@@ -21,5 +21,13 @@ def push_dir_to_repo(project_dir, commit_message):
 
     os.chdir(f'{project_root}/{project_dir}')
     subprocess.run(['git', 'add', '.'], check=True)
-    subprocess.run(['git', 'commit', '-m', commit_message], check=True)
-    subprocess.run(['git', 'push'], check=True)
+    result = subprocess.run(['git', 'status', '--porcelain'], capture_output=True, text=True)
+    
+    if not result.stdout.strip():
+        print("Nothing to commit, working tree clean.")
+    else:
+        try:
+            subprocess.run(['git', 'commit', '-m', commit_message])
+            subprocess.run(['git', 'push'])
+        except subprocess.CalledProcessError as e:
+            pass
