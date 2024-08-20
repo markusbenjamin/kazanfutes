@@ -1,3 +1,5 @@
+"""DeCONZ interfacing."""
+
 import utils.project as project
 
 def get_deconz_access_params():
