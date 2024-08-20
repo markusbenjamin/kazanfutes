@@ -1,6 +1,7 @@
+"""Wrapper functions for everything IO."""
+
 import utils.project as project
 import utils.deconz as deconz
-import utils.config as config
 
 def get_room_temps_and_humidity():
     """
@@ -25,7 +26,7 @@ def get_room_temps_and_humidity():
             sensor_temps_and_hums[sensor.name]['hum'] = sensor.humidity
             sensor_temps_and_hums[sensor.name]['last_updated'] = last_updated
 
-    rooms_info = config.get_rooms_info()
+    rooms_info = project.get_rooms_info()
 
     room_temps_and_hums = {}
     for room_id in rooms_info:

@@ -1,3 +1,3 @@
-import utils.project as project
+import utils.data as data_management
 
-project.push_dir_to_repo('data/', 'Automatic data push.')
+data_management.push_dir_to_repo('data/', 'Automatic data push.')
