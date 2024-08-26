@@ -32,7 +32,7 @@ def push_dir_to_repo(project_dir_path, commit_message):
         else:
             # Handle 'git commit' and 'git push'
             subprocess.run(['git', 'commit', '-m', commit_message], check=True)
-            subprocess.run(['git', 'push'], check=True)
+            subprocess.run(['git', 'push', '--force'], check=True)
     except subprocess.CalledProcessError as e:
         raise errors.GitOperationError(f"Git command failed: {e}") from e
     except Exception as e:
