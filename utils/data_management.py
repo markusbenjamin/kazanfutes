@@ -24,15 +24,18 @@ def push_dir_to_repo(project_dir_path, commit_message):
         # Handle 'git add'
         subprocess.run(['git', 'add', '.'], check=True)
 
-        # Handle 'git status'
-        result = subprocess.run(['git', 'status', '--porcelain'], capture_output=True, text=True)
-        
-        if not result.stdout.strip():
-            comms.report("Nothing to commit, working tree clean.")
-        else:
-            # Handle 'git commit' and 'git push'
+        # Check if there are changes staged for commit
+        result = subprocess.run(['git', 'diff', '--cached', '--exit-code'], check=False)
+
+        # Only commit and push if there are staged changes
+        if result.returncode != 0:
+            # Handle 'git commit'
             subprocess.run(['git', 'commit', '-m', commit_message], check=True)
-            subprocess.run(['git', 'push', '--force'], check=True)
+
+            # Push the changes to the remote repository
+            subprocess.run(['git', 'push'], check=True)
+        else:
+            comms.report("No changes staged for commit. Skipping commit and push.")
     except subprocess.CalledProcessError as e:
         raise errors.GitOperationError(f"Git command failed: {e}") from e
     except Exception as e:
