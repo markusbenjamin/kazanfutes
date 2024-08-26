@@ -1,0 +1,8 @@
+try:
+	do_stuff()
+except (VerySpecificNativeErrorSignifyingProblemTypeI1, VerySpecificNativeErrorSignifyingProblemTypeI2) as e:
+	raise MyModulePartSpecificError("Message about type I error.", original_exception=e, include_traceback=True) from e
+except (VerySpecificNativeErrorSignifyingProblemTypeII1, VerySpecificNativeErrorSignifyingProblemTypeII2) as e:
+	raise MyModulePartSpecificError("Message about type II error.", original_exception=e, include_traceback=True) from e
+except Exception as e:
+	raise MyModulePartSpecificError(f"An unexpected error occured while doing stuff:{e}", original_exception=e, include_traceback=True) from e
