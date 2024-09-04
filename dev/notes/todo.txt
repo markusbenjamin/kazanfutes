@@ -1,4 +1,5 @@
 Következő lépések:
-    - eddig megírt service scriptekbe beintegrálni az error kezelést
     - kifejleszteni rajtuk az error reportingot (pl. valamelyik hőmérő nem elérhető, valami nem fut, stb)
+        - error registrar működése kb ok már, de tesztelni kell a bufferes verziót
+        - illetve kell bele egy reporting, ami ír valamelyik logba, hogy mi van (dedikált error registration log?)
     - heating_control.py-t elkezdeni

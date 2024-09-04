@@ -73,6 +73,7 @@ class Settings:
     def __init__(self):
         # Initialize default settings
         self._detailed_error_reporting = True
+        self._timestamp_format = "%Y-%m-%d-%H-%M-%S"
         self._dynamic_settings = {}
 
     # Getter and setter for detailed error reporting
@@ -83,6 +84,9 @@ class Settings:
 
     def get_detailed_error_reporting(self):
         return self._detailed_error_reporting
+    
+    def get_timestamp_format(self):
+        return self._timestamp_format
 
     # Dynamic settings handling
     def add_dynamic_setting(self, key: str, value):
