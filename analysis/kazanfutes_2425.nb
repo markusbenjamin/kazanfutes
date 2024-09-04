@@ -1,0 +1,170 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 12.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      6071,        162]
+NotebookOptionsPosition[      4597,        128]
+NotebookOutlinePosition[      5146,        147]
+CellTagsIndexPosition[      5103,        144]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["load & set", "Title",
+ CellChangeTimes->{{3.9344350056535163`*^9, 
+  3.9344350468342266`*^9}},ExpressionUUID->"dc3b4033-a983-49d4-99d5-\
+4952b2e7eac7"],
+
+Cell["set", "Subtitle",
+ CellChangeTimes->{{3.9344350056535163`*^9, 3.934435036655195*^9}, {
+  3.9344350919215364`*^9, 
+  3.934435092122015*^9}},ExpressionUUID->"b95c9fff-d5ed-40f2-9e13-\
+a7a49b6fccb2"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"dataRoot", "=", 
+   RowBox[{"StringRiffle", "[", 
+    RowBox[{
+     RowBox[{"Join", "[", 
+      RowBox[{
+       RowBox[{"Drop", "[", 
+        RowBox[{
+         RowBox[{"StringSplit", "[", 
+          RowBox[{
+           RowBox[{"NotebookDirectory", "[", "]"}], ",", "\"\<\\\\\>\""}], 
+          "]"}], ",", 
+         RowBox[{"-", "1"}]}], "]"}], ",", 
+       RowBox[{"{", "\"\<data\>\"", "}"}]}], "]"}], ",", "\"\<\\\\\>\""}], 
+    "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.9344351112140703`*^9, 3.934435113498793*^9}, {
+  3.9344351757722435`*^9, 3.934435176572344*^9}},
+ CellLabel->"In[5]:=",ExpressionUUID->"46c82bde-08f7-44e3-b444-84d8534f83b7"],
+
+Cell[CellGroupData[{
+
+Cell["load", "Subtitle",
+ CellChangeTimes->{{3.9344350056535163`*^9, 3.934435036655195*^9}, {
+  3.934435088496415*^9, 
+  3.934435089671216*^9}},ExpressionUUID->"cdc29ab5-08c6-4cdf-9a10-\
+8425e0947c4a"],
+
+Cell[BoxData[
+ RowBox[{"roomTemps", "="}]], "Input",
+ CellChangeTimes->{{3.934435199832755*^9, 
+  3.934435236281644*^9}},ExpressionUUID->"8f092417-e067-4365-a47f-\
+dd7f93daa822"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"alma", "=", 
+   RowBox[{"Import", "[", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"FileNames", "[", 
+       RowBox[{"All", ",", 
+        RowBox[{
+        "dataRoot", "<>", "\"\<\\\\logs\\\\temperature_and_humidity\>\""}]}], 
+       "]"}], "[", 
+      RowBox[{"[", "1", "]"}], "]"}], ",", "\"\<Text\>\""}], "]"}]}], 
+  ";"}]], "Input",
+ CellChangeTimes->{{3.9344352085284557`*^9, 3.9344352563736167`*^9}, {
+  3.9344352872697296`*^9, 3.934435306252817*^9}},
+ CellLabel->"In[12]:=",ExpressionUUID->"dab32315-84c2-45b5-b7bf-0a83f8dd0ece"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"StringSplit", "[", 
+   RowBox[{"alma", ",", "\"\<\\n\>\""}], "]"}], "[", 
+  RowBox[{"[", "1", "]"}], "]"}]], "Input",
+ CellChangeTimes->{{3.9344353071648474`*^9, 3.934435341857195*^9}, {
+  3.9344354280483007`*^9, 3.934435439105569*^9}},
+ CellLabel->"In[17]:=",ExpressionUUID->"a3b2a129-2be7-433b-8eef-d04785ed074d"],
+
+Cell[BoxData["\<\"{\\\"1\\\": {\\\"temp\\\": \\\"none\\\", \\\"hum\\\": \
+\\\"none\\\", \\\"last_updated\\\": \\\"none\\\"}, \\\"2\\\": {\\\"temp\\\": \
+3078, \\\"hum\\\": 4154, \\\"last_updated\\\": \\\"2024-09-03-22-57\\\"}, \
+\\\"3\\\": {\\\"temp\\\": 3098, \\\"hum\\\": 4606, \\\"last_updated\\\": \
+\\\"2024-09-03-22-56\\\"}, \\\"4\\\": {\\\"temp\\\": 3045, \\\"hum\\\": 4758, \
+\\\"last_updated\\\": \\\"2024-09-03-22-51\\\"}, \\\"5\\\": {\\\"temp\\\": \
+2877, \\\"hum\\\": 4607, \\\"last_updated\\\": \\\"2024-09-03-22-45\\\"}, \
+\\\"6\\\": {\\\"temp\\\": \\\"none\\\", \\\"hum\\\": \\\"none\\\", \
+\\\"last_updated\\\": \\\"none\\\"}, \\\"7\\\": {\\\"temp\\\": 2839, \
+\\\"hum\\\": 4757, \\\"last_updated\\\": \\\"2024-09-03-22-58\\\"}, \
+\\\"8\\\": {\\\"temp\\\": 2963, \\\"hum\\\": 4558, \\\"last_updated\\\": \
+\\\"2024-09-03-22-53\\\"}, \\\"9\\\": {\\\"temp\\\": 3036, \\\"hum\\\": 6092, \
+\\\"last_updated\\\": \\\"2024-08-28-10-02\\\"}}\"\>"], "Output",
+ CellChangeTimes->{{3.934435431701397*^9, 3.934435439306465*^9}},
+ CellLabel->"Out[17]=",ExpressionUUID->"5175e975-f936-4a97-b073-bd9b998a2df1"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["elemz\[EAcute]s", "Title",
+ CellChangeTimes->{{3.9344350056535163`*^9, 
+  3.934435036655195*^9}},ExpressionUUID->"bf9b0cfa-173d-4d3f-9606-\
+15f938fe7425"],
+
+Cell["ny\[AAcute]ri h\[ODoubleAcute]m\[EAcute]rs\[EAcute]kletek", "Subtitle",
+ CellChangeTimes->{{3.9344350056535163`*^9, 3.934435036655195*^9}, {
+  3.9344350919215364`*^9, 
+  3.934435101792997*^9}},ExpressionUUID->"8ed54376-9e54-4335-a682-\
+603f42d8ec86"]
+}, Open  ]]
+},
+WindowSize->{1152., 615.6},
+WindowMargins->{{
+  Automatic, -5.399999999999864}, {-5.399999999999977, Automatic}},
+WindowStatusArea->"kazanfutes_2425.nb last backed up to kazanfutes_2425.nb~ \
+on Wed 4 Sep 2024 at 12:39:01 PM",
+FrontEndVersion->"12.3 for Microsoft Windows (64-bit) (July 9, 2021)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"980e490b-d77e-4a83-ad54-3d54493feb04"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 157, 3, 98, "Title",ExpressionUUID->"dc3b4033-a983-49d4-99d5-4952b2e7eac7"],
+Cell[740, 27, 202, 4, 53, "Subtitle",ExpressionUUID->"b95c9fff-d5ed-40f2-9e13-a7a49b6fccb2"],
+Cell[945, 33, 688, 18, 28, "Input",ExpressionUUID->"46c82bde-08f7-44e3-b444-84d8534f83b7"],
+Cell[CellGroupData[{
+Cell[1658, 55, 201, 4, 53, "Subtitle",ExpressionUUID->"cdc29ab5-08c6-4cdf-9a10-8425e0947c4a"],
+Cell[1862, 61, 178, 4, 28, "Input",ExpressionUUID->"8f092417-e067-4365-a47f-dd7f93daa822"],
+Cell[2043, 67, 568, 15, 28, "Input",ExpressionUUID->"dab32315-84c2-45b5-b7bf-0a83f8dd0ece"],
+Cell[CellGroupData[{
+Cell[2636, 86, 350, 7, 28, "Input",ExpressionUUID->"a3b2a129-2be7-433b-8eef-d04785ed074d"],
+Cell[2989, 95, 1112, 14, 109, "Output",ExpressionUUID->"5175e975-f936-4a97-b073-bd9b998a2df1"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[4162, 116, 160, 3, 98, "Title",ExpressionUUID->"bf9b0cfa-173d-4d3f-9606-15f938fe7425"],
+Cell[4325, 121, 256, 4, 53, "Subtitle",ExpressionUUID->"8ed54376-9e54-4335-a682-603f42d8ec86"]
+}, Open  ]]
+}
+]
+*)
+
