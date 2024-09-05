@@ -1,3 +1,7 @@
-import utils.utils as utils
+"""
+Syncs the contents of the data folder to the online repo.
+"""
 
-utils.push_dir_to_repo('data/', 'Automatic data push.')
+from utils.project import *
+
+push_dir_to_repo('data/', 'Automatic data push.')

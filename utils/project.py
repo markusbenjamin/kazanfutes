@@ -4,7 +4,7 @@ import json
 import os
 import time
 from datetime import datetime
-from filelock import FileLock
+import filelock
 #endregion
 
 #region Classes
@@ -80,7 +80,7 @@ class Settings:
         # Initialize default settings
         self._detailed_error_reporting = True # Whether to include full trace when reporting an error.
         self._timestamp_format = "%Y-%m-%d-%H-%M-%S"
-        self._verbose = True # Whether to report the full internal flow of a script.
+        self._verbosity = True # Whether to report the full internal flow of a script.
         self._dynamic_settings = {}
 
     def set_detailed_error_reporting(self, value):
@@ -176,9 +176,13 @@ class ProjectSettingError(ProjectError):
 #region Comms
 """Everything related to external communication and reporting."""
 
-def report(message):
+def report(message, *, verbose = False):
     """Generalized output plug for runtime messages and reporting."""
-    print(message)
+    if verbose: # Verbose is true for messages that should only be printed in verbose mode.
+        if settings.get_verbosity():
+            print(message)
+    else:
+        print(message)
 #endregion
 
 #region Data management
@@ -352,7 +356,7 @@ def read_sensors():
 #endregion
 
 #region Error management
-def error_registrar(exception_type, severity, origin, origin_timestamp):
+def error_registrar(exception_type, severity, origin = None, origin_timestamp = None):
     """
     Registers a new error in error_registry.json if not already present and the file is not locked.
     If error_registry.json is locked, appends the error to error_buffer.json for later retry.
@@ -368,56 +372,67 @@ def error_registrar(exception_type, severity, origin, origin_timestamp):
     # Define the hardcoded paths to the error registry and buffer using the absolute project root
     ERROR_REGISTRY_PATH = f"{get_project_root()}/data/errors/error_registry.json"
     ERROR_BUFFER_PATH = f"{get_project_root()}/data/errors/error_buffer.json"
-
     
     error_entry = {
         "exception_type": exception_type, 
         "severity": severity,
-        "origin": origin,
-        "origin_timestamp": origin_timestamp,
-        "registration_timestamp": time.strftime("%Y-%m-%d-%H-%M-%S"),
+        "origin": generate_exception_origin_stamp() if origin is None else origin,
+        "origin_timestamp": time.strftime(settings.get_timestamp_format() if origin_timestamp is None else origin_timestamp),
+        "registration_timestamp": None,
         "reported": False,
         "reported_timestamp": None,
-        "system_admin_checked": False,
-        "system_admin_checked_timestamp": None
+        "checked": False,
+        "checked_timestamp": None
     }
     
     # Step 1: Ensure error_registry.json exists, create if missing
     if not os.path.exists(ERROR_REGISTRY_PATH):
         with open(ERROR_REGISTRY_PATH, 'w') as f:
             json.dump([], f)
+            report("Created new error registry file.", verbose = True)
     
     try: # Step 2: Try to acquire a lock on the error_registry.json file
-        with FileLock(ERROR_REGISTRY_PATH + ".lock"):
+        report("Checking lock on error registry.", verbose = True)
+        with filelock.FileLock(ERROR_REGISTRY_PATH + ".lock", timeout=1):
+            report("Locking error registry.", verbose = True)
             # Step 2a: Open and read the current error registry
             with open(ERROR_REGISTRY_PATH, 'r') as f:
                 error_registry = json.load(f)
-            
+                report("Existing error registry loaded.", verbose = True)
+
             # Step 2b: Check if the error is already registered based on its identity
             already_registered = False
+            report("Checking if error entry is already registered.", verbose = True)
             for existing_error in error_registry:
                 if (existing_error["exception_type"] == error_entry["exception_type"] and
                     existing_error["severity"] == error_entry["severity"] and
                     existing_error["origin"] == error_entry["origin"]):
                     already_registered = True
+                    report("Error entry already in registry, exiting registrar.", verbose = True)
                     break
 
             # If the error is not already registered, append it
             if not already_registered:
+                error_entry["registration_timestamp"] = time.strftime(settings.get_timestamp_format())
                 error_registry.append(error_entry)
                 
                 # Step 2c: Write the updated registry back to file
                 with open(ERROR_REGISTRY_PATH, 'w') as f:
                     json.dump(error_registry, f, indent=4)
-    except: # Step 3: Ensure error_buffer.json exists, create if missing
+                    report("New error, entry registrered.", verbose = True)
+    except filelock.Timeout: # Step 3: Ensure error_buffer.json exists, create if missing
+        report("Error registry locked.", verbose = True)
         if not os.path.exists(ERROR_BUFFER_PATH):
             with open(ERROR_BUFFER_PATH, 'w') as f:
                 json.dump([], f)
+                report("Created new error buffer file.", verbose = True)
         
         # Step 3a: If error_registry.json is locked, write to the error_buffer.json
-        with FileLock(ERROR_BUFFER_PATH + ".lock"):
+        report("Locking error buffer.", verbose = True)
+        with filelock.FileLock(ERROR_BUFFER_PATH + ".lock"):
             with open(ERROR_BUFFER_PATH, 'r') as f:
                 error_buffer = json.load(f)
+                report("Error buffer loaded.", verbose = True)
                 
             # Step 3b: Append the error to the buffer
             error_buffer.append(error_entry)
@@ -425,6 +440,50 @@ def error_registrar(exception_type, severity, origin, origin_timestamp):
             # Step 3c: Write the buffer back to file
             with open(ERROR_BUFFER_PATH, 'w') as f:
                 json.dump(error_buffer, f, indent=4)
+                report("Error entry written to buffer.", verbose = True)
+
+def generate_exception_origin_stamp():
+    """
+    Generates a unique origin string for the calling function/script based on the file name, 
+    function name, and line number where it was invoked.
+    
+    Returns:
+        str: A string representing the origin of the exception in the calling script.
+    """
+    """
+    Generates a unique origin string for the calling script, with the full call chain from the 
+    innermost function to the main scope, as well as the file name and line number.
+    
+    Returns:
+        str: A string representing the origin of the exception in the calling script, 
+             including the full call chain.
+    """
+    # Get the current stack trace
+    stack = traceback.extract_stack()
+
+    # Initialize the call chain with an empty list
+    call_chain = []
+    
+    # Traverse the stack frames from the bottom up (skip the last frame, which is this function)
+    for frame in stack[:-2]:
+        # Get function name, or "main scope" if in the global scope
+        function_name = frame.name if frame.name != "<module>" else "main_scope"
+        call_chain.append(function_name)
+
+    # Join the call chain to form a string
+    full_call_chain = "/".join(call_chain)
+
+    # Get the last relevant frame (before this function was called)
+    tb = stack[-3] if len(stack) >= 3 else stack[-1]
+
+    # Extract the script name, line number, and function name
+    script_name = os.path.basename(tb.filename)
+    line_number = tb.lineno
+
+    # Create a unique origin string based on file, call chain, and line number
+    origin = f"{script_name}:{full_call_chain}:{line_number}"
+    return origin
+
 #endregion
 
 #region IO
