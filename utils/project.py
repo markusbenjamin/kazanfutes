@@ -158,6 +158,13 @@ class ProjectIOError(HeatingControlError): #Named so it won't interfere with the
     """Base exception for I/O-related """
     pass
 
+# Communication Errors
+class CommunicationError(HeatingControlError):
+    pass
+
+class GMailError(CommunicationError):
+    pass
+
 # Project Errors
 class ProjectError(HeatingControlError):
     """Base exception for project-wide """
@@ -183,6 +190,65 @@ def report(message, *, verbose = False):
             print(message)
     else:
         print(message)
+
+def notify_admin():
+    pass
+
+def send_email(to, subject='', body=''):
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+    """
+    Sends an email using Gmail's SMTP server. Login credentials are loaded from 
+    project_root/secrets_and_env/gmail_login.
+    
+    Args:
+        to (str): The recipient's email address.
+        subject (str): The subject of the email.
+        body (str): The body of the email.
+        **kwargs: Additional email headers (optional).
+    
+    Raises:
+        Exception: If sending the email fails for any reason.
+    """
+    # Path to the login file
+    login_file_path = os.path.join(get_project_root(), 'secrets_and_env', 'gmail_login')
+
+    # Read the login credentials from the file
+    with open(login_file_path, 'r') as f:
+        email_address = f.readline().strip()  # First line: email
+        password = f.readline().strip()       # Second line: password
+
+    # Set up the email (headers, subject, body)
+    msg = MIMEMultipart()
+    msg['From'] = email_address
+    msg['To'] = to
+    msg['Subject'] = subject
+
+    # Attach the body as a plain text message
+    msg.attach(MIMEText(body, 'plain'))
+
+    success = False
+
+    try:
+        # Connect to Gmail's SMTP server
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
+        server.login(email_address, password)  # Log in to the email account
+        text = msg.as_string()  # Convert message to a string
+        server.sendmail(email_address, to, text)  # Send the email
+        server.quit()
+        report(f"Email sent successfully to {to}.",verbose=True)
+        success = True
+    except (smtplib.SMTPAuthenticationError, smtplib.SMTPNotSupportedError) as e:
+        raise GMailError("Failed to authenticate with Gmail SMTP server or unsupported operation.", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+    except (smtplib.SMTPRecipientsRefused, smtplib.SMTPSenderRefused, smtplib.SMTPDataError) as e:
+        raise GMailError("SMTP issue: Recipient or sender refused, or data error occurred.", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+    except Exception as e:
+        raise GMailError(f"An unexpected error occurred while sending an email: {e}", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+    
+    return success
+
 #endregion
 
 #region Data management
