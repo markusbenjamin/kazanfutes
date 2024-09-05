@@ -367,6 +367,8 @@ def error_registrar(exception_type, severity, origin = None, origin_timestamp = 
     severity (str): Severity level of the error (1 := low, 2 := moderate, 3 :=high).
     origin (str): Where the error originated (e.g., file, function, line).
     origin_timestamp (str): Timestamp when the error occurred.
+
+    Returns true only if an error has been registered into the error registry, false otherwise.
     """
 
     # Define the hardcoded paths to the error registry and buffer using the absolute project root
@@ -384,6 +386,8 @@ def error_registrar(exception_type, severity, origin = None, origin_timestamp = 
         "checked": False,
         "checked_timestamp": None
     }
+
+    success = False
     
     # Step 1: Ensure error_registry.json exists, create if missing
     if not os.path.exists(ERROR_REGISTRY_PATH):
@@ -419,9 +423,11 @@ def error_registrar(exception_type, severity, origin = None, origin_timestamp = 
                 # Step 2c: Write the updated registry back to file
                 with open(ERROR_REGISTRY_PATH, 'w') as f:
                     json.dump(error_registry, f, indent=4)
-                    report("New error, entry registrered.", verbose = True)
-    except filelock.Timeout: # Step 3: Ensure error_buffer.json exists, create if missing
+                    report("New error, entry registered.", verbose = True)
+                    success = True
+    except filelock.Timeout:
         report("Error registry locked.", verbose = True)
+        # Step 3: Ensure error_buffer.json exists, create if missing
         if not os.path.exists(ERROR_BUFFER_PATH):
             with open(ERROR_BUFFER_PATH, 'w') as f:
                 json.dump([], f)
@@ -429,18 +435,23 @@ def error_registrar(exception_type, severity, origin = None, origin_timestamp = 
         
         # Step 3a: If error_registry.json is locked, write to the error_buffer.json
         report("Locking error buffer.", verbose = True)
-        with filelock.FileLock(ERROR_BUFFER_PATH + ".lock"):
-            with open(ERROR_BUFFER_PATH, 'r') as f:
-                error_buffer = json.load(f)
-                report("Error buffer loaded.", verbose = True)
+        try:
+            with filelock.FileLock(ERROR_BUFFER_PATH + ".lock", timeout = 0):
+                with open(ERROR_BUFFER_PATH, 'r') as f:
+                    error_buffer = json.load(f)
+                    report("Error buffer loaded.", verbose = True)
+                    
+                # Step 3b: Append the error to the buffer
+                error_buffer.append(error_entry)
                 
-            # Step 3b: Append the error to the buffer
-            error_buffer.append(error_entry)
-            
-            # Step 3c: Write the buffer back to file
-            with open(ERROR_BUFFER_PATH, 'w') as f:
-                json.dump(error_buffer, f, indent=4)
-                report("Error entry written to buffer.", verbose = True)
+                # Step 3c: Write the buffer back to file
+                with open(ERROR_BUFFER_PATH, 'w') as f:
+                    json.dump(error_buffer, f, indent=4)
+                    report("Error entry written to buffer.", verbose = True)
+        except:
+            report("Error buffer locked, exiting.", verbose = True)
+
+    return success
 
 def generate_exception_origin_stamp():
     """

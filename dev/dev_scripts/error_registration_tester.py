@@ -1,7 +1,7 @@
-from utils import project
+from utils.project import *
 
 def foo():
-    project.error_registrar(exception_type="Exception",severity=1)
+    error_registrar(exception_type="Exception",severity=1)
 
 def foo2():
     foo()
