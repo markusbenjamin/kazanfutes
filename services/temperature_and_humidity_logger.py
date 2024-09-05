@@ -1,4 +1,4 @@
-import utils
+import utils.utils as utils
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import json
