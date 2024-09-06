@@ -1,7 +1,11 @@
 Következő lépések:
     - kifejleszteni rajtuk az error reportingot (pl. valamelyik hőmérő nem elérhető, valami nem fut, stb)
-        - error registrar működése kb ok már, de tesztelni kell a bufferes verziót
-        - illetve kell bele egy reporting, ami ír valamelyik logba, hogy mi van (dedikált error registration log?)
-        - kell még az a script ami az error origin stampet legyártja
-        - utána error managert kell megcsinálni, ami reportolja különböző severity szerint
+        - utána error managert kell megcsinálni, hiányzik még:
+            - 
+            - reportolja különböző severity szerint
+                - low - 1: write to error log -- ezeknél az error_manager service lesz a check is
+                - moderate - 2: add to daily report
+                - high - 3: notify system admin right away
+    - settings ne kódban kelljen újraírni hanem olvassa be egy jsonból a default mezőket
+        - legyen egy mező az admin_email_address
     - heating_control.py-t elkezdeni
