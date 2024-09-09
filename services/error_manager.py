@@ -2,7 +2,7 @@
 Manages project-wide error reporting.
 
 Tasks:
-    - attempt re-registration of unregistered errors in buffer
+    - attempts re-registration of unregistered errors in buffer
     - reports unreported errors from registry according to severity
         low - 1: write to error log
         moderate - 2: write to error log, append to daily report

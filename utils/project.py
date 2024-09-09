@@ -521,13 +521,6 @@ def error_registrar(exception_type, severity, origin = None, origin_timestamp = 
 
 def generate_exception_origin_stamp():
     """
-    Generates a unique origin string for the calling function/script based on the file name, 
-    function name, and line number where it was invoked.
-    
-    Returns:
-        str: A string representing the origin of the exception in the calling script.
-    """
-    """
     Generates a unique origin string for the calling script, with the full call chain from the 
     innermost function to the main scope, as well as the file name and line number.
     
