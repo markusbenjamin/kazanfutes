@@ -275,6 +275,7 @@ def push_dir_to_repo(project_dir_path, commit_message):
 
         # Check if there are changes staged for commit
         result = subprocess.run(['git', 'diff', '--cached', '--exit-code'], check=False)
+        
 
         # Only commit and push if there are staged changes
         if result.returncode != 0:
