@@ -35,28 +35,25 @@ class Settings:
             with open(settings_file, 'r') as file:
                 self.settings = json.load(file)
         except FileNotFoundError as e:
-            #raise ProjectSettingError(f"Settings file {settings_file} not found.", original_exception=e, include_traceback=True) from e
-            raise FileNotFoundError
-        #except json.JSONDecodeError as e:
-        #    raise ProjectSettingError(f"Invalid JSON format in {settings_file}.", original_exception=e, include_traceback=True) from e
-        #except Exception as e:
-        #    raise ProjectSettingError(f"An unexpected error occurred while loading the settings file: {e}", original_exception=e, include_traceback=True) from e
+            raise ProjectSettingError(f"Settings file {settings_file} not found.", original_exception=e, include_traceback=True) from e
+        except json.JSONDecodeError as e:
+            raise ProjectSettingError(f"Invalid JSON format in {settings_file}.", original_exception=e, include_traceback=True) from e
+        except Exception as e:
+            raise ProjectSettingError(f"An unexpected error occurred while loading the settings file: {e}", original_exception=e, include_traceback=True) from e
 
     def get(self, key):
         """Retrieve a setting value, or None if the key does not exist."""
         try:
             return self.settings.get(key)
         except Exception as e:
-            #raise ProjectSettingError(f"Error accessing the setting '{key}': {e}", original_exception=e, include_traceback=True) from e
-            raise ValueError
+            raise ProjectSettingError(f"Error accessing the setting '{key}': {e}", original_exception=e, include_traceback=True) from e
 
     def set(self, key, value):
         """Modify or add a setting."""
         try:
             self.settings[key] = value
         except Exception as e:
-            #raise ProjectSettingError(f"Error setting the value for '{key}': {e}", original_exception=e, include_traceback=True) from e
-            raise ValueError
+            raise ProjectSettingError(f"Error setting the value for '{key}': {e}", original_exception=e, include_traceback=True) from e
     
 settings = Settings()
 #endregion
