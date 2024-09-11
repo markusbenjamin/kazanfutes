@@ -261,19 +261,17 @@ def push_dir_to_repo(project_dir_path, commit_message):
 
     import subprocess
 
-    try:
-        project_root = get_project_root()
-
-        # Handle changing directory
-        os.chdir(os.path.join(project_root, project_dir_path))
+    try: 
+        os.chdir(os.path.join(get_project_root(), project_dir_path))
     except (FileNotFoundError, PermissionError, OSError) as e:
         raise GitOperationError(f"Failed to change directory to {project_dir_path}: {e}", original_exception = e, include_traceback = settings.get_detailed_error_reporting()) from e
     except Exception as e:
         raise GitOperationError(f"Unexpected error while changing directory: {e}", original_exception = e, include_traceback = settings.get_detailed_error_reporting()) from e
 
     try:
-        # Handle 'git add'
         subprocess.run(['git', 'add', '.'], check=True)
+        
+        subprocess.run(['git', 'pull', 'origin','main'], check=True)
 
         # Check if there are changes staged for commit
         result = subprocess.run(['git', 'diff', '--cached', '--exit-code'], check=False)
@@ -284,7 +282,7 @@ def push_dir_to_repo(project_dir_path, commit_message):
             subprocess.run(['git', 'commit', '-m', commit_message], check=True)
 
             # Push the changes to the remote repository
-            subprocess.run(['git', 'push'], check=True)
+            subprocess.run(['git', 'push','-u','origin','main'], check=True)
         else:
             report("No changes staged for commit. Skipping commit and push.")
     except subprocess.CalledProcessError as e:
