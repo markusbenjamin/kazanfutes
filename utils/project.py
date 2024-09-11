@@ -10,106 +10,53 @@ import filelock
 #region Classes
 
 #region Settings
-"""
-Settings for the 
-
-This module contains the `Settings` class, which centralizes the management of configuration options.
-Settings are encapsulated within the class, and methods are provided to get and set configuration values.
-
-Usage Example:
-    if settings.get_detailed_error_reporting():
-        # Perform detailed error reporting
-        ...
-
-    # Modifying settings at runtime:
-    settings.set_detailed_error_reporting(False)
-
-    # Display current settings:
-    settings.show_settings()
-
-Dynamic Usage Example:
-
-    # Adding or modifying settings dynamically during runtime:
-    settings.add_dynamic_setting('NEW_FEATURE_ENABLED', True)
-
-    # Accessing dynamic settings:
-    feature_enabled = settings.get_dynamic_setting('NEW_FEATURE_ENABLED')
-    if feature_enabled:
-        # Enable the new feature
-        ...
-
-Extending the `Settings` class:
-
-The `Settings` class can be easily extended to accommodate specific configurations
-for different environments, services, or scripts. This allows for a layered configuration
-structure where you can inherit and override settings based on context.
-
-Example:
-
-    class ProductionSettings(Settings):
-        def __init__(self):
-            super().__init__()
-            # Override default settings for production environment
-            self.set_detailed_error_reporting(False)
-            self.add_dynamic_setting('LOG_LEVEL', 'ERROR')
-
-    class DevelopmentSettings(Settings):
-        def __init__(self):
-            super().__init__()
-            # Override default settings for development environment
-            self.set_detailed_error_reporting(True)
-            self.add_dynamic_setting('LOG_LEVEL', 'DEBUG')
-
-Usage Example:
-
-    production_settings = ProductionSettings()
-    dev_settings = DevelopmentSettings()
-
-    # Access and use settings based on the environment
-    if production_settings.get_detailed_error_reporting():
-        # Production-specific logic
-        ...
-
-    if dev_settings.get_dynamic_setting('LOG_LEVEL') == 'DEBUG':
-        # Development-specific logic
-        ...
-"""
-
 class Settings:
-    def __init__(self):
-        # Initialize default settings
-        self._detailed_error_reporting = True # Whether to include full trace when reporting an error.
-        self._timestamp_format = "%Y-%m-%d-%H-%M-%S"
-        self._verbosity = True # Whether to report the full internal flow of a script.
-        self._dynamic_settings = {}
+    """
+    A class to manage configuration settings loaded from a JSON file.
 
-    def set_detailed_error_reporting(self, value):
-        if not isinstance(value, bool):
-            raise ProjectSettingError("DETAILED_ERROR_REPORTING must be a boolean.",original_exception=None, include_traceback=False)
-        self._detailed_error_reporting = value
+    Attributes:
+        settings (dict): A dictionary holding the current settings.
 
-    def get_detailed_error_reporting(self):
-        return self._detailed_error_reporting
-    
-    def set_verbosity(self, value):
-        if not isinstance(value, bool):
-            raise ProjectSettingError("VERBOSITY must be a boolean.",original_exception=None, include_traceback=False)
-        self._verbosity = value
+    Methods:
+        load_settings_from_file(settings_file): Loads settings from a JSON file.
+        get(key): Retrieves the value of a setting by key.
+        set(key, value): Modifies or adds a setting.
+    """
+    def __init__(self, settings_file='settings.json'):
+        # Initialize the settings dictionary by loading from the JSON file
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        settings_file = os.path.join(project_root, 'system_config', 'settings.json')
+        self.settings = {}
+        self.load_settings_from_file(settings_file)
 
-    def get_verbosity(self):
-        return self._verbosity
-    
-    def get_timestamp_format(self):
-        return self._timestamp_format
+    def load_settings_from_file(self, settings_file):
+        """Load settings from a JSON file."""
+        try:
+            with open(settings_file, 'r') as file:
+                self.settings = json.load(file)
+        except FileNotFoundError as e:
+            #raise ProjectSettingError(f"Settings file {settings_file} not found.", original_exception=e, include_traceback=True) from e
+            raise FileNotFoundError
+        #except json.JSONDecodeError as e:
+        #    raise ProjectSettingError(f"Invalid JSON format in {settings_file}.", original_exception=e, include_traceback=True) from e
+        #except Exception as e:
+        #    raise ProjectSettingError(f"An unexpected error occurred while loading the settings file: {e}", original_exception=e, include_traceback=True) from e
 
-    # Dynamic settings handling
-    def add_dynamic_setting(self, key: str, value):
-        """Add or modify a dynamic setting."""
-        self._dynamic_settings[key] = value
+    def get(self, key):
+        """Retrieve a setting value, or None if the key does not exist."""
+        try:
+            return self.settings.get(key)
+        except Exception as e:
+            #raise ProjectSettingError(f"Error accessing the setting '{key}': {e}", original_exception=e, include_traceback=True) from e
+            raise ValueError
 
-    def get_dynamic_setting(self, key: str):
-        """Retrieve a dynamic setting value, or None if the key does not exist."""
-        return self._dynamic_settings.get(key)
+    def set(self, key, value):
+        """Modify or add a setting."""
+        try:
+            self.settings[key] = value
+        except Exception as e:
+            #raise ProjectSettingError(f"Error setting the value for '{key}': {e}", original_exception=e, include_traceback=True) from e
+            raise ValueError
     
 settings = Settings()
 #endregion
@@ -186,7 +133,7 @@ class ProjectSettingError(ProjectError):
 def report(message, *, verbose = False):
     """Generalized output plug for runtime messages and reporting."""
     if verbose: # Verbose is true for messages that should only be printed in verbose mode.
-        if settings.get_verbosity():
+        if settings.get('verbosity'):
             print(message)
     else:
         print(message)
@@ -241,11 +188,11 @@ def send_email(to, subject='', body=''):
         report(f"Email sent successfully to {to}.",verbose=True)
         success = True
     except (smtplib.SMTPAuthenticationError, smtplib.SMTPNotSupportedError) as e:
-        raise GMailError("Failed to authenticate with Gmail SMTP server or unsupported operation.", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+        raise GMailError("Failed to authenticate with Gmail SMTP server or unsupported operation.", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
     except (smtplib.SMTPRecipientsRefused, smtplib.SMTPSenderRefused, smtplib.SMTPDataError) as e:
-        raise GMailError("SMTP issue: Recipient or sender refused, or data error occurred.", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+        raise GMailError("SMTP issue: Recipient or sender refused, or data error occurred.", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
     except Exception as e:
-        raise GMailError(f"An unexpected error occurred while sending an email: {e}", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+        raise GMailError(f"An unexpected error occurred while sending an email: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
     
     return success
 
@@ -264,9 +211,9 @@ def push_dir_to_repo(project_dir_path, commit_message):
     try: 
         os.chdir(os.path.join(get_project_root(), project_dir_path))
     except (FileNotFoundError, PermissionError, OSError) as e:
-        raise GitOperationError(f"Failed to change directory to {project_dir_path}: {e}", original_exception = e, include_traceback = settings.get_detailed_error_reporting()) from e
+        raise GitOperationError(f"Failed to change directory to {project_dir_path}: {e}", original_exception = e, include_traceback = settings.get('detailed_error_reporting')) from e
     except Exception as e:
-        raise GitOperationError(f"Unexpected error while changing directory: {e}", original_exception = e, include_traceback = settings.get_detailed_error_reporting()) from e
+        raise GitOperationError(f"Unexpected error while changing directory: {e}", original_exception = e, include_traceback = settings.get('detailed_error_reporting')) from e
 
     try:
         subprocess.run(['git', 'add', '.'], check=True)
@@ -275,7 +222,7 @@ def push_dir_to_repo(project_dir_path, commit_message):
 
         # Check if there are changes staged for commit
         result = subprocess.run(['git', 'diff', '--cached', '--exit-code'], check=False)
-        
+
 
         # Only commit and push if there are staged changes
         if result.returncode != 0:
@@ -289,7 +236,7 @@ def push_dir_to_repo(project_dir_path, commit_message):
     except subprocess.CalledProcessError as e:
         raise GitOperationError(f"Git command failed: {e}") from e
     except Exception as e:
-        raise GitOperationError(f"Unexpected error while pushing {project_dir_path} to repo: {e}", original_exception = e, include_traceback = settings.get_detailed_error_reporting()) from e
+        raise GitOperationError(f"Unexpected error while pushing {project_dir_path} to repo: {e}", original_exception = e, include_traceback = settings.get('detailed_error_reporting')) from e
 #endregion
 
 #region Deconz
@@ -307,18 +254,18 @@ def get_deconz_access_params():
         with open(f'{project_root}/secrets_and_env/deconz_api_url', 'r') as file:
             deconz_api_url = file.read()
     except FileNotFoundError as e:
-        raise DeconzSetupError("No deconz_api_url file in secrets_and_env.", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+        raise DeconzSetupError("No deconz_api_url file in secrets_and_env.", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
     except Exception as e:
-        raise DeconzSetupError(f"An unexpected error occurred while reading deconz_api_url: {e}", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+        raise DeconzSetupError(f"An unexpected error occurred while reading deconz_api_url: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
 
     deconz_api_key = ""
     try:
         with open(f'{project_root}/secrets_and_env/deconz_api_key', 'r') as file:
             deconz_api_key = file.read()
     except FileNotFoundError as e:
-        raise DeconzSetupError("No deconz_api_key file in secrets_and_env.", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+        raise DeconzSetupError("No deconz_api_key file in secrets_and_env.", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
     except Exception as e:
-        raise DeconzSetupError(f"An unexpected error occurred while reading deconz_api_key: {e}", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+        raise DeconzSetupError(f"An unexpected error occurred while reading deconz_api_key: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
 
     return {'api_url':deconz_api_url,'api_key':deconz_api_key}
 
@@ -383,9 +330,9 @@ def read_deconz_state():
         ip = parsed_url.hostname
         #ip = full_url[full_url.index('http://')+7:full_url.index(':80/api')] # Previous hardcoded way stored for fallback if needed
     except ValueError as e:
-        raise DeconzSetupError("Couldn't extract Deconz URL.", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+        raise DeconzSetupError("Couldn't extract Deconz URL.", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
     except Exception as e:
-        raise DeconzSetupError(f"An unexpected error occurred while extracting Deconz URL: {e}", original_exception=e, include_traceback=settings.get_detailed_error_reporting())  from e
+        raise DeconzSetupError(f"An unexpected error occurred while extracting Deconz URL: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting'))  from e
     port = '80'
     api_key = deconz_access_params['api_key']
 
@@ -409,9 +356,9 @@ def read_deconz_state():
         aiohttp.ClientError,
         OSError
      ) as e:
-        raise DeconzReadError(f"Failed to connect to Deconz API due to client or network error: {e}", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+        raise DeconzReadError(f"Failed to connect to Deconz API due to client or network error: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
     except Exception as e:
-        raise DeconzReadError(f"Failed to connect to Deconz API due to unexpected error:{e}", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+        raise DeconzReadError(f"Failed to connect to Deconz API due to unexpected error:{e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
 
 def read_sensors():
     """
@@ -444,7 +391,7 @@ def error_registrar(exception_type, severity, origin = None, origin_timestamp = 
         "exception_type": exception_type, 
         "severity": severity,
         "origin": generate_exception_origin_stamp() if origin is None else origin,
-        "origin_timestamp": time.strftime(settings.get_timestamp_format() if origin_timestamp is None else origin_timestamp),
+        "origin_timestamp": time.strftime(settings.get('timestamp_format') if origin_timestamp is None else origin_timestamp),
         "registration_timestamp": None,
         "reported": False,
         "reported_timestamp": None,
@@ -482,7 +429,7 @@ def error_registrar(exception_type, severity, origin = None, origin_timestamp = 
 
             # If the error is not already registered, append it
             if not already_registered:
-                error_entry["registration_timestamp"] = time.strftime(settings.get_timestamp_format())
+                error_entry["registration_timestamp"] = time.strftime(settings.get('timestamp_format'))
                 error_registry.append(error_entry)
                 
                 # Step 2c: Write the updated registry back to file
@@ -569,13 +516,13 @@ def get_room_temps_and_humidity():
         sensor_temps_and_hums = {}
         for sensor_id, sensor in sensors_state:
             if sensor.type == "ZHATemperature":
-                last_updated = datetime.strptime((sensor.raw)['state']['lastupdated'], "%Y-%m-%dT%H:%M:%S.%f").strftime(settings.get_timestamp_format())
+                last_updated = datetime.strptime((sensor.raw)['state']['lastupdated'], "%Y-%m-%dT%H:%M:%S.%f").strftime(settings.get('timestamp_format'))
                 if sensor.name not in sensor_temps_and_hums:
                     sensor_temps_and_hums[sensor.name] = {'temp':'none','hum':'none','last_updated':'none'}
                 sensor_temps_and_hums[sensor.name]['temp'] = sensor.temperature
                 sensor_temps_and_hums[sensor.name]['last_updated'] = last_updated
             elif sensor.type == "ZHAHumidity":
-                last_updated = datetime.strptime((sensor.raw)['state']['lastupdated'], "%Y-%m-%dT%H:%M:%S.%f").strftime(settings.get_timestamp_format())
+                last_updated = datetime.strptime((sensor.raw)['state']['lastupdated'], "%Y-%m-%dT%H:%M:%S.%f").strftime(settings.get('timestamp_format'))
                 if sensor.name not in sensor_temps_and_hums:
                     sensor_temps_and_hums[sensor.name] = {'temp':'none','hum':'none','last_updated':'none'}
                 sensor_temps_and_hums[sensor.name]['hum'] = sensor.humidity
@@ -599,9 +546,9 @@ def get_room_temps_and_humidity():
         DeconzError,
         ProjectError
      ) as e:
-        raise ProjectIOError(f"Couldn't read sensor state due to: {e}", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+        raise ProjectIOError(f"Couldn't read sensor state due to: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
     except Exception as e:
-        raise ProjectIOError(f"Unexpected error while reading sensor state: {e}", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+        raise ProjectIOError(f"Unexpected error while reading sensor state: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
 #endregion
 
 #region Project
@@ -616,9 +563,9 @@ def get_project_root():
         parent_directory_path = os.path.dirname(current_file_path)
         return os.path.dirname(parent_directory_path)
     except OSError as e:
-        raise ProjectError(f"Couldn't get project root due to: {e}", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+        raise ProjectError(f"Couldn't get project root due to: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
     except Exception as e:
-        raise ProjectError(f"Unexpected error when getting project root: {e}", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+        raise ProjectError(f"Unexpected error when getting project root: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
 
 def get_rooms_info():
     try:
@@ -631,9 +578,9 @@ def get_rooms_info():
     except (
         FileNotFoundError,PermissionError,json.JSONDecodeError,OSError
     ) as e:
-        raise ProjectConfigError(f"Couldn't get rooms config due to: {e}", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+        raise ProjectConfigError(f"Couldn't get rooms config due to: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
     except Exception as e:
-        raise ProjectConfigError(f"Unexpected error while reading rooms config: {e}", original_exception=e, include_traceback=settings.get_detailed_error_reporting()) from e
+        raise ProjectConfigError(f"Unexpected error while reading rooms config: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
 
 #endregion
 
