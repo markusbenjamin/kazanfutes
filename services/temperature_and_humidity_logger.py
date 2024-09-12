@@ -6,7 +6,7 @@ from utils.project import *
 
 try:
     # Log measurements
-    log_data(get_room_temps_and_humidity(),log_file_path='/temperature_and_humidity/temperature_and_humidity.json')
+    log_data(get_room_temps_and_humidity(),'temperature_and_humidity/temperature_and_humidity.json')
     report("Temperature and humidity values acquired and logged.",verbose=True)
     success = True
 except Exception as e:
