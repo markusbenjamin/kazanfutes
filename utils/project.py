@@ -262,9 +262,9 @@ def log_data(data: dict, log_file_path: str):
     # Initialize the logger and log the data
     init_logger(log_file_path)
     logger = logging.getLogger()
-    data['timestamp'] = datetime.now().strftime(settings.get('timestamp_format'))
-    log_entry = json.dumps(data)
-    logger.info(log_entry)
+    log_entry = {'timestamp': datetime.now().strftime(settings.get('timestamp_format'))}
+    log_entry.update(data)  # Add the rest of the data
+    logger.info(json.dumps(log_entry))
 
 #endregion
 
