@@ -210,7 +210,11 @@ def init_logger(log_file_path: str):
     
     """
     logger = logging.getLogger()
-    full_log_path = os.path.join(get_project_root(),'data','logs',log_file_path)
+    full_log_path = os.path.join(get_project_root(),'data','logs', log_file_path)
+    log_directory = os.path.dirname(full_log_path)
+    if not os.path.exists(log_directory):
+        os.makedirs(log_directory, exist_ok=True)
+
     handler = TimedRotatingFileHandler(full_log_path, when='midnight', interval=1)
     
     # Define formatter with timestamp
@@ -242,10 +246,10 @@ def log(data: dict):
     
     # Full path to the log file
     log_file_path = os.path.join(log_directory, f'{calling_script}.json')
+    report(log_file_path,verbose=True)
     
     # Initialize the logger and log the data
-    init_logger(log_file_path)
-    log_data(data)
+    log_data(data,log_file_path)
 
 def log_data(data: dict, log_file_path: str):
     """
