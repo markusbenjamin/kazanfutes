@@ -246,7 +246,6 @@ def log(data: dict):
     
     # Full path to the log file
     log_file_path = os.path.join(log_directory, f'{calling_script}.json')
-    report(log_file_path,verbose=True)
     
     # Initialize the logger and log the data
     log_data(data,log_file_path)
@@ -263,7 +262,9 @@ def log_data(data: dict, log_file_path: str):
     # Initialize the logger and log the data
     init_logger(log_file_path)
     logger = logging.getLogger()
-    logger.info(json.dumps(data))
+    data['timestamp'] = datetime.now().strftime(settings.get('timestamp_format'))
+    log_entry = json.dumps(data)
+    logger.info(log_entry)
 
 #endregion
 
