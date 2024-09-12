@@ -8,6 +8,7 @@ from datetime import datetime
 from logging.handlers import TimedRotatingFileHandler
 
 import filelock
+
 #endregion
 
 #region Classes
@@ -196,9 +197,10 @@ def send_email(to, subject='', body=''):
     
     return success
 
-def init_logger(log_file: str, when: str = 'midnight', interval: int = 1):
+def init_logger(log_file_path: str):
     """
     Initializes the logger with a TimedRotatingFileHandler and adds a timestamp to each log entry.
+    Should not normally be called on it's own, but by log() or log_data() as determined by the use-case.
     
     Args:
         log_file (str): Path to the log file.
@@ -208,7 +210,8 @@ def init_logger(log_file: str, when: str = 'midnight', interval: int = 1):
     
     """
     logger = logging.getLogger()
-    handler = TimedRotatingFileHandler(log_file, when=when, interval=interval)
+    full_log_path = os.path.join(get_project_root(),'data','logs',log_file_path)
+    handler = TimedRotatingFileHandler(full_log_path, when='midnight', interval=1)
     
     # Define formatter with timestamp
     formatter = logging.Formatter(f'%(message)s')
@@ -217,39 +220,46 @@ def init_logger(log_file: str, when: str = 'midnight', interval: int = 1):
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
 
-def log_data(data: dict):
+def log(data: dict):
     """
-    Logs the provided JSON-compatible data as an NDJSON entry, with the timestamp as the first field.
+    Used for runtime logging.
+    Logs the provided data to a JSON log file in a hardcoded directory, named after the script calling this function.
     
     Args:
-        data (dict): The data to be logged. Should be a JSON-compatible dictionary or nested structure.
-    
+        data (dict): The data to be logged.
     """
-    logger = logging.getLogger()
-    # Create a new dictionary with timestamp as the first entry
-    log_entry = {'timestamp': datetime.now().strftime(settings.get("timestamp_format"))}
-    log_entry.update(data)  # Add the rest of the data
-    
-    logger.info(json.dumps(log_entry))
+    import inspect
+    from pathlib import Path
 
-def rotate_logs():
-    """
-    Forces log rotation. This can be used if manual log rotation is required outside the defined intervals.
-    
-    """
-    for handler in logging.getLogger().handlers:
-        if isinstance(handler, TimedRotatingFileHandler):
-            handler.doRollover()
+    # Get the name of the calling script (the file that called log())
+    calling_script = os.path.basename(inspect.stack()[1].filename).split('.')[0]
 
-def close_logger():
-    """
-    Closes the logger and releases all file handlers. Ensures all buffered logs are written to the file before exiting.
+    # Hardcoded log directory
+    log_directory = os.path.join('services')
     
+    # Create the log directory if it doesn't exist
+    Path(log_directory).mkdir(parents=True, exist_ok=True)
+    
+    # Full path to the log file
+    log_file_path = os.path.join(log_directory, f'{calling_script}.json')
+    
+    # Initialize the logger and log the data
+    init_logger(log_file_path)
+    log_data(data)
+
+def log_data(data: dict, log_file_path: str):
     """
+    Used for feature logging.
+    Logs the provided data to a specified log file.
+    
+    Args:
+        data (dict): The data to be logged.
+        log_file_path (str): The full path to the log file.
+    """
+    # Initialize the logger and log the data
+    init_logger(log_file_path)
     logger = logging.getLogger()
-    for handler in logger.handlers:
-        handler.close()
-        logger.removeHandler(handler)
+    logger.info(json.dumps(data))
 
 #endregion
 
