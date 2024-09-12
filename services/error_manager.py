@@ -75,28 +75,35 @@ if os.path.exists(ERROR_REGISTRY_PATH):
                 report("Cycling through registered errors for reporting.", verbose = True)
                 for error in errors:
                     success = False
+                    error_report_contents = {
+                                            'exception_type': error['exception_type'],
+                                            'severity': error['severity'],
+                                            'origin': error['origin'],
+                                            'origin_timestamp': error['origin_timestamp'],
+                                            'registration_timestamp': error['registration_timestamp']
+                                            }
                     try:
                         log_data(error,'errors/error_log.json')
                         if error['severity'] == 1: # For low severity errors logging itself is considered as checking.
-                            error["checked"] = True
-                            error["checked_timestamp"] = timestamp()
+                            error['checked'] = True
+                            error['checked_timestamp'] = timestamp()
                         success = True
                     except:
-                        log({'message':'Could not log attached error.','error':error})
-                    if 1 < error["severity"]:
+                        log({'message':'Could not log attached error.','error':error_report_contents})
+                    if 1 < error['severity']:
                         success = False
                         try:
                             log_data(error,'errors/daily_report.json')
                             success = True
                         except:
-                            log({'message':'Could not append attached error to daily report.','error':error})
-                        if 2 < error["severity"]:
+                            log({'message':'Could not append attached error to daily report.','error':error_report_contents})
+                        if 2 < error['severity']:
                             success = False
                             try:
-                                send_email(to = settings.get('admin_email'),subject='Severe error detected.',body = error)
+                                send_email(to = settings.get('admin_email'),subject='Severe error detected.',body = error_report_contents)
                                 success = True
                             except:
-                                log({'message':'Could not notify admin about attached error.','error':error})
+                                log({'message':'Could not notify admin about attached error.','error':error_report_contents})
 
                     if success: # Meaning highest level of reporting required is successful.
                         error['reported'] = True
