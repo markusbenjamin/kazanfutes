@@ -215,7 +215,7 @@ def init_logger(log_file: str, when: str = 'midnight', interval: int = 1):
     handler.setFormatter(formatter)
     
     logger.addHandler(handler)
-    logger.setLevel(logging.NOTSET)
+    logger.setLevel(logging.INFO)
 
 def log_data(data: dict):
     """
