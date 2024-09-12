@@ -1,9 +1,12 @@
 #region Imports
-import traceback
 import json
+import logging
 import os
 import time
+import traceback
 from datetime import datetime
+from logging.handlers import TimedRotatingFileHandler
+
 import filelock
 #endregion
 
@@ -193,12 +196,67 @@ def send_email(to, subject='', body=''):
     
     return success
 
+def init_logger(log_file: str, when: str = 'midnight', interval: int = 1):
+    """
+    Initializes the logger with a TimedRotatingFileHandler and adds a timestamp to each log entry.
+    
+    Args:
+        log_file (str): Path to the log file.
+        when (str): A string representing the time interval for log rotation (default: 'midnight').
+        interval (int): The interval for rotating the logs (default: 1).
+        timestamp_format (str): The format of the timestamp to be included with each log entry (default: '%Y-%m-%d %H:%M:%S').
+    
+    """
+    logger = logging.getLogger()
+    handler = TimedRotatingFileHandler(log_file, when=when, interval=interval)
+    
+    # Define formatter with timestamp
+    formatter = logging.Formatter(f'%(message)s')
+    handler.setFormatter(formatter)
+    
+    logger.addHandler(handler)
+    logger.setLevel(logging.NOTSET)
+
+def log_data(data: dict):
+    """
+    Logs the provided JSON-compatible data as an NDJSON entry, with the timestamp as the first field.
+    
+    Args:
+        data (dict): The data to be logged. Should be a JSON-compatible dictionary or nested structure.
+    
+    """
+    logger = logging.getLogger()
+    # Create a new dictionary with timestamp as the first entry
+    log_entry = {'timestamp': datetime.now().strftime(settings.get("timestamp_format"))}
+    log_entry.update(data)  # Add the rest of the data
+    
+    logger.info(json.dumps(log_entry))
+
+def rotate_logs():
+    """
+    Forces log rotation. This can be used if manual log rotation is required outside the defined intervals.
+    
+    """
+    for handler in logging.getLogger().handlers:
+        if isinstance(handler, TimedRotatingFileHandler):
+            handler.doRollover()
+
+def close_logger():
+    """
+    Closes the logger and releases all file handlers. Ensures all buffered logs are written to the file before exiting.
+    
+    """
+    logger = logging.getLogger()
+    for handler in logger.handlers:
+        handler.close()
+        logger.removeHandler(handler)
+
 #endregion
 
 #region Data management
 """Wrapper functions for data management operations."""
 
-def push_dir_to_repo(project_dir_path, commit_message):
+def sync_dir_with_repo(project_dir_path, commit_message):
     """
     Pushes a project directory to the GitHub repository.
     """
@@ -548,7 +606,7 @@ def get_room_temps_and_humidity():
         raise ProjectIOError(f"Unexpected error while reading sensor state: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
 #endregion
 
-#region Project
+#region Project and system config
 """File and folder management, etc."""
 
 def get_project_root():

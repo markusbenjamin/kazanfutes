@@ -14,13 +14,14 @@ Tasks:
 import filelock
 from utils.project import *
 
-settings.set_verbosity(True) #DEV
+settings.set("verbosity",True) #DEV
 
 ERROR_REGISTRY_PATH = f"{get_project_root()}/data/errors/error_registry.json"
 ERROR_BUFFER_PATH = f"{get_project_root()}/data/errors/error_buffer.json"
 ERROR_ARCHIVE_PATH = f"{get_project_root()}/data/errors/error_buffer.json"
 
 #region Buffer management
+
 report("Trying to re-register buffered errors.", verbose=True)
 if os.path.exists(ERROR_BUFFER_PATH):
     try:
@@ -55,6 +56,7 @@ if os.path.exists(ERROR_BUFFER_PATH):
         report("Error buffer locked, skipping.", verbose=True)
 else:
     report("Buffered errors file not even initialized.", verbose=True)
+
 #endregion
 
 #region Report unreported errors
