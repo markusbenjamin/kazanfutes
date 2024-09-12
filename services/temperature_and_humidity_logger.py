@@ -6,8 +6,7 @@ from utils.project import *
 
 try:
     # Log measurements
-    init_logger(log_file=f'{get_project_root()}/data/logs/temperature_and_humidity/temperature_and_humidity.json')
-    log_data(get_room_temps_and_humidity())
+    log_data(get_room_temps_and_humidity(),log_file_path='/temperature_and_humidity/temperature_and_humidity.json')
     report("Temperature and humidity values acquired and logged.",verbose=True)
     success = True
 except Exception as e:
@@ -16,5 +15,4 @@ except Exception as e:
     raise DeconzError(f"An unexpected error occured while trying to read sensors:{e}", original_exception=e, include_traceback=settings.get("detailed_error_reporting")) from e
 finally:
     # Log execution
-    init_logger(log_file=f'{get_project_root()}/data/logs/services/temperature_and_humidity_logger.json')
-    log_data({"success":success})
+    log({"success":success})

@@ -18,7 +18,7 @@ settings.set("verbosity",True) #DEV
 
 ERROR_REGISTRY_PATH = f"{get_project_root()}/data/errors/error_registry.json"
 ERROR_BUFFER_PATH = f"{get_project_root()}/data/errors/error_buffer.json"
-ERROR_ARCHIVE_PATH = f"{get_project_root()}/data/errors/error_buffer.json"
+ERROR_ARCHIVE_PATH = f"{get_project_root()}/data/errors/error_archive.json"
 
 #region Buffer management
 
