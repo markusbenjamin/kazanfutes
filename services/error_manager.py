@@ -11,7 +11,6 @@ Tasks:
     - archives checked errors.
 """
 
-import filelock
 from utils.project import *
 
 settings.set("verbosity",True) #DEV
@@ -45,17 +44,21 @@ if os.path.exists(ERROR_BUFFER_PATH):
                     else:
                         remaining_error_buffer.append(error)
                         report("Buffered error couldn't be re-registered, kept in buffer.",verbose=True)
+                    log({'success_buffered_errors':success})
                 
                 with open(ERROR_BUFFER_PATH, 'w') as f:
                         json.dump(remaining_error_buffer, f, indent=4)
                         report("Pushed remaining errors back to buffer.", verbose=True)
             else:
                 report("No buffered errors.", verbose=True)
+                log({'success_buffered_errors':True})
 
     except filelock.Timeout:
         report("Error buffer locked, skipping.", verbose=True)
+        log({'success_buffered_errors':False})
 else:
     report("Buffered errors file not even initialized.", verbose=True)
+    log({'success_buffered_errors':True})
 
 #endregion
 
@@ -71,22 +74,33 @@ if os.path.exists(ERROR_REGISTRY_PATH):
             if errors != []:
                 report("Cycling through registered errors for reporting.", verbose = True)
                 for error in errors:
-                    if error["severity"] == 1:
-                        # append to error log
-                        # if successful, set checked to true
-                        pass
-                    elif error["severity"] == 2:
-                        # append to error log
-                        # append to daily report
-                        pass
-                    elif error["severity"] == 3:
-                        # append to error log
-                        # append to daily report
-                        # notify admin
-                        pass
+                    success = False
+                    try:
+                        log_data(error,'errors/error_log.json')
+                        if error['severity'] == 1: # For low severity errors logging itself is considered as checking.
+                            error["checked"] = True
+                            error["checked_timestamp"] = timestamp()
+                        success = True
+                    except:
+                        log({'message':'Could not log attached error.','error':error})
+                    if 1 < error["severity"]:
+                        success = False
+                        try:
+                            log_data(error,'errors/daily_report.json')
+                            success = True
+                        except:
+                            log({'message':'Could not append attached error to daily report.','error':error})
+                        if 2 < error["severity"]:
+                            success = False
+                            try:
+                                send_email(to = settings.get('admin_email'),subject='Severe error detected.',body = error)
+                                success = True
+                            except:
+                                log({'message':'Could not notify admin about attached error.','error':error})
 
-                    if success: # meaning highest level of reporting required is successful
-                        # set reported fields for error entry
+                    if success: # Meaning highest level of reporting required is successful.
+                        error['reported'] = True
+                        error['reported_timestamp'] = timestamp()
                         report("Error successfully reported.", verbose = True)
                     else:
                         report("Couldn't report error.",verbose=True)
@@ -94,13 +108,18 @@ if os.path.exists(ERROR_REGISTRY_PATH):
                 with open(ERROR_REGISTRY_PATH, 'w') as f:
                         json.dump(errors, f, indent=4)
                         report("Error registry updated.")
+                
+                log({'success_error_reporting':True})
             else:
                 report("No registered errors.", verbose=True)
+                log({'success_error_reporting':True})
 
     except filelock.Timeout:
         report("Error registry locked, skipping.", verbose=True)
+        log({'success_error_reporting':False})
 else:
     report("Error registry not even initialized.", verbose=True)
+    log({'success_error_reporting':True})
 
 #endregion
 

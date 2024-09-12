@@ -1,14 +1,9 @@
 Következő lépések:
     - kifejleszteni error reportingot (pl. valamelyik hőmérő nem elérhető, valami nem fut, stb)
         - utána error managert kell megcsinálni, hiányzik még:
-            ! kell bele runtime logging
-            - reportolja különböző severity szerint
-                - low - 1: write to error log -- ezeknél az error_manager service lesz a check is
-                    --> ehhez interfacelni kéne a logging modult
-                - moderate - 2: add to daily report
-                - high - 3: notify system admin right away
             - küldjön napi jelentést
             - archiválja a checked hibákat
+        - meglévő servicekbe be kell integrálni az error regisztrációt
     - system_integrity_check.py-t elkezdeni:
         - nézze, hogy elérhetőek e a hőmérők és jelezzen, ha nem
     - heating_control.py-t elkezdeni

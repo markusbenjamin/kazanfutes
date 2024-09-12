@@ -173,6 +173,9 @@ def send_email(to, subject='', body=''):
     msg['To'] = to
     msg['Subject'] = subject
 
+    if isinstance(body, dict):
+        body = json.dumps(body, indent=4)  # Pretty-print the dictionary
+
     # Attach the body as a plain text message
     msg.attach(MIMEText(body, 'plain'))
 
@@ -262,9 +265,12 @@ def log_data(data: dict, log_file_path: str):
     # Initialize the logger and log the data
     init_logger(log_file_path)
     logger = logging.getLogger()
-    log_entry = {'timestamp': datetime.now().strftime(settings.get('timestamp_format'))}
+    log_entry = {'timestamp': timestamp()}
     log_entry.update(data)  # Add the rest of the data
     logger.info(json.dumps(log_entry))
+    for handler in logger.handlers:
+        handler.close()
+        logger.removeHandler(handler)
 
 #endregion
 
@@ -621,21 +627,8 @@ def get_room_temps_and_humidity():
         raise ProjectIOError(f"Unexpected error while reading sensor state: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
 #endregion
 
-#region Project and system config
-"""File and folder management, etc."""
-
-def get_project_root():
-    """
-    Returns the root of the project as a string.
-    """
-    try:
-        current_file_path = os.path.abspath(__file__)
-        parent_directory_path = os.path.dirname(current_file_path)
-        return os.path.dirname(parent_directory_path)
-    except OSError as e:
-        raise ProjectError(f"Couldn't get project root due to: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
-    except Exception as e:
-        raise ProjectError(f"Unexpected error when getting project root: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+#region System config
+"""Utility functions related to config."""
 
 def get_rooms_info():
     try:
@@ -651,6 +644,30 @@ def get_rooms_info():
         raise ProjectConfigError(f"Couldn't get rooms config due to: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
     except Exception as e:
         raise ProjectConfigError(f"Unexpected error while reading rooms config: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+
+#endregion
+
+#region Misc
+"""
+All sorts of utility functions and shorthands.
+"""
+
+def get_project_root():
+    """
+    Returns the root of the project as a string.
+    """
+    try:
+        current_file_path = os.path.abspath(__file__)
+        parent_directory_path = os.path.dirname(current_file_path)
+        return os.path.dirname(parent_directory_path)
+    except OSError as e:
+        raise ProjectError(f"Couldn't get project root due to: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+    except Exception as e:
+        raise ProjectError(f"Unexpected error when getting project root: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+
+
+def timestamp():
+    return datetime.now().strftime(settings.get('timestamp_format'))
 
 #endregion
 
