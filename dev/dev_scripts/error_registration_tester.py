@@ -1,10 +1,8 @@
 from utils.project import *
 
-def foo():
-    error_registrar(exception_type="Exception",severity=1)
+settings.set('verbosity',True)
 
-def foo2():
-    foo()
+def foo():
+    error_registrar(exception_type="Test exception 2",severity=3)
 
 foo()
-foo2()

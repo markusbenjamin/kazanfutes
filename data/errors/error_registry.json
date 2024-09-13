@@ -5,10 +5,10 @@
         "origin": "error_registration_tester.py:main_scope/foo:10",
         "origin_timestamp": "2024-09-05-18-54-15",
         "registration_timestamp": "2024-09-05-18-54-15",
-        "reported": false,
-        "reported_timestamp": null,
-        "checked": false,
-        "checked_timestamp": null
+        "reported": true,
+        "reported_timestamp": "2024-09-12-20-44-25",
+        "checked": true,
+        "checked_timestamp": "2024-09-12-20-44-25"
     },
     {
         "exception_type": "Exception",
@@ -16,10 +16,10 @@
         "origin": "error_registration_tester.py:main_scope/foo2/foo:10",
         "origin_timestamp": "2024-09-05-18-54-15",
         "registration_timestamp": "2024-09-05-18-54-15",
-        "reported": false,
-        "reported_timestamp": null,
-        "checked": false,
-        "checked_timestamp": null
+        "reported": true,
+        "reported_timestamp": "2024-09-12-20-44-25",
+        "checked": true,
+        "checked_timestamp": "2024-09-12-20-44-25"
     },
     {
         "exception_type": "Exception",
@@ -27,10 +27,10 @@
         "origin": "error_registration_tester.py:main_scope/foo:5",
         "origin_timestamp": "2024-09-05-19-34-05",
         "registration_timestamp": "2024-09-05-19-34-05",
-        "reported": false,
-        "reported_timestamp": null,
-        "checked": false,
-        "checked_timestamp": null
+        "reported": true,
+        "reported_timestamp": "2024-09-12-20-44-25",
+        "checked": true,
+        "checked_timestamp": "2024-09-12-20-44-25"
     },
     {
         "exception_type": "Exception",
@@ -38,10 +38,10 @@
         "origin": "error_registration_tester.py:main_scope/foo2/foo:5",
         "origin_timestamp": "2024-09-05-19-34-05",
         "registration_timestamp": "2024-09-05-19-34-05",
-        "reported": false,
-        "reported_timestamp": null,
-        "checked": false,
-        "checked_timestamp": null
+        "reported": true,
+        "reported_timestamp": "2024-09-12-20-44-25",
+        "checked": true,
+        "checked_timestamp": "2024-09-12-20-44-25"
     },
     {
         "exception_type": "Exception2",
@@ -49,10 +49,10 @@
         "origin": "error_registration_tester.py:main_scope/foo:4",
         "origin_timestamp": "2024-09-05-20-09-50",
         "registration_timestamp": "2024-09-05-20-10-30",
-        "reported": false,
-        "reported_timestamp": null,
-        "checked": false,
-        "checked_timestamp": null
+        "reported": true,
+        "reported_timestamp": "2024-09-12-20-44-25",
+        "checked": true,
+        "checked_timestamp": "2024-09-12-20-44-25"
     },
     {
         "exception_type": "Exception2",
@@ -60,8 +60,30 @@
         "origin": "error_registration_tester.py:main_scope/foo2/foo:4",
         "origin_timestamp": "2024-09-05-20-09-51",
         "registration_timestamp": "2024-09-05-20-10-30",
-        "reported": false,
-        "reported_timestamp": null,
+        "reported": true,
+        "reported_timestamp": "2024-09-12-20-44-25",
+        "checked": true,
+        "checked_timestamp": "2024-09-12-20-44-25"
+    },
+    {
+        "exception_type": "Test exception",
+        "severity": 3,
+        "origin": "error_registration_tester.py:main_scope/foo:6",
+        "origin_timestamp": "2024-09-12-20-34-04",
+        "registration_timestamp": "2024-09-12-20-34-04",
+        "reported": true,
+        "reported_timestamp": "2024-09-12-20-44-27",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "exception_type": "Test exception 2",
+        "severity": 3,
+        "origin": "error_registration_tester.py:main_scope/foo:6",
+        "origin_timestamp": "2024-09-12-20-44-19",
+        "registration_timestamp": "2024-09-12-20-44-19",
+        "reported": true,
+        "reported_timestamp": "2024-09-12-20-44-28",
         "checked": false,
         "checked_timestamp": null
     }
