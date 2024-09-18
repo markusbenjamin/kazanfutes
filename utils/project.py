@@ -115,7 +115,7 @@ class GMailError(CommunicationError):
 
 # Project Errors
 class ProjectError(HeatingControlError):
-    """Base exception for project-wide """
+    """Base exception for project-wide errors."""
     pass
 
 class ProjectConfigError(ProjectError):
