@@ -141,6 +141,10 @@ else:
 
 #region Send daily error report
 report("\nSEND DAILY REPORT",verbose=True)
+if rotate_log_file('errors/daily_report.json'):
+    report("Daily report log file rotated.",verbose=True)
+else:
+    report("No unrotated daily reports.",verbose=True)
 unsent_daily_reports = [file for file in glob.glob(os.path.join(get_project_root(),'data','logs','errors','daily_report.json.*')) if not file.endswith('.sent')]
 if 0<len(unsent_daily_reports):
     for daily_report_filepath in unsent_daily_reports:
