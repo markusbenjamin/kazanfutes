@@ -1,8 +1,8 @@
 from utils.project import *
 
 try:
-	moo()
+	faulty_module_function()
 except ModuleException as e:
 	ServiceException("Module exception", original_exception=e, severity = 0)
 except Exception as e:
-	ServiceException("Unexpected error")
+	ServiceException("Unexpected error",severity = 1)

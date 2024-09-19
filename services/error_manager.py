@@ -226,4 +226,5 @@ try:
     #endregion
 except Exception as e: # Send notification email right away if error management can't run.
     email_body = '\n'.join([json.dumps(extract_exception_details())])
+    report(f'Error management error: {email_body}')
     send_email(settings.get('admin_email'),'Error management error.',email_body)

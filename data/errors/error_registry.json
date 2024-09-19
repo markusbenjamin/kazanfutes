@@ -1,1 +1,24 @@
-[]
+[
+    {
+        "message": "Unexpected error: division by zero.",
+        "severity": 1,
+        "origin": "exception_scheme_tester.py:4 --> project.py/faulty_module_function:390",
+        "origin_timestamp": "2024-09-19-23-34-51",
+        "registration_timestamp": "2024-09-19-23-34-51",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module exception: something went wrong in module: division by zero (ZeroDivisionError).",
+        "severity": 0,
+        "origin": "exception_scheme_tester.py:4 --> project.py/faulty_module_function:393",
+        "origin_timestamp": "2024-09-19-23-36-44",
+        "registration_timestamp": "2024-09-19-23-36-44",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    }
+]

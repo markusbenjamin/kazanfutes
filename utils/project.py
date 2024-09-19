@@ -386,6 +386,13 @@ def read_sensors():
 #endregion
 
 #region Error management
+def faulty_module_function():
+    try:
+        1/0
+    except Exception:
+        raise ModuleException("something went wrong in module")
+
+
 class ServiceException(Exception):
     """Exception class that gets registered when called, should only be called by service scripts."""
     def __init__(self, message, original_exception = None, severity = 0):
@@ -402,11 +409,12 @@ class ServiceException(Exception):
             else:
                 error_entry['severity'] = severity
             error_entry['origin'] = exception_details['origin']
-        except Exception: # If called on it's own (unlikely)
+        except Exception as e: # If called on it's own (unlikely)
             print(str(e))
             error_entry['message'] = message
             error_entry['severity'] = severity
             error_entry['origin'] = generate_call_origin()
+        error_entry['origin_timestamp'] = timestamp()
         error_registrar(error_entry)
         super().__init__(message)
 
@@ -535,7 +543,7 @@ def extract_exception_details():
         origin_chain = []
 
         while tb:
-            filename = tb.tb_frame.f_code.co_filename.split('\\')[-1]
+            filename = tb.tb_frame.f_code.co_filename.split(os.sep)[-1]
             scope = tb.tb_frame.f_code.co_name or 'main_scope'
             line = tb.tb_lineno
             origin_chain.append(f"{filename}{'/'+scope if scope != '<module>' else ''}:{line}")
@@ -669,7 +677,6 @@ def load_json_to_dict(relative_path:str):
         return loaded_dict
     except Exception:
         raise ModuleException(f"unexpected error while loading {relative_path} to dict")
-
 
 #endregion
 
