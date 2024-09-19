@@ -34,12 +34,7 @@ try:
                     report("Cycling through buffered errors to re-register.", verbose = True)
                     remaining_error_buffer = []
                     for error in error_buffer:
-                        success = error_registrar(
-                            exception_type=error["exception_type"],
-                            severity=error["severity"],
-                            origin=error["origin"],
-                            origin_timestamp=error["origin_timestamp"]
-                            )
+                        success = error_registrar(error)
                         if success:
                             report("Buffered error registered, removed from buffer.", verbose = True)
                         else:
@@ -80,7 +75,7 @@ try:
                             modification = True
                             success = False
                             error_report_contents = {
-                                                    'exception_type': error['exception_type'],
+                                                    'message': error['message'],
                                                     'severity': error['severity'],
                                                     'origin': error['origin'],
                                                     'origin_timestamp': error['origin_timestamp'],
@@ -155,7 +150,7 @@ try:
                 error_list = [json.loads(line) for line in lines]
                 error_report_contents = '\n'.join([json.dumps(
                     {
-                        'exception_type': error['exception_type'],
+                        'message': error['message'],
                         'severity': error['severity'],
                         'origin':error['origin'],
                         'origin_timestamp': error['origin_timestamp'],
@@ -165,18 +160,16 @@ try:
                 if send_email(to = settings.get('admin_email'),subject=f'Daily error report for {daystamp}',body = error_report_contents):
                     os.rename(daily_report_filepath, daily_report_filepath + '.sent')
                     report(f"Sent out daily report for {daystamp}.",verbose=True)
-                    log({'success_daily_report_sent':True})
+                    log({'success_daily_report':True})
                 else:
                     report(f"Could not send out daily report for {daystamp} due to an error with sending the email.")
-                    log({'success_daily_report_sent':False})
-            except Exception as e: 
-                error_registrar(exception_type=e,severity=1) # Do not generate a new reportable error if there is an issue with error reporting, just log it
-                exception_name = type(e).__name__
-                report(f"Could not send out daily report for {daystamp} due to {exception_name}.", verbose=True)
-                log({'success_daily_report_sent':False})
+                    log({'success_daily_report':False})
+            except Exception:
+                ServiceException(f"Could not send out daily report for {daystamp}",severity=1) # Do not generate a new reportable error (severity == 2) if there is an issue with error reporting, just log it (severity == 1)
+                log({'success_daily_report':False})
     else:
         report("No unsent daily reports.",verbose=True)
-        log({'success_daily_report_sent':True})
+        log({'success_daily_report':True})
 
     #endregion
 
@@ -232,5 +225,5 @@ try:
 
     #endregion
 except Exception as e: # Send notification email right away if error management can't run.
-    email_body = '\n'.join([json.dumps(extract_exception_details(e))])
+    email_body = '\n'.join([json.dumps(extract_exception_details())])
     send_email(settings.get('admin_email'),'Error management error.',email_body)
