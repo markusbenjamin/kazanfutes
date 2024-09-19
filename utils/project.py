@@ -545,42 +545,6 @@ def error_registrar(error_entry):
             report("Error buffer locked, exiting.", verbose = True)
 
     return success
-
-def generate_exception_origin_stamp():
-    """
-    Generates a unique origin string for the calling script, with the full call chain from the 
-    innermost function to the main scope, as well as the file name and line number.
-    
-    Returns:
-        str: A string representing the origin of the exception in the calling script, 
-             including the full call chain.
-    """
-    # Get the current stack trace
-    stack = traceback.extract_stack()
-
-    # Initialize the call chain with an empty list
-    call_chain = []
-    
-    # Traverse the stack frames from the bottom up (skip the last frame, which is this function)
-    for frame in stack[:-2]:
-        # Get function name, or "main scope" if in the global scope
-        function_name = frame.name if frame.name != "<module>" else "main_scope"
-        call_chain.append(function_name)
-
-    # Join the call chain to form a string
-    full_call_chain = "/".join(call_chain)
-
-    # Get the last relevant frame (before this function was called)
-    tb = stack[-3] if len(stack) >= 3 else stack[-1]
-
-    # Extract the script name, line number, and function name
-    script_name = os.path.basename(tb.filename)
-    line_number = tb.lineno
-
-    # Create a unique origin string based on file, call chain, and line number
-    origin = f"{script_name}:{full_call_chain}:{line_number}"
-    return origin
-
 #endregion
 
 #region IO
@@ -669,7 +633,6 @@ def get_project_root():
         raise ProjectBaseException(f"Couldn't get project root due to: {e}", original_exception=e, severity=1) from e
     except Exception as e:
         raise ProjectBaseException(f"Unexpected error when getting project root: {e}", original_exception=e, severity=1) from e
-
 
 def timestamp():
     return datetime.now().strftime(settings.get('timestamp_format'))
