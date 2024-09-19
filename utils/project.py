@@ -1,5 +1,5 @@
 """
-Codebase for the entire project.
+Common toolkit for the entire project.
 Import with: from utils.project import *
 """
 
@@ -14,8 +14,6 @@ from logging.handlers import TimedRotatingFileHandler
 import filelock
 
 #endregion
-
-#region Classes
 
 #region Settings
 class Settings:
@@ -42,116 +40,28 @@ class Settings:
         try:
             with open(settings_file, 'r') as file:
                 self.settings = json.load(file)
-        except FileNotFoundError as e:
-            raise SettingError(f"Settings file {settings_file} not found.", original_exception=e, severity=1) from e
-        except json.JSONDecodeError as e:
-            raise SettingError(f"Invalid JSON format in {settings_file}.", original_exception=e,severity=1) from e
-        except Exception as e:
-            raise SettingError(f"An unexpected error occurred while loading the settings file: {e}", original_exception=e, severity=1) from e
+        except FileNotFoundError:
+            raise ModuleException(f"settings file {settings_file} not found",severity=1)
+        except json.JSONDecodeError:
+            raise ModuleException(f"invalid JSON format in {settings_file}",severity=1)
+        except Exception:
+            raise ModuleException(f"unexpected error occurred while loading the settings file",severity=3)
 
     def get(self, key):
         """Retrieve a setting value, or None if the key does not exist."""
         try:
             return self.settings.get(key)
-        except Exception as e:
-            raise SettingError(f"Error accessing the setting '{key}': {e}", original_exception=e, severity=1) from e
+        except Exception:
+            raise ModuleException(f"error accessing the setting '{key}'",severity=2)
 
     def set(self, key, value):
         """Modify or add a setting."""
         try:
             self.settings[key] = value
-        except Exception as e:
-            raise SettingError(f"Error setting the value for '{key}': {e}", original_exception=e, severity=1) from e
+        except Exception:
+            raise ModuleException(f"error setting the value for '{key}'",severity=2)
     
 settings = Settings()
-#endregion
-
-#region Exception hierarchy
-# Base Exception
-class ProjectBaseException(Exception):
-    """Base exception for the whole project """
-    def __init__(self, message, original_exception = None, severity = 0):
-        error_entry = {
-            'exception_type': 'ProjectBaseException', 
-            'severity': severity,
-            'origin': None,
-            'origin_timestamp': time.strftime(settings.get('timestamp_format'))
-        }
-        if original_exception is not None:
-            exception_details = extract_exception_details(original_exception)
-            error_entry['exception_type'] = exception_details['type']
-            error_entry['origin'] = exception_details['origin']
-        
-        error_registrar(error_entry)
-        report(message+'\n\nNative output:')
-
-def extract_exception_details(e:Exception):
-    exception_details = {
-        'type':None,
-        'origin':None,
-    }
-
-    exception_details['type'] = e.__class__.__name__
-    
-    tb = e.__traceback__
-    origin_filename = tb.tb_frame.f_code.co_filename.split('\\')[-1]
-    origin_chain = origin_filename+'/'
-    line_number = None
-    while tb is not None:
-        origin_scope = tb.tb_frame.f_code.co_name
-        origin_chain += '/' + origin_scope if origin_scope != '<module>' else 'main_scope'
-        line_number = tb.tb_frame.f_code.co_firstlineno
-        tb = tb.tb_next
-    exception_details['origin'] = f'{origin_chain}:{line_number}'
-
-    return exception_details
-
-# Service-specific errors
-class HeatingControlError(ProjectBaseException):
-    """Base exception for heating control service errors."""
-    pass
-
-# Data management errors
-class DataManagementError(ProjectBaseException):
-    """Base exception for data management-related """
-    pass
-
-class GitOperationError(DataManagementError):
-    """Raised when a Git operation fails."""
-    pass
-
-# DeCONZ errors
-class DeconzError(ProjectBaseException):
-    """Base exception for DeCONZ-related """
-    pass
-
-class DeconzSetupError(DeconzError):
-    """Raised for errors during Deconz setup (such as API key generation, URL read in, etc.)."""
-    pass
-
-class DeconzReadError(DeconzError):
-    """Raised for errors while trying to get data from the ZigBee mesh."""
-    pass
-
-# I/O errors
-class ProjectIOError(ProjectBaseException): #Named so it won't interfere with the native IOError class.
-    """Base exception for I/O-related """
-    pass
-
-# Communication errors
-class CommunicationError(ProjectBaseException):
-    pass
-
-class GMailError(CommunicationError):
-    pass
-
-# Project-wide config & setting errors
-class ConfigError(ProjectBaseException):
-    """Raised when configuration file operations fail (e.g., reading rooms.json)."""
-    pass
-
-class SettingError(ProjectBaseException):
-    """Raised when issues with settings arise."""
 #endregion
 
 #region Function definitions
@@ -171,9 +81,6 @@ def notify_admin():
     pass
 
 def send_email(to, subject='', body=''):
-    import smtplib
-    from email.mime.text import MIMEText
-    from email.mime.multipart import MIMEMultipart
     """
     Sends an email using Gmail's SMTP server. Login credentials are loaded from 
     project_root/secrets_and_env/gmail_login.
@@ -187,6 +94,9 @@ def send_email(to, subject='', body=''):
     Raises:
         Exception: If sending the email fails for any reason.
     """
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
     # Path to the login file
     login_file_path = os.path.join(get_project_root(), 'secrets_and_env', 'gmail_login')
 
@@ -219,12 +129,12 @@ def send_email(to, subject='', body=''):
         server.quit()
         report(f"Email sent successfully to {to}.",verbose=True)
         success = True
-    except (smtplib.SMTPAuthenticationError, smtplib.SMTPNotSupportedError) as e:
-        raise GMailError("Failed to authenticate with Gmail SMTP server or unsupported operation.", original_exception=e, severity=1) from e
-    except (smtplib.SMTPRecipientsRefused, smtplib.SMTPSenderRefused, smtplib.SMTPDataError) as e:
-        raise GMailError("SMTP issue: Recipient or sender refused, or data error occurred.", original_exception=e, severity=1) from e
-    except Exception as e:
-        raise GMailError(f"An unexpected error occurred while sending an email: {e}", original_exception=e, severity=1) from e
+    except (smtplib.SMTPAuthenticationError, smtplib.SMTPNotSupportedError):
+        raise ModuleException("failed to authenticate with Gmail SMTP server or unsupported operation",severity=1)
+    except (smtplib.SMTPRecipientsRefused, smtplib.SMTPSenderRefused, smtplib.SMTPDataError):
+        raise ModuleException("SMTP issue: recipient or sender refused, or data error occurred",severity=1)
+    except Exception:
+        raise ModuleException(f"unexpected error occurred while sending an email",severity=2)
     
     return success
 
@@ -294,6 +204,9 @@ def init_logger(relative_log_file_path: str):
     logger.setLevel(logging.INFO)
 
 def rotate_log_file(relative_log_file_path: str, when: str = 'midnight', interval: int = 1):
+    """
+    Does rotation of a log file if needed.
+    """
     rotation = False
     full_log_file_path = os.path.join(get_project_root(),'data','logs', relative_log_file_path)
     handler = TimedRotatingFileHandler(full_log_file_path, when=when, interval=interval)
@@ -317,10 +230,10 @@ def sync_dir_with_repo(project_dir_path, commit_message):
 
     try: 
         os.chdir(os.path.join(get_project_root(), project_dir_path))
-    except (FileNotFoundError, PermissionError, OSError) as e:
-        raise GitOperationError(f"Failed to change directory to {project_dir_path}: {e}", original_exception = e, severity=2) from e
-    except Exception as e:
-        raise GitOperationError(f"Unexpected error while changing directory: {e}", original_exception = e, severity=2) from e
+    except (FileNotFoundError, PermissionError, OSError):
+        raise ModuleException(f"failed to change directory to {project_dir_path}",severity=1)
+    except Exception:
+        raise ModuleException(f"unexpected error while changing directory to {project_dir_path}",severity=1)
 
     try:
         subprocess.run(['git', 'add', '.'], check=True)
@@ -340,10 +253,10 @@ def sync_dir_with_repo(project_dir_path, commit_message):
             subprocess.run(['git', 'push','-u','origin','main'], check=True)
         else:
             report("No changes staged for commit. Skipping commit and push.")
-    except subprocess.CalledProcessError as e:
-        raise GitOperationError(f"Git command failed: {e}", original_exception=e, severity=2) from e
-    except Exception as e:
-        raise GitOperationError(f"Unexpected error while pushing {project_dir_path} to repo: {e}", original_exception = e, severity=2) from e
+    except subprocess.CalledProcessError:
+        raise ModuleException(f"git command failed",severity=2)
+    except Exception:
+        raise ModuleException(f"unexpected error while pushing {project_dir_path} to repo",severity=2)
 #endregion
 
 #region Deconz
@@ -360,19 +273,19 @@ def get_deconz_access_params():
     try:
         with open(f'{project_root}/secrets_and_env/deconz_api_url', 'r') as file:
             deconz_api_url = file.read()
-    except FileNotFoundError as e:
-        raise DeconzSetupError("No deconz_api_url file in secrets_and_env.", original_exception=e, severity=0) from e
-    except Exception as e:
-        raise DeconzSetupError(f"An unexpected error occurred while reading deconz_api_url: {e}", original_exception=e, severity=1) from e
+    except FileNotFoundError:
+        raise ModuleException("no deconz_api_url file in secrets_and_env")
+    except Exception:
+        raise ModuleException("an unexpected error occurred while reading deconz_api_url",severity=2)
 
     deconz_api_key = ""
     try:
         with open(f'{project_root}/secrets_and_env/deconz_api_key', 'r') as file:
             deconz_api_key = file.read()
-    except FileNotFoundError as e:
-        raise DeconzSetupError("No deconz_api_key file in secrets_and_env.", original_exception=e, severity=0) from e
-    except Exception as e:
-        raise DeconzSetupError(f"An unexpected error occurred while reading deconz_api_key: {e}", original_exception=e, severity=1) from e
+    except FileNotFoundError:
+        raise ModuleException("no deconz_api_key file in secrets_and_env")
+    except Exception:
+        raise ModuleException("unexpected error occurred while reading deconz_api_key",severity=2)
 
     return {'api_url':deconz_api_url,'api_key':deconz_api_key}
 
@@ -388,7 +301,7 @@ def read_and_save_deconz_api_key():
     deconz_api_url = deconz_access_params['api_url']
     if deconz_api_url == "":
         report("First supply Deconz API URL at secrets_and_env.")
-        raise DeconzSetupError("Missing Deconz API URL at secrets_and_env", original_exception=None, severity=0)
+        raise ModuleException("missing Deconz API URL at secrets_and_env",severity=2)
     
     data = {"devicetype": "conbee_gateway_access"}
     try:
@@ -415,10 +328,10 @@ def read_and_save_deconz_api_key():
         requests.exceptions.ConnectionError,
         requests.exceptions.Timeout,
         requests.exceptions.HTTPError
-     ) as e:
-        raise DeconzSetupError(f"Failed to connect to Deconz API: {e}") from e
-    except Exception as e:
-        raise DeconzSetupError(f"An unexpected error occurred while connecting to Deconz API: {e}") from e
+     ):
+        raise ModuleException("failed to connect to Deconz API",severity=3)
+    except Exception:
+        raise ModuleException("unexpected error occurred while connecting to Deconz API",severity=3)
 
 def read_deconz_state():
     """
@@ -436,10 +349,8 @@ def read_deconz_state():
         parsed_url = urlparse(full_url)
         ip = parsed_url.hostname
         #ip = full_url[full_url.index('http://')+7:full_url.index(':80/api')] # Previous hardcoded way stored for fallback if needed
-    except ValueError as e:
-        raise DeconzSetupError("Couldn't extract Deconz URL.", original_exception=e, severity=0) from e
-    except Exception as e:
-        raise DeconzSetupError(f"An unexpected error occurred while extracting Deconz URL: {e}", original_exception=e, severity=1)  from e
+    except Exception:
+        raise ModuleException("unexpected error occurred while extracting Deconz URL",severity=3)
     port = '80'
     api_key = deconz_access_params['api_key']
 
@@ -462,10 +373,10 @@ def read_deconz_state():
     except (
         aiohttp.ClientError,
         OSError
-     ) as e:
-        raise DeconzReadError(f"Failed to connect to Deconz API due to client or network error: {e}", original_exception=e, severity=3) from e
-    except Exception as e:
-        raise DeconzReadError(f"Failed to connect to Deconz API due to unexpected error:{e}", original_exception=e, severity=3) from e
+     ):
+        raise ModuleException("failed to connect to Deconz API due to client or network error",severity=3)
+    except Exception:
+        raise ModuleException("failed to connect to Deconz API due to unexpected error",severity=3)
 
 def read_sensors():
     """
@@ -475,15 +386,53 @@ def read_sensors():
 #endregion
 
 #region Error management
+class ServiceException(Exception):
+    """Exception class that gets registered when called, should only be called by service scripts."""
+    def __init__(self, message, original_exception = None, severity = 0):
+        """
+        Generates and registers error entry.
+        """
+        error_entry = {}
+        
+        try: # If called by a raised exception
+            exception_details = extract_exception_details()
+            error_entry['message'] = message +': '+exception_details['message']+'.'
+            if exception_details['type'] == 'ModuleException':
+                error_entry['severity'] = max(severity, original_exception.severity)
+            else:
+                error_entry['severity'] = severity
+            error_entry['origin'] = exception_details['origin']
+        except Exception: # If called on it's own (unlikely)
+            print(str(e))
+            error_entry['message'] = message
+            error_entry['severity'] = severity
+            error_entry['origin'] = generate_call_origin()
+        error_registrar(error_entry)
+        super().__init__(message)
+
+class ModuleException(Exception):
+    """
+    Custom module exception with proposed severity level and origin details.
+
+    Should only be called in module functions.
+    """
+    def __init__(self, message, severity=0):
+        caller_details = extract_exception_details()
+        self.severity = severity
+        message += ": "+caller_details['message']+' ('+caller_details['type']+')'
+        super().__init__(message)
+
 def error_registrar(error_entry):
     """
+    Expected keys in a valid error entry: message, severity, origin, origin_timestamp.
+
     Registers a new error in error_registry.json if not already present and the file is not locked.
     If error_registry.json is locked, appends the error to error_buffer.json for later retry.
     Automatically sets default values for metadata (reported, timestamps, etc.).
     
     Parameters:
-    an error_entry dict containing the exception type, severity, origin and origin timestamp info,
-    as generated by the ProjectBaseException class.
+    an error_entry dict containing the message, severity, origin and origin timestamp info,
+    as generated by the ServiceException class.
 
     Returns true only if an error has been registered into the error registry, false otherwise.
     """
@@ -521,9 +470,10 @@ def error_registrar(error_entry):
             already_registered = False
             report("Checking if error entry is already registered.", verbose = True)
             for existing_error in error_registry:
-                if (existing_error["exception_type"] == error_entry["exception_type"] and
+                if (
                     existing_error["severity"] == error_entry["severity"] and
-                    existing_error["origin"] == error_entry["origin"]):
+                    existing_error["origin"] == error_entry["origin"]
+                    ):
                     already_registered = True
                     report("Error entry already in registry, exiting registrar.", verbose = True)
                     break
@@ -565,6 +515,66 @@ def error_registrar(error_entry):
             report("Error buffer locked, exiting.", verbose = True)
 
     return success
+
+def extract_exception_details():
+    """
+    Works only if called after an exception has been raised.
+
+    Returns a dict containing: type, message and origin.
+    """
+    try:
+        import sys
+        exc_type, exc_message, tb = sys.exc_info()
+        
+        exception_details = {
+            'type': exc_type.__name__,
+            'message': str(exc_message),
+            'origin': None
+        }
+
+        origin_chain = []
+
+        while tb:
+            filename = tb.tb_frame.f_code.co_filename.split('\\')[-1]
+            scope = tb.tb_frame.f_code.co_name or 'main_scope'
+            line = tb.tb_lineno
+            origin_chain.append(f'{filename}{'/'+scope if scope != '<module>' else ''}:{line}')
+            tb = tb.tb_next
+
+        exception_details['origin'] = ' --> '.join(origin_chain)
+        return exception_details
+    except:
+        report("Couldn't extract exception details, likely because no exception has been raised.")
+
+def generate_call_origin():
+    """
+    Extracts detailed information from the current stack trace.
+
+    Returns:
+        str: A formatted string representing the call stack up to the topmost frame.
+             Format: 'filename/function:line --> filename/function:line --> ...'
+    """
+    import inspect
+    from typing import List
+
+    stack = inspect.stack()
+    origin_chain: List[str] = []
+
+    for frame_info in stack[1:]:  # Skip the current frame
+        filename = os.path.basename(frame_info.filename)
+        function = frame_info.function if frame_info.function != '<module>' else ''
+        if function == '__init__' or filename == '__init__.py':
+            continue
+        line = frame_info.lineno
+        if function:
+            origin_chain.append(f"{filename}/{function}:{line}")
+        else:
+            origin_chain.append(f"{filename}:{line}")
+
+    origin = ' --> '.join(origin_chain)
+    return origin
+
+
 #endregion
 
 #region IO
@@ -607,13 +617,10 @@ def get_room_temps_and_humidity():
                 room_temps_and_hums[room_id] = {"temp":"none","hum":"none","last_updated":"none"}
         
         return room_temps_and_hums
-    except (
-        DeconzError,
-        ProjectIOError
-     ) as e:
-        raise ProjectIOError(f"Couldn't read sensor state due to: {e}", original_exception=e, severity = 2) from e
-    except Exception as e:
-        raise ProjectIOError(f"Unexpected error while reading sensor state: {e}", original_exception=e, severity = 2) from e
+    except ModuleException:
+        raise ModuleException("couldn't read sensor state due to", severity = 2)
+    except Exception:
+        raise ModuleException("unexpected error while reading sensor state", severity = 2)
 #endregion
 
 #region Config
@@ -626,19 +633,8 @@ def get_cycles_info():
     return get_system_config("cycles")
 
 def get_system_config(subdict_key: str):
-    try:
-        project_root = get_project_root()
-
-        with open(os.path.join(project_root, 'config', 'system.json'), 'r', encoding='utf-8') as file:
-            system = json.load(file)
-            
-        return system[subdict_key]
-    except (
-        FileNotFoundError,PermissionError,json.JSONDecodeError,OSError
-    ) as e:
-        raise ConfigError(f"Couldn't get {subdict_key} config due to: {e}", original_exception=e,  severity = 3) from e
-    except Exception as e:
-        raise ConfigError(f"Unexpected error while reading {subdict_key} config: {e}", original_exception=e,  severity = 3) from e
+    system = load_json_to_dict(os.path.join('config', 'system.json'))
+    return system[subdict_key]
 
 #endregion
 
@@ -655,13 +651,25 @@ def get_project_root():
         current_file_path = os.path.abspath(__file__)
         parent_directory_path = os.path.dirname(current_file_path)
         return os.path.dirname(parent_directory_path)
-    except OSError as e:
-        raise ProjectBaseException(f"Couldn't get project root due to: {e}", original_exception=e, severity=1) from e
-    except Exception as e:
-        raise ProjectBaseException(f"Unexpected error when getting project root: {e}", original_exception=e, severity=1) from e
+    except OSError:
+        raise ModuleException("couldn't get project root due to")
+    except Exception:
+        raise ModuleException("unexpected error when getting project root")
 
 def timestamp():
     return datetime.now().strftime(settings.get('timestamp_format'))
+
+def load_json_to_dict(relative_path:str):
+    try:
+        project_root = get_project_root()
+
+        with open(os.path.join(project_root, relative_path), 'r', encoding='utf-8') as file:
+            loaded_dict = json.load(file)
+            
+        return loaded_dict
+    except Exception:
+        raise ModuleException(f"unexpected error while loading {relative_path} to dict")
+
 
 #endregion
 

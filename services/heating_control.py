@@ -31,3 +31,19 @@ Integrated throughout:
 """
 
 from utils.project import *
+
+try:
+    success = True
+    try:
+        rooms = get_rooms_info()
+        cycles = get_cycles_info()
+    except Exception as e:
+        success = False
+        raise HeatingConfigError(f"Couldn't load system config due to {e}",original_exception=e,severity=0)
+    try:
+        pass
+    except Exception as e:
+        success = False
+        raise HeatingConfigError(f"Couldn't load run config due to {e}",original_exception=e,severity=0)
+finally:
+    log({"success_load_config":success})
