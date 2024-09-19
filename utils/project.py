@@ -538,7 +538,7 @@ def extract_exception_details():
             filename = tb.tb_frame.f_code.co_filename.split('\\')[-1]
             scope = tb.tb_frame.f_code.co_name or 'main_scope'
             line = tb.tb_lineno
-            origin_chain.append(f'{filename}{'/'+scope if scope != '<module>' else ''}:{line}')
+            origin_chain.append(f"{filename}{'/'+scope if scope != '<module>' else ''}:{line}")
             tb = tb.tb_next
 
         exception_details['origin'] = ' --> '.join(origin_chain)
