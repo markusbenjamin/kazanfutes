@@ -1,10 +1,13 @@
+"""
+Codebase for the entire project.
+Import with: from utils.project import *
+"""
+
 #region Imports
 import json
 import logging
 import os
-import sys
 import time
-import traceback
 from datetime import datetime
 from logging.handlers import TimedRotatingFileHandler
 
@@ -30,7 +33,7 @@ class Settings:
     def __init__(self, settings_file='settings.json'):
         # Initialize the settings dictionary by loading from the JSON file
         project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        settings_file = os.path.join(project_root, 'system_config', 'settings.json')
+        settings_file = os.path.join(project_root, 'config', 'settings.json')
         self.settings = {}
         self.load_settings_from_file(settings_file)
 
@@ -75,23 +78,40 @@ class ProjectBaseException(Exception):
             'origin_timestamp': time.strftime(settings.get('timestamp_format'))
         }
         if original_exception is not None:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            error_entry['exception_type'] = exc_type.__name__
-            tb = exc_traceback
-            origin_filename = tb.tb_frame.f_code.co_filename.split('\\')[-1]
-            origin_chain = origin_filename+'/'
-            line_number = None
-            while tb is not None:
-                origin_scope = tb.tb_frame.f_code.co_name
-                origin_chain += '/' + origin_scope if origin_scope != '<module>' else 'main_scope'
-                line_number = tb.tb_frame.f_code.co_firstlineno
-                tb = tb.tb_next
-            error_entry['origin'] = f'{origin_chain}:{line_number}'
+            exception_details = extract_exception_details(original_exception)
+            error_entry['exception_type'] = exception_details['type']
+            error_entry['origin'] = exception_details['origin']
         
         error_registrar(error_entry)
         report(message+'\n\nNative output:')
 
-# Data Management Errors
+def extract_exception_details(e:Exception):
+    exception_details = {
+        'type':None,
+        'origin':None,
+    }
+
+    exception_details['type'] = e.__class__.__name__
+    
+    tb = e.__traceback__
+    origin_filename = tb.tb_frame.f_code.co_filename.split('\\')[-1]
+    origin_chain = origin_filename+'/'
+    line_number = None
+    while tb is not None:
+        origin_scope = tb.tb_frame.f_code.co_name
+        origin_chain += '/' + origin_scope if origin_scope != '<module>' else 'main_scope'
+        line_number = tb.tb_frame.f_code.co_firstlineno
+        tb = tb.tb_next
+    exception_details['origin'] = f'{origin_chain}:{line_number}'
+
+    return exception_details
+
+# Service-specific errors
+class HeatingControlError(ProjectBaseException):
+    """Base exception for heating control service errors."""
+    pass
+
+# Data management errors
 class DataManagementError(ProjectBaseException):
     """Base exception for data management-related """
     pass
@@ -100,7 +120,7 @@ class GitOperationError(DataManagementError):
     """Raised when a Git operation fails."""
     pass
 
-# DeCONZ Module Errors
+# DeCONZ errors
 class DeconzError(ProjectBaseException):
     """Base exception for DeCONZ-related """
     pass
@@ -113,19 +133,19 @@ class DeconzReadError(DeconzError):
     """Raised for errors while trying to get data from the ZigBee mesh."""
     pass
 
-# I/O Errors
+# I/O errors
 class ProjectIOError(ProjectBaseException): #Named so it won't interfere with the native IOError class.
     """Base exception for I/O-related """
     pass
 
-# Communication Errors
+# Communication errors
 class CommunicationError(ProjectBaseException):
     pass
 
 class GMailError(CommunicationError):
     pass
 
-# Project-wide config & setting Errors
+# Project-wide config & setting errors
 class ConfigError(ProjectBaseException):
     """Raised when configuration file operations fail (e.g., reading rooms.json)."""
     pass
@@ -596,23 +616,29 @@ def get_room_temps_and_humidity():
         raise ProjectIOError(f"Unexpected error while reading sensor state: {e}", original_exception=e, severity = 2) from e
 #endregion
 
-#region System config
+#region Config
 """Utility functions related to config."""
 
 def get_rooms_info():
+    return get_system_config("rooms")
+
+def get_cycles_info():
+    return get_system_config("cycles")
+
+def get_system_config(subdict_key: str):
     try:
         project_root = get_project_root()
 
-        with open(os.path.join(project_root, 'system_config', 'rooms.json'), 'r') as file:
-            rooms_dict = json.load(file)
+        with open(os.path.join(project_root, 'config', 'system.json'), 'r', encoding='utf-8') as file:
+            system = json.load(file)
             
-        return rooms_dict
+        return system[subdict_key]
     except (
         FileNotFoundError,PermissionError,json.JSONDecodeError,OSError
     ) as e:
-        raise ConfigError(f"Couldn't get rooms config due to: {e}", original_exception=e,  severity = 3) from e
+        raise ConfigError(f"Couldn't get {subdict_key} config due to: {e}", original_exception=e,  severity = 3) from e
     except Exception as e:
-        raise ConfigError(f"Unexpected error while reading rooms config: {e}", original_exception=e,  severity = 3) from e
+        raise ConfigError(f"Unexpected error while reading {subdict_key} config: {e}", original_exception=e,  severity = 3) from e
 
 #endregion
 
