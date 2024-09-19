@@ -4,6 +4,8 @@ Logs temperature and humidity values from the rooms as specified in rooms.json.
 
 from utils.project import *
 
+settings.set("detailed_error_reporting",False)
+
 try:
     # Log measurements
     log_data(get_room_temps_and_humidity(),'temperature_and_humidity/temperature_and_humidity.json')

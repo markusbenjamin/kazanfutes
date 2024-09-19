@@ -2,6 +2,7 @@
 import json
 import logging
 import os
+import sys
 import time
 import traceback
 from datetime import datetime
@@ -39,48 +40,59 @@ class Settings:
             with open(settings_file, 'r') as file:
                 self.settings = json.load(file)
         except FileNotFoundError as e:
-            raise ProjectSettingError(f"Settings file {settings_file} not found.", original_exception=e, include_traceback=True) from e
+            raise SettingError(f"Settings file {settings_file} not found.", original_exception=e, severity=1) from e
         except json.JSONDecodeError as e:
-            raise ProjectSettingError(f"Invalid JSON format in {settings_file}.", original_exception=e, include_traceback=True) from e
+            raise SettingError(f"Invalid JSON format in {settings_file}.", original_exception=e,severity=1) from e
         except Exception as e:
-            raise ProjectSettingError(f"An unexpected error occurred while loading the settings file: {e}", original_exception=e, include_traceback=True) from e
+            raise SettingError(f"An unexpected error occurred while loading the settings file: {e}", original_exception=e, severity=1) from e
 
     def get(self, key):
         """Retrieve a setting value, or None if the key does not exist."""
         try:
             return self.settings.get(key)
         except Exception as e:
-            raise ProjectSettingError(f"Error accessing the setting '{key}': {e}", original_exception=e, include_traceback=True) from e
+            raise SettingError(f"Error accessing the setting '{key}': {e}", original_exception=e, severity=1) from e
 
     def set(self, key, value):
         """Modify or add a setting."""
         try:
             self.settings[key] = value
         except Exception as e:
-            raise ProjectSettingError(f"Error setting the value for '{key}': {e}", original_exception=e, include_traceback=True) from e
+            raise SettingError(f"Error setting the value for '{key}': {e}", original_exception=e, severity=1) from e
     
 settings = Settings()
 #endregion
 
 #region Exception hierarchy
 # Base Exception
-class HeatingControlError(Exception):
-    """Base exception for all heating system """
-    def __init__(self, message, original_exception=None, include_traceback=False):
-        # Store the original exception, if provided
-        self.original_exception = original_exception
+class ProjectBaseException(Exception):
+    """Base exception for the whole project """
+    def __init__(self, message, original_exception = None, severity = 0):
+        error_entry = {
+            'exception_type': 'ProjectBaseException', 
+            'severity': severity,
+            'origin': None,
+            'origin_timestamp': time.strftime(settings.get('timestamp_format'))
+        }
+        if original_exception is not None:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            error_entry['exception_type'] = exc_type.__name__
+            tb = exc_traceback
+            origin_filename = tb.tb_frame.f_code.co_filename.split('\\')[-1]
+            origin_chain = origin_filename+'/'
+            line_number = None
+            while tb is not None:
+                origin_scope = tb.tb_frame.f_code.co_name
+                origin_chain += '/' + origin_scope if origin_scope != '<module>' else 'main_scope'
+                line_number = tb.tb_frame.f_code.co_firstlineno
+                tb = tb.tb_next
+            error_entry['origin'] = f'{origin_chain}:{line_number}'
         
-        # Optionally include the traceback
-        if include_traceback and original_exception is not None:
-            message += f"\nTraceback:\n{traceback.format_exc()}"
-        
-        report(message)
-
-        # Initialize the base Exception with the final message
-        super().__init__(message)
+        error_registrar(error_entry)
+        report(message+'\n\nNative output:')
 
 # Data Management Errors
-class DataManagementError(HeatingControlError):
+class DataManagementError(ProjectBaseException):
     """Base exception for data management-related """
     pass
 
@@ -89,7 +101,7 @@ class GitOperationError(DataManagementError):
     pass
 
 # DeCONZ Module Errors
-class DeconzError(HeatingControlError):
+class DeconzError(ProjectBaseException):
     """Base exception for DeCONZ-related """
     pass
 
@@ -102,27 +114,23 @@ class DeconzReadError(DeconzError):
     pass
 
 # I/O Errors
-class ProjectIOError(HeatingControlError): #Named so it won't interfere with the native IOError class.
+class ProjectIOError(ProjectBaseException): #Named so it won't interfere with the native IOError class.
     """Base exception for I/O-related """
     pass
 
 # Communication Errors
-class CommunicationError(HeatingControlError):
+class CommunicationError(ProjectBaseException):
     pass
 
 class GMailError(CommunicationError):
     pass
 
-# Project Errors
-class ProjectError(HeatingControlError):
-    """Base exception for project-wide errors."""
-    pass
-
-class ProjectConfigError(ProjectError):
+# Project-wide config & setting Errors
+class ConfigError(ProjectBaseException):
     """Raised when configuration file operations fail (e.g., reading rooms.json)."""
     pass
 
-class ProjectSettingError(ProjectError):
+class SettingError(ProjectBaseException):
     """Raised when issues with settings arise."""
 #endregion
 
@@ -192,15 +200,53 @@ def send_email(to, subject='', body=''):
         report(f"Email sent successfully to {to}.",verbose=True)
         success = True
     except (smtplib.SMTPAuthenticationError, smtplib.SMTPNotSupportedError) as e:
-        raise GMailError("Failed to authenticate with Gmail SMTP server or unsupported operation.", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+        raise GMailError("Failed to authenticate with Gmail SMTP server or unsupported operation.", original_exception=e, severity=1) from e
     except (smtplib.SMTPRecipientsRefused, smtplib.SMTPSenderRefused, smtplib.SMTPDataError) as e:
-        raise GMailError("SMTP issue: Recipient or sender refused, or data error occurred.", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+        raise GMailError("SMTP issue: Recipient or sender refused, or data error occurred.", original_exception=e, severity=1) from e
     except Exception as e:
-        raise GMailError(f"An unexpected error occurred while sending an email: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+        raise GMailError(f"An unexpected error occurred while sending an email: {e}", original_exception=e, severity=1) from e
     
     return success
 
-def init_logger(log_file_path: str):
+def log(data: dict):
+    """
+    Used for runtime logging.
+    Logs the provided data to a JSON log file in a hardcoded directory, named after the script calling this function.
+    
+    Args:
+        data (dict): The data to be logged.
+    """
+    import inspect
+
+    # Get the name of the calling script (the file that called log())
+    calling_script_name = os.path.basename(inspect.stack()[1].filename).split('.')[0]
+
+    # Relative path to the log file: default is services directory with the script name in this case
+    relative_log_file_path = os.path.join('services', f'{calling_script_name}.json')
+    
+    # Initialize the logger and log the data
+    log_data(data,relative_log_file_path)
+
+def log_data(data: dict, relative_log_file_path: str):
+    """
+    Used for feature logging.
+    Logs the provided data to a specified log file.
+    
+    Args:
+        data (dict): The data to be logged.
+        log_file_path (str): Relative path to log file in data/logs/.
+    """
+    # Initialize the logger and log the data
+    init_logger(relative_log_file_path)
+    logger = logging.getLogger()
+    log_entry = {'timestamp': timestamp()}
+    log_entry.update(data)  # Add the rest of the data
+    logger.info(json.dumps(log_entry))
+    for handler in logger.handlers:
+        handler.close()
+        logger.removeHandler(handler)
+
+def init_logger(relative_log_file_path: str):
     """
     Initializes the logger with a TimedRotatingFileHandler and adds a timestamp to each log entry.
     Should not normally be called on it's own, but by log() or log_data() as determined by the use-case.
@@ -213,12 +259,12 @@ def init_logger(log_file_path: str):
     
     """
     logger = logging.getLogger()
-    full_log_path = os.path.join(get_project_root(),'data','logs', log_file_path)
-    log_directory = os.path.dirname(full_log_path)
+    full_log_file_path = os.path.join(get_project_root(),'data','logs', relative_log_file_path)
+    log_directory = os.path.dirname(full_log_file_path)
     if not os.path.exists(log_directory):
         os.makedirs(log_directory, exist_ok=True)
 
-    handler = TimedRotatingFileHandler(full_log_path, when='midnight', interval=1)
+    handler = TimedRotatingFileHandler(full_log_file_path, when='midnight', interval=1)
     
     # Define formatter with timestamp
     formatter = logging.Formatter(f'%(message)s')
@@ -227,50 +273,15 @@ def init_logger(log_file_path: str):
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
 
-def log(data: dict):
-    """
-    Used for runtime logging.
-    Logs the provided data to a JSON log file in a hardcoded directory, named after the script calling this function.
-    
-    Args:
-        data (dict): The data to be logged.
-    """
-    import inspect
-    from pathlib import Path
-
-    # Get the name of the calling script (the file that called log())
-    calling_script = os.path.basename(inspect.stack()[1].filename).split('.')[0]
-
-    # Hardcoded log directory
-    log_directory = os.path.join('services')
-    
-    # Create the log directory if it doesn't exist
-    Path(log_directory).mkdir(parents=True, exist_ok=True)
-    
-    # Full path to the log file
-    log_file_path = os.path.join(log_directory, f'{calling_script}.json')
-    
-    # Initialize the logger and log the data
-    log_data(data,log_file_path)
-
-def log_data(data: dict, log_file_path: str):
-    """
-    Used for feature logging.
-    Logs the provided data to a specified log file.
-    
-    Args:
-        data (dict): The data to be logged.
-        log_file_path (str): The full path to the log file.
-    """
-    # Initialize the logger and log the data
-    init_logger(log_file_path)
-    logger = logging.getLogger()
-    log_entry = {'timestamp': timestamp()}
-    log_entry.update(data)  # Add the rest of the data
-    logger.info(json.dumps(log_entry))
-    for handler in logger.handlers:
-        handler.close()
-        logger.removeHandler(handler)
+def rotate_log_file(relative_log_file_path: str, when: str = 'midnight', interval: int = 1):
+    rotation = False
+    full_log_file_path = os.path.join(get_project_root(),'data','logs', relative_log_file_path)
+    handler = TimedRotatingFileHandler(full_log_file_path, when=when, interval=interval)
+    if handler.shouldRollover(int(time.time())):
+        handler.doRollover()
+        rotation = True
+    handler.close()
+    return rotation
 
 #endregion
 
@@ -287,9 +298,9 @@ def sync_dir_with_repo(project_dir_path, commit_message):
     try: 
         os.chdir(os.path.join(get_project_root(), project_dir_path))
     except (FileNotFoundError, PermissionError, OSError) as e:
-        raise GitOperationError(f"Failed to change directory to {project_dir_path}: {e}", original_exception = e, include_traceback = settings.get('detailed_error_reporting')) from e
+        raise GitOperationError(f"Failed to change directory to {project_dir_path}: {e}", original_exception = e, severity=2) from e
     except Exception as e:
-        raise GitOperationError(f"Unexpected error while changing directory: {e}", original_exception = e, include_traceback = settings.get('detailed_error_reporting')) from e
+        raise GitOperationError(f"Unexpected error while changing directory: {e}", original_exception = e, severity=2) from e
 
     try:
         subprocess.run(['git', 'add', '.'], check=True)
@@ -310,9 +321,9 @@ def sync_dir_with_repo(project_dir_path, commit_message):
         else:
             report("No changes staged for commit. Skipping commit and push.")
     except subprocess.CalledProcessError as e:
-        raise GitOperationError(f"Git command failed: {e}") from e
+        raise GitOperationError(f"Git command failed: {e}", original_exception=e, severity=2) from e
     except Exception as e:
-        raise GitOperationError(f"Unexpected error while pushing {project_dir_path} to repo: {e}", original_exception = e, include_traceback = settings.get('detailed_error_reporting')) from e
+        raise GitOperationError(f"Unexpected error while pushing {project_dir_path} to repo: {e}", original_exception = e, severity=2) from e
 #endregion
 
 #region Deconz
@@ -330,18 +341,18 @@ def get_deconz_access_params():
         with open(f'{project_root}/secrets_and_env/deconz_api_url', 'r') as file:
             deconz_api_url = file.read()
     except FileNotFoundError as e:
-        raise DeconzSetupError("No deconz_api_url file in secrets_and_env.", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+        raise DeconzSetupError("No deconz_api_url file in secrets_and_env.", original_exception=e, severity=0) from e
     except Exception as e:
-        raise DeconzSetupError(f"An unexpected error occurred while reading deconz_api_url: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+        raise DeconzSetupError(f"An unexpected error occurred while reading deconz_api_url: {e}", original_exception=e, severity=1) from e
 
     deconz_api_key = ""
     try:
         with open(f'{project_root}/secrets_and_env/deconz_api_key', 'r') as file:
             deconz_api_key = file.read()
     except FileNotFoundError as e:
-        raise DeconzSetupError("No deconz_api_key file in secrets_and_env.", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+        raise DeconzSetupError("No deconz_api_key file in secrets_and_env.", original_exception=e, severity=0) from e
     except Exception as e:
-        raise DeconzSetupError(f"An unexpected error occurred while reading deconz_api_key: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+        raise DeconzSetupError(f"An unexpected error occurred while reading deconz_api_key: {e}", original_exception=e, severity=1) from e
 
     return {'api_url':deconz_api_url,'api_key':deconz_api_key}
 
@@ -357,7 +368,7 @@ def read_and_save_deconz_api_key():
     deconz_api_url = deconz_access_params['api_url']
     if deconz_api_url == "":
         report("First supply Deconz API URL at secrets_and_env.")
-        raise DeconzSetupError("Missing Deconz API URL at secrets_and_env", original_exception=None, include_traceback=False)
+        raise DeconzSetupError("Missing Deconz API URL at secrets_and_env", original_exception=None, severity=0)
     
     data = {"devicetype": "conbee_gateway_access"}
     try:
@@ -406,9 +417,9 @@ def read_deconz_state():
         ip = parsed_url.hostname
         #ip = full_url[full_url.index('http://')+7:full_url.index(':80/api')] # Previous hardcoded way stored for fallback if needed
     except ValueError as e:
-        raise DeconzSetupError("Couldn't extract Deconz URL.", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+        raise DeconzSetupError("Couldn't extract Deconz URL.", original_exception=e, severity=0) from e
     except Exception as e:
-        raise DeconzSetupError(f"An unexpected error occurred while extracting Deconz URL: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting'))  from e
+        raise DeconzSetupError(f"An unexpected error occurred while extracting Deconz URL: {e}", original_exception=e, severity=1)  from e
     port = '80'
     api_key = deconz_access_params['api_key']
 
@@ -432,9 +443,9 @@ def read_deconz_state():
         aiohttp.ClientError,
         OSError
      ) as e:
-        raise DeconzReadError(f"Failed to connect to Deconz API due to client or network error: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+        raise DeconzReadError(f"Failed to connect to Deconz API due to client or network error: {e}", original_exception=e, severity=3) from e
     except Exception as e:
-        raise DeconzReadError(f"Failed to connect to Deconz API due to unexpected error:{e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+        raise DeconzReadError(f"Failed to connect to Deconz API due to unexpected error:{e}", original_exception=e, severity=3) from e
 
 def read_sensors():
     """
@@ -444,17 +455,15 @@ def read_sensors():
 #endregion
 
 #region Error management
-def error_registrar(exception_type, severity, origin = None, origin_timestamp = None):
+def error_registrar(error_entry):
     """
     Registers a new error in error_registry.json if not already present and the file is not locked.
     If error_registry.json is locked, appends the error to error_buffer.json for later retry.
     Automatically sets default values for metadata (reported, timestamps, etc.).
     
     Parameters:
-    exception_type (str): Type of the raised exception, preferably from the project-specific exception hierarchy.
-    severity (str): Severity level of the error (1 := low, 2 := moderate, 3 :=high).
-    origin (str): Where the error originated (e.g., file, function, line).
-    origin_timestamp (str): Timestamp when the error occurred.
+    an error_entry dict containing the exception type, severity, origin and origin timestamp info,
+    as generated by the ProjectBaseException class.
 
     Returns true only if an error has been registered into the error registry, false otherwise.
     """
@@ -463,17 +472,13 @@ def error_registrar(exception_type, severity, origin = None, origin_timestamp = 
     ERROR_REGISTRY_PATH = f"{get_project_root()}/data/errors/error_registry.json"
     ERROR_BUFFER_PATH = f"{get_project_root()}/data/errors/error_buffer.json"
     
-    error_entry = {
-        "exception_type": exception_type, 
-        "severity": severity,
-        "origin": generate_exception_origin_stamp() if origin is None else origin,
-        "origin_timestamp": time.strftime(settings.get('timestamp_format') if origin_timestamp is None else origin_timestamp),
+    error_entry.update({
         "registration_timestamp": None,
         "reported": False,
         "reported_timestamp": None,
         "checked": False,
         "checked_timestamp": None
-    }
+    })
 
     success = False
     
@@ -620,11 +625,11 @@ def get_room_temps_and_humidity():
         return room_temps_and_hums
     except (
         DeconzError,
-        ProjectError
+        ProjectIOError
      ) as e:
-        raise ProjectIOError(f"Couldn't read sensor state due to: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+        raise ProjectIOError(f"Couldn't read sensor state due to: {e}", original_exception=e, severity = 2) from e
     except Exception as e:
-        raise ProjectIOError(f"Unexpected error while reading sensor state: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+        raise ProjectIOError(f"Unexpected error while reading sensor state: {e}", original_exception=e, severity = 2) from e
 #endregion
 
 #region System config
@@ -641,9 +646,9 @@ def get_rooms_info():
     except (
         FileNotFoundError,PermissionError,json.JSONDecodeError,OSError
     ) as e:
-        raise ProjectConfigError(f"Couldn't get rooms config due to: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+        raise ConfigError(f"Couldn't get rooms config due to: {e}", original_exception=e,  severity = 3) from e
     except Exception as e:
-        raise ProjectConfigError(f"Unexpected error while reading rooms config: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+        raise ConfigError(f"Unexpected error while reading rooms config: {e}", original_exception=e,  severity = 3) from e
 
 #endregion
 
@@ -661,9 +666,9 @@ def get_project_root():
         parent_directory_path = os.path.dirname(current_file_path)
         return os.path.dirname(parent_directory_path)
     except OSError as e:
-        raise ProjectError(f"Couldn't get project root due to: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+        raise ProjectBaseException(f"Couldn't get project root due to: {e}", original_exception=e, severity=1) from e
     except Exception as e:
-        raise ProjectError(f"Unexpected error when getting project root: {e}", original_exception=e, include_traceback=settings.get('detailed_error_reporting')) from e
+        raise ProjectBaseException(f"Unexpected error when getting project root: {e}", original_exception=e, severity=1) from e
 
 
 def timestamp():
