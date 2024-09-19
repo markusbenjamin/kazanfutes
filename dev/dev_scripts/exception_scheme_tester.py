@@ -1,11 +1,11 @@
 from utils.project import *
 
-def foo():
+def foo2():
 	1/0
 
 try:
-	foo()
+	foo2()
 except ZeroDivisionError as e:
-	raise ProjectBaseException("TestException raised.", original_exception = e, severity = 1) from e
+	raise ProjectBaseException("TestException raised.", original_exception = e, severity = 2) from e
 except Exception as e:
 	raise ProjectBaseException("Test2Exception raised.") from e
