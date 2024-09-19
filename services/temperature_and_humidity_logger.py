@@ -14,7 +14,7 @@ try:
 except Exception as e:
     success = False
     report("Temperature and humidity values couldn't be acquired.",verbose=True)
-    raise DeconzError(f"An unexpected error occured while trying to read sensors:{e}", original_exception=e, include_traceback=settings.get("detailed_error_reporting")) from e
+    raise DeconzError(f"An unexpected error occured while trying to read sensors:{e}", original_exception=e, severity = 3) from e
 finally:
     # Log execution
     log({"success":success})
