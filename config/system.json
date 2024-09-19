@@ -1,0 +1,106 @@
+{
+    "cycles": {
+        "1": {
+            "name": "Teakonyhán túl",
+            "pump":{
+                "id":null,
+                "ip":null,
+                "key":null
+            },
+            "rooms": [
+                1,
+                2,
+                3
+            ]
+        },
+        "2": {
+            "name": "Teakonyhán innen",
+            "pump":{
+                "id":null,
+                "ip":null,
+                "key":null
+            },
+            "rooms": [
+                4,
+                5,
+                6,
+                7
+            ]
+        },
+        "3": {
+            "name": "Gólya emelet",
+            "pump":{
+                "id":null,
+                "ip":null,
+                "key":null
+            },
+            "rooms": [
+                8,
+                9
+            ]
+        },
+        "4": {
+            "name": "Gólya földszint",
+            "pump":{
+                "id":null,
+                "ip":null,
+                "key":null
+            },
+            "rooms": [
+                10
+            ]
+        }
+    },
+    "rooms": {
+        "1": {
+            "name": "Oktopusz",
+            "sensor": null,
+            "cycle": 1
+        },
+        "2": {
+            "name": "ovi",
+            "sensor": "Sonoff4",
+            "cycle": 1
+        },
+        "3": {
+            "name": "PK",
+            "sensor": "Sonoff5",
+            "cycle": 1
+        },
+        "4": {
+            "name": "SZGK",
+            "sensor": "Sonoff7",
+            "cycle": 2
+        },
+        "5": {
+            "name": "Mérce",
+            "sensor": "Sonoff1",
+            "cycle": 2
+        },
+        "6": {
+            "name": "Lahmacun",
+            "sensor": null,
+            "cycle": 2
+        },
+        "7": {
+            "name": "Gólyairoda",
+            "sensor": "Sonoff2",
+            "cycle": 2
+        },
+        "8": {
+            "name": "kisterem",
+            "sensor": "Sonoff6",
+            "cycle": 3
+        },
+        "9": {
+            "name": "vendégtér",
+            "sensor": "Sonoff3",
+            "cycle": 3
+        },
+        "10": {
+            "name": "Trafóház",
+            "sensor": null,
+            "cycle": 4
+        }
+    }
+}

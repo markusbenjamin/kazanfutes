@@ -1,3 +1,3 @@
 from utils.project import *
 
-testfunction()
+print(get_cycles_info())
