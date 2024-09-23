@@ -387,14 +387,19 @@ def read_sensors():
 
 #region Error management
 def faulty_module_function():
+    """
+    For testing purposes.
+    """
     try:
         1/0
     except Exception:
         raise ModuleException("something went wrong in module")
 
-
 class ServiceException(Exception):
-    """Exception class that gets registered when called, should only be called by service scripts."""
+    """
+    Exception class that calls the error registrar when called (except when testing == True), 
+    should only be called by service scripts.
+    """
     def __init__(self, message, original_exception = None, severity = 0):
         """
         Generates and registers error entry.
@@ -415,7 +420,10 @@ class ServiceException(Exception):
             error_entry['severity'] = severity
             error_entry['origin'] = generate_call_origin()
         error_entry['origin_timestamp'] = timestamp()
-        error_registrar(error_entry)
+        if settings.get('testing'):
+            report(error_entry)
+        else:
+            error_registrar(error_entry)
         super().__init__(message)
 
 class ModuleException(Exception):
