@@ -11,3 +11,30 @@
         "checked_timestamp": null
     }
 ]
+        "reported_timestamp": "2024-09-20-10-52-07",
+        "checked": true,
+        "checked_timestamp": "2024-09-20-10-52-07"
+    },
+    {
+        "message": "Deconz access error: no deconz_api_url file in secrets_and_env: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Beno\\\\Documents\\\\SZAKI\\\\dev\\\\kazanfutes/secrets_and_env/deconz_api_url' (FileNotFoundError).",
+        "severity": 0,
+        "origin": "system_integrity_checker.py:24 --> project.py/read_deconz_state:344 --> project.py/get_deconz_access_params:277",
+        "origin_timestamp": "2024-09-20-15-19-35",
+        "registration_timestamp": "2024-09-20-15-19-35",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Deconz access error: no deconz_api_url file in secrets_and_env: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Beno\\\\Documents\\\\SZAKI\\\\dev\\\\kazanfutes/secrets_and_env/deconz_api_url' (FileNotFoundError).",
+        "severity": 0,
+        "origin": "C:\\Users\\Beno\\Documents\\SZAKI\\dev\\kazanfutes\\services\\system_integrity_checker.py:24 --> C:\\Users\\Beno\\Documents\\SZAKI\\dev\\kazanfutes\\utils\\project.py/read_deconz_state:344 --> C:\\Users\\Beno\\Documents\\SZAKI\\dev\\kazanfutes\\utils\\project.py/get_deconz_access_params:277",
+        "origin_timestamp": "2024-09-20-15-19-43",
+        "registration_timestamp": "2024-09-20-15-19-43",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    }
+]
