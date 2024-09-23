@@ -82,7 +82,7 @@ try:
                                                     'registration_timestamp': error['registration_timestamp']
                                                     }
                             try:
-                                log_data(error,'errors/error_log.json')
+                                log_data(error_report_contents,'errors/error_log.json')
                                 if error['severity'] == 1: # For low severity errors logging itself is considered as checking.
                                     error['checked'] = True
                                     error['checked_timestamp'] = timestamp()
@@ -92,7 +92,7 @@ try:
                             if 1 < error['severity']:
                                 success = False
                                 try:
-                                    log_data(error,'errors/daily_report.json')
+                                    log_data(error_report_contents,'errors/daily_report.json')
                                     success = True
                                 except:
                                     log({'message':'Could not append attached error to daily report.','error':error_report_contents})
@@ -147,23 +147,28 @@ try:
             try:
                 with open(daily_report_filepath, 'r') as file:
                     lines = file.readlines()
-                error_list = [json.loads(line) for line in lines]
-                error_report_contents = '\n'.join([json.dumps(
-                    {
-                        'message': error['message'],
-                        'severity': error['severity'],
-                        'origin':error['origin'],
-                        'origin_timestamp': error['origin_timestamp'],
-                        'registration_timestamp': error['registration_timestamp']
-                    }
-                    , indent=4) for error in error_list])
-                if send_email(to = settings.get('admin_email'),subject=f'Daily error report for {daystamp}',body = error_report_contents):
-                    os.rename(daily_report_filepath, daily_report_filepath + '.sent')
-                    report(f"Sent out daily report for {daystamp}.",verbose=True)
-                    log({'success_daily_report':True})
+                if 0<len(lines):
+                    error_list = [json.loads(line) for line in lines]
+                    error_report_contents = '\n'.join([json.dumps(
+                        {
+                            'message': error['message'],
+                            'severity': error['severity'],
+                            'origin':error['origin'],
+                            'origin_timestamp': error['origin_timestamp'],
+                            'registration_timestamp': error['registration_timestamp']
+                        }
+                        , indent=4) for error in error_list])
+                    if send_email(to = settings.get('admin_email'),subject=f'Daily error report for {daystamp}',body = error_report_contents):
+                        os.rename(daily_report_filepath, daily_report_filepath + '.sent')
+                        report(f"Sent out daily report for {daystamp}.",verbose=True)
+                        log({'success_daily_report':True})
+                    else:                        
+                        report(f"Could not send out daily report for {daystamp} due to an error with sending the email.")
+                        log({'success_daily_report':False})
                 else:
-                    report(f"Could not send out daily report for {daystamp} due to an error with sending the email.")
-                    log({'success_daily_report':False})
+                    os.remove(daily_report_filepath)
+                    report(f"No reported medium severity errors for {daystamp}.",verbose=True)
+                    log({'success_daily_report':True})
             except Exception:
                 ServiceException(f"Could not send out daily report for {daystamp}",severity=1) # Do not generate a new reportable error (severity == 2) if there is an issue with error reporting, just log it (severity == 1)
                 log({'success_daily_report':False})

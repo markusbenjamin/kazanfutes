@@ -387,14 +387,19 @@ def read_sensors():
 
 #region Error management
 def faulty_module_function():
+    """
+    For testing purposes.
+    """
     try:
         1/0
     except Exception:
         raise ModuleException("something went wrong in module")
 
-
 class ServiceException(Exception):
-    """Exception class that gets registered when called, should only be called by service scripts."""
+    """
+    Exception class that calls the error registrar when constructor is intialized (except when testing == True),
+    should only be instantiated (but not necessarily raised) in service scripts.
+    """
     def __init__(self, message, original_exception = None, severity = 0):
         """
         Generates and registers error entry.
@@ -415,14 +420,17 @@ class ServiceException(Exception):
             error_entry['severity'] = severity
             error_entry['origin'] = generate_call_origin()
         error_entry['origin_timestamp'] = timestamp()
-        error_registrar(error_entry)
+        if settings.get('testing'):
+            report(error_entry)
+        else:
+            error_registrar(error_entry)
         super().__init__(message)
 
 class ModuleException(Exception):
     """
     Custom module exception with proposed severity level and origin details.
 
-    Should only be called in module functions.
+    Should only be raised in module functions.
     """
     def __init__(self, message, severity=0):
         caller_details = extract_exception_details()
@@ -445,9 +453,9 @@ def error_registrar(error_entry):
     Returns true only if an error has been registered into the error registry, false otherwise.
     """
 
-    # Define the hardcoded paths to the error registry and buffer using the absolute project root
-    ERROR_REGISTRY_PATH = f"{get_project_root()}/data/errors/error_registry.json"
-    ERROR_BUFFER_PATH = f"{get_project_root()}/data/errors/error_buffer.json"
+        # Define the hardcoded paths to the error registry and buffer using the absolute project root
+    ERROR_REGISTRY_PATH = os.path.join(get_project_root(), "data", "errors", "error_registry.json")
+    ERROR_BUFFER_PATH = os.path.join(get_project_root(), "data", "errors", "error_buffer.json")
     
     error_entry.update({
         "registration_timestamp": None,
