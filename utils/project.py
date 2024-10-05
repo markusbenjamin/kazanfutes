@@ -59,7 +59,7 @@ def notify_admin():
 def send_email(to, subject='', body=''):
     """
     Sends an email using Gmail's SMTP server. Login credentials are loaded from 
-    project_root/secrets_and_env/gmail_login.
+    project_root/config/secrets_and_env/gmail_login.
     
     Args:
         to (str): The recipient's email address.
@@ -74,7 +74,7 @@ def send_email(to, subject='', body=''):
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
     # Path to the login file
-    login_file_path = os.path.join(get_project_root(), 'secrets_and_env', 'gmail_login')
+    login_file_path = os.path.join(get_project_root(), 'config','secrets_and_env', 'gmail_login')
 
     # Read the login credentials from the file
     with open(login_file_path, 'r') as f:
@@ -226,16 +226,16 @@ class JSONNodeAtURL:
         try:
             response = method(self.url+"/"+subpath+".json",**kwargs)
             response.raise_for_status()
-            report(f"Successfully interacted with node via {method.__name__}.", verbose = True)
+            report(f"Successfully interacted with node '{self.node_relative_path}' via {method.__name__}.", verbose = True)
             if method.__name__ == 'get':
                 return jsonify_array(response.json())
         except Exception:
             if response:
                 report(f"Failed to interact with node via {method.__name__}. Status code: {response.status_code}", verbose = True)
-                raise ModuleException(f"failed to interact with node 'Firebase/{self.node_relative_path}' via {method.__name__}")
+                raise ModuleException(f"failed to interact with node '{self.node_relative_path}' via {method.__name__}")
             else:
                 report(f"Failed to interact with node via {method.__name__}, response is not even initialized.", verbose = True)
-                raise ModuleException(f"failed to interact with node 'Firebase/{self.node_relative_path}' via {method.__name__}")
+                raise ModuleException(f"failed to interact with node '{self.node_relative_path}' via {method.__name__}")
 
     def read(self, read_subpath:str = ''):
         """
@@ -353,132 +353,6 @@ def sync_dir_with_repo(project_dir_path, commit_message):
 
 #endregion
 
-#region Deconz
-"""DeCONZ interfacing."""
-
-def get_deconz_access_params():
-    """
-    Reads in and returns the URL and the API key of the Deconz Phoscon app
-    that is used to access and read the ZigBee mesh through ConBee II.
-    """
-    project_root = get_project_root()
-
-    deconz_api_url = ""
-    try:
-        with open(f'{project_root}/secrets_and_env/deconz_api_url', 'r') as file:
-            deconz_api_url = file.read()
-    except FileNotFoundError:
-        raise ModuleException("no deconz_api_url file in secrets_and_env")
-    except Exception:
-        raise ModuleException("an unexpected error occurred while reading deconz_api_url",severity=2)
-
-    deconz_api_key = ""
-    try:
-        with open(f'{project_root}/secrets_and_env/deconz_api_key', 'r') as file:
-            deconz_api_key = file.read()
-    except FileNotFoundError:
-        raise ModuleException("no deconz_api_key file in secrets_and_env")
-    except Exception:
-        raise ModuleException("unexpected error occurred while reading deconz_api_key",severity=2)
-
-    return {'api_url':deconz_api_url,'api_key':deconz_api_key}
-
-def read_and_save_deconz_api_key():
-    """
-    Reads in the API key from Phoscon app.
-    Requires Authenticate app at Phoscon app --> Gateway/conbee/Advanced.
-    """
-
-    import requests
-    
-    deconz_access_params = get_deconz_access_params()
-    deconz_api_url = deconz_access_params['api_url']
-    if deconz_api_url == "":
-        report("First supply Deconz API URL at secrets_and_env.")
-        raise ModuleException("missing Deconz API URL at secrets_and_env",severity=2)
-    
-    data = {"devicetype": "conbee_gateway_access"}
-    try:
-        response = requests.post(deconz_api_url, json=data)
-        response.raise_for_status()  # Raises an HTTPError for bad responses (4xx, 5xx)
-        
-        # Handle successful response
-        response_json = response.json()
-        
-        # Check if the response indicates that authentication is required
-        if "error" in response_json and response_json["error"]["type"] == 101:
-            report("First press Authenticate app at Phoscon app --> Gateway/conbee/Advanced.")
-        elif "success" in response_json:
-            # Save the API key
-            api_key = response_json["success"]["username"]
-            project_root = get_project_root()
-            with open(f'{project_root}/secrets_and_env/deconz_api_key', 'w') as file:
-                file.write(api_key)
-            report("Deconz API key successfully obtained and saved.")
-        else:
-            report("Unexpected response from Deconz API.")
-    
-    except (
-        requests.exceptions.ConnectionError,
-        requests.exceptions.Timeout,
-        requests.exceptions.HTTPError
-     ):
-        raise ModuleException("failed to connect to Deconz API",severity=3)
-    except Exception:
-        raise ModuleException("unexpected error occurred while connecting to Deconz API",severity=3)
-
-def read_deconz_state():
-    """
-    Makes data available from the ZigBee mesh.
-    """
-    import asyncio
-    import aiohttp
-    from pydeconz.gateway import DeconzSession
-
-    deconz_access_params = get_deconz_access_params()
-    full_url = deconz_access_params['api_url']
-    try:
-        from urllib.parse import urlparse
-
-        parsed_url = urlparse(full_url)
-        ip = parsed_url.hostname
-        #ip = full_url[full_url.index('http://')+7:full_url.index(':80/api')] # Previous hardcoded way stored for fallback if needed
-    except Exception:
-        raise ModuleException("unexpected error occurred while extracting Deconz URL",severity=3)
-    port = '80'
-    api_key = deconz_access_params['api_key']
-
-    async def read_deconz():    
-        async with aiohttp.ClientSession() as session:
-            deconz_session = DeconzSession(session, ip, port, api_key)
-            await deconz_session.refresh_state()
-
-            #for sensor_id, sensor in deconz_session.sensors.items():
-            #    report(f"Sensor ID: {sensor_id}, Name: {sensor.name}")
-            #for sensor_id, sensor in deconz_session.sensors.items():
-            #    if sensor.type == "ZHATemperature":
-            #        report(f"Sensor ID: {sensor.name}, Temperature: {sensor.temperature}")
-            #    elif sensor.type == "ZHAHumidity":
-            #        report(f"Sensor ID: {sensor.name}, Humidity: {sensor.humidity}")
-            return deconz_session
-    
-    try:
-        return asyncio.run(read_deconz())
-    except (
-        aiohttp.ClientError,
-        OSError
-     ):
-        raise ModuleException("failed to connect to Deconz API due to client or network error",severity=3)
-    except Exception:
-        raise ModuleException("failed to connect to Deconz API due to unexpected error",severity=3)
-
-def read_sensors():
-    """
-    Extracts sensor states from overall ZigBee mesh state.
-    """
-    return read_deconz_state().sensors.items()
-#endregion
-
 #region Error management
 def faulty_module_function():
     """
@@ -514,8 +388,8 @@ class ServiceException(Exception):
             error_entry['severity'] = severity
             error_entry['origin'] = generate_call_origin()
         error_entry['origin_timestamp'] = timestamp()
-        if settings['testing']:
-            report(error_entry)
+        if settings['dev']:
+            report(json.dumps(error_entry, indent=4))
         else:
             error_registrar(error_entry)
         super().__init__(message)
@@ -688,7 +562,48 @@ def generate_call_origin():
 #endregion
 
 #region IO
+
+#region Wrappers
 """Wrapper functions for everything IO."""
+
+def get_boiler_state():
+    """
+    Returns a faux val for development purposes for now.
+    """
+    return 0
+
+def set_boiler_state(state:int):
+    pass
+
+def get_pump_states():
+    """
+    Returns a faux dict for development purposes for now.
+    """
+    return {'1':0,'2':1,'3':1,'4':0}
+
+def set_pump_state(pump:str,state:int):
+    pass
+
+def get_room_temps_and_humidity_dev():
+    """
+    Returns a faux dict for development purposes.
+    """
+    rooms_info = get_rooms_info()
+    room_temps_and_hums = {}
+    for room in rooms_info:
+        if rooms_info[room]['sensor']:
+            room_temps_and_hums[room] = {
+                "temp":1600,
+                "hum":5000,
+                "last_updated":datetime.now().strftime(settings['timestamp_format'])
+                }
+        else:
+            room_temps_and_hums[room] = {
+                "temp":None,
+                "hum":None,
+                "last_updated":None
+                }
+    return room_temps_and_hums
 
 def get_room_temps_and_humidity():
     """
@@ -709,28 +624,169 @@ def get_room_temps_and_humidity():
             elif sensor.type == "ZHAHumidity":
                 last_updated = datetime.strptime((sensor.raw)['state']['lastupdated'], "%Y-%m-%dT%H:%M:%S.%f").strftime(settings['timestamp_format'])
                 if sensor.name not in sensor_temps_and_hums:
-                    sensor_temps_and_hums[sensor.name] = {'temp':'none','hum':'none','last_updated':'none'}
+                    sensor_temps_and_hums[sensor.name] = {'temp':None,'hum':None,'last_updated':None}
                 sensor_temps_and_hums[sensor.name]['hum'] = sensor.humidity
                 sensor_temps_and_hums[sensor.name]['last_updated'] = last_updated
 
         rooms_info = get_rooms_info()
 
         room_temps_and_hums = {}
-        for room_id in rooms_info:
-            if rooms_info[room_id]['sensor'] in sensor_temps_and_hums:
-                room_temps_and_hums[room_id] = {
-                    "temp":sensor_temps_and_hums[rooms_info[room_id]['sensor']]['temp'],
-                    "hum":sensor_temps_and_hums[rooms_info[room_id]['sensor']]['hum'],
-                    "last_updated":sensor_temps_and_hums[rooms_info[room_id]['sensor']]['last_updated']
+        for room in rooms_info:
+            if rooms_info[room]['sensor'] in sensor_temps_and_hums:
+                room_temps_and_hums[room] = {
+                    "temp":sensor_temps_and_hums[rooms_info[room]['sensor']]['temp'],
+                    "hum":sensor_temps_and_hums[rooms_info[room]['sensor']]['hum'],
+                    "last_updated":sensor_temps_and_hums[rooms_info[room]['sensor']]['last_updated']
                     }
             else:
-                room_temps_and_hums[room_id] = {"temp":"none","hum":"none","last_updated":"none"}
+                room_temps_and_hums[room] = {"temp":None,"hum":None,"last_updated":None}
         
         return room_temps_and_hums
     except ModuleException:
         raise ModuleException("couldn't read sensor state due to", severity = 2)
     except Exception:
         raise ModuleException("unexpected error while reading sensor state", severity = 2)
+
+#endregion
+
+#region Deconz
+"""DeCONZ interfacing."""
+
+def get_deconz_access_params():
+    """
+    Reads in and returns the URL and the API key of the Deconz Phoscon app
+    that is used to access and read the ZigBee mesh through ConBee II.
+    """
+    project_root = get_project_root()
+
+    deconz_api_url = ""
+    try:
+        with open(f'{project_root}/config/secrets_and_env/deconz_api_url', 'r') as file:
+            deconz_api_url = file.read()
+    except FileNotFoundError:
+        raise ModuleException("no deconz_api_url file in secrets_and_env")
+    except Exception:
+        raise ModuleException("an unexpected error occurred while reading deconz_api_url",severity=2)
+
+    deconz_api_key = ""
+    try:
+        with open(f'{project_root}/config/secrets_and_env/deconz_api_key', 'r') as file:
+            deconz_api_key = file.read()
+    except FileNotFoundError:
+        raise ModuleException("no deconz_api_key file in secrets_and_env")
+    except Exception:
+        raise ModuleException("unexpected error occurred while reading deconz_api_key",severity=2)
+
+    return {'api_url':deconz_api_url,'api_key':deconz_api_key}
+
+def read_and_save_deconz_api_key():
+    """
+    Reads in the API key from Phoscon app.
+    Requires Authenticate app at Phoscon app --> Gateway/conbee/Advanced.
+    """
+
+    import requests
+    
+    deconz_access_params = get_deconz_access_params()
+    deconz_api_url = deconz_access_params['api_url']
+    if deconz_api_url == "":
+        report("First supply Deconz API URL at secrets_and_env.")
+        raise ModuleException("missing Deconz API URL at secrets_and_env",severity=2)
+    
+    data = {"devicetype": "conbee_gateway_access"}
+    try:
+        response = requests.post(deconz_api_url, json=data)
+        response.raise_for_status()  # Raises an HTTPError for bad responses (4xx, 5xx)
+        
+        # Handle successful response
+        response_json = response.json()
+        
+        # Check if the response indicates that authentication is required
+        if "error" in response_json and response_json["error"]["type"] == 101:
+            report("First press Authenticate app at Phoscon app --> Gateway/conbee/Advanced.")
+        elif "success" in response_json:
+            # Save the API key
+            api_key = response_json["success"]["username"]
+            project_root = get_project_root()
+            with open(f'{project_root}/config/secrets_and_env/deconz_api_key', 'w') as file:
+                file.write(api_key)
+            report("Deconz API key successfully obtained and saved.")
+        else:
+            report("Unexpected response from Deconz API.")
+    
+    except (
+        requests.exceptions.ConnectionError,
+        requests.exceptions.Timeout,
+        requests.exceptions.HTTPError
+     ):
+        raise ModuleException("failed to connect to Deconz API",severity=3)
+    except Exception:
+        raise ModuleException("unexpected error occurred while connecting to Deconz API",severity=3)
+
+def read_deconz_state():
+    """
+    Makes data available from the ZigBee mesh.
+    """
+    import asyncio
+    import aiohttp
+    from pydeconz.gateway import DeconzSession
+
+    deconz_access_params = get_deconz_access_params()
+    full_url = deconz_access_params['api_url']
+    try:
+        from urllib.parse import urlparse
+
+        parsed_url = urlparse(full_url)
+        ip = parsed_url.hostname
+        #ip = full_url[full_url.index('http://')+7:full_url.index(':80/api')] # Previous hardcoded way stored for fallback if needed
+    except Exception:
+        raise ModuleException("unexpected error occurred while extracting Deconz URL",severity=3)
+    port = '80'
+    api_key = deconz_access_params['api_key']
+
+    async def read_deconz():    
+        async with aiohttp.ClientSession() as session:
+            deconz_session = DeconzSession(session, ip, port, api_key)
+            await deconz_session.refresh_state()
+
+            #for sensor_id, sensor in deconz_session.sensors.items():
+            #    report(f"Sensor ID: {sensor_id}, Name: {sensor.name}")
+            #for sensor_id, sensor in deconz_session.sensors.items():
+            #    if sensor.type == "ZHATemperature":
+            #        report(f"Sensor ID: {sensor.name}, Temperature: {sensor.temperature}")
+            #    elif sensor.type == "ZHAHumidity":
+            #        report(f"Sensor ID: {sensor.name}, Humidity: {sensor.humidity}")
+            return deconz_session
+    
+    try:
+        return asyncio.run(read_deconz())
+    except (
+        aiohttp.ClientError,
+        OSError
+     ):
+        raise ModuleException("failed to connect to Deconz API due to client or network error",severity=3)
+    except Exception:
+        raise ModuleException("failed to connect to Deconz API due to unexpected error",severity=3)
+
+def read_sensors():
+    """
+    Extracts sensor states from overall ZigBee mesh state.
+    """
+    return read_deconz_state().sensors.items()
+#endregion
+
+#region Tuya
+"""
+Tuya interfacing.
+"""
+#endregion
+
+#region GPIO
+"""
+GPIO interfacing.
+"""
+#endregion
+
 #endregion
 
 #region Config
@@ -790,13 +846,18 @@ def get_project_root():
     except Exception:
         raise ModuleException("couldn't get project root due to")
 
+def sign(num):
+    """
+    Returns the sign of a number.
+    """
+    return (num > 0) - (num < 0)
 
 #region Time
-def timestamp():
+def timestamp(datetime_object:datetime = datetime.now()):
     """
-    Returns the timestamp string with the format specified in settings.
+    Returns a timestamp string with the format specified in settings.
     """
-    return datetime.now().strftime(settings['timestamp_format'])
+    return datetime_object.strftime(settings['timestamp_format'])
 
 def generate_timepoint_info(timepoint = datetime.now()):
     """

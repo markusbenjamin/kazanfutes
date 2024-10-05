@@ -12,6 +12,7 @@ from utils.project import *
 settings['verbosity'] = False
 
 #region Initialize settings and else
+report('\nINITIALIZE')
 rooms_info = get_rooms_info()
 
 heating_config = load_json_to_dict('config/heating_control_config.json')
@@ -40,6 +41,7 @@ condensed_schedule_update_info = {'update_needed':True,'last_updated':None}
 
 #region Update local copy of heating control config
 def update_local_heating_control_config():
+    report('\nUPDATE HEATING CONFIG')
     if heating_config_update_info['update_needed']:
         success = False
         try:
@@ -73,7 +75,6 @@ def update_detected(relative_path,change_contents):
     update_keys = change['path'].split('/')
     if 'heating_control_config' in update_keys:
         heating_config_update_info['update_needed'] = True
-        print(update_keys)
     else:
         if 'weekly_cycle' in update_keys:
             room = room_name_to_num(update_keys[1])
@@ -96,6 +97,7 @@ def check_scheduling_files_expiry(duration:float):
     Checks whether the specified duration in hours has passed since the last update on any scheduling file.
     If yes, set the path in update_needed dict accordingly.
     """
+    report('\nCHECK SCHEDULING FILES EXPIRY')
     success = False
     try:
         report("Checking if updates are due to expiry.")
@@ -118,6 +120,7 @@ def check_scheduling_files_expiry(duration:float):
         log({f"success_update_expiry_check":success})
 
 def update_local_scheduling_files():
+    report('\nUPDATE LOCAL SCHEDULING FILES')
     for update_path in find_val_in_dict(update_needed, True):
         success = False
         try:
@@ -149,6 +152,7 @@ def update_local_scheduling_files():
 If there was an update to either the weekly cycles or the overrides or midnight has passed.
 """
 def generate_condensed_schedule(for_how_many_days : int):
+    report('\nGENERATE CONDENSED SCHEDULE')
     if condensed_schedule_update_info['last_updated']:
         if condensed_schedule_update_info['last_updated'].day != datetime.now().day:
             condensed_schedule_update_info['update_needed'] = True 
@@ -200,6 +204,7 @@ def generate_condensed_schedule(for_how_many_days : int):
 
             condensed_schedule_update_info['update_needed'] = False
             condensed_schedule_update_info['last_updated'] = datetime.now()
+            report('Successfully generated condensed schedule.')
             success = True
             return condensed_schedule
         except ModuleException as e:
@@ -213,6 +218,7 @@ def generate_condensed_schedule(for_how_many_days : int):
 
 #region Export condensed schedule locally
 def export_condensed_schedule_locally(condensed_schedule:dict):
+    report('\nEXPORT CONDENSED SCHEDULE')
     success = False
     try:
         export_dict_as_json(condensed_schedule,'config/condensed_schedule.json')
@@ -228,6 +234,7 @@ def export_condensed_schedule_locally(condensed_schedule:dict):
 
 #region Update condensed schedule on Firebase
 def update_condensed_schedule_on_firebase(condensed_schedule:dict):
+    report('\nUPDATE CONDENSED SCHEDULE ON FIREBASE')
     success = False
     try:
         schedule_node.write(condensed_schedule,'condensed_schedule')

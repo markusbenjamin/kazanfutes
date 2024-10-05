@@ -43,8 +43,8 @@ def manage_buffered_errors():
                         log({'success_buffered_errors':success})
                     
                     with open(ERROR_BUFFER_PATH, 'w') as f:
-                            json.dump(remaining_error_buffer, f, indent=4)
-                            report("Pushed remaining errors back to buffer.", verbose=True)
+                        json.dump(remaining_error_buffer, f, indent=4)
+                        report("Pushed remaining errors back to buffer.", verbose=True)
                 else:
                     report("No buffered errors.", verbose=True)
                     log({'success_buffered_errors':True})
