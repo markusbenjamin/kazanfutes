@@ -4,64 +4,37 @@ Import with: from utils.project import *
 """
 
 #region Imports
+import csv
 import json
 import logging
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from logging.handlers import TimedRotatingFileHandler
-
+import threading
+import requests
 import filelock
+import math
 
 #endregion
 
 #region Settings
-class Settings:
+def initialize_settings():
     """
-    A class to manage configuration settings loaded from a JSON file.
-
-    Attributes:
-        settings (dict): A dictionary holding the current settings.
-
-    Methods:
-        load_settings_from_file(settings_file): Loads settings from a JSON file.
-        get(key): Retrieves the value of a setting by key.
-        set(key, value): Modifies or adds a setting.
+    Brittle function to initialize the settings dict. Do not use anywhere except directly below.
     """
-    def __init__(self, settings_file='settings.json'):
-        # Initialize the settings dictionary by loading from the JSON file
-        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        settings_file = os.path.join(project_root, 'config', 'settings.json')
-        self.settings = {}
-        self.load_settings_from_file(settings_file)
-
-    def load_settings_from_file(self, settings_file):
-        """Load settings from a JSON file."""
-        try:
-            with open(settings_file, 'r') as file:
-                self.settings = json.load(file)
-        except FileNotFoundError:
-            raise ModuleException(f"settings file {settings_file} not found",severity=1)
-        except json.JSONDecodeError:
-            raise ModuleException(f"invalid JSON format in {settings_file}",severity=1)
-        except Exception:
-            raise ModuleException(f"unexpected error occurred while loading the settings file",severity=3)
-
-    def get(self, key):
-        """Retrieve a setting value, or None if the key does not exist."""
-        try:
-            return self.settings.get(key)
-        except Exception:
-            raise ModuleException(f"error accessing the setting '{key}'",severity=2)
-
-    def set(self, key, value):
-        """Modify or add a setting."""
-        try:
-            self.settings[key] = value
-        except Exception:
-            raise ModuleException(f"error setting the value for '{key}'",severity=2)
+    try:
+        current_file_path = os.path.abspath(__file__)
+        parent_directory_path = os.path.dirname(current_file_path)
+        project_root = os.path.dirname(parent_directory_path)
+        with open(os.path.join(project_root, 'config/settings.json'), 'r', encoding='utf-8') as file:
+            settings_dict = json.load(file)            
+        return settings_dict
+    except Exception as e:
+        print(f"Can't load settings due to {e}")
     
-settings = Settings()
+settings = initialize_settings()
+
 #endregion
 
 #region Function definitions
@@ -69,14 +42,17 @@ settings = Settings()
 #region Comms
 """Everything related to external communication and reporting."""
 
+#region Console
 def report(message, *, verbose = False):
     """Generalized output plug for runtime messages and reporting."""
     if verbose: # Verbose is true for messages that should only be printed in verbose mode.
-        if settings.get('verbosity'):
+        if settings['verbosity']:
             print(message)
     else:
         print(message)
+#endregion
 
+#region Email
 def notify_admin():
     pass
 
@@ -137,7 +113,9 @@ def send_email(to, subject='', body=''):
         raise ModuleException(f"unexpected error occurred while sending an email",severity=2)
     
     return success
+#endregion
 
+#region Logging
 def log(data: dict):
     """
     Used for runtime logging.
@@ -215,11 +193,125 @@ def rotate_log_file(relative_log_file_path: str, when: str = 'midnight', interva
         rotation = True
     handler.close()
     return rotation
+#endregion
+
+#region Firebase
+def default_firebase_callback(relative_path, node_changes):
+    """
+    Default callback function for the JSONNodeAtURL class 
+    (hardcoded to represent Firebase, but easily adapted to other JSON nodes).
+    """
+    report(f"Callback: data changed: {node_changes} at 'Firebase/{relative_path}'.")
+    return {'path':relative_path,'data':node_changes}
+
+class JSONNodeAtURL:
+    def __init__(self, node_relative_path:str='', url:str = ''):
+        """
+        Initialize with the URL of a freely accessible JSON stored at an URL.
+        Hardcoded to represent Firebase, but easily adapted to other JSON nodes.
+        :param node_relative_path: The path to the node relative to the root of the database.
+        :param url: The URL of the root of the database, set to the Firebase Realtime Database address defined in settings by default. 
+        """
+        
+        self.node_relative_path = node_relative_path
+        self.url = (settings["firebase_url"] if url == '' else url)+"/"+node_relative_path
+        self.last_known_state_of_node = self.read()
+        self.last_sent_data = None
+
+    def interact(self, method, subpath:str = '', **kwargs):
+        """
+        Unified method for all kinds of requests. Do not use on its own.
+        """
+        response = None
+        try:
+            response = method(self.url+"/"+subpath+".json",**kwargs)
+            response.raise_for_status()
+            report(f"Successfully interacted with node via {method.__name__}.", verbose = True)
+            if method.__name__ == 'get':
+                return jsonify_array(response.json())
+        except Exception:
+            if response:
+                report(f"Failed to interact with node via {method.__name__}. Status code: {response.status_code}", verbose = True)
+                raise ModuleException(f"failed to interact with node 'Firebase/{self.node_relative_path}' via {method.__name__}")
+            else:
+                report(f"Failed to interact with node via {method.__name__}, response is not even initialized.", verbose = True)
+                raise ModuleException(f"failed to interact with node 'Firebase/{self.node_relative_path}' via {method.__name__}")
+
+    def read(self, read_subpath:str = ''):
+        """
+        Read and return data from the node at specified subpath.
+        """
+        return self.interact(requests.get, subpath = read_subpath)
+
+    def overwrite(self, data:dict, overwrite_subpath:str = ''):
+        """
+        Overwrite data on node at specified subpath.
+        """
+        self.last_sent_data = {'path':overwrite_subpath,'data':data}
+        self.interact(requests.put, subpath = overwrite_subpath, json = data)
+
+    def write(self, data:dict, write_subpath:str = ''):
+        """
+        Update specific fields in the node without overwriting the entire node.
+        """
+        self.last_sent_data = {'path':write_subpath,'data':data}
+        self.interact(requests.patch, subpath = write_subpath, json = data)
+
+    def delete(self):
+        """
+        Deletes the entire node. Use with caution.
+        """
+        self.interact(requests.put, subpath = '', json = {})
+
+    def poll_periodically(self, interval=5, callback = default_firebase_callback):
+        """
+        Starts a background thread to periodically check for changes in the node's data.
+        If change is detected, calls the callback.
+        The callback gets passed the relative path of the node and the list of node paths changed with their new content.
+        """
+        self._stop_listening = False
+        thread = threading.Thread(target=self._listen_loop, args=(interval,callback,))
+        thread.daemon = True  # Daemonize thread so it exits when main program exits
+        thread.start()
+
+    def _listen_loop(self,  interval=5, callback = default_firebase_callback):
+        """
+        The internal loop that checks for data changes.
+        This function runs in a separate thread when poll_periodically is called.
+        """
+        while not self._stop_listening:
+            current_state_of_node = self.read()
+            try:
+                if current_state_of_node != self.last_known_state_of_node:
+                    node_changes = compare_dicts(self.last_known_state_of_node,current_state_of_node)
+                    self.last_known_state_of_node = current_state_of_node
+                    node_change_data = []
+                    for change in node_changes:
+                        for key, value in change.items():
+                            if '/' in key:
+                                path, data_key = key.rsplit('/', 1)
+                            else:
+                                path = ''
+                                data_key = key
+                            changed_data = {'path': path, 'data': {data_key: value}}
+                            if self.last_sent_data != changed_data:
+                                node_change_data.append(changed_data)
+                    if 0<len(node_change_data):
+                        callback(self.node_relative_path, node_change_data)
+            except:
+                raise ModuleException(f'unexpected error with periodical polling on node {self.node_relative_path}')
+            time.sleep(interval)
+
+    def stop_listening(self):
+        """
+        Stops the periodical polling thread.
+        """
+        self._stop_listening = True
+        report("Listener stopped.",verbose=True)
 
 #endregion
 
-#region Data management
-"""Wrapper functions for data management operations."""
+#region GitHub
 
 def sync_dir_with_repo(project_dir_path, commit_message):
     """
@@ -257,6 +349,8 @@ def sync_dir_with_repo(project_dir_path, commit_message):
         raise ModuleException(f"git command failed",severity=2)
     except Exception:
         raise ModuleException(f"unexpected error while pushing {project_dir_path} to repo",severity=2)
+#endregion
+
 #endregion
 
 #region Deconz
@@ -420,7 +514,7 @@ class ServiceException(Exception):
             error_entry['severity'] = severity
             error_entry['origin'] = generate_call_origin()
         error_entry['origin_timestamp'] = timestamp()
-        if settings.get('testing'):
+        if settings['testing']:
             report(error_entry)
         else:
             error_registrar(error_entry)
@@ -496,7 +590,7 @@ def error_registrar(error_entry):
 
             # If the error is not already registered, append it
             if not already_registered:
-                error_entry["registration_timestamp"] = time.strftime(settings.get('timestamp_format'))
+                error_entry["registration_timestamp"] = timestamp()
                 error_registry.append(error_entry)
                 
                 # Step 2c: Write the updated registry back to file
@@ -607,13 +701,13 @@ def get_room_temps_and_humidity():
         sensor_temps_and_hums = {}
         for sensor_id, sensor in sensors_state:
             if sensor.type == "ZHATemperature":
-                last_updated = datetime.strptime((sensor.raw)['state']['lastupdated'], "%Y-%m-%dT%H:%M:%S.%f").strftime(settings.get('timestamp_format'))
+                last_updated = datetime.strptime((sensor.raw)['state']['lastupdated'], "%Y-%m-%dT%H:%M:%S.%f").strftime(settings['timestamp_format'])
                 if sensor.name not in sensor_temps_and_hums:
                     sensor_temps_and_hums[sensor.name] = {'temp':'none','hum':'none','last_updated':'none'}
                 sensor_temps_and_hums[sensor.name]['temp'] = sensor.temperature
                 sensor_temps_and_hums[sensor.name]['last_updated'] = last_updated
             elif sensor.type == "ZHAHumidity":
-                last_updated = datetime.strptime((sensor.raw)['state']['lastupdated'], "%Y-%m-%dT%H:%M:%S.%f").strftime(settings.get('timestamp_format'))
+                last_updated = datetime.strptime((sensor.raw)['state']['lastupdated'], "%Y-%m-%dT%H:%M:%S.%f").strftime(settings['timestamp_format'])
                 if sensor.name not in sensor_temps_and_hums:
                     sensor_temps_and_hums[sensor.name] = {'temp':'none','hum':'none','last_updated':'none'}
                 sensor_temps_and_hums[sensor.name]['hum'] = sensor.humidity
@@ -648,9 +742,35 @@ def get_rooms_info():
 def get_cycles_info():
     return get_system_config("cycles")
 
-def get_system_config(subdict_key: str):
+def get_system_config(subdict_key: str=''):
     system = load_json_to_dict(os.path.join('config', 'system.json'))
-    return system[subdict_key]
+    return system if subdict_key == '' else system[subdict_key]
+
+def room_to_cycle(room):
+    if not isinstance(room,str):
+        room = str(room)
+    rooms_info = get_rooms_info()
+    return rooms_info[room]['cycle']
+
+def room_num_to_name(room):
+    if not isinstance(room,str):
+        room = str(room)
+    rooms_info = get_rooms_info()
+    return rooms_info[room]['name']
+
+def room_name_to_num(room_name):
+    rooms_info = get_rooms_info()
+    for key,val in rooms_info.items():
+        if val['name'] == room_name:
+            return key
+    report("Couldn't find room name in system.")
+    return None
+
+def cycle_to_rooms(cycle):
+    if not isinstance(cycle,str):
+        cycle = str(cycle)
+    cycles_info = get_cycles_info()
+    return cycles_info[cycle]['rooms']
 
 #endregion
 
@@ -667,25 +787,373 @@ def get_project_root():
         current_file_path = os.path.abspath(__file__)
         parent_directory_path = os.path.dirname(current_file_path)
         return os.path.dirname(parent_directory_path)
-    except OSError:
-        raise ModuleException("couldn't get project root due to")
     except Exception:
-        raise ModuleException("unexpected error when getting project root")
+        raise ModuleException("couldn't get project root due to")
 
+
+#region Time
 def timestamp():
-    return datetime.now().strftime(settings.get('timestamp_format'))
+    """
+    Returns the timestamp string with the format specified in settings.
+    """
+    return datetime.now().strftime(settings['timestamp_format'])
+
+def generate_timepoint_info(timepoint = datetime.now()):
+    """
+    If no arguments supplied generate for now, else for datetime or timestamp string.
+    Returns dict with keys: unix_day, month, day_of_week, weekday, timestamp, datetime_object.
+    """
+    if isinstance(timepoint,datetime) or isinstance(timepoint,str):
+        if isinstance(timepoint,str):
+            timepoint = timestamp_to_datetime(timepoint)
+        unixtime = timepoint.timestamp()
+        unix_day = math.floor(unixtime/(60*60*24))
+        unix_hour_of_day = math.floor(unixtime/(60*60))-unix_day*24
+        datetime_hour_of_day = timepoint.hour
+        unix_to_datetime_hour_shift = (24 + datetime_hour_of_day - unix_hour_of_day)%24
+        unixtime = timepoint.timestamp() + unix_to_datetime_hour_shift*60*60
+        timepoint_inf = {
+            'unix_day':math.floor(unixtime/(60*60*24)),
+            'hour_of_day':timepoint.hour,
+            'month':timepoint.month,
+            'day_of_week':timepoint.weekday()+1,
+            'weekday': True if timepoint.weekday()+1<6 else False,
+            'timestamp':timepoint.strftime(settings["timestamp_format"]),
+            'datetime_object':timepoint
+        }
+        return timepoint_inf
+    else:
+        report('Invalid timepoint input.')
+
+def timestamp_to_datetime(timestamp:str):
+    """
+    Turns a timestamp string into a datetime object for internal Python manipulation.
+    """
+    return datetime.strptime(timestamp,settings['timestamp_format'])
+#endregion
+
+#region JSON and dicts
+def find_val_in_dict(nested_dict, value):
+    """
+    Returns the paths to the occurences of a value in a nested dict.
+    """
+    paths = []
+    
+    def find_in_subdict(subdict, path):
+        if isinstance(subdict, dict):
+            for key, item in subdict.items():
+                find_in_subdict(item, path + [key])
+        elif subdict == value:
+            paths.append(path)
+    
+    find_in_subdict(nested_dict, [])
+    return ['/'.join(path_list) for path_list in paths]
+
+def response_table_to_dict_list(response_table, header = None):
+    """
+    Generates a list of dicts from a response table generated by Google Forms.
+    Applies header if specified or original header if not.
+    """
+    if not header:
+        header = response_table[0]
+    dict_list = []
+    for response_row in response_table:
+        dict_list.append(dict(zip(header, response_row)))
+    return dict_list
 
 def load_json_to_dict(relative_path:str):
+    """
+    Returns a dict generated from a JSON file.
+    """
     try:
-        project_root = get_project_root()
-
-        with open(os.path.join(project_root, relative_path), 'r', encoding='utf-8') as file:
-            loaded_dict = json.load(file)
-            
+        with open(os.path.join(get_project_root(), relative_path), 'r', encoding='utf-8') as file:
+            loaded_dict = json.load(file)            
         return loaded_dict
     except Exception:
         raise ModuleException(f"unexpected error while loading {relative_path} to dict")
 
+def export_dict_as_json(data, relative_path: str):
+    """
+    Saves a dict as JSON to specified path relative to project root.
+    Ensures that the folder path exists.
+    """
+    try:
+        # Get the full path by combining project root and relative path
+        full_path = os.path.join(get_project_root(), relative_path)
+
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+
+        # Write the dictionary to the JSON file
+        with open(full_path, 'w') as json_file:
+            json.dump(data, json_file, indent=4)
+
+    except:
+        raise ModuleException(f"couldn't export dict to {relative_path}")
+
+def jsonify_array(data):
+    """
+    Converts lists that have numeric-like keys back into dictionaries and removes any None values.
+    Can be used to re-correct a dictionary that was transformed by Firebase.
+    
+    :param data: The dictionary to fix.
+    :return: A corrected dictionary with lists turned back into dicts.
+    """
+    if isinstance(data, list):
+        # Convert list back to a dictionary if it's filled with dict-like entries and non-null elements
+        return {str(i): jsonify_array(v) for i, v in enumerate(data) if v is not None}
+    
+    elif isinstance(data, dict):
+        # Recursively fix any nested dicts/lists
+        return {k: jsonify_array(v) for k, v in data.items()}
+    
+    return data  # Base case: return the data as is if it's not a list or dict
+
+def dejsonify_array(jsonified_array:dict):
+    """
+    Extracts the matrix of values from a dict disregarding the keys.
+    To be used where keys are simple indices with no additional meaning.
+    """
+    if isinstance(jsonified_array,dict):
+        array = []
+        for val in jsonified_array.values():
+            array.append(dejsonify_array(val) if isinstance(val,dict) else val)
+        return array
+
+def compare_dicts(dict1, dict2, parent_key=''):
+    """
+    Compare two dictionaries and return the list of nodes where they differ,
+    along with the state of the second dictionary at those nodes.
+    
+    :param dict1: The first dictionary (original state).
+    :param dict2: The second dictionary (new state).
+    :param parent_key: Used internally for recursive key tracking (do not pass anything).
+    :return: A list of nodes where the two dicts differ.
+    """
+    try:
+        differences = []
+
+        # If the node contains just a variable
+        if isinstance(dict2,dict) == False:
+            return [{'':dict2}]
+
+        # Case when dict1 is None but dict2 is not (new node added)
+        if dict1 is None and dict2 is not None:
+            return flatten_dict(dict2, parent_key)
+
+        # Case when dict2 is None but dict1 is not (node deleted)
+        if dict2 is None and dict1 is not None:
+            return [{'':None}]
+
+        # Case when both dicts are None
+        if dict1 is None and dict2 is None:
+            return []
+
+        # Get the union of keys from both dictionaries
+        all_keys = set(dict1.keys()).union(set(dict2.keys()))
+
+        for key in all_keys:
+            full_key = f"{parent_key}/{key}" if parent_key else key
+
+            # If the key is in only one of the dictionaries
+            if key not in dict1:
+                differences.append({full_key: dict2[key]})
+            elif key not in dict2:
+                differences.append({full_key: None})
+            else:
+                # If both values are dictionaries, compare them recursively
+                if isinstance(dict1[key], dict) and isinstance(dict2[key], dict):
+                    differences.extend(compare_dicts(dict1[key], dict2[key], full_key))
+                # If the values differ, add to the differences
+                elif dict1[key] != dict2[key]:
+                    differences.append({full_key: dict2[key]})
+
+        return differences
+    except:
+        raise ModuleException(f"couldn't compare dicts")
+
+def flatten_dict(d, parent_key=''):
+    """
+    Flatten a nested dictionary into a list of key-value pairs.
+    
+    :param d: The dictionary to flatten.
+    :param parent_key: Used internally for recursive key tracking (do not pass anything).
+    :return: A flattened dictionary with terminal addresses as keys.
+    """
+    items = []
+    for k, v in d.items():
+        new_key = f"{parent_key}/{k}" if parent_key else k
+        if isinstance(v, dict):
+            items.extend(flatten_dict(v, new_key))
+        else:
+            items.append({new_key: v})
+    return items
+
+def update_nested_dict(dict_to_update: dict, key_path: str, value):
+    """
+    Updates a nested dictionary using a key path string.
+
+    Parameters:
+    - dict_to_update: The dictionary to update
+    - key_path: A string representing the path in the nested dictionary (e.g., 'key1/key2/')
+    - value: The value to set at the final key
+    """
+    keys = key_path.strip('/').split('/')
+    for key in keys[:-1]:
+        dict_to_update = dict_to_update.setdefault(key, {})
+    dict_to_update[keys[-1]] = value
+
+def read_nested_dict(dict_to_read: dict, key_path: str):
+    """
+    Reads a value from a nested dictionary using a key path string.
+
+    Parameters:
+    - dict_to_read: The dictionary to read from
+    - key_path: A string representing the path in the nested dictionary (e.g., 'key1/key2/')
+    
+    Returns:
+    - The value found at the specified key path, or None if the path does not exist
+    """
+    keys = key_path.strip('/').split('/')
+    for key in keys:
+        dict_to_read = dict_to_read.get(key)
+        if dict_to_read is None:
+            return None
+    return dict_to_read
+
+#endregion
+
+#region CSV and arrays
+def find_val_in_array(nested_list, value):
+    """
+    Returns the positions of a value in a nested array.
+    """
+    positions = []
+    
+    def find_in_sublist(sublist, path):
+        if isinstance(sublist, list):
+            for index, item in enumerate(sublist):
+                find_in_sublist(item, path + [index])
+        elif sublist == value:
+            positions.append(path)
+
+    find_in_sublist(nested_list, [])
+    return positions
+
+def download_csv_to_2D_array(url:str):
+    """
+    Download a csv file into an unformatted raw table (2D array).
+    """
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        table = []
+        for line in response.content.decode('utf-8-sig').splitlines():
+            table.append(line.rsplit(','))
+        return table
+    except:
+        raise ModuleException(f"couldn't download csv from {url}")
+    
+def load_csv_to_2D_array(relative_path:str):
+    """
+    Load a csv file into an unformatted raw table (2D array) from a project path.
+    """
+    try:
+        table = []
+        with open(os.path.join(get_project_root(), relative_path), 'r', encoding='utf-8') as file:
+            for line in csv.reader(file):
+                table.append(line)
+        return table
+    except:
+        raise ModuleException(f"couldn't load csv from {relative_path}")
+
+def select_subtable_from_table(table, row_selection = None, col_selection = None):
+    """
+    Selects and returns a rectangular subtable from a passed 2D table.
+    """
+    try:
+        dims = [len(table),len(table[0])]
+        if row_selection is None:
+            row_selection = [0, dims[0]]
+        else:
+            row_selection = [
+                row_selection[0],
+                dims[0] + row_selection[1]
+            ]
+        if col_selection is None:
+            col_selection = [0, dims[1]]
+        else:
+            col_selection = [
+                col_selection[0],
+                dims[1] + col_selection[1]
+            ]
+        subtable = [row[col_selection[0]:col_selection[1]] for row in table[row_selection[0]:row_selection[1]]]
+        return subtable
+    except:
+        raise ModuleException(f"couldn't select subtable")
+
+def transpose_2D_array(array):
+    """
+    Transpose a 2D array then return it.
+    """
+    return [list(row) for row in zip(*array)]
+
+def extend_2D_array(array, prepend_rows=None, append_rows=None, row_shift=0, row_spacer='', prepend_cols=None, append_cols=None, col_shift=0, col_spacer=''):
+    """
+    Extends an array with headers, footers in any direction etc.
+    """
+    if prepend_rows:
+        for i, row in enumerate(prepend_rows):
+            prepend_rows[i] = [row_spacer] * row_shift + row + [row_spacer] * (len(array[0]) - len(row) - row_shift)
+    
+    if append_rows:
+        for i, row in enumerate(append_rows):
+            append_rows[i] = [row_spacer] * row_shift + row + [row_spacer] * (len(array[0]) - len(row) - row_shift)
+
+    if prepend_rows:
+        array = prepend_rows + array
+    if append_rows:
+        array = array + append_rows
+
+    col_shift += len(prepend_cols)
+    
+    if prepend_cols:
+        for i, col in enumerate(prepend_cols):
+            prepend_cols[i] = [col_spacer] * col_shift + col + [col_spacer] * (len(array) - len(col) - col_shift)
+    
+    if append_cols:
+        for i, col in enumerate(append_cols):
+            append_cols[i] = [col_spacer] * col_shift + col + [col_spacer] * (len(array) - len(col) - col_shift)
+
+    array = transpose_2D_array(array)
+    
+    if prepend_cols:
+        array = prepend_cols + array
+    if append_cols:
+        array = array + append_cols
+
+    array = transpose_2D_array(array)
+    
+    return array
+
+def export_2D_array_to_csv(array: list, relative_path: str):
+    """
+    Saves an arbitrarily extended CSV to a project path.
+    Ensures that the folder path exists.
+    """
+    try:
+        # Get the full path by combining project root and relative path
+        full_path = os.path.join(get_project_root(), relative_path)
+
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+
+        # Write the 2D array to the CSV file
+        with open(full_path, 'w', newline='', encoding='utf-8') as csvfile:
+            csv.writer(csvfile).writerows(array)
+    except Exception as e:
+        raise ModuleException(f"couldn't export 2D array to CSV at {relative_path}")
+#endregion
 #endregion
 
 #endregion

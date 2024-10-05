@@ -11,17 +11,17 @@ Tasks:
     - archives checked errors.
 """
 
+#region Init
 from utils.project import *
-try:
-    import glob
+import glob
 
-    settings.set("verbosity",True) #DEV
+ERROR_REGISTRY_PATH = f"{get_project_root()}/data/errors/error_registry.json"
+ERROR_BUFFER_PATH = f"{get_project_root()}/data/errors/error_buffer.json"
+ERROR_ARCHIVE_PATH = f"{get_project_root()}/data/errors/error_archive.json"
+#endregion
 
-    ERROR_REGISTRY_PATH = f"{get_project_root()}/data/errors/error_registry.json"
-    ERROR_BUFFER_PATH = f"{get_project_root()}/data/errors/error_buffer.json"
-    ERROR_ARCHIVE_PATH = f"{get_project_root()}/data/errors/error_archive.json"
-
-    #region Buffer management
+#region Buffer management
+def manage_buffered_errors():
     report("\nERROR BUFFER MANAGEMENT",verbose=True)
     if os.path.exists(ERROR_BUFFER_PATH):
         try:
@@ -56,9 +56,10 @@ try:
         report("Buffered errors file not even initialized.", verbose=True)
         log({'success_buffered_errors':True})
 
-    #endregion
+#endregion
 
-    #region Report unreported errors
+#region Report unreported errors based on severity
+def report_unreported_errors():
     report("\nERROR REPORTING",verbose=True)
     if os.path.exists(ERROR_REGISTRY_PATH):
         try:
@@ -99,7 +100,7 @@ try:
                                 if 2 < error['severity']:
                                     success = False
                                     try:
-                                        send_email(to = settings.get('admin_email'),subject='Severe error detected.',body = error_report_contents)
+                                        send_email(to = settings['admin_email'],subject='Severe error detected.',body = error_report_contents)
                                         success = True
                                     except:
                                         log({'message':'Could not notify admin about attached error.','error':error_report_contents})
@@ -132,9 +133,10 @@ try:
         report("Error registry not even initialized.", verbose=True)
         log({'success_error_reporting':True})
 
-    #endregion
+#endregion
 
-    #region Send daily error report
+#region Send daily error report
+def send_daily_error_report():
     report("\nSEND DAILY REPORT",verbose=True)
     if rotate_log_file('errors/daily_report.json'):
         report("Daily report log file rotated.",verbose=True)
@@ -158,7 +160,7 @@ try:
                             'registration_timestamp': error['registration_timestamp']
                         }
                         , indent=4) for error in error_list])
-                    if send_email(to = settings.get('admin_email'),subject=f'Daily error report for {daystamp}',body = error_report_contents):
+                    if send_email(to = settings['admin_email'],subject=f'Daily error report for {daystamp}',body = error_report_contents):
                         os.rename(daily_report_filepath, daily_report_filepath + '.sent')
                         report(f"Sent out daily report for {daystamp}.",verbose=True)
                         log({'success_daily_report':True})
@@ -176,9 +178,10 @@ try:
         report("No unsent daily reports.",verbose=True)
         log({'success_daily_report':True})
 
-    #endregion
+#endregion
 
-    #region Archive checked errors
+#region Archive checked errors
+def archive_checked_errors():
     report("\nARCHIVING CHECKED ERRORS",verbose=True)
     if os.path.exists(ERROR_REGISTRY_PATH):
         try:
@@ -228,8 +231,15 @@ try:
         report("Error registry not even initialized.", verbose=True)
         log({'success_error_archiving':True})
 
-    #endregion
-except Exception as e: # Send notification email right away if error management can't run.
-    email_body = '\n'.join([json.dumps(extract_exception_details())])
-    report(f'Error management error: {email_body}')
-    send_email(settings.get('admin_email'),'Error management error.',email_body)
+#endregion
+
+if __name__ == "__main__":
+    try:
+        manage_buffered_errors()
+        report_unreported_errors()
+        send_daily_error_report()
+        archive_checked_errors()
+    except Exception as e: # Send notification email right away if error management can't run.
+        email_body = '\n'.join([json.dumps(extract_exception_details())])
+        report(f'Error management error: {email_body}')
+        send_email(settings['admin_email'],'Error management error.',email_body)

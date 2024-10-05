@@ -1,7 +1,7 @@
 from utils.project import *
 
-print(settings.get('timestamp_format'))
+print(settings['timestamp_format'])
 
-settings.set('new_custom_setting','val')
+settings['new_custom_setting'] = 'val'
 
-print(settings.get('new_custom_setting'))
+print(settings['new_custom_setting'])

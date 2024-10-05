@@ -8,9 +8,9 @@
                 "key":null
             },
             "rooms": [
-                1,
-                2,
-                3
+                "1",
+                "2",
+                "3"
             ]
         },
         "2": {
@@ -21,10 +21,10 @@
                 "key":null
             },
             "rooms": [
-                4,
-                5,
-                6,
-                7
+                "4",
+                "5",
+                "6",
+                "7"
             ]
         },
         "3": {
@@ -35,8 +35,8 @@
                 "key":null
             },
             "rooms": [
-                8,
-                9
+                "8",
+                "9"
             ]
         },
         "4": {
@@ -47,7 +47,7 @@
                 "key":null
             },
             "rooms": [
-                10
+                "10"
             ]
         }
     },
@@ -55,52 +55,62 @@
         "1": {
             "name": "Oktopusz",
             "sensor": null,
-            "cycle": 1
+            "cycle": "1",
+            "schedule_gid":"1887663707"
         },
         "2": {
             "name": "Gólyafészek",
             "sensor": "Sonoff4",
-            "cycle": 1
+            "cycle": "1",
+            "schedule_gid":"0"
         },
         "3": {
             "name": "PK",
             "sensor": "Sonoff5",
-            "cycle": 1
+            "cycle": "1",
+            "schedule_gid":"674264149"
         },
         "4": {
             "name": "SZGK",
             "sensor": "Sonoff7",
-            "cycle": 2
+            "cycle": "2",
+            "schedule_gid":"228406814"
         },
         "5": {
             "name": "Mérce",
             "sensor": "Sonoff1",
-            "cycle": 2
+            "cycle": "2",
+            "schedule_gid":"994637352"
         },
         "6": {
             "name": "Lahmacun",
             "sensor": null,
-            "cycle": 2
+            "cycle": "2",
+            "schedule_gid":"1575267052"
         },
         "7": {
             "name": "Gólyairoda",
             "sensor": "Sonoff2",
-            "cycle": 2
+            "cycle": "2",
+            "schedule_gid":"228745025"
         },
         "8": {
             "name": "kisterem",
             "sensor": "Sonoff6",
-            "cycle": 3
+            "cycle": "3",
+            "schedule_gid":"60517023"
         },
         "9": {
             "name": "vendégtér",
             "sensor": "Sonoff3",
-            "cycle": 3
+            "cycle": "3",
+            "schedule_gid":"2020257900"
         },
         "10": {
             "name": "Trafóház",
             "sensor": null,
-            "cycle": 4
+            "cycle": "4",
+            "schedule_gid":"1236306457"
         }
     }
 }
