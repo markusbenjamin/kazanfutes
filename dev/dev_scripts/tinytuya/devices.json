@@ -1,0 +1,440 @@
+[
+    {
+        "name": "4",
+        "id": "1720430170039f6886e5",
+        "key": "om;kaE;)~~ZtPeF.",
+        "mac": "70:03:9f:68:86:e5",
+        "uuid": "1720430170039f6886e5",
+        "category": "cz",
+        "product_name": "Smart Socket",
+        "product_id": "IGzCi97RpN2Lf9cu",
+        "biz_type": 0,
+        "model": "SP1-C Smart Socket-16A-AR(SP1-C)",
+        "sub": false,
+        "icon": "https://images.tuyaeu.com/smart/icon/ay1519551146071pEnBd/97283313e9b5776cf1bb9a4c3560edd0.png",
+        "mapping": {
+            "1": {
+                "code": "switch_1",
+                "type": "Boolean",
+                "values": {}
+            },
+            "9": {
+                "code": "countdown_1",
+                "type": "Integer",
+                "values": {
+                    "unit": "s",
+                    "min": 0,
+                    "max": 86400,
+                    "scale": 0,
+                    "step": 1
+                }
+            },
+            "17": {
+                "code": "add_ele",
+                "type": "Integer",
+                "values": {
+                    "unit": "",
+                    "min": 0,
+                    "max": 50000,
+                    "scale": 3,
+                    "step": 100
+                }
+            },
+            "18": {
+                "code": "cur_current",
+                "type": "Integer",
+                "values": {
+                    "unit": "mA",
+                    "min": 0,
+                    "max": 30000,
+                    "scale": 0,
+                    "step": 1
+                }
+            },
+            "19": {
+                "code": "cur_power",
+                "type": "Integer",
+                "values": {
+                    "unit": "W",
+                    "min": 0,
+                    "max": 50000,
+                    "scale": 1,
+                    "step": 1
+                }
+            },
+            "20": {
+                "code": "cur_voltage",
+                "type": "Integer",
+                "values": {
+                    "unit": "V",
+                    "min": 0,
+                    "max": 5000,
+                    "scale": 1,
+                    "step": 1
+                }
+            }
+        },
+        "ip": "192.168.29.53",
+        "version": "3.3"
+    },
+    {
+        "name": "3",
+        "id": "bf0e377e0f305dbe9bv5yl",
+        "key": "A2h-kJv*|Uqy#Ju*",
+        "mac": "7c:f6:66:d2:29:43",
+        "uuid": "f3764e22363bf4d8",
+        "category": "cz",
+        "product_name": "Smart Socket ",
+        "product_id": "jgdxyetthcpjir0j",
+        "biz_type": 0,
+        "model": "SP1_RTL",
+        "sub": false,
+        "icon": "https://images.tuyaeu.com/smart/icon/ay1517974017716dABhC/54689589975b2c226a160ce146067b3b.png",
+        "mapping": {
+            "1": {
+                "code": "switch_1",
+                "type": "Boolean",
+                "values": {}
+            },
+            "9": {
+                "code": "countdown_1",
+                "type": "Integer",
+                "values": {
+                    "unit": "s",
+                    "min": 0,
+                    "max": 86400,
+                    "scale": 0,
+                    "step": 1
+                }
+            },
+            "17": {
+                "code": "add_ele",
+                "type": "Integer",
+                "values": {
+                    "unit": "kwh",
+                    "min": 0,
+                    "max": 50000,
+                    "scale": 3,
+                    "step": 100
+                }
+            },
+            "18": {
+                "code": "cur_current",
+                "type": "Integer",
+                "values": {
+                    "unit": "mA",
+                    "min": 0,
+                    "max": 80000,
+                    "scale": 0,
+                    "step": 1
+                }
+            },
+            "19": {
+                "code": "cur_power",
+                "type": "Integer",
+                "values": {
+                    "unit": "W",
+                    "min": 0,
+                    "max": 200000,
+                    "scale": 1,
+                    "step": 1
+                }
+            },
+            "20": {
+                "code": "cur_voltage",
+                "type": "Integer",
+                "values": {
+                    "unit": "V",
+                    "min": 0,
+                    "max": 5000,
+                    "scale": 1,
+                    "step": 1
+                }
+            },
+            "38": {
+                "code": "relay_status",
+                "type": "Enum",
+                "values": {
+                    "range": [
+                        "power_off",
+                        "power_on",
+                        "last"
+                    ]
+                }
+            },
+            "39": {
+                "code": "light_mode",
+                "type": "Enum",
+                "values": {
+                    "range": [
+                        "relay",
+                        "pos",
+                        "none"
+                    ]
+                }
+            },
+            "40": {
+                "code": "child_lock",
+                "type": "Boolean",
+                "values": {}
+            },
+            "41": {
+                "code": "cycle_time",
+                "type": "String",
+                "values": "{}"
+            },
+            "42": {
+                "code": "random_time",
+                "type": "String",
+                "values": "{}"
+            },
+            "43": {
+                "code": "switch_inching",
+                "type": "String",
+                "values": "{}"
+            }
+        },
+        "ip": "192.168.29.90",
+        "version": "3.3"
+    },
+    {
+        "name": "2",
+        "id": "bfc349ab71c1876252nmss",
+        "key": "[X*(AZd#$QMtH@zm",
+        "mac": "7c:f6:66:f2:3d:07",
+        "uuid": "4dcb345efb154bcf",
+        "category": "cz",
+        "product_name": "Smart Socket ",
+        "product_id": "jgdxyetthcpjir0j",
+        "biz_type": 0,
+        "model": "SP1_RTL",
+        "sub": false,
+        "icon": "https://images.tuyaeu.com/smart/icon/ay1517974017716dABhC/54689589975b2c226a160ce146067b3b.png",
+        "mapping": {
+            "1": {
+                "code": "switch_1",
+                "type": "Boolean",
+                "values": {}
+            },
+            "9": {
+                "code": "countdown_1",
+                "type": "Integer",
+                "values": {
+                    "unit": "s",
+                    "min": 0,
+                    "max": 86400,
+                    "scale": 0,
+                    "step": 1
+                }
+            },
+            "17": {
+                "code": "add_ele",
+                "type": "Integer",
+                "values": {
+                    "unit": "kwh",
+                    "min": 0,
+                    "max": 50000,
+                    "scale": 3,
+                    "step": 100
+                }
+            },
+            "18": {
+                "code": "cur_current",
+                "type": "Integer",
+                "values": {
+                    "unit": "mA",
+                    "min": 0,
+                    "max": 80000,
+                    "scale": 0,
+                    "step": 1
+                }
+            },
+            "19": {
+                "code": "cur_power",
+                "type": "Integer",
+                "values": {
+                    "unit": "W",
+                    "min": 0,
+                    "max": 200000,
+                    "scale": 1,
+                    "step": 1
+                }
+            },
+            "20": {
+                "code": "cur_voltage",
+                "type": "Integer",
+                "values": {
+                    "unit": "V",
+                    "min": 0,
+                    "max": 5000,
+                    "scale": 1,
+                    "step": 1
+                }
+            },
+            "38": {
+                "code": "relay_status",
+                "type": "Enum",
+                "values": {
+                    "range": [
+                        "power_off",
+                        "power_on",
+                        "last"
+                    ]
+                }
+            },
+            "39": {
+                "code": "light_mode",
+                "type": "Enum",
+                "values": {
+                    "range": [
+                        "relay",
+                        "pos",
+                        "none"
+                    ]
+                }
+            },
+            "40": {
+                "code": "child_lock",
+                "type": "Boolean",
+                "values": {}
+            },
+            "41": {
+                "code": "cycle_time",
+                "type": "String",
+                "values": "{}"
+            },
+            "42": {
+                "code": "random_time",
+                "type": "String",
+                "values": "{}"
+            },
+            "43": {
+                "code": "switch_inching",
+                "type": "String",
+                "values": "{}"
+            }
+        },
+        "ip": "192.168.29.74",
+        "version": "3.3"
+    },
+    {
+        "name": "1",
+        "id": "bfda700f216ded0696ns02",
+        "key": "kW@O(aG7Q4[^+0zm",
+        "mac": "7c:f6:66:e8:52:b9",
+        "uuid": "4ab3faf8b81f5b48",
+        "category": "cz",
+        "product_name": "Smart Socket ",
+        "product_id": "jgdxyetthcpjir0j",
+        "biz_type": 0,
+        "model": "SP1_RTL",
+        "sub": false,
+        "icon": "https://images.tuyaeu.com/smart/icon/ay1517974017716dABhC/54689589975b2c226a160ce146067b3b.png",
+        "mapping": {
+            "1": {
+                "code": "switch_1",
+                "type": "Boolean",
+                "values": {}
+            },
+            "9": {
+                "code": "countdown_1",
+                "type": "Integer",
+                "values": {
+                    "unit": "s",
+                    "min": 0,
+                    "max": 86400,
+                    "scale": 0,
+                    "step": 1
+                }
+            },
+            "17": {
+                "code": "add_ele",
+                "type": "Integer",
+                "values": {
+                    "unit": "kwh",
+                    "min": 0,
+                    "max": 50000,
+                    "scale": 3,
+                    "step": 100
+                }
+            },
+            "18": {
+                "code": "cur_current",
+                "type": "Integer",
+                "values": {
+                    "unit": "mA",
+                    "min": 0,
+                    "max": 80000,
+                    "scale": 0,
+                    "step": 1
+                }
+            },
+            "19": {
+                "code": "cur_power",
+                "type": "Integer",
+                "values": {
+                    "unit": "W",
+                    "min": 0,
+                    "max": 200000,
+                    "scale": 1,
+                    "step": 1
+                }
+            },
+            "20": {
+                "code": "cur_voltage",
+                "type": "Integer",
+                "values": {
+                    "unit": "V",
+                    "min": 0,
+                    "max": 5000,
+                    "scale": 1,
+                    "step": 1
+                }
+            },
+            "38": {
+                "code": "relay_status",
+                "type": "Enum",
+                "values": {
+                    "range": [
+                        "power_off",
+                        "power_on",
+                        "last"
+                    ]
+                }
+            },
+            "39": {
+                "code": "light_mode",
+                "type": "Enum",
+                "values": {
+                    "range": [
+                        "relay",
+                        "pos",
+                        "none"
+                    ]
+                }
+            },
+            "40": {
+                "code": "child_lock",
+                "type": "Boolean",
+                "values": {}
+            },
+            "41": {
+                "code": "cycle_time",
+                "type": "String",
+                "values": "{}"
+            },
+            "42": {
+                "code": "random_time",
+                "type": "String",
+                "values": "{}"
+            },
+            "43": {
+                "code": "switch_inching",
+                "type": "String",
+                "values": "{}"
+            }
+        },
+        "ip": "192.168.29.77",
+        "version": "3.3"
+    }
+]
