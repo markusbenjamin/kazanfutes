@@ -636,7 +636,7 @@ def set_pump_state(pump:str,state:int):
         else:
             success = device.turn_off()['dps']['1'] == False
     except Exception:
-        raise ModuleException(f"couldn't turn pump {pump} {['OFF',"ON"][state]}")
+        raise ModuleException(f"couldn't turn pump {pump} {['OFF','ON'][state]}")
     finally:
         return success
 
@@ -650,7 +650,7 @@ def set_all_pumps(state:int):
         for pump,info in pump_info.items():
             success[pump] = set_pump_state(pump,state)
     except Exception:
-        raise ModuleException(f"couldn't turn all pumps {["OFF","ON"][state]}")
+        raise ModuleException(f"couldn't turn all pumps {['OFF','ON'][state]}")
     finally:
         return success
 
