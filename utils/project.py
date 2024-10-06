@@ -593,10 +593,10 @@ def set_boiler_state(state:int):
     """
     success = False
     try:
-        print(f"Turning boiler {["OFF","ON"][state]}.") #Placeholder for actual code that interacts with the GPIO pins to switch the boiler.
+        print(f"Turning boiler {['OFF','ON'][state]}.") #Placeholder for actual code that interacts with the GPIO pins to switch the boiler.
         success = True
     except Exception:
-        raise ModuleException(f"couldn't turn boiler {["OFF","ON"][state]}")
+        raise ModuleException(f"couldn't turn boiler {['OFF','ON'][state]}")
     finally:
         return success
 
@@ -636,7 +636,7 @@ def set_pump_state(pump:str,state:int):
         else:
             success = device.turn_off()['dps']['1'] == False
     except Exception:
-        raise ModuleException(f"couldn't turn pump {pump} {["OFF","ON"][state]}")
+        raise ModuleException(f"couldn't turn pump {pump} {['OFF',"ON"][state]}")
     finally:
         return success
 
