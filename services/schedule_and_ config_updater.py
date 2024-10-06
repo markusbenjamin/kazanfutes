@@ -34,7 +34,8 @@ for room in rooms_info:
     update_needed['weekly_cycle'][room] = False
     last_update['weekly_cycle'][room] = None
     update_urls['weekly_cycle'][room] = f"{heating_config['weekly_schedule_url']}&gid={rooms_info[room]['schedule_gid']}"
-    export_paths['weekly_cycle'][room] = f"config/local_scheduling_files/weekly_cycle_{rooms_info[room]['name']}.csv"
+    export_paths['weekly_cycle'][room] = f"config/local_scheduling_files/weekly_cycle_room_{room
+    }.csv"
 
 condensed_schedule_update_info = {'update_needed':True,'last_updated':None}
 #endregion
@@ -180,7 +181,7 @@ def generate_condensed_schedule(for_how_many_days : int):
                     timepoint_info = generate_timepoint_info(timepoint)
                     for room in rooms_list:
                         weekly_table = transpose_2D_array(select_subtable_from_table(
-                            load_csv_to_2D_array(f"config/local_scheduling_files/weekly_cycle_{rooms_info[room]['name']}.csv"),
+                            load_csv_to_2D_array(f"config/local_scheduling_files/weekly_cycle_room_{room}.csv"),
                             row_selection=[1,-0],
                             col_selection=[1,-0]
                             ))
@@ -259,4 +260,7 @@ if __name__ == "__main__":
         if condensed_schedule:
             export_condensed_schedule_locally(condensed_schedule)
             update_condensed_schedule_on_firebase(condensed_schedule)
-        time.sleep(10)
+        if settings['dev']:
+            exit()
+        else:
+            time.sleep(10)
