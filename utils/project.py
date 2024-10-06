@@ -374,23 +374,31 @@ class ServiceException(Exception):
         """
         error_entry = {}
         
+        register = True
+
         try: # If called by a raised exception
             exception_details = extract_exception_details()
-            error_entry['message'] = message +': '+exception_details['message']+'.'
-            if exception_details['type'] == 'ModuleException':
-                error_entry['severity'] = max(severity, original_exception.severity)
+            if exception_details['type'] == 'KeyboardInterrupt':
+                register = False
             else:
-                error_entry['severity'] = severity
-            error_entry['origin'] = exception_details['origin']
+                error_entry['message'] = message +': '+exception_details['message']+'.'
+                if exception_details['type'] == 'ModuleException':
+                    error_entry['severity'] = max(severity, original_exception.severity)
+                else:
+                    error_entry['severity'] = severity
+                error_entry['origin'] = exception_details['origin']
+
         except Exception as e: # If called on it's own (unlikely)
-            print(str(e))
-            error_entry['message'] = message
-            error_entry['severity'] = severity
-            error_entry['origin'] = generate_call_origin()
+            if isinstance(e, KeyboardInterrupt):
+                register = False
+            else:
+                error_entry['message'] = message
+                error_entry['severity'] = severity
+                error_entry['origin'] = generate_call_origin()
         error_entry['origin_timestamp'] = timestamp()
         if settings['dev']:
             report(json.dumps(error_entry, indent=4))
-        else:
+        elif register:
             error_registrar(error_entry)
         super().__init__(message)
 
@@ -569,20 +577,93 @@ def generate_call_origin():
 def get_boiler_state():
     """
     Returns a faux val for development purposes for now.
+    Returns 0 or 1 or None if cannot read.
     """
-    return 0
+    try:
+        state = 0 #Placeholder for actual code that interacts with the GPIO pins to read the boiler state.
+        return state
+    except Exception:
+        raise ModuleException(f"couldn't read boiler state")
 
 def set_boiler_state(state:int):
-    pass
+    """
+    Sets the state of the boiler via GPIO interfacing.
+    Returns success.
+    """
+    success = False
+    try:
+        print(f"Turning boiler {["OFF","ON"][state]}.") #Placeholder for actual code that interacts with the GPIO pins to switch the boiler.
+        success = True
+    except Exception:
+        raise ModuleException(f"couldn't turn boiler {["OFF","ON"][state]}")
+    finally:
+        return success
+
+def get_pump_state(pump:str):
+    """
+    Returns a faux val for development purposes for now.
+    """
+    try:
+        state = 0 #Placeholder for actual code that interacts with the GPIO pins to read the boiler state.
+        return state
+    except Exception:
+        raise ModuleException(f"couldn't read state of pump {pump}")
 
 def get_pump_states():
     """
     Returns a faux dict for development purposes for now.
+    Returns a dict with 0 or 1 or None if cannot read for each pump.
     """
-    return {'1':0,'2':1,'3':1,'4':0}
+    try:
+        state = {'1':None,'2':None,'3':None,'4':None}
+        cycles_info = get_cycles_info()
+        for cycle,info in cycles_info.items():
+            state[cycle] = get_pump_state(cycle)
+        return state
+    except Exception:
+        raise ModuleException(f"couldn't read pump states")
 
 def set_pump_state(pump:str,state:int):
-    pass
+    """
+    Sets the state of a given pump via Tuya interfacing.
+    Returns success.
+    """
+    success = False
+    try:
+        print(f"Turning pump {pump} {["OFF","ON"][state]}.") #Placeholder for actual code that interacts with Tuya to switch the boiler.
+        success = True
+    except Exception:
+        raise ModuleException(f"couldn't turn pump {pump} {["OFF","ON"][state]}")
+    finally:
+        return success
+
+def set_all_pumps(state:int):
+    """
+    Turn all pumps on or off at once. Returns a dict of successes.
+    """
+    success = {"1":False,"2":False,"3":False,"4":False}
+    try:
+        cycles_info = get_cycles_info()
+        for cycle,info in cycles_info.items():
+            success[cycle] = set_pump_state(cycle,state)
+    except Exception:
+        raise ModuleException(f"couldn't turn all pumps {["OFF","ON"][state]}")
+    finally:
+        return success
+
+def shutdown_heating():
+    """
+    Turns off all pumps & boiler. Returns success.
+    """
+    success = False
+    try:
+        set_boiler_state(0)
+        set_all_pumps(0)
+        success = True
+    except Exception:
+        raise ModuleException(f"couldn't shut down heating")
+    finally:
+        return success
 
 def get_room_temps_and_humidity_dev():
     """

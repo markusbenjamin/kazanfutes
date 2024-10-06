@@ -1,19 +1,5 @@
 """
 Main heating control script.
- Execute commands:
-        Load issued commands.
-        Go over commands and execute unexecuted past ones.
-        Mark and filter successfully executed commands.
-
-    Save state:
-        Export and upload current state of system (pump states, room set temps and measured temps, boiler state).
-
-Integrated throughout:
-    Verbose reporting.
-    Runtime success logging of main tasks.
-    Feature logging of system state and decisions.
-    Error registration.
-    Firebase reporting according to dashboard needs.
 """
 
 from utils.project import *
@@ -161,17 +147,6 @@ def compare_and_command(system_state:dict):
                 - unless cycle-wise off is set
 
         Boiler: if differs from boiler state issue command and log decision
-
-        Commands:
-            - issue in the form of {
-                            'issuance_time': time of issuance
-                            'due_time': after which it should be executed unless there's a newer command
-                            'device':pump1, 2, 3, 4 or boiler
-                            'setting':0 or 1
-                            'executed':0
-                            'execution_time':None
-                            }
-            - save to data/heating_control/commands.json
     """
     report('\nCOMPARING SET TEMPS TO ACTUAL TEMPS TO DETERMINE VOTES')
     success = False
@@ -232,7 +207,14 @@ def compare_and_command(system_state:dict):
             for pump,vote 
             in pump_votes.items()
             ])}.",verbose=True)
+        report(f"Pump states: {
+            ', '.join([
+            f"{pump}: {['OFF','ON'][state]}"
+            for pump,state 
+            in system_state['pump_states'].items()
+            ])}.",verbose=True)
         report(f"Boiler vote: {['OFF','ON'][boiler_vote]}",verbose=True)
+        report(f"Boiler state: {['OFF','ON'][system_state['boiler_state']]}",verbose=True)
         success = True
     except ModuleException as e:
         ServiceException(f"Module error while voting", original_exception=e, severity = 3)
@@ -247,7 +229,7 @@ def compare_and_command(system_state:dict):
         command = {
                     'issuance_timestamp':timestamp(),
                     'due_timestamp':timestamp(due_time),
-                    'device':f"pump_{cycle}",
+                    'device':device,
                     'setting':setting,
                     'executed':False,
                     'execution_timestamp':None
@@ -267,19 +249,18 @@ def compare_and_command(system_state:dict):
     
     success = False
     try:
-        existing_commands = load_existing_commands()
+        existing_commands = load_commands()
         new_commands = []
         cycles_info = get_cycles_info()
+        append_valid_command = (lambda command: new_commands.append(command) if command else None)
         for cycle, info in cycles_info.items():
             if system_state['pump_states'][cycle] != pump_votes[cycle]:
                 delay = [3, 0][pump_votes[cycle]] # 3 mins cooloff when turning off a cycle
-                (lambda cmd: new_commands.append(cmd) if cmd else None)(issue_command(existing_commands, f'pump_{cycle}', delay, pump_votes[cycle]))
+                append_valid_command(issue_command(existing_commands, f'pump_{cycle}', delay, pump_votes[cycle]))
         if system_state['boiler_state'] != boiler_vote:
-            (lambda cmd: new_commands.append(cmd) if cmd else None)(issue_command(existing_commands,f'boiler',0,boiler_vote))
+            append_valid_command(issue_command(existing_commands,'boiler',0,boiler_vote))
         
-        all_commands = existing_commands + new_commands
-        with open(COMMANDS_PATH, 'w') as f:
-            json.dump(all_commands, f, indent=4)
+        refresh_commands(existing_commands + new_commands)
         success = True
     except ModuleException as e:
         ServiceException(f"Module error while issuing commands", original_exception=e, severity = 3)
@@ -288,7 +269,25 @@ def compare_and_command(system_state:dict):
     finally:
         log({f"success_issuing_command":success})
 
-def load_existing_commands():
+def push_commands(path:str,commands:list):
+    try:
+        if not os.path.exists(path):
+            with open(path, 'w') as commands_file:
+                json.dump([], commands_file)
+        with open(path, 'w') as commands_file:
+            json.dump(commands, commands_file, indent=4)
+    except ModuleException as e:
+        ServiceException(f"Module error while writing commands to {path}", original_exception=e, severity = 3)
+    except Exception:
+        ServiceException(f"Unexpected error while writing commands to {path}", severity = 3)
+
+def refresh_commands(commands):
+    push_commands(COMMANDS_PATH,commands)
+
+def archive_commands(commands):
+    push_commands(COMMANDS_ARCHIVE_PATH,commands)
+
+def load_commands():
     try:
         if not os.path.exists(COMMANDS_PATH):
             with open(COMMANDS_PATH, 'w') as commands_file:
@@ -296,14 +295,9 @@ def load_existing_commands():
         with open(COMMANDS_PATH, 'r') as commands_file:
             return json.load(commands_file)
     except ModuleException as e:
-        ServiceException(f"Module error while issuing commands", original_exception=e, severity = 3)
+        ServiceException(f"Module error while loading commands", original_exception=e, severity = 3)
     except Exception:
-        ServiceException(f"Unexpected error while issuing commands", severity = 3)
-    finally:
-        log({f"success_loading_existing_commands":success})
-
-def archive_executed_commands():
-    pass
+        ServiceException(f"Unexpected error while loading commands", severity = 3)
 #endregion
 
 #region Execute commands
@@ -312,13 +306,55 @@ def execute_commands():
     Simply load commands for pumps and the boiler then execute the latest actual.
     If successful, set executed to True and set execution timestamp.
     """
-    pass
+    success = False
+    try:
+        commands = load_commands()
+        executed_commands = list(filter(lambda command:command['executed'],commands))
+        future_commands = list(filter(lambda command:datetime.now()<timestamp_to_datetime(command['due_timestamp']),commands))
+        latest_unexecuted_commands_past_due = []
+        for device in ['pump_1','pump_2','pump_3','pump_4','boiler']: # So the latest for a given device can be selected
+            try:
+                latest_unexecuted_command_past_due = sorted(
+                    list(filter(
+                    lambda command: 
+                    not command['executed'] and # As of yet unexecuted commands
+                    command['device'] == device and # For this device
+                    timestamp_to_datetime(command['due_timestamp'])<datetime.now(), # That are past due
+                    commands
+                    )),
+                    key=lambda command: timestamp_to_datetime(command['issuance_timestamp']) # Sort by timestamp just to make sure
+                )[-1] # Select latest
+                latest_unexecuted_commands_past_due.append(latest_unexecuted_command_past_due) # Does not copy, just creates new reference so the list of loaded commands is still directly affected (which is good)
+            except IndexError: pass
 
-def archive_executed_commands():
-    """
-    Load commands to dict, append to archived_commands.json if executed == True.
-    """
-    pass
+        boiler_switch_success = True
+        pumps_switch_successes = []
+        for command in latest_unexecuted_commands_past_due:
+            if command['device'] == 'boiler':
+                boiler_switch_success = set_boiler_state(command['setting'])
+                if boiler_switch_success:
+                    command['executed'] = True
+                    command['execution_timestamp'] = timestamp()
+            else:
+                pumps_switch_successes.append(set_pump_state(command['device'][-1],command['setting']))
+                if pumps_switch_successes[-1]:
+                    command['executed'] = True
+                    command['execution_timestamp'] = timestamp()
+
+        newly_executed_commands = list(filter(lambda command:command['executed'],latest_unexecuted_commands_past_due))
+        still_unexecuted_commands = list(filter(lambda command:not command['executed'],latest_unexecuted_commands_past_due))
+
+        refresh_commands(future_commands + still_unexecuted_commands)
+        archive_commands(executed_commands + newly_executed_commands)
+
+        if False not in pumps_switch_successes and boiler_switch_success:
+            success = True
+    except ModuleException as e:
+        ServiceException(f"Module error while executing commands", original_exception=e, severity = 3)
+    except Exception:
+        ServiceException(f"Unexpected error while executing commands", severity = 3)
+    finally:
+        log({'success_executing_commands':success})
 
 #endregion
 
@@ -328,3 +364,4 @@ if __name__ == '__main__':
     
     system_state = get_and_export_system_state()
     compare_and_command(system_state)
+    execute_commands()
