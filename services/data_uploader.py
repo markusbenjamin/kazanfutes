@@ -12,6 +12,5 @@ except ModuleException as e:
     ServiceException("Module error while trying to sync data with repo", original_exception=e, severity = 2)
 except Exception:
     ServiceException("Unexpected error while trying to sync data with repo", severity = 2)
-finally:
-    # Log execution
-    log({"success":success})
+
+log({"success":success})
