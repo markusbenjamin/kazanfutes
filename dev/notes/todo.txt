@@ -1,18 +1,23 @@
 Menetrend:
     okt. 10.:
-        - GPIO interfaceinget befejezni
+        //- GPIO interfaceinget befejezni
         - hőmérőkiosztást kitalálni és új hőmérőket hozzáadni
         - kinézni új helyeket az égőknek
-        - meglévő égőket barátságos színűre állítani / lekapcsolni
         - szobák heti ciklusát csekkolni, elkezdeni leegyeztetni felhasználókkal
         - heating_control servicet megírni
+        - vmi 0.1-es dahsboard
         - elmenni lámpáért és dobozért műhelybe
         - hőmennyiségmérők adatrögzítését elindítani
         - gázfogyasztás mérését elindítani
         - rendszer szintű ON/OFF
         - kör szintű kapcsolhatóságot beépíteni
         - kör szintű időzíthetőséget beépítenni
-        - QR kódos kapcsolhatóságot kitalálni
+        //- QR kódos kapcsolhatóságot kitalálni:
+            - QR kód --> fix GitHub pages link
+            - linkek: AppsScriptet indítanak el az override SpreadSheetben, ami egy másik sheetre teszi be a parancsot
+            - a schedule updaterben be kell állítani, hogy azt is letöltse, és simítsa egybe
+        - meglévő égőket barátságos színűre állítani / lekapcsolni
+        - schedule megjelenítés
 
     később:
         - heating control dev tovább
