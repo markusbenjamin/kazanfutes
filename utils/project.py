@@ -8,6 +8,9 @@ import csv
 import json
 import logging
 import os
+on_raspi = False
+if os.name == 'posix':
+    on_raspi = True
 import time
 from datetime import datetime, timedelta
 from logging.handlers import TimedRotatingFileHandler
@@ -17,11 +20,11 @@ import filelock
 import math
 import asyncio
 import aiohttp
-try:
+if on_raspi:
     import RPi.GPIO as GPIO
     import tinytuya
     from pydeconz.gateway import DeconzSession
-except:
+else:
     print("Project.py: skipping import of RasPi specific modules.")
 import random
 import subprocess
@@ -44,6 +47,7 @@ def initialize_settings():
         print(f"Can't load settings due to {e}")
     
 settings = initialize_settings()
+settings['on_raspi'] = on_raspi
 
 #endregion
 
@@ -894,22 +898,31 @@ GPIO interfacing.
 
 def load_GPIO_setup(pin:int = None):
     GPIO_setup = load_json_to_dict('config/GPIO_setup.json')
-    if pin and pin not in GPIO_setup:
-        GPIO_setup[pin] = {}
+    pin_key = str(pin)
+    if isinstance(pin,str):
+        pin = int(pin)
+    if pin and pin_key not in GPIO_setup:
+        GPIO_setup[pin_key] = {}
     return GPIO_setup
 
 def save_GPIO_setup(GPIO_setup:dict):
     return export_dict_as_json(GPIO_setup,'config/GPIO_setup.json')
 
 def release_pin(pin:int):
+    """
+    Sets a GPIO pin to IN with no pull-down state set and removes it from GPIO setup.
+    """
+    pin_key = str(pin)
+    if isinstance(pin,str):
+        pin = int(pin)
     set_pin_mode(pin, GPIO.IN)
     GPIO_setup = load_GPIO_setup()
-    GPIO_setup[pin].pop(pin)
-    save_GPIO_setup()
+    GPIO_setup.pop(pin_key,None)
+    save_GPIO_setup(GPIO_setup)
 
 def reset_GPIO():
     """
-    Resets all GPIO pins to 
+    Releases all GPIO pins.
     """
     try:
         GPIO.setmode(GPIO.BCM)
@@ -926,42 +939,52 @@ def set_pin_mode(pin: int, mode, pud=GPIO.PUD_OFF):
     Mode: either GPIO.IN or GPIO.OUT
     Pud: for IN pins floating (PUD_OFF) if not specified, or either GPIO.PUD_UP or GPIO.PUD_DOWN. Do not specify for OUT pins.
     """
+    pin_key = str(pin)
+    if isinstance(pin,str):
+        pin = int(pin)
     try:
         GPIO.setmode(GPIO.BCM) # Follows the pin naming convention written on the mother- and breadboard
 
         GPIO_setup = load_GPIO_setup(pin)
 
-        GPIO_setup[pin]['mode'] = "IN" if mode == GPIO.IN else "OUT"
+        GPIO_setup[pin_key]['mode'] = "IN" if mode == GPIO.IN else "OUT"
         if mode == GPIO.OUT and pud != GPIO.PUD_OFF:
-            report(f"Warning: trying to set PUD {"UP" if pud == GPIO.PUD_UP else "DOWN"} for OUT pin {pin}. Aborting operation.")
+            report(f'Warning: trying to set PUD {"UP" if pud == GPIO.PUD_UP else "DOWN"} for OUT pin {pin}. Aborting operation.')
             return
         
         GPIO.setup(pin, mode, pud)
-        GPIO_setup[pin]['pud'] = "OFF" if pud == GPIO.PUD_OFF else "UP" if pud == GPIO.PUD_UP else "DOWN"
+        GPIO_setup[pin_key]['pud'] = "OFF" if pud == GPIO.PUD_OFF else "UP" if pud == GPIO.PUD_UP else "DOWN"
+        if mode == GPIO.IN:
+            GPIO_setup[pin_key].pop("state",None)
         
         save_GPIO_setup(GPIO_setup)
     except Exception:
-        raise ModuleException(f"couldn't set pin {pin} mode to {"IN" if mode == GPIO.IN else "OUT"}")
+        raise ModuleException(f"couldn't set pin {pin} mode to {'IN' if mode == GPIO.IN else 'OUT'}")
 
 def set_pin_state(pin:int, state:int):
     """
     Sets the specified GPIO OUT pin to the given state (HIGH or LOW).
     Saves the setting externally.
     """
+    pin_key = str(pin)
+    if isinstance(pin,str):
+        pin = int(pin)
     success = False
     try:
         GPIO.setmode(GPIO.BCM)
-        GPIO_setup = load_GPIO_setup(pin)
+        GPIO_setup = load_GPIO_setup(pin)        
 
-        if pin not in GPIO_setup.keys():
+        if 'mode' not in GPIO_setup[pin_key].keys():
             report(f"Trying to set uninitialized pin {pin} to {['LOW','HIGH'][state]}. Set mode first. Aborting operation.")
             return
-        if GPIO_setup[pin]['mode'] == 'IN':
+        if GPIO_setup[pin_key]['mode'] == 'IN':
             report(f"Warning: trying to set state {state} for IN pin {pin}. Aborting operation.")
             return
-
+        
+        GPIO.setup(pin, GPIO.OUT)
         GPIO.output(pin, GPIO.HIGH if state == 1 else GPIO.LOW)
-        GPIO_setup[pin]['state'] = "HIGH" if state == 1 else "LOW"
+        GPIO_setup[pin_key]['state'] = "HIGH" if state == 1 else "LOW"
+        save_GPIO_setup(GPIO_setup)
         success = True
     except Exception:
         raise ModuleException(f"couldn't set pin {pin} to {['LOW','HIGH'][state]}")
@@ -971,16 +994,19 @@ def read_pin_state(pin:int):
     """
     Reads the state of the specified GPIO pin.
     """
+    pin_key = str(pin)
+    if isinstance(pin,str):
+        pin = int(pin)
     try:
         GPIO.setmode(GPIO.BCM)
         
         GPIO_setup = load_GPIO_setup(pin)
-        if pin not in GPIO_setup.keys():
+        if pin_key not in GPIO_setup.keys():
             report(f"Trying to read uninitialized pin {pin}. Aborting operation.")
             return
         state = GPIO.input(pin)
-        if GPIO_setup[pin]['mode'] == 'OUT':
-            state = 1 if state == 0 else 0 # Flip needed to turn input reading to output reading
+        #if GPIO_setup[pin_key]['mode'] == 'OUT':
+        #    state = 1 if state == 0 else 0 # Flip needed to turn input reading to output reading
         return state
     except Exception:
         raise ModuleException(f"couldn't read state of GPIO pin {pin}")

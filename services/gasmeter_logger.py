@@ -12,7 +12,8 @@ if __name__ == "__main__":
         while True:
             new_state = read_pin_state(gasmeter_pin)
             if new_state != state:
-                log_data({"gasmeter_pin_state_change":new_state})
+                log_data({"seconds":datetime.now().strftime('%S'),"gasmeter_pin_state_change":new_state},'gas_consumption/gas_relay_turns.json')
+                report(f"State change detected on gas meter relay: {new_state}")
                 state = new_state
                 
             time.sleep(2.5)
