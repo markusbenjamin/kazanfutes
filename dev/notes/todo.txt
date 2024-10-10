@@ -4,19 +4,24 @@ Menetrend:
         //- hőmérőkiosztást kitalálni és új hőmérőket hozzáadni
         //- elmenni lámpáért és dobozért műhelybe
         - hőmennyiségmérők adatrögzítését elindítani
+            //- fizikai setup + webcam test
+            - utána crop szinten
         - gázfogyasztás mérését elindítani
+            //- fizikai setup
+            - GPIO interfacelt rögzítés logikus helyre
         - rendszer szintű ON/OFF
         - kör szintű kapcsolhatóságot beépíteni
         - kör szintű időzíthetőséget beépíteni
-        - heating_control servicet megírni
+        - heating_control service-t és timert megírni
         - vmi 0.1-es dashboard firebase systemstate alapján
-        //- QR kódos kapcsolhatóságot kitalálni:
+
+    később:
+        - QR kódos kapcsolhatóság:
+            //- sémát kitalálni
             - QR kód --> fix GitHub pages link
             - linkek: AppsScriptet indítanak el az override SpreadSheetben, ami egy másik sheetre teszi be a parancsot
             - a schedule updaterben be kell állítani, hogy azt is letöltse, és simítsa egybe
         - schedule megjelenítés
-
-    később:
         - eszközlistát megírni, rendben eltenni mindent
         - kinézni új helyeket az égőknek
         - szobák heti ciklusát csekkolni, elkezdeni leegyeztetni felhasználókkal
