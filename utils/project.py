@@ -17,6 +17,8 @@ import filelock
 import math
 import tinytuya
 import RPi.GPIO as GPIO
+import random
+import subprocess
 
 #endregion
 
