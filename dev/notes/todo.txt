@@ -1,9 +1,25 @@
-Következő lépések:
-    - system_integrity_check.py-t elkezdeni:
-        - nézze, hogy elérhetőek e a hőmérők és jelezzen, ha nem
-    - heating_control.py-t elkezdeni
-        - folyt.: GPIO interfaceing
-        - kezdjen valamit azzal, ha régi a hőmérséklet adat egy szobából
-        - legyen egy led ami mutatja, hogy mit csinál a boilert vezérlő pin
-        - lehessen hozzáadni kapcsolható hősugárzót
-        - natívan lehessen le-fel kapcsolni köröket
+Menetrend:
+    okt. 10.:
+        - GPIO interfaceinget befejezni
+        - hőmérőkiosztást kitalálni és új hőmérőket hozzáadni
+        - kinézni új helyeket az égőknek
+        - meglévő égőket barátságos színűre állítani / lekapcsolni
+        - szobák heti ciklusát csekkolni, elkezdeni leegyeztetni felhasználókkal
+        - heating_control servicet megírni
+        - elmenni lámpáért és dobozért műhelybe
+        - hőmennyiségmérők adatrögzítését elindítani
+        - gázfogyasztás mérését elindítani
+        - rendszer szintű ON/OFF
+        - kör szintű kapcsolhatóságot beépíteni
+        - kör szintű időzíthetőséget beépítenni
+        - QR kódos kapcsolhatóságot kitalálni
+
+    később:
+        - heating control dev tovább
+            - kezdjen valamit azzal, ha régi a hőmérséklet adat egy szobából
+            - legyen egy led ami mutatja, hogy mit csinál a boilert vezérlő pin
+            - lehessen hozzáadni kapcsolható hősugárzót
+        - system integrity checker
+        - munkaállomást kiépíteni
+        - dashboardot felállítani
+        - helyi GUI-t felállítani

@@ -16,6 +16,7 @@ import requests
 import filelock
 import math
 import tinytuya
+import RPi.GPIO as GPIO
 
 #endregion
 
@@ -581,7 +582,7 @@ def get_boiler_state():
     Returns 0 or 1 or None if cannot read.
     """
     try:
-        state = 0 #Placeholder for actual code that interacts with the GPIO pins to read the boiler state.
+        state = read_pin_state(get_system_config()['boiler']['GPIO'])
         return state
     except Exception:
         raise ModuleException(f"couldn't read boiler state")
@@ -593,8 +594,7 @@ def set_boiler_state(state:int):
     """
     success = False
     try:
-        print(f"Turning boiler {['OFF','ON'][state]}.") #Placeholder for actual code that interacts with the GPIO pins to switch the boiler.
-        success = True
+        success = set_pin_state(get_system_config()['boiler']['GPIO'],state)
     except Exception:
         raise ModuleException(f"couldn't turn boiler {['OFF','ON'][state]}")
     finally:
@@ -619,7 +619,8 @@ def get_pump_state(pump:str):
     """
     try:
         device = connect_to_pump(pump)
-        return int(device.status()['dps']['1']) # This path encodes the on/off state in the JSON reply
+        if device:
+            return int(device.status()['dps']['1']) # This path encodes the on/off state in the JSON reply
     except Exception:
         raise ModuleException(f"couldn't read state of pump {pump}")
 
@@ -631,10 +632,11 @@ def set_pump_state(pump:str,state:int):
     success = False
     try:
         device = connect_to_pump(pump)
-        if state:
-            success = device.turn_on()['dps']['1']
-        else:
-            success = device.turn_off()['dps']['1'] == False
+        if device:
+            if state:
+                success = device.turn_on()['dps']['1']
+            else:
+                success = device.turn_off()['dps']['1'] == False
     except Exception:
         raise ModuleException(f"couldn't turn pump {pump} {['OFF','ON'][state]}")
     finally:
@@ -653,7 +655,6 @@ def set_all_pumps(state:int):
         raise ModuleException(f"couldn't turn all pumps {['OFF','ON'][state]}")
     finally:
         return success
-
 
 def shutdown_heating():
     """
@@ -864,18 +865,21 @@ def read_sensors():
 """
 Tuya interfacing.
 """
-
 def connect_to_pump(pump:str):
     """
-    Connects to a pump via tinytuya and returns an OutletDevice object.
+    Connects to a pump via tinytuya and returns an OutletDevice object if successful.
+    Returns None if cannot connect to pump.
     """
-    pump_info = get_pumps_info()
-    device = tinytuya.OutletDevice(
-        dev_id = pump_info[pump]['id'],
-        address = pump_info[pump]['ip'],      # Or set to 'Auto' to auto-discover IP address
-        local_key = pump_info[pump]['key'], 
-        version = 3.3)
-    return device
+    try:
+        pump_info = get_pumps_info()
+        device = tinytuya.OutletDevice(
+            dev_id = pump_info[pump]['id'],
+            address = pump_info[pump]['ip'],      # Or set to 'Auto' to auto-discover IP address
+            local_key = pump_info[pump]['key'], 
+            version = 3.3)
+        return device
+    except Exception:
+        raise ModuleException(f"couldn't connect to pump {pump}")
 
 def transfer_vals_from_devices_and_snapshot_jsons_to_system_json():
     """
@@ -888,6 +892,33 @@ def transfer_vals_from_devices_and_snapshot_jsons_to_system_json():
 """
 GPIO interfacing.
 """
+def set_pin_state(pin:int, state:int):
+    """
+    Sets the specified GPIO pin to the given state (HIGH or LOW).
+    """
+    success = False
+    try:
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(pin, GPIO.OUT)
+        GPIO.output(pin, GPIO.HIGH if state == 1 else GPIO.LOW)
+        success = True
+    except Exception:
+        raise ModuleException(f"couldn't set pin {pin} to {['LOW','HIGH'][state]}")
+    finally:
+        return success
+
+def read_pin_state(pin:int):
+    """
+    Reads the state of the specified GPIO pin.
+    """
+    try:
+        GPIO.setmode(GPIO.BCM) # Follows the pin naming convention on the extension
+        GPIO.setup(pin, GPIO.OUT) # Setting it to .IN would destroy the very state we'd want to measure
+        input = GPIO.input(pin) # Read input state
+        return 0 if input == 1 else 1 # Flip needed to turn input reading to output reading
+    except Exception:
+        raise ModuleException(f"couldn't read state of GPIO pin {pin}")
+
 #endregion
 
 #endregion
