@@ -14,6 +14,6 @@ except ModuleException as e:
     ServiceException("Module error while trying to acquire temperature and humidity data", original_exception=e, severity = 3)
 except Exception:
     ServiceException("Module error while trying to acquire temperature and humidity data", severity = 3)
-finally:
-    # Log execution
-    log({"success":success})
+
+# Log execution
+log({"success":success})

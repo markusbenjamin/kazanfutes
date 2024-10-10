@@ -59,8 +59,8 @@ def update_local_heating_control_config():
             ServiceException(f"Module error while trying to update local heating control config", original_exception=e, severity = 2)
         except Exception:
             ServiceException(f"Unexpected error while trying to update local heating control config", severity = 2)
-        finally:
-            log({f"success_update_local_heating_control_config":success})
+        
+        log({f"success_update_local_heating_control_config":success})
 #endregion
 
 #region Set up Firebase
@@ -117,8 +117,8 @@ def check_scheduling_files_expiry(duration:float):
         ServiceException(f"Module error while checking if updates are due to expiry", original_exception=e, severity = 2)
     except Exception:
         ServiceException(f"Unexpected error while checking if updates are due to expiry", severity = 2)
-    finally:
-        log({f"success_update_expiry_check":success})
+    
+    log({f"success_update_expiry_check":success})
 
 def update_local_scheduling_files():
     report('\nUPDATE LOCAL SCHEDULING FILES')
@@ -144,8 +144,8 @@ def update_local_scheduling_files():
             ServiceException(f"Module error while trying to update local copy of {update_path}", original_exception=e, severity = 3)
         except Exception:
             ServiceException(f"Unexpected error while trying to update local copy of {update_path}", severity = 3)
-        finally:
-            log({f"success_room_{update_path}_update":success})
+
+        log({f"success_room_{update_path}_update":success})
 #endregion
 
 #region Generate condensed schedule for next n days
@@ -212,8 +212,8 @@ def generate_condensed_schedule(for_how_many_days : int):
             ServiceException(f"Module error while trying to generate condensed schedule", original_exception=e, severity = 3)
         except Exception:
             ServiceException(f"Unexpected error while trying to generate condensed schedule", severity = 3)
-        finally:
-            log({f"success_generating_condensed_schedule":success})
+
+        log({f"success_generating_condensed_schedule":success})
 
 #endregion
 
@@ -229,8 +229,8 @@ def export_condensed_schedule_locally(condensed_schedule:dict):
         ServiceException(f"Module error while trying to export condensed schedule locally", original_exception=e, severity = 3)
     except Exception:
         ServiceException(f"Unexpected error while trying to export condensed schedule locally", severity = 3)
-    finally:
-        log({f"success_export_condensed_schedule_locally":success})
+
+    log({f"success_export_condensed_schedule_locally":success})
 #endregion
 
 #region Update condensed schedule on Firebase
@@ -245,8 +245,8 @@ def update_condensed_schedule_on_firebase(condensed_schedule:dict):
         ServiceException(f"Module error while trying to update condensed schedule to Firebase", original_exception=e, severity = 2)
     except Exception:
         ServiceException(f"Unexpected error while trying to update condensed schedule to Firebase", severity = 2)
-    finally:
-        log({f"success_update_condensed_schedule_to_firebase":success})
+
+    log({f"success_update_condensed_schedule_to_firebase":success})
 #endregion
 
 if __name__ == "__main__":

@@ -19,8 +19,8 @@ except ModuleException as e:
     ServiceException(f"Module error while trying to initialize heating control", original_exception=e, severity = 3)
 except Exception:
     ServiceException(f"Unexpected error while trying to initialize heating control", severity = 3)
-finally:
-    log({f"success_initialize":success})
+
+log({f"success_initialize":success})
 
 COMMANDS_PATH = os.path.join(get_project_root(), "data", "heating_control", "commands.json")
 COMMANDS_ARCHIVE_PATH = os.path.join(get_project_root(), "data", "heating_control", "commands_archive.json")
@@ -60,8 +60,8 @@ def get_and_export_system_state():
         ServiceException(f"Module error while acquiring measured temps", original_exception=e, severity = 3)
     except Exception:
         ServiceException(f"Unexpected error while acquiring measured temps", severity = 3)
-    finally:
-        log({f"success_acquire_measured_temps":success})
+
+    log({f"success_acquire_measured_temps":success})
 
     success = False
     try:
@@ -82,8 +82,8 @@ def get_and_export_system_state():
         ServiceException(f"Module error while acquiring set temps", original_exception=e, severity = 3)
     except Exception:
         ServiceException(f"Unexpected error while acquiring set temps", severity = 3)
-    finally:
-        log({f"success_acquire_set_temps":success})
+
+    log({f"success_acquire_set_temps":success})
 
     success = False
     try:
@@ -96,8 +96,8 @@ def get_and_export_system_state():
         ServiceException(f"Module error while acquiring pump states", original_exception=e, severity = 3)
     except Exception:
         ServiceException(f"Unexpected error while acquiring pump states", severity = 3)
-    finally:
-        log({f"success_acquire_pump_states":success})
+
+    log({f"success_acquire_pump_states":success})
 
     success = False
     try:
@@ -110,8 +110,8 @@ def get_and_export_system_state():
         ServiceException(f"Module error while acquiring boiler state", original_exception=e, severity = 3)
     except Exception:
         ServiceException(f"Unexpected error while acquiring boiler state", severity = 3)
-    finally:
-        log({f"success_acquire_boiler_state":success})
+
+    log({f"success_acquire_boiler_state":success})
     
     try:
         log(system_state)
@@ -122,8 +122,8 @@ def get_and_export_system_state():
         ServiceException(f"Module error while exporting system state", original_exception=e, severity = 3)
     except Exception:
         ServiceException(f"Unexpected error while exporting system state", severity = 3)
-    finally:
-        log({f"success_export_system_state":success})
+
+    log({f"success_export_system_state":success})
     return system_state
 #endregion
 
@@ -220,8 +220,8 @@ def compare_and_command(system_state:dict):
         ServiceException(f"Module error while voting", original_exception=e, severity = 3)
     except Exception:
         ServiceException(f"Unexpected error while voting", severity = 3)
-    finally:
-        log({f"success_voting":success})
+
+    log({f"success_voting":success})
 
     report('\nISSUING COMMANDS')
     def issue_command(existing_commands, device:str, delay:float, setting:int):
@@ -266,8 +266,8 @@ def compare_and_command(system_state:dict):
         ServiceException(f"Module error while issuing commands", original_exception=e, severity = 3)
     except Exception:
         ServiceException(f"Unexpected error while issuing commands", severity = 3)
-    finally:
-        log({f"success_issuing_command":success})
+
+    log({f"success_issuing_command":success})
 
 def push_commands(path:str,commands:list):
     try:
@@ -353,8 +353,8 @@ def execute_commands():
         ServiceException(f"Module error while executing commands", original_exception=e, severity = 3)
     except Exception:
         ServiceException(f"Unexpected error while executing commands", severity = 3)
-    finally:
-        log({'success_executing_commands':success})
+
+    log({'success_executing_commands':success})
 
 #endregion
 

@@ -15,8 +15,14 @@ import threading
 import requests
 import filelock
 import math
-import tinytuya
-import RPi.GPIO as GPIO
+import asyncio
+import aiohttp
+try:
+    import RPi.GPIO as GPIO
+    import tinytuya
+    from pydeconz.gateway import DeconzSession
+except:
+    print("Project.py: skipping import of RasPi specific modules.")
 import random
 import subprocess
 
@@ -580,12 +586,10 @@ def generate_call_origin():
 
 def get_boiler_state():
     """
-    Returns a faux val for development purposes for now.
-    Returns 0 or 1 or None if cannot read.
+    Returns either 0 or 1 after reading the specified GPIO pin for the boiler.
     """
     try:
-        state = read_pin_state(get_system_config()['boiler']['GPIO'])
-        return state
+        return read_pin_state(get_system_config()['boiler']['GPIO'])
     except Exception:
         raise ModuleException(f"couldn't read boiler state")
 
@@ -596,11 +600,11 @@ def set_boiler_state(state:int):
     """
     success = False
     try:
+        set_pin_mode(get_system_config()['boiler']['GPIO'],GPIO.OUT)
         success = set_pin_state(get_system_config()['boiler']['GPIO'],state)
     except Exception:
         raise ModuleException(f"couldn't turn boiler {['OFF','ON'][state]}")
-    finally:
-        return success
+    return success
 
 def get_pump_states():
     """
@@ -641,8 +645,7 @@ def set_pump_state(pump:str,state:int):
                 success = device.turn_off()['dps']['1'] == False
     except Exception:
         raise ModuleException(f"couldn't turn pump {pump} {['OFF','ON'][state]}")
-    finally:
-        return success
+    return success
 
 def set_all_pumps(state:int):
     """
@@ -655,8 +658,7 @@ def set_all_pumps(state:int):
             success[pump] = set_pump_state(pump,state)
     except Exception:
         raise ModuleException(f"couldn't turn all pumps {['OFF','ON'][state]}")
-    finally:
-        return success
+    return success
 
 def shutdown_heating():
     """
@@ -669,8 +671,7 @@ def shutdown_heating():
         success = True
     except Exception:
         raise ModuleException(f"couldn't shut down heating")
-    finally:
-        return success
+    return success
 
 def get_room_temps_and_humidity_dev():
     """
@@ -815,10 +816,6 @@ def read_deconz_state():
     """
     Makes data available from the ZigBee mesh.
     """
-    import asyncio
-    import aiohttp
-    from pydeconz.gateway import DeconzSession
-
     deconz_access_params = get_deconz_access_params()
     full_url = deconz_access_params['api_url']
     try:
@@ -894,30 +891,97 @@ def transfer_vals_from_devices_and_snapshot_jsons_to_system_json():
 """
 GPIO interfacing.
 """
+
+def load_GPIO_setup(pin:int = None):
+    GPIO_setup = load_json_to_dict('config/GPIO_setup.json')
+    if pin and pin not in GPIO_setup:
+        GPIO_setup[pin] = {}
+    return GPIO_setup
+
+def save_GPIO_setup(GPIO_setup:dict):
+    return export_dict_as_json(GPIO_setup,'config/GPIO_setup.json')
+
+def release_pin(pin:int):
+    set_pin_mode(pin, GPIO.IN)
+    GPIO_setup = load_GPIO_setup()
+    GPIO_setup[pin].pop(pin)
+    save_GPIO_setup()
+
+def reset_GPIO():
+    """
+    Resets all GPIO pins to 
+    """
+    try:
+        GPIO.setmode(GPIO.BCM)
+        GPIO_setup = load_GPIO_setup()
+
+        for pin in GPIO_setup.keys():
+            release_pin(pin)
+    except Exception:
+        raise ModuleException(f"couldn't reset GPIO setup")
+
+def set_pin_mode(pin: int, mode, pud=GPIO.PUD_OFF):
+    """
+    Sets a GPIO pin's mode and the state of it's internal pull-down resistor.
+    Mode: either GPIO.IN or GPIO.OUT
+    Pud: for IN pins floating (PUD_OFF) if not specified, or either GPIO.PUD_UP or GPIO.PUD_DOWN. Do not specify for OUT pins.
+    """
+    try:
+        GPIO.setmode(GPIO.BCM) # Follows the pin naming convention written on the mother- and breadboard
+
+        GPIO_setup = load_GPIO_setup(pin)
+
+        GPIO_setup[pin]['mode'] = "IN" if mode == GPIO.IN else "OUT"
+        if mode == GPIO.OUT and pud != GPIO.PUD_OFF:
+            report(f"Warning: trying to set PUD {"UP" if pud == GPIO.PUD_UP else "DOWN"} for OUT pin {pin}. Aborting operation.")
+            return
+        
+        GPIO.setup(pin, mode, pud)
+        GPIO_setup[pin]['pud'] = "OFF" if pud == GPIO.PUD_OFF else "UP" if pud == GPIO.PUD_UP else "DOWN"
+        
+        save_GPIO_setup(GPIO_setup)
+    except Exception:
+        raise ModuleException(f"couldn't set pin {pin} mode to {"IN" if mode == GPIO.IN else "OUT"}")
+
 def set_pin_state(pin:int, state:int):
     """
-    Sets the specified GPIO pin to the given state (HIGH or LOW).
+    Sets the specified GPIO OUT pin to the given state (HIGH or LOW).
+    Saves the setting externally.
     """
     success = False
     try:
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(pin, GPIO.OUT)
+        GPIO_setup = load_GPIO_setup(pin)
+
+        if pin not in GPIO_setup.keys():
+            report(f"Trying to set uninitialized pin {pin} to {['LOW','HIGH'][state]}. Set mode first. Aborting operation.")
+            return
+        if GPIO_setup[pin]['mode'] == 'IN':
+            report(f"Warning: trying to set state {state} for IN pin {pin}. Aborting operation.")
+            return
+
         GPIO.output(pin, GPIO.HIGH if state == 1 else GPIO.LOW)
+        GPIO_setup[pin]['state'] = "HIGH" if state == 1 else "LOW"
         success = True
     except Exception:
         raise ModuleException(f"couldn't set pin {pin} to {['LOW','HIGH'][state]}")
-    finally:
-        return success
+    return success
 
 def read_pin_state(pin:int):
     """
     Reads the state of the specified GPIO pin.
     """
     try:
-        GPIO.setmode(GPIO.BCM) # Follows the pin naming convention on the extension
-        GPIO.setup(pin, GPIO.OUT) # Setting it to .IN would destroy the very state we'd want to measure
-        input = GPIO.input(pin) # Read input state
-        return 0 if input == 1 else 1 # Flip needed to turn input reading to output reading
+        GPIO.setmode(GPIO.BCM)
+        
+        GPIO_setup = load_GPIO_setup(pin)
+        if pin not in GPIO_setup.keys():
+            report(f"Trying to read uninitialized pin {pin}. Aborting operation.")
+            return
+        state = GPIO.input(pin)
+        if GPIO_setup[pin]['mode'] == 'OUT':
+            state = 1 if state == 0 else 0 # Flip needed to turn input reading to output reading
+        return state
     except Exception:
         raise ModuleException(f"couldn't read state of GPIO pin {pin}")
 
