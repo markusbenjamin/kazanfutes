@@ -894,7 +894,7 @@ def transfer_vals_from_devices_and_snapshot_jsons_to_system_json():
 GPIO interfacing.
 """
 
-#region Mock GPIO so module file loads in Windows too
+#region Mock GPIO class so module file loads in Windows too
 if not on_raspi:
     class GPIO:
         # Constants
@@ -927,7 +927,7 @@ if not on_raspi:
         @staticmethod
         def cleanup():
             print("GPIO cleanup() called.")
-            
+
 #endregion
 
 def load_GPIO_setup(pin:int = None):
