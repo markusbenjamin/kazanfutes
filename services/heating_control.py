@@ -22,6 +22,11 @@ except Exception:
 
 log({f"success_initialize":success})
 
+if heating_config['system_on'] == '0':
+    report('Heating is switched off in config file.')
+    if settings['on_raspi']: shutdown_heating()
+    exit()
+
 COMMANDS_PATH = os.path.join(get_project_root(), "data", "heating_control", "commands.json")
 COMMANDS_ARCHIVE_PATH = os.path.join(get_project_root(), "data", "heating_control", "commands_archive.json")
 
@@ -250,7 +255,7 @@ def compare_and_command(system_state:dict):
     
     success = False
     try:
-        existing_commands = load_commands()
+        existing_commands = load_commands(COMMANDS_PATH)
         new_commands = []
         cycles_info = get_cycles_info()
         append_valid_command = (lambda command: new_commands.append(command) if command else None)
@@ -270,30 +275,33 @@ def compare_and_command(system_state:dict):
 
     log({f"success_issuing_command":success})
 
-def push_commands(path:str,commands:list):
+def push_commands(commands_path:str,commands:list,append = False):
     try:
-        if not os.path.exists(path):
-            with open(path, 'w') as commands_file:
+        if not os.path.exists(commands_path):
+            with open(commands_path, 'w') as commands_file:
                 json.dump([], commands_file)
-        with open(path, 'w') as commands_file:
-            json.dump(commands, commands_file, indent=4)
+        existing_commands = []
+        if append:
+            existing_commands = load_commands(commands_path)
+        with open(commands_path, 'w') as commands_file:
+            json.dump(existing_commands + commands, commands_file, indent=4)
     except ModuleException as e:
-        ServiceException(f"Module error while writing commands to {path}", original_exception=e, severity = 3)
+        ServiceException(f"Module error while writing commands to {commands_path}", original_exception=e, severity = 3)
     except Exception:
-        ServiceException(f"Unexpected error while writing commands to {path}", severity = 3)
+        ServiceException(f"Unexpected error while writing commands to {commands_path}", severity = 3)
 
 def refresh_commands(commands):
     push_commands(COMMANDS_PATH,commands)
 
 def archive_commands(commands):
-    push_commands(COMMANDS_ARCHIVE_PATH,commands)
+    push_commands(COMMANDS_ARCHIVE_PATH,commands,True)
 
-def load_commands():
+def load_commands(commands_path):
     try:
-        if not os.path.exists(COMMANDS_PATH):
-            with open(COMMANDS_PATH, 'w') as commands_file:
+        if not os.path.exists(commands_path):
+            with open(commands_path, 'w') as commands_file:
                 json.dump([], commands_file)
-        with open(COMMANDS_PATH, 'r') as commands_file:
+        with open(commands_path, 'r') as commands_file:
             return json.load(commands_file)
     except ModuleException as e:
         ServiceException(f"Module error while loading commands", original_exception=e, severity = 3)
@@ -310,7 +318,7 @@ def execute_commands():
     report('\nEXECUTING COMMANDS')
     success = False
     try:
-        commands = load_commands()
+        commands = load_commands(COMMANDS_PATH)
         executed_commands = list(filter(lambda command:command['executed'],commands))
         future_commands = list(filter(lambda command:datetime.now()<timestamp_to_datetime(command['due_timestamp']),commands))
         latest_unexecuted_commands_past_due = []
