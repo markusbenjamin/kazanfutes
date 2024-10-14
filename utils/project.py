@@ -25,15 +25,14 @@ import aiohttp
 import filelock
 import requests
 import pytz
+from PIL import Image
 
 if on_raspi:
     import RPi.GPIO as GPIO
     import tinytuya
     from pydeconz.gateway import DeconzSession
     import tzlocal
-    from Pillow import Image
-else:
-    from PIL import Image
+    
 
 #endregion
 
