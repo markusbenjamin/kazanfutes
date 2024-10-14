@@ -4,30 +4,36 @@ Import with: from utils.project import *
 """
 
 #region Imports
+import asyncio
 import csv
 import json
 import logging
+import math
 import os
+import random
+import subprocess
+import threading
+import time
+from datetime import datetime, timedelta
+from logging.handlers import TimedRotatingFileHandler
+
 on_raspi = False
 if os.name == 'posix':
     on_raspi = True
-import time
-from datetime import datetime, timedelta
-import pytz
-import tzlocal
-from logging.handlers import TimedRotatingFileHandler
-import threading
-import requests
-import filelock
-import math
-import asyncio
+
 import aiohttp
+import filelock
+import requests
+import pytz
+
 if on_raspi:
     import RPi.GPIO as GPIO
     import tinytuya
     from pydeconz.gateway import DeconzSession
-import random
-import subprocess
+    import tzlocal
+    from Pillow import Image
+else:
+    from PIL import Image
 
 #endregion
 
@@ -580,13 +586,41 @@ def generate_call_origin():
     origin = ' --> '.join(origin_chain)
     return origin
 
-
 #endregion
 
 #region IO
 
 #region Wrappers
 """Wrapper functions for everything IO."""
+
+def generate_and_save_cycle_crops(relative_path:str, crop_rectangles:list, del_original_on_success:bool = True):
+    """
+    Generates, saves and returns the crop for each cycle from a passed Pillow image.
+    """
+    try:
+        image = load_image(relative_path)
+
+        capture_timestamp = os.path.splitext(os.path.basename(relative_path))[0]
+
+        daystamp = datetime.strptime(capture_timestamp,settings["timestamp_format"]).strftime("%Y-%m-%d")
+        hourminute_stamp = datetime.strptime(capture_timestamp,settings["timestamp_format"]).strftime("%H-%M")
+        
+        image = image.rotate(90, resample=Image.BICUBIC, expand=True) # Rotate with antialiasing
+        cycle_crops = []
+
+        for cycle in range(1, 5):
+            cropped_img = image.crop(crop_rectangles[cycle - 1])
+            cycle_crops.append(cropped_img)
+            save_relative_path = os.path.join('data','logs','heat_delivery',f"heatmeter_images_{daystamp}",f"{hourminute_stamp}_{cycle}.png")
+            save_image(cropped_img, save_relative_path)
+
+        if del_original_on_success:
+            delete_image(relative_path)
+
+        return cycle_crops           
+
+    except Exception:
+        raise ModuleException(f"couldn't extract cycle crops for {capture_timestamp}")
 
 def get_boiler_state():
     """
@@ -739,6 +773,88 @@ def get_room_temps_and_humidity():
     except Exception:
         raise ModuleException("unexpected error while reading sensor state", severity = 2)
 
+#endregion
+
+#region PIL and fswebcam
+"""
+PIL image handling library interfacing with image capture using fswebcam.
+"""
+def load_image(relative_path):
+    """
+    Loads and returns an image file using Pillow.
+    Path should be relative to project root.
+    """
+    try:
+        full_path = os.path.join(get_project_root(),relative_path)
+        with Image.open(full_path) as img:
+            img.load()
+            return img
+    except:
+        raise ModuleException(f"couldn't open image at {relative_path}")
+    
+def save_image(image, relative_path):
+    """
+    Saves an image file as PNG or JPG using Pillow.
+    Automatically determines the format based on the file extension.
+    Path should be relative to project root.
+    """
+    try:
+        full_path = os.path.join(get_project_root(), relative_path)
+
+        directory = os.path.dirname(full_path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        
+        extension = relative_path.lower().split('.')[-1]  # Get file extension
+        
+        if extension == 'jpg' or extension == 'jpeg':
+            image = image.convert('RGB')  # Pillow requires RGB mode for JPEG
+            image.save(full_path, format='JPEG')
+            return relative_path
+        elif extension == 'png':
+            image.save(full_path, format='PNG')
+            return relative_path
+        else:
+            raise ModuleException(f"unsupported file format for {relative_path}")
+    
+    except Exception:
+        raise ModuleException(f"couldn't save image to {relative_path}")
+
+def delete_image(relative_path):
+    """
+    Deletes an image file.
+    Path should be relative to project root.
+    """
+    try:
+        full_path = os.path.join(get_project_root(), relative_path)
+        
+        if os.path.exists(full_path):
+            os.remove(full_path)
+        else:
+            raise ModuleException(f"image at {relative_path} does not exist")
+    
+    except Exception:
+        raise ModuleException(f"couldn't delete image at {relative_path}")
+
+def capture_image_to_disk(relative_path:str):
+    """
+    Uses fswebcam to capture an image using the first accessible webcam,
+    then saves it to the relative project path given as a timestamped jpg.
+    """
+    full_path = os.path.join(get_project_root(),relative_path)
+    if not os.path.exists(full_path):
+        os.makedirs(full_path)
+    
+    image_filename = f'{timestamp()}.jpg'
+    full_save_path = os.path.join(full_path,image_filename)
+    relative_save_path = os.path.join(relative_path,image_filename)
+    
+    try:
+        subprocess.run(['fswebcam', '-r', '1280x720', '--no-banner', full_save_path])
+        report(f'Captured image {image_filename}.',verbose=True)
+        return relative_save_path
+    except Exception:
+        raise ModuleException(f"couldn't capture and save image to {relative_save_path}")
 #endregion
 
 #region Deconz
