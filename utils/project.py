@@ -16,6 +16,9 @@ import threading
 import time
 from datetime import datetime, timedelta
 from logging.handlers import TimedRotatingFileHandler
+import google.auth
+from googleapiclient.discovery import build
+from google.oauth2.service_account import Credentials
 
 on_raspi = False
 if os.name == 'posix':
@@ -430,7 +433,8 @@ class ModuleException(Exception):
     def __init__(self, message, severity=0):
         caller_details = extract_exception_details()
         self.severity = severity
-        message += ": "+caller_details['message']+' ('+caller_details['type']+')'
+        if caller_details:
+            message += ": "+caller_details['message']+' ('+caller_details['type']+')'
         super().__init__(message)
 
 def error_registrar(error_entry):
@@ -449,8 +453,8 @@ def error_registrar(error_entry):
     """
 
         # Define the hardcoded paths to the error registry and buffer using the absolute project root
-    ERROR_REGISTRY_PATH = os.path.join(get_project_root(), "data", "errors", "error_registry.json")
-    ERROR_BUFFER_PATH = os.path.join(get_project_root(), "data", "errors", "error_buffer.json")
+    ERROR_REGISTRY_PATH = os.path.join(get_project_root(), "data", "error_management", "error_registry.json")
+    ERROR_BUFFER_PATH = os.path.join(get_project_root(), "data", "error_management", "error_buffer.json")
     
     error_entry.update({
         "registration_timestamp": None,
@@ -1482,9 +1486,46 @@ def find_val_in_array(nested_list, value):
     find_in_sublist(nested_list, [])
     return positions
 
+def download_google_sheet_to_2D_array(spreadsheet_id, sheet = None):
+    """
+    Uses the Google Sheets API to download the contents of either the first sheet of a spreadsheet (if sheet == None), or from the sheet specified.
+    """
+    try:
+        credentials = Credentials.from_service_account_file(
+            os.path.join(get_project_root(),'config','secrets_and_env','sheets-access-key.json'), 
+            scopes=['https://www.googleapis.com/auth/spreadsheets.readonly']
+            )
+        service = build('sheets', 'v4', credentials=credentials)
+        spreadsheet_metadata = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+    except:
+        raise ModuleException("failed to set up Google Sheets API")
+    
+    try:
+        if sheet:
+            sheet_names = []
+            for sheet_data in spreadsheet_metadata['sheets']:
+                sheet_names.append(sheet_data['properties']['title'])
+            if sheet not in sheet_names:
+                raise ModuleException(f"requested sheet '{sheet}' not in spreadsheet '{spreadsheet_metadata['properties']['title']}'")
+        else:
+            sheet = spreadsheet_metadata['sheets'][0]['properties']['title']
+        
+        range_to_get = sheet +'!A1:Z10000'
+
+        sheet = service.spreadsheets()
+        result = sheet.values().get(spreadsheetId=spreadsheet_id, range=range_to_get).execute()
+        values = result.get('values', [])
+
+        return values
+    except ModuleException as e:
+        raise
+    except:
+        raise ModuleException(f"failed to download sheet '{sheet}' from spreadsheet '{spreadsheet_metadata['properties']['title']}'")
+
 def download_csv_to_2D_array(url:str):
     """
     Download a csv file into an unformatted raw table (2D array).
+    Do not call on published versions of Google Sheets if time-critical because those won't get republished instantly upon change.
     """
     try:
         response = requests.get(url)

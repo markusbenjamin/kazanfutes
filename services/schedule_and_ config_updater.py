@@ -2,7 +2,7 @@
 The only continuously running script. If fails, gets restarted by corresponding service file.
 
 Listens to Firebase and refreshes heating control config, schedules and overrides.
-Generates condensed schedule (weekly schedule + overrides) for next n days based on latest info got.
+Generates condensed schedule (weekly cycle + overrides) for next n days based on latest info got.
 If successful, uploads condensed schedule to Firebase.
 
 Usual logging and reporting.
@@ -20,10 +20,15 @@ heating_config_update_info = {'update_needed':True,'last_updated':None}
 
 update_needed = {'weekly_cycle':{},'override_rooms':True,'override_cycles':True}
 last_update = {'weekly_cycle':{},'override_rooms':None,'override_cycles':None}
-update_urls = {
+update_ids = {
     'weekly_cycle':{},
     'override_rooms':heating_config['override_rooms_url'],
     'override_cycles':heating_config['override_cycles_url']
+    }
+update_sheet_names = {
+    'weekly_cycle':{},
+    'override_rooms':None,
+    'override_cycles':None
     }
 local_scheduling_files_relative_path = 'config/scheduling/local_scheduling_files'
 export_paths = {
@@ -34,7 +39,8 @@ export_paths = {
 for room in rooms_info:
     update_needed['weekly_cycle'][room] = False
     last_update['weekly_cycle'][room] = None
-    update_urls['weekly_cycle'][room] = f"{heating_config['weekly_schedule_url']}&gid={rooms_info[room]['schedule_gid']}"
+    update_ids['weekly_cycle'][room] = heating_config['weekly_cycle_id']
+    update_sheet_names['weekly_cycle'][room] = rooms_info[room]['name']
     export_paths['weekly_cycle'][room] = f"config/scheduling/local_scheduling_files/weekly_cycle_room_{room}.csv"
 
 condensed_schedule_update_info = {'update_needed':True,'last_updated':None}
@@ -46,7 +52,8 @@ def update_local_heating_control_config():
     if heating_config_update_info['update_needed']:
         success = False
         try:
-            heating_control_config_online_version = transpose_2D_array(select_subtable_from_table(download_csv_to_2D_array(heating_config['heating_control_config_url']),[1,-0]))
+            #heating_control_config_online_version = transpose_2D_array(select_subtable_from_table(download_csv_to_2D_array(heating_config['heating_control_config_url']),[1,-0]))
+            heating_control_config_online_version = transpose_2D_array(select_subtable_from_table(download_google_sheet_to_2D_array(heating_config['heating_control_config_id']),[1,-0]))
             updated_heating_config =dict(zip(heating_control_config_online_version[0], heating_control_config_online_version[1]))
             export_dict_as_json(updated_heating_config,'config/heating_control_config.json')
             heating_config_update_info['update_needed'] = False
@@ -125,9 +132,10 @@ def update_local_scheduling_files():
     for update_path in find_val_in_dict(update_needed, True):
         success = False
         try:
-            update_url = read_nested_dict(update_urls,update_path)
-            export_path = read_nested_dict(export_paths,update_path)
-            export_2D_array_to_csv(download_csv_to_2D_array(update_url),export_path)
+            update_id = read_nested_dict(update_ids, update_path)
+            update_sheet_name = read_nested_dict(update_sheet_names, update_path)
+            export_path = read_nested_dict(export_paths, update_path)
+            export_2D_array_to_csv(download_google_sheet_to_2D_array(update_id,update_sheet_name),export_path)
             update_nested_dict(update_needed,update_path,False)
             update_nested_dict(last_update,update_path,datetime.now())
             condensed_schedule_update_info['update_needed'] = True
@@ -250,7 +258,10 @@ def update_condensed_schedule_on_firebase(condensed_schedule:dict):
 #endregion
 
 if __name__ == "__main__":
-    while True:
+    #while True:
+        settings['dev'] = True
+        settings['verbosity'] = True
+
         updated_heating_config = update_local_heating_control_config()
         if updated_heating_config:
             heating_config = updated_heating_config
