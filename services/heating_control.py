@@ -186,7 +186,7 @@ def compare_and_command(heating_switch:dict, system_state:dict):
             room_vote = 0
             reason = 'None given'
             reason_control = 'none'
-            relation = ''
+            relation = str(measured_temp)
             cycle = room_to_cycle(room)
 
             if set_temp != -1 and heating_switch['cycles'][cycle] == 0: # Cycle is room controlled
@@ -423,7 +423,7 @@ def execute_commands():
 
 if __name__ == '__main__':
     settings['verbosity'] = True #DEV
-    settings['dev'] = True #DEV
+    #settings['dev'] = True #DEV
     
     heating_switch = acquire_heating_switch()
     system_state = get_and_export_system_state()
