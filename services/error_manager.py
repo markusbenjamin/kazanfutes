@@ -15,9 +15,9 @@ Tasks:
 from utils.project import *
 import glob
 
-ERROR_REGISTRY_PATH = f"{get_project_root()}/data/errors/error_registry.json"
-ERROR_BUFFER_PATH = f"{get_project_root()}/data/errors/error_buffer.json"
-ERROR_ARCHIVE_PATH = f"{get_project_root()}/data/errors/error_archive.json"
+ERROR_REGISTRY_PATH = f"{get_project_root()}/data/error_management/error_registry.json"
+ERROR_BUFFER_PATH = f"{get_project_root()}/data/error_management/error_buffer.json"
+ERROR_ARCHIVE_PATH = f"{get_project_root()}/data/error_management/error_archive.json"
 #endregion
 
 #region Buffer management

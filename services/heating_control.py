@@ -11,7 +11,7 @@ try:
     rooms = get_rooms_info()
     cycles = get_cycles_info()
     heating_config = load_json_to_dict('config/heating_control_config.json')
-    condensed_schedule = load_json_to_dict('config/condensed_schedule.json')
+    condensed_schedule = load_json_to_dict('config/scheduling/condensed_schedule.json')
     system_node = JSONNodeAtURL(node_relative_path='system')
     report('Successfully loaded config files and initialized Firebase connection.')
     success = True
@@ -116,7 +116,7 @@ def get_and_export_system_state():
     try:
         log(system_state)
         system_node.write(system_state,'state')
-        export_dict_as_json(system_state,'data/system_state/state.json')
+        export_dict_as_json(system_state,'system/state.json')
         success = True
     except ModuleException as e:
         ServiceException(f"Module error while exporting system state", original_exception=e, severity = 3)

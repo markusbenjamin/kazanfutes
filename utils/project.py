@@ -32,7 +32,6 @@ if on_raspi:
     import tinytuya
     from pydeconz.gateway import DeconzSession
     import tzlocal
-    
 
 #endregion
 
@@ -45,7 +44,7 @@ def initialize_settings():
         current_file_path = os.path.abspath(__file__)
         parent_directory_path = os.path.dirname(current_file_path)
         project_root = os.path.dirname(parent_directory_path)
-        with open(os.path.join(project_root, 'config/settings.json'), 'r', encoding='utf-8') as file:
+        with open(os.path.join(project_root, 'utils/settings.json'), 'r', encoding='utf-8') as file:
             settings_dict = json.load(file)            
         return settings_dict
     except Exception as e:
@@ -149,7 +148,7 @@ def log(data: dict):
     calling_script_name = os.path.basename(inspect.stack()[1].filename).split('.')[0]
 
     # Relative path to the log file: default is services directory with the script name in this case
-    relative_log_file_path = os.path.join('services', f'{calling_script_name}.json')
+    relative_log_file_path = os.path.join('service_execution', f'{calling_script_name}.json')
     
     # Initialize the logger and log the data
     log_data(data,relative_log_file_path)
@@ -626,7 +625,7 @@ def get_boiler_state():
     Returns either 0 or 1 after reading the specified GPIO pin for the boiler.
     """
     try:
-        return read_pin_state(get_system_config()['boiler']['GPIO'])
+        return read_pin_state(get_system_setup()['boiler']['GPIO'])
     except Exception:
         raise ModuleException(f"couldn't read boiler state")
 
@@ -637,8 +636,8 @@ def set_boiler_state(state:int):
     """
     success = False
     try:
-        set_pin_mode(get_system_config()['boiler']['GPIO'],GPIO.OUT)
-        success = set_pin_state(get_system_config()['boiler']['GPIO'],state)
+        set_pin_mode(get_system_setup()['boiler']['GPIO'],GPIO.OUT)
+        success = set_pin_state(get_system_setup()['boiler']['GPIO'],state)
     except Exception:
         raise ModuleException(f"couldn't turn boiler {['OFF','ON'][state]}")
     return success
@@ -1047,7 +1046,7 @@ if not on_raspi:
 #endregion
 
 def load_GPIO_state(pin:int = None):
-    GPIO_state = load_json_to_dict('config/GPIO_state.json')
+    GPIO_state = load_json_to_dict('system/GPIO_state.json')
     pin_key = str(pin)
     if isinstance(pin,str):
         pin = int(pin)
@@ -1169,10 +1168,10 @@ def read_pin_state(pin:int):
 """Utility functions related to config."""
 
 def get_rooms_info():
-    return get_system_config("rooms")
+    return get_system_setup("rooms")
 
 def get_cycles_info():
-    return get_system_config("cycles")
+    return get_system_setup("cycles")
 
 def get_pumps_info():
     pumps_info = {}
@@ -1180,8 +1179,8 @@ def get_pumps_info():
         pumps_info[cycle] = info['pump']
     return pumps_info
 
-def get_system_config(subdict_key: str=''):
-    system = load_json_to_dict(os.path.join('config', 'system.json'))
+def get_system_setup(subdict_key: str=''):
+    system = load_json_to_dict(os.path.join('system', 'setup.json'))
     return system if subdict_key == '' else system[subdict_key]
 
 def room_to_cycle(room):

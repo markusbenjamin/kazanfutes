@@ -25,16 +25,17 @@ update_urls = {
     'override_rooms':heating_config['override_rooms_url'],
     'override_cycles':heating_config['override_cycles_url']
     }
+local_scheduling_files_relative_path = 'config/scheduling/local_scheduling_files'
 export_paths = {
     'weekly_cycle':{},
-    'override_rooms':'config/local_scheduling_files/override_rooms.csv',
-    'override_cycles':'config/local_scheduling_files/override_cycles.csv'
+    'override_rooms':local_scheduling_files_relative_path + '/override_rooms.csv',
+    'override_cycles':local_scheduling_files_relative_path + '/override_cycles.csv'
     }
 for room in rooms_info:
     update_needed['weekly_cycle'][room] = False
     last_update['weekly_cycle'][room] = None
     update_urls['weekly_cycle'][room] = f"{heating_config['weekly_schedule_url']}&gid={rooms_info[room]['schedule_gid']}"
-    export_paths['weekly_cycle'][room] = f"config/local_scheduling_files/weekly_cycle_room_{room
+    export_paths['weekly_cycle'][room] = f"config/scheduling/local_scheduling_files/weekly_cycle_room_{room
     }.csv"
 
 condensed_schedule_update_info = {'update_needed':True,'last_updated':None}
@@ -161,7 +162,7 @@ def generate_condensed_schedule(for_how_many_days : int):
         success = False
         try:
             override_commands_for_rooms = response_table_to_dict_list(
-                select_subtable_from_table(load_csv_to_2D_array('config/local_scheduling_files/override_rooms.csv'),row_selection=[1,-0]),
+                select_subtable_from_table(load_csv_to_2D_array(local_scheduling_files_relative_path + '/override_rooms.csv'),row_selection=[1,-0]),
                 ["timestamp","room_name","date","hour_of_day","duration","temp"]
                 )
             rooms_list = list(rooms_info.keys())
@@ -181,7 +182,7 @@ def generate_condensed_schedule(for_how_many_days : int):
                     timepoint_info = generate_timepoint_info(timepoint)
                     for room in rooms_list:
                         weekly_table = transpose_2D_array(select_subtable_from_table(
-                            load_csv_to_2D_array(f"config/local_scheduling_files/weekly_cycle_room_{room}.csv"),
+                            load_csv_to_2D_array(f"{local_scheduling_files_relative_path}/weekly_cycle_room_{room}.csv"),
                             row_selection=[1,-0],
                             col_selection=[1,-0]
                             ))
@@ -222,7 +223,7 @@ def export_condensed_schedule_locally(condensed_schedule:dict):
     report('\nEXPORT CONDENSED SCHEDULE')
     success = False
     try:
-        export_dict_as_json(condensed_schedule,'config/condensed_schedule.json')
+        export_dict_as_json(condensed_schedule,'config/scheduling/condensed_schedule.json')
         success = True
         report("Successfully exported condensed schedule.")
     except ModuleException as e:

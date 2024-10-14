@@ -6,7 +6,7 @@ from utils.project import *
 
 if __name__ == "__main__":
     try:
-        gasmeter_pin = get_system_config()['gasmeter']['GPIO']
+        gasmeter_pin = get_system_setup()['gasmeter']['GPIO']
         set_pin_mode(gasmeter_pin,GPIO.IN,GPIO.PUD_DOWN)
         state = 0
         while True:
