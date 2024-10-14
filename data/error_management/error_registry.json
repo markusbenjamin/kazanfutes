@@ -317,5 +317,16 @@
         "reported_timestamp": null,
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to update local copy of override_rooms: failed to set up Google Sheets API: <HttpError 404 when requesting https://sheets.googleapis.com/v4/spreadsheets/https%3A%2F%2Fdocs.google.com%2Fspreadsheets%2Fd%2F1Cir4TYYhIx14Qja9c4nN9m2GTeZ0FHrJRt03oXs_fgI%2Fpub%3Foutput%3Dcsv?alt=json returned \"Requested entity was not found.\". Details: \"Requested entity was not found.\"> (HttpError).",
+        "severity": 3,
+        "origin": "schedule_and_ config_updater.py/update_local_scheduling_files:138 --> project.py/download_google_sheet_to_2D_array:1501",
+        "origin_timestamp": "2024-10-14-21-54-34",
+        "registration_timestamp": "2024-10-14-21-54-34",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]

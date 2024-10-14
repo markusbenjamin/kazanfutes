@@ -22,8 +22,8 @@ update_needed = {'weekly_cycle':{},'override_rooms':True,'override_cycles':True}
 last_update = {'weekly_cycle':{},'override_rooms':None,'override_cycles':None}
 update_ids = {
     'weekly_cycle':{},
-    'override_rooms':heating_config['override_rooms_url'],
-    'override_cycles':heating_config['override_cycles_url']
+    'override_rooms':heating_config['override_rooms_id'],
+    'override_cycles':heating_config['override_cycles_id']
     }
 update_sheet_names = {
     'weekly_cycle':{},
@@ -258,9 +258,9 @@ def update_condensed_schedule_on_firebase(condensed_schedule:dict):
 #endregion
 
 if __name__ == "__main__":
-    #while True:
-        settings['dev'] = True
-        settings['verbosity'] = True
+    while True:
+        #settings['dev'] = True
+        #settings['verbosity'] = True
 
         updated_heating_config = update_local_heating_control_config()
         if updated_heating_config:
