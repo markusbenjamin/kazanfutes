@@ -259,7 +259,7 @@ def update_condensed_schedule_on_firebase(condensed_schedule:dict):
 
 if __name__ == "__main__":
     while True:
-        #settings['dev'] = True
+        settings['dev'] = True
         #settings['verbosity'] = True
 
         updated_heating_config = update_local_heating_control_config()
