@@ -16,8 +16,9 @@ Menetrend:
             - service + timer
         - heating control dev
             //- commands archive felülíródik
-            //- rendszer szintű ON/OFF
-            - kör szintű kapcsolhatóságot beépíteni
+            //- rendszer, kör és szoba szintű ON/OFF
+            //- firebasere küldje fel a system on/offot és a cycle allow és onoffokat
+            //- firebasere küldje fel, hogy melyik szobának mi az állapota
             - kör szintű időzíthetőséget beépíteni
             - heating_control service-t és timert megírni
         - vmi 0.1-es dashboard firebase systemstate alapján
@@ -37,6 +38,8 @@ Menetrend:
         - system integrity checker
     
     később:
+        - heating control:
+            - ez a sor problémás, ha törlődik egy hőmérő a rendszerből: measured_temps[room] = 0.5 # For non-temp controlled rooms
         - eszközlistát megírni
         - kinézni új helyeket az égőknek
         - meglévő égőket barátságos színűre állítani / lekapcsolni

@@ -46,30 +46,6 @@ for room in rooms_info:
 condensed_schedule_update_info = {'update_needed':True,'last_updated':None}
 #endregion
 
-#region Update local copy of heating control config
-def update_local_heating_control_config():
-    report('\nUPDATE HEATING CONFIG')
-    if heating_config_update_info['update_needed']:
-        success = False
-        try:
-            #heating_control_config_online_version = transpose_2D_array(select_subtable_from_table(download_csv_to_2D_array(heating_config['heating_control_config_url']),[1,-0]))
-            heating_control_config_online_version = transpose_2D_array(select_subtable_from_table(download_google_sheet_to_2D_array(heating_config['heating_control_config_id']),[1,-0]))
-            updated_heating_config =dict(zip(heating_control_config_online_version[0], heating_control_config_online_version[1]))
-            export_dict_as_json(updated_heating_config,'config/heating_control_config.json')
-            heating_config_update_info['update_needed'] = False
-            heating_config_update_info['last_updated'] = datetime.now()
-            update_node.write({'seen_by_updater':True},'heating_control_config')
-            success = True
-            report("Successfully updated local heating control config.")
-            return updated_heating_config
-        except ModuleException as e:
-            ServiceException(f"Module error while trying to update local heating control config", original_exception=e, severity = 2)
-        except Exception:
-            ServiceException(f"Unexpected error while trying to update local heating control config", severity = 2)
-        
-        log({f"success_update_local_heating_control_config":success})
-#endregion
-
 #region Set up Firebase
 def update_detected(relative_path,change_contents):
     """
@@ -79,7 +55,6 @@ def update_detected(relative_path,change_contents):
     change = change_contents[0]
     report(f"Update detected at {change['path']}: {change['data']}")
     report(f"Setting {update_needed,change['path']} to True.",verbose=True)
-    # Nem jó a path reference, a Fb-n szoba névvel van, az itteni dictekben pedig szoba szám
     update_keys = change['path'].split('/')
     if 'heating_control_config' in update_keys:
         heating_config_update_info['update_needed'] = True
@@ -94,6 +69,60 @@ update_node = JSONNodeAtURL(node_relative_path='update')
 update_node.poll_periodically(interval=5,callback=update_detected)
 
 schedule_node = JSONNodeAtURL(node_relative_path='schedule') # Will have: condensed_schedule, condensed_schedule_last_update, cycle_override_schedule (or something to that effect)
+
+system_node = JSONNodeAtURL(node_relative_path='system')
+#endregion
+
+#region Update local copy of heating control config
+def update_local_heating_control_config():
+    report('\nUPDATE HEATING CONFIG')
+    if heating_config_update_info['update_needed']:
+        success = False
+        try:
+            heating_control_config_online_version = transpose_2D_array(select_subtable_from_table(download_google_sheet_to_2D_array(heating_config['heating_control_config_id']),[1,-0],[0,-1]))
+            updated_heating_config =dict(zip(heating_control_config_online_version[0], heating_control_config_online_version[1]))
+            export_dict_as_json(updated_heating_config,'config/heating_control_config.json')
+                        
+            heating_config_update_info['update_needed'] = False
+            heating_config_update_info['last_updated'] = datetime.now()
+            update_node.write({'seen_by_updater':True},'heating_control_config')
+            report("Successfully updated local heating control config.")
+
+            generate_and_export_heating_switch(updated_heating_config)
+            report("Successfully generated heating switch config.")
+            success = True
+            return updated_heating_config
+        except ModuleException as e:
+            ServiceException(f"Module error while trying to update local heating control config", original_exception=e, severity = 2)
+        except Exception:
+            ServiceException(f"Unexpected error while trying to update local heating control config", severity = 2)
+        
+        log({f"success_update_local_heating_control_config":success})
+#endregion
+
+#region Update heating switch
+"""
+Generates a json config file from the heating control table.
+"""
+def generate_and_export_heating_switch(heating_config:dict = None):
+    """
+    Returns the various master switch states based on the heating config dict.
+    """
+    report('\nGENERATE HEATING SWITCH')
+    try:
+        if not heating_config:
+            heating_config = load_json_to_dict('config/heating_control_config.json')
+        heating_switch = {}
+        heating_switch['system'] = int(heating_config['system_on'])
+        heating_switch['cycles'] = {cycle:int(heating_config['cycle_'+str(cycle)+'_on']) for cycle in range(1,5)}
+        room_num = len(get_rooms_info())
+        heating_switch['rooms'] = {room:int(heating_config['room_'+str(room)+'_on']) for room in range(1,room_num + 1)}
+
+        system_node.write(heating_switch,'switch')
+        system_node.write({'last_updated':timestamp()},'switch')
+        export_dict_as_json(heating_switch,'config/heating_switch.json')
+    except Exception:
+        ServiceException("Couldn't generate system switch")
 #endregion
 
 #region Update local copies of scheduling files (weekly cycles, overrides)
@@ -168,10 +197,26 @@ def generate_condensed_schedule(for_how_many_days : int):
     if condensed_schedule_update_info['update_needed']:
         success = False
         try:
-            override_commands_for_rooms = response_table_to_dict_list(
-                select_subtable_from_table(load_csv_to_2D_array(local_scheduling_files_relative_path + '/override_rooms.csv'),row_selection=[1,-0]),
-                ["timestamp","room_name","date","hour_of_day","duration","temp"]
-                )
+            override_commands_for_rooms = [
+                command
+                for command 
+                in response_table_to_dict_list(
+                    select_subtable_from_table(load_csv_to_2D_array(local_scheduling_files_relative_path + '/override_rooms.csv'),row_selection=[1,-0]),
+                    ["timestamp","room_name","date","hour_of_day","duration","temp"]
+                    )
+                if datetime.strptime(command['date']+'-'+command['hour_of_day'],'%d/%m/%Y-%H')+timedelta(hours=int(command['duration'])) >= datetime.now()
+                ]
+            
+            override_commands_for_cycles = [
+                command
+                for command 
+                in response_table_to_dict_list(
+                    select_subtable_from_table(load_csv_to_2D_array(local_scheduling_files_relative_path + '/override_cycles.csv'),row_selection=[1,-0]),
+                    ["timestamp","cycle","date","hour_of_day","duration"]
+                    )
+                if datetime.strptime(command['date']+'-'+command['hour_of_day'],'%d/%m/%Y-%H')+timedelta(hours=int(command['duration'])) >= datetime.now()
+                ]
+        
             rooms_list = list(rooms_info.keys())
 
             condensed_schedule = {}
@@ -188,12 +233,15 @@ def generate_condensed_schedule(for_how_many_days : int):
                             )
                     timepoint_info = generate_timepoint_info(timepoint)
                     for room in rooms_list:
+                        # Set temp based on weekly cycle
                         weekly_table = transpose_2D_array(select_subtable_from_table(
                             load_csv_to_2D_array(f"{local_scheduling_files_relative_path}/weekly_cycle_room_{room}.csv"),
                             row_selection=[1,-0],
                             col_selection=[1,-0]
                             ))
                         set_temp = int(weekly_table[timepoint_info['day_of_week']-1][hour_of_day])
+                        
+                        # Check if there's a relevant room override, overwrite set temp if yes
                         relevant_room_overrides = [
                             command['temp']
                             for command
@@ -209,6 +257,23 @@ def generate_condensed_schedule(for_how_many_days : int):
                         ]
                         if 0<len(relevant_room_overrides): # if at least one valid override
                             set_temp = int(relevant_room_overrides[-1]) # select latest
+                        
+                        # Check if there's a relevant cycle-wide override, overwrite set temp if yes
+                        relevant_cycle_overrides = [
+                            -1
+                            for command
+                            in override_commands_for_cycles
+                            if 
+                            command['cycle'] == room_to_cycle(room) # room is on cycle
+                            and
+                            datetime.strptime(command['date']+'-'+command['hour_of_day'],'%d/%m/%Y-%H') # start of override period is
+                            < # before
+                            timepoint # iterated timepoint and iterated timepoint is
+                            < # before
+                            datetime.strptime(command['date']+'-'+command['hour_of_day'],'%d/%m/%Y-%H') + timedelta(hours=int(command['duration'])) # end of override period
+                        ]
+                        if 0<len(relevant_cycle_overrides): # if at least one valid override
+                            set_temp = -1 # set master off for room
                         update_nested_dict(condensed_schedule,'/'.join([room,str(timepoint_info['unix_day']),str(hour_of_day)]),set_temp)
 
             condensed_schedule_update_info['update_needed'] = False
@@ -247,6 +312,7 @@ def update_condensed_schedule_on_firebase(condensed_schedule:dict):
     success = False
     try:
         schedule_node.write(condensed_schedule,'condensed_schedule')
+        schedule_node.write({'last_updated':timestamp()},'')
         success = True
         report("Successfully updated condensed schedule on Firebase.")
     except ModuleException as e:

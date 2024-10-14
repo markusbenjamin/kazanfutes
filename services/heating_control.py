@@ -14,6 +14,10 @@ try:
     condensed_schedule = load_json_to_dict('config/scheduling/condensed_schedule.json')
     system_node = JSONNodeAtURL(node_relative_path='system')
     report('Successfully loaded config files and initialized Firebase connection.')
+
+    COMMANDS_PATH = os.path.join(get_project_root(), "data", "heating_control", "commands.json")
+    COMMANDS_ARCHIVE_PATH = os.path.join(get_project_root(), "data", "heating_control", "commands_archive.json")
+
     success = True
 except ModuleException as e:
     ServiceException(f"Module error while trying to initialize heating control", original_exception=e, severity = 3)
@@ -22,14 +26,22 @@ except Exception:
 
 log({f"success_initialize":success})
 
-if heating_config['system_on'] == '0':
-    report('Heating is switched off in config file.')
-    if settings['on_raspi']: shutdown_heating()
-    exit()
+#region Update heating switch
+report('\nCHECK HEATING SWITCH')
+def acquire_heating_switch():
+    """
+    Either exits if the system is turned off or returns the heating system switch state.
+    """
+    try:
+        heating_switch = load_json_to_dict('config/heating_switch.json')
 
-COMMANDS_PATH = os.path.join(get_project_root(), "data", "heating_control", "commands.json")
-COMMANDS_ARCHIVE_PATH = os.path.join(get_project_root(), "data", "heating_control", "commands_archive.json")
-
+        if heating_switch['system'] == 0:
+            report('Heating is switched off in config file.')
+            if settings['on_raspi']: shutdown_heating()
+            exit()
+        return heating_switch
+    except Exception:
+        ServiceException("Couldn't load system switch")
 #endregion
 
 #region Get and export system state
@@ -120,6 +132,7 @@ def get_and_export_system_state():
     
     try:
         log(system_state)
+        system_state['last_updated'] = timestamp()
         system_node.write(system_state,'state')
         export_dict_as_json(system_state,'system/state.json')
         success = True
@@ -133,7 +146,7 @@ def get_and_export_system_state():
 #endregion
 
 #region Compare and command
-def compare_and_command(system_state:dict):
+def compare_and_command(heating_switch:dict, system_state:dict):
     """
     Principle: 
         if at least one room requires heating on a given cycle
@@ -155,11 +168,14 @@ def compare_and_command(system_state:dict):
     """
     report('\nCOMPARING SET TEMPS TO ACTUAL TEMPS TO DETERMINE VOTES')
     success = False
+    control = {}
     try:
         rooms_info = get_rooms_info()
         room_votes = {}
         cycle_votes = {'1':0,'2':0,'3':0,'4':0}
         report('Room votes:',verbose=True)
+        control['rooms'] = {}
+
         for room in rooms_info:
             set_temp = system_state['set_temps'][room]
             hysteresis_buffer = float(heating_config['hysteresis_buffer'])
@@ -168,31 +184,62 @@ def compare_and_command(system_state:dict):
             set_high = set_temp + hysteresis_buffer
 
             room_vote = 0
-            reason = 'none given'
+            reason = 'None given'
+            reason_control = 'none'
             relation = ''
+            cycle = room_to_cycle(room)
 
-            if  measured_temp < set_low:
+            if set_temp != -1 and heating_switch['cycles'][cycle] == 0: # Cycle is room controlled
+                if heating_switch['rooms'][room] == 0: # Room is schedule controlled
+                    if  measured_temp < set_low:
+                        room_vote = 1
+                        reason = 'Below set temp'
+                        reason_control = 'below'
+                        relation = f"{measured_temp} < {set_low}"
+                    elif set_high < measured_temp:
+                        room_vote = 0 # Does nothing in current vote-additive logic just included for completeness
+                        reason = 'Above set temp'
+                        reason_control = 'above'
+                        relation = f"{set_high} < {measured_temp}"
+                    else:
+                        room_vote = system_state['pump_states'][cycle]
+                        reason = 'Off hysteresis' if system_state['pump_states'][cycle] == 0 else 'On hysteresis'
+                        reason_control = 'h_off' if system_state['pump_states'][cycle] == 0 else 'h_on'
+                        relation = f"{set_low} <= {measured_temp} <= {set_high}"
+                elif heating_switch['rooms'][room] == 1:
+                    room_vote = 1
+                    reason = 'Room master ON'
+                    reason_control = 'r_m_on'
+                elif heating_switch['rooms'][room] == -1:
+                    room_vote = 0
+                    reason = 'Room master OFF'
+                    reason_control = 'r_m_off'
+            elif set_temp == -1:
+                room_vote = 0
+                reason = f"Cycle {cycle} scheduled master OFF"
+                reason_control = 'c_s_m_off'
+            elif heating_switch['cycles'][cycle] == 1:
                 room_vote = 1
-                reason = 'Below set temp'
-                relation = f"{measured_temp} < {set_low}"
-            elif set_high < measured_temp:
-                room_vote = 0 # Does nothing in this logic just included for completeness
-                reason = 'Above set temp'
-                relation = f"{set_high} < {measured_temp}"
-            else:
-                room_vote = system_state['pump_states'][room_to_cycle(room)]
-                reason = 'Hysteresis'
-                relation = f"{set_low} <= {measured_temp} <= {set_high}"
+                reason = f"Cycle {cycle} master ON"
+                reason_control = 'c_m_on'
+            elif heating_switch['cycles'][cycle] == -1:
+                room_vote = 0
+                reason = f"Cycle {cycle} master OFF"
+                reason_control = 'c_m_off'
             
-            report(f"\t{reason} ({relation}): {rooms_info[room]['name']} voting {['OFF','ON'][room_vote]} for cycle {room_to_cycle(room)}.",verbose=True)
+            report(f"\t{reason} ({relation}): {rooms_info[room]['name']} voting {['OFF','ON'][room_vote]} for cycle {cycle}.",verbose=True)
+            control['rooms'][room] = {'vote':room_vote,'reason':reason_control}
             room_votes[room] = room_vote
-            cycle_votes[room_to_cycle(room)] += room_vote
+            cycle_votes[cycle] += room_vote
             
+        control['cycles'] = {}
         pump_votes = {}
         for cycle,votes in cycle_votes.items():
             pump_votes[cycle] = sign(votes)
+            control['cycles'][cycle] = sign(votes)
 
         boiler_vote = sign(sum(list(pump_votes.values())))
+        control['boiler'] = boiler_vote
 
         log({'room_votes':room_votes})
         log({'cycle_votes':cycle_votes})
@@ -221,6 +268,10 @@ def compare_and_command(system_state:dict):
             ]) + ".", verbose=True)
         report(f"Boiler vote: {['OFF','ON'][boiler_vote]}",verbose=True)
         report(f"Boiler state: {['OFF','ON'][system_state['boiler_state']]}",verbose=True)
+
+        control['last_updated'] = timestamp()
+        system_node.write(control,'control')
+        export_dict_as_json(control,'system/control.json')
         success = True
     except ModuleException as e:
         ServiceException(f"Module error while voting", original_exception=e, severity = 3)
@@ -374,6 +425,7 @@ if __name__ == '__main__':
     settings['verbosity'] = True #DEV
     settings['dev'] = True #DEV
     
+    heating_switch = acquire_heating_switch()
     system_state = get_and_export_system_state()
-    compare_and_command(system_state)
+    compare_and_command(heating_switch, system_state)
     execute_commands()

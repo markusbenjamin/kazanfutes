@@ -1025,6 +1025,7 @@ if not on_raspi:
         PUD_OFF = "PUD_OFF"
         PUD_DOWN = "PUD_DOWN"
         PUD_UP = "PUD_UP"
+        BCM = "BCM"
         
         # Mock functions
         @staticmethod
