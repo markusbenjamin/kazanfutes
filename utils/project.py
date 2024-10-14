@@ -13,6 +13,8 @@ if os.name == 'posix':
     on_raspi = True
 import time
 from datetime import datetime, timedelta
+import pytz
+import tzlocal
 from logging.handlers import TimedRotatingFileHandler
 import threading
 import requests
@@ -706,14 +708,13 @@ def get_room_temps_and_humidity():
 
         sensor_temps_and_hums = {}
         for sensor_id, sensor in sensors_state:
+            last_updated = datetime.strptime(sensor.raw['state']['lastupdated'], "%Y-%m-%dT%H:%M:%S.%f").replace(tzinfo=pytz.UTC).astimezone(tzlocal.get_localzone()).strftime(settings['timestamp_format'])
             if sensor.type == "ZHATemperature":
-                last_updated = datetime.strptime((sensor.raw)['state']['lastupdated'], "%Y-%m-%dT%H:%M:%S.%f").strftime(settings['timestamp_format'])
                 if sensor.name not in sensor_temps_and_hums:
                     sensor_temps_and_hums[sensor.name] = {'temp':'none','hum':'none','last_updated':'none'}
                 sensor_temps_and_hums[sensor.name]['temp'] = sensor.temperature
                 sensor_temps_and_hums[sensor.name]['last_updated'] = last_updated
             elif sensor.type == "ZHAHumidity":
-                last_updated = datetime.strptime((sensor.raw)['state']['lastupdated'], "%Y-%m-%dT%H:%M:%S.%f").strftime(settings['timestamp_format'])
                 if sensor.name not in sensor_temps_and_hums:
                     sensor_temps_and_hums[sensor.name] = {'temp':None,'hum':None,'last_updated':None}
                 sensor_temps_and_hums[sensor.name]['hum'] = sensor.humidity
@@ -930,17 +931,17 @@ if not on_raspi:
 
 #endregion
 
-def load_GPIO_setup(pin:int = None):
-    GPIO_setup = load_json_to_dict('config/GPIO_setup.json')
+def load_GPIO_state(pin:int = None):
+    GPIO_state = load_json_to_dict('config/GPIO_state.json')
     pin_key = str(pin)
     if isinstance(pin,str):
         pin = int(pin)
-    if pin and pin_key not in GPIO_setup:
-        GPIO_setup[pin_key] = {}
-    return GPIO_setup
+    if pin and pin_key not in GPIO_state:
+        GPIO_state[pin_key] = {}
+    return GPIO_state
 
-def save_GPIO_setup(GPIO_setup:dict):
-    return export_dict_as_json(GPIO_setup,'config/GPIO_setup.json')
+def save_GPIO_state(GPIO_state:dict):
+    return export_dict_as_json(GPIO_state,'config/GPIO_state.json')
 
 def release_pin(pin:int):
     """
@@ -950,9 +951,9 @@ def release_pin(pin:int):
     if isinstance(pin,str):
         pin = int(pin)
     set_pin_mode(pin, GPIO.IN)
-    GPIO_setup = load_GPIO_setup()
-    GPIO_setup.pop(pin_key,None)
-    save_GPIO_setup(GPIO_setup)
+    GPIO_state = load_GPIO_state()
+    GPIO_state.pop(pin_key,None)
+    save_GPIO_state(GPIO_state)
 
 def reset_GPIO():
     """
@@ -960,9 +961,9 @@ def reset_GPIO():
     """
     try:
         GPIO.setmode(GPIO.BCM)
-        GPIO_setup = load_GPIO_setup()
+        GPIO_state = load_GPIO_state()
 
-        for pin in GPIO_setup.keys():
+        for pin in GPIO_state.keys():
             release_pin(pin)
     except Exception:
         raise ModuleException(f"couldn't reset GPIO setup")
@@ -979,19 +980,19 @@ def set_pin_mode(pin: int, mode, pud=GPIO.PUD_OFF):
     try:
         GPIO.setmode(GPIO.BCM) # Follows the pin naming convention written on the mother- and breadboard
 
-        GPIO_setup = load_GPIO_setup(pin)
+        GPIO_state = load_GPIO_state(pin)
 
-        GPIO_setup[pin_key]['mode'] = "IN" if mode == GPIO.IN else "OUT"
+        GPIO_state[pin_key]['mode'] = "IN" if mode == GPIO.IN else "OUT"
         if mode == GPIO.OUT and pud != GPIO.PUD_OFF:
             report(f'Warning: trying to set PUD {"UP" if pud == GPIO.PUD_UP else "DOWN"} for OUT pin {pin}. Aborting operation.')
             return
         
         GPIO.setup(pin, mode, pud)
-        GPIO_setup[pin_key]['pud'] = "OFF" if pud == GPIO.PUD_OFF else "UP" if pud == GPIO.PUD_UP else "DOWN"
+        GPIO_state[pin_key]['pud'] = "OFF" if pud == GPIO.PUD_OFF else "UP" if pud == GPIO.PUD_UP else "DOWN"
         if mode == GPIO.IN:
-            GPIO_setup[pin_key].pop("state",None)
+            GPIO_state[pin_key].pop("state",None)
         
-        save_GPIO_setup(GPIO_setup)
+        save_GPIO_state(GPIO_state)
     except Exception:
         raise ModuleException(f"couldn't set pin {pin} mode to {'IN' if mode == GPIO.IN else 'OUT'}")
 
@@ -1006,19 +1007,19 @@ def set_pin_state(pin:int, state:int):
     success = False
     try:
         GPIO.setmode(GPIO.BCM)
-        GPIO_setup = load_GPIO_setup(pin)        
+        GPIO_state = load_GPIO_state(pin)        
 
-        if 'mode' not in GPIO_setup[pin_key].keys():
+        if 'mode' not in GPIO_state[pin_key].keys():
             report(f"Trying to set uninitialized pin {pin} to {['LOW','HIGH'][state]}. Set mode first. Aborting operation.")
             return
-        if GPIO_setup[pin_key]['mode'] == 'IN':
+        if GPIO_state[pin_key]['mode'] == 'IN':
             report(f"Warning: trying to set state {state} for IN pin {pin}. Aborting operation.")
             return
         
         GPIO.setup(pin, GPIO.OUT)
         GPIO.output(pin, GPIO.HIGH if state == 1 else GPIO.LOW)
-        GPIO_setup[pin_key]['state'] = "HIGH" if state == 1 else "LOW"
-        save_GPIO_setup(GPIO_setup)
+        GPIO_state[pin_key]['state'] = "HIGH" if state == 1 else "LOW"
+        save_GPIO_state(GPIO_state)
         success = True
     except Exception:
         raise ModuleException(f"couldn't set pin {pin} to {['LOW','HIGH'][state]}")
@@ -1034,12 +1035,12 @@ def read_pin_state(pin:int):
     try:
         GPIO.setmode(GPIO.BCM)
         
-        GPIO_setup = load_GPIO_setup(pin)
-        if pin_key not in GPIO_setup.keys():
+        GPIO_state = load_GPIO_state(pin)
+        if pin_key not in GPIO_state.keys():
             report(f"Trying to read uninitialized pin {pin}. Aborting operation.")
             return
         state = GPIO.input(pin)
-        #if GPIO_setup[pin_key]['mode'] == 'OUT':
+        #if GPIO_state[pin_key]['mode'] == 'OUT':
         #    state = 1 if state == 0 else 0 # Flip needed to turn input reading to output reading
         return state
     except Exception:
