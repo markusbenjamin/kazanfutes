@@ -1,7 +1,8 @@
 from utils.project import *
 
-node = JSONNodeAtURL(node_relative_path='update')
-node.write({'bla':True},'bla')
+system_setup = get_system_setup()
+node = JSONNodeAtURL(node_relative_path='system')
+node.write({'setup':system_setup},'')
 exit()
 
 firebase_node.poll_periodically(interval=1)
