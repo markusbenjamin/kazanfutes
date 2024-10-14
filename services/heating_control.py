@@ -44,7 +44,7 @@ def get_and_export_system_state():
     success = False
     try:
         report("Acquiring measured temps.",verbose=True)
-        room_temps_and_humidity = get_room_temps_and_humidity_dev()
+        room_temps_and_humidity = get_room_temps_and_humidity()
         measured_temps = {}
         for room,vals in room_temps_and_humidity.items():
             if vals['temp']:
@@ -170,14 +170,14 @@ def compare_and_command(system_state:dict):
                 room_vote = 1
                 reason = 'Below set temp'
                 relation = f"{measured_temp} < {set_low}"
-            elif measured_temp < set_high:
+            elif set_high < measured_temp:
                 room_vote = 0 # Does nothing in this logic just included for completeness
-                reason = 'Hysteresis'
-                relation = f"{set_low} <= {measured_temp} <= {set_high}"
-            else:
-                room_vote = system_state['pump_states'][room_to_cycle(room)]
                 reason = 'Above set temp'
                 relation = f"{set_high} < {measured_temp}"
+            else:
+                room_vote = system_state['pump_states'][room_to_cycle(room)]
+                reason = 'Hysteresis'
+                relation = f"{set_low} <= {measured_temp} <= {set_high}"
             
             report(f"\t{reason} ({relation}): {rooms_info[room]['name']} voting {['OFF','ON'][room_vote]} for cycle {room_to_cycle(room)}.",verbose=True)
             room_votes[room] = room_vote
@@ -195,24 +195,25 @@ def compare_and_command(system_state:dict):
         log({'boiler_vote':boiler_vote})
 
         cycles_info = get_cycles_info()
-        report(f"Cycle votes:\n\t{
+        report(f"Cycle votes:\n\t" + 
             '\n\t'.join([
-            f"{cycles_info[cycle]['name']}: {vote} room wants heating."
-            for cycle,vote 
-            in cycle_votes.items()
-            ])}",verbose=True)
-        report(f"Pump votes: {
+                cycles_info[cycle]['name'] + ': ' + str(vote) + ' room wants heating.'
+                for 
+                cycle, vote 
+                in cycle_votes.items()
+            ]), verbose=True)
+        report(f"Pump votes: " + 
             ', '.join([
-            f"{pump}: {['OFF','ON'][vote]}"
-            for pump,vote 
-            in pump_votes.items()
-            ])}.",verbose=True)
-        report(f"Pump states: {
+                f"{pump}: {['OFF', 'ON'][vote]}"
+                for pump, vote 
+                in pump_votes.items()
+            ]) + ".", verbose=True)
+        report(f"Pump states: " + 
             ', '.join([
-            f"{pump}: {['OFF','ON'][state]}"
-            for pump,state 
-            in system_state['pump_states'].items()
-            ])}.",verbose=True)
+                f"{pump}: {['OFF', 'ON'][state]}"
+                for pump, state 
+                in system_state['pump_states'].items()
+            ]) + ".", verbose=True)
         report(f"Boiler vote: {['OFF','ON'][boiler_vote]}",verbose=True)
         report(f"Boiler state: {['OFF','ON'][system_state['boiler_state']]}",verbose=True)
         success = True
@@ -245,7 +246,7 @@ def compare_and_command(system_state:dict):
             report(f"Issuing command to turn '{device}' {['OFF','ON'][setting]} in {delay} minutes.",verbose=True)
             return command
         else:
-            report('Command already issued.',verbose=True)  
+            report(f"Command ('{device}': {['OFF','ON'][setting]}) already issued.",verbose=True)  
     
     success = False
     try:
@@ -255,7 +256,7 @@ def compare_and_command(system_state:dict):
         append_valid_command = (lambda command: new_commands.append(command) if command else None)
         for cycle, info in cycles_info.items():
             if system_state['pump_states'][cycle] != pump_votes[cycle]:
-                delay = [3, 0][pump_votes[cycle]] # 3 mins cooloff when turning off a cycle
+                delay = [0, 0][pump_votes[cycle]] # In theory 3 mins cooloff when turning off a cycle would be nice, skipping now so there won't be forgotten commands
                 append_valid_command(issue_command(existing_commands, f'pump_{cycle}', delay, pump_votes[cycle]))
         if system_state['boiler_state'] != boiler_vote:
             append_valid_command(issue_command(existing_commands,'boiler',0,boiler_vote))
@@ -306,6 +307,7 @@ def execute_commands():
     Simply load commands for pumps and the boiler then execute the latest actual.
     If successful, set executed to True and set execution timestamp.
     """
+    report('\nEXECUTING COMMANDS')
     success = False
     try:
         commands = load_commands()
@@ -333,11 +335,13 @@ def execute_commands():
             if command['device'] == 'boiler':
                 boiler_switch_success = set_boiler_state(command['setting'])
                 if boiler_switch_success:
+                    report(f"Command executed: '{command['device']}: {['OFF','ON'][command['setting']]}.",verbose=True)
                     command['executed'] = True
                     command['execution_timestamp'] = timestamp()
             else:
                 pumps_switch_successes.append(set_pump_state(command['device'][-1],command['setting']))
                 if pumps_switch_successes[-1]:
+                    report(f"Command executed: '{command['device']}: {['OFF','ON'][command['setting']]}.",verbose=True)
                     command['executed'] = True
                     command['execution_timestamp'] = timestamp()
 

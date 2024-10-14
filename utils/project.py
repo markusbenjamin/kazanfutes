@@ -29,6 +29,7 @@ from PIL import Image
 
 if on_raspi:
     import RPi.GPIO as GPIO
+    GPIO.setwarnings(False)
     import tinytuya
     from pydeconz.gateway import DeconzSession
     import tzlocal
@@ -1055,7 +1056,7 @@ def load_GPIO_state(pin:int = None):
     return GPIO_state
 
 def save_GPIO_state(GPIO_state:dict):
-    return export_dict_as_json(GPIO_state,'config/GPIO_state.json')
+    return export_dict_as_json(GPIO_state,'system/GPIO_state.json')
 
 def release_pin(pin:int):
     """
@@ -1150,12 +1151,11 @@ def read_pin_state(pin:int):
         GPIO.setmode(GPIO.BCM)
         
         GPIO_state = load_GPIO_state(pin)
-        if pin_key not in GPIO_state.keys():
-            report(f"Trying to read uninitialized pin {pin}. Aborting operation.")
-            return
+
+        if 'mode' not in GPIO_state[pin_key].keys():
+            return 0
+        set_pin_mode(pin,GPIO.OUT if GPIO_state[pin_key]['mode']=='OUT' else GPIO.IN)
         state = GPIO.input(pin)
-        #if GPIO_state[pin_key]['mode'] == 'OUT':
-        #    state = 1 if state == 0 else 0 # Flip needed to turn input reading to output reading
         return state
     except Exception:
         raise ModuleException(f"couldn't read state of GPIO pin {pin}")

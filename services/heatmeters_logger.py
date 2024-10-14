@@ -2,6 +2,9 @@ from utils.project import *
 
 success = False
 try:
+    time.sleep(random.randint(1, 20)) # To avoid synchronisation with the cycling of heatmeter displays
+    captured_image_path = capture_image_to_disk('data/logs/heat_delivery/raw/')
+
     crop_rectangles = [
         (192,401,228,420),
         (193,555,229,572),
@@ -9,7 +12,6 @@ try:
         (191,251,227,270)
     ]
 
-    captured_image_path = capture_image_to_disk('data/logs/heat_delivery/raw/')
     generate_and_save_cycle_crops(
         captured_image_path,
         crop_rectangles

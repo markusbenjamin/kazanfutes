@@ -35,8 +35,7 @@ for room in rooms_info:
     update_needed['weekly_cycle'][room] = False
     last_update['weekly_cycle'][room] = None
     update_urls['weekly_cycle'][room] = f"{heating_config['weekly_schedule_url']}&gid={rooms_info[room]['schedule_gid']}"
-    export_paths['weekly_cycle'][room] = f"config/scheduling/local_scheduling_files/weekly_cycle_room_{room
-    }.csv"
+    export_paths['weekly_cycle'][room] = f"config/scheduling/local_scheduling_files/weekly_cycle_room_{room}.csv"
 
 condensed_schedule_update_info = {'update_needed':True,'last_updated':None}
 #endregion
@@ -136,8 +135,8 @@ def update_local_scheduling_files():
             success = True
             update_keys = update_path.split('/')
             if 'weekly_cycle' in update_keys:
-                update_node.write({'seen_by_updater':True},f'weekly_cycle/{rooms_info[update_keys[1]]['name']}')
-                report(f'Successfully updated local copy of weekly_cycle/{rooms_info[update_keys[1]]['name']}.')
+                update_node.write({'seen_by_updater':True},f'weekly_cycle/{rooms_info[update_keys[1]]["name"]}')
+                report(f'Successfully updated local copy of weekly_cycle/{rooms_info[update_keys[1]]["name"]}.')
             else:
                 update_node.write({'seen_by_updater':True},update_path)
                 report(f'Successfully updated local copy of {update_path}.')
@@ -264,4 +263,5 @@ if __name__ == "__main__":
         if settings['dev']:
             exit()
         else:
+            report('\nSLEEPING FOR 10 SECS')
             time.sleep(10)
