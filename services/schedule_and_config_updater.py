@@ -18,22 +18,25 @@ rooms_info = get_rooms_info()
 heating_config = load_json_to_dict('config/heating_control_config.json')
 heating_config_update_info = {'update_needed':True,'last_updated':None}
 
-update_needed = {'weekly_cycle':{},'override_rooms':True,'override_cycles':True}
-last_update = {'weekly_cycle':{},'override_rooms':None,'override_cycles':None}
+update_needed = {'weekly_cycle':{},'override_rooms':True,'override_rooms_qr':True,'override_cycles':True}
+last_update = {'weekly_cycle':{},'override_rooms':None,'override_rooms_qr':None,'override_cycles':None}
 update_ids = {
     'weekly_cycle':{},
     'override_rooms':heating_config['override_rooms_id'],
+    'override_rooms_qr':heating_config['override_rooms_qr_id'],
     'override_cycles':heating_config['override_cycles_id']
     }
 update_sheet_names = {
     'weekly_cycle':{},
     'override_rooms':None,
+    'override_rooms_qr':None,
     'override_cycles':None
     }
 local_scheduling_files_relative_path = 'config/scheduling/local_scheduling_files'
 export_paths = {
     'weekly_cycle':{},
     'override_rooms':local_scheduling_files_relative_path + '/override_rooms.csv',
+    'override_rooms_qr':local_scheduling_files_relative_path + '/override_rooms_qr.csv',
     'override_cycles':local_scheduling_files_relative_path + '/override_cycles.csv'
     }
 for room in rooms_info:
@@ -202,17 +205,25 @@ def generate_condensed_schedule(for_how_many_days : int):
                 for command 
                 in response_table_to_dict_list(
                     select_subtable_from_table(load_csv_to_2D_array(local_scheduling_files_relative_path + '/override_rooms.csv'),row_selection=[1,-0]),
-                    ["timestamp","room_name","date","hour_of_day","duration","temp"]
+                    ["google_timestamp","room_name","date","hour_of_day","duration","temp"]
+                    )
+                if datetime.strptime(command['date']+'-'+command['hour_of_day'],'%d/%m/%Y-%H')+timedelta(hours=int(command['duration'])) >= datetime.now()
+                ] + [
+                command
+                for command 
+                in response_table_to_dict_list(
+                    select_subtable_from_table(load_csv_to_2D_array(local_scheduling_files_relative_path + '/override_rooms_qr.csv'),row_selection=[1,-0]),
+                    ["google_timestamp","room_name","date","hour_of_day","duration","temp"]
                     )
                 if datetime.strptime(command['date']+'-'+command['hour_of_day'],'%d/%m/%Y-%H')+timedelta(hours=int(command['duration'])) >= datetime.now()
                 ]
-            
+
             override_commands_for_cycles = [
                 command
                 for command 
                 in response_table_to_dict_list(
                     select_subtable_from_table(load_csv_to_2D_array(local_scheduling_files_relative_path + '/override_cycles.csv'),row_selection=[1,-0]),
-                    ["timestamp","cycle","date","hour_of_day","duration"]
+                    ["google_timestamp","cycle","date","hour_of_day","duration"]
                     )
                 if datetime.strptime(command['date']+'-'+command['hour_of_day'],'%d/%m/%Y-%H')+timedelta(hours=int(command['duration'])) >= datetime.now()
                 ]
@@ -243,7 +254,7 @@ def generate_condensed_schedule(for_how_many_days : int):
                         
                         # Check if there's a relevant room override, overwrite set temp if yes
                         relevant_room_overrides = [
-                            command['temp']
+                            command
                             for command
                             in override_commands_for_rooms
                             if 
@@ -255,8 +266,11 @@ def generate_condensed_schedule(for_how_many_days : int):
                             < # before
                             datetime.strptime(command['date']+'-'+command['hour_of_day'],'%d/%m/%Y-%H') + timedelta(hours=int(command['duration'])) # end of override period
                         ]
+
+                        relevant_room_overrides = sorted(relevant_room_overrides, key=lambda command: datetime_object_from_google_timestamp(command['google_timestamp']))
+
                         if 0<len(relevant_room_overrides): # if at least one valid override
-                            set_temp = int(relevant_room_overrides[-1]) # select latest
+                            set_temp = int(relevant_room_overrides[-1]['temp']) # select latest
                         
                         # Check if there's a relevant cycle-wide override, overwrite set temp if yes
                         relevant_cycle_overrides = [
