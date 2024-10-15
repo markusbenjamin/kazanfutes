@@ -26,20 +26,21 @@ Menetrend:
         //- vmi 0.1-es dashboard firebase alapján
         - QR kódos kapcsolhatóság:
             //- sémát kitalálni
-            - QR kód --> fix GitHub pages link
-            - linkek: AppsScriptet indítanak el az override SpreadSheetben, ami egy másik sheetre teszi be a parancsot
-            - a schedule updaterben be kell állítani, hogy azt is letöltse, és simítsa egybe
+            //- QR kód --> fix GitHub pages link
+            //- linkek: AppsScriptet indítanak el az override SpreadSheetben, ami egy másik sheetre teszi be a parancsot
+            //- a schedule updaterben be kell állítani, hogy azt is letöltse, és simítsa egybe
+            - QR kódokat legenerálni és tesztelni
+            - RasPin frissíteni a schedule updatert, hogy kezelje az új adatforrást
         - schedule megjelenítés
         - szobák heti ciklusát csekkolni, elkezdeni leegyeztetni felhasználókkal
+    
+    később:
         - heating control dev tovább
             - kezdjen valamit azzal, ha régi a hőmérséklet adat egy szobából
             - jelenlét szenzor Lahmacunba
             - lehessen hozzáadni kapcsolható hősugárzót
-        - system integrity checker
-    
-    később:
-        - heating control:
             - ez a sor problémás, ha törlődik egy hőmérő a rendszerből: measured_temps[room] = 0.5 # For non-temp controlled rooms
+        - system integrity checker
         - eszközlistát megírni
         - kinézni új helyeket az égőknek
         - meglévő égőket barátságos színűre állítani / lekapcsolni
