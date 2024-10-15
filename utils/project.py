@@ -1243,17 +1243,22 @@ def sign(num):
     return (num > 0) - (num < 0)
 
 #region Time
-def timestamp(datetime_object:datetime = datetime.now()):
+def timestamp(datetime_object:datetime = None):
     """
     Returns a timestamp string with the format specified in settings.
     """
-    return datetime_object.strftime(settings['timestamp_format'])
+    if datetime_object:
+        return datetime_object.strftime(settings['timestamp_format'])
+    else:
+        datetime.now().strftime(settings['timestamp_format'])
 
-def generate_timepoint_info(timepoint = datetime.now()):
+def generate_timepoint_info(timepoint = None):
     """
     If no arguments supplied generate for now, else for datetime or timestamp string.
     Returns dict with keys: unix_day, month, day_of_week, weekday, timestamp, datetime_object.
     """
+    if not timepoint:
+        timepoint = datetime.now()
     if isinstance(timepoint,datetime) or isinstance(timepoint,str):
         if isinstance(timepoint,str):
             timepoint = timestamp_to_datetime(timepoint)
