@@ -438,5 +438,27 @@
         "reported_timestamp": "2024-10-15-09-25-04",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while voting: type datetime.timedelta doesn't define __round__ method.",
+        "severity": 3,
+        "origin": "heating_control.py/compare_and_command:194",
+        "origin_timestamp": "2024-10-15-12-42-49",
+        "registration_timestamp": "2024-10-15-12-42-49",
+        "reported": true,
+        "reported_timestamp": "2024-10-15-12-45-07",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while issuing commands: cannot access local variable 'pump_votes' where it is not associated with a value.",
+        "severity": 3,
+        "origin": "heating_control.py/compare_and_command:320",
+        "origin_timestamp": "2024-10-15-12-42-49",
+        "registration_timestamp": "2024-10-15-12-42-49",
+        "reported": true,
+        "reported_timestamp": "2024-10-15-12-45-07",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
