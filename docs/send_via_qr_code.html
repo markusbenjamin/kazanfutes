@@ -30,7 +30,7 @@
                 duration: Number(params.get("duration")) || null,
                 until: Number(params.get("until")) || null,
                 temp: Number(params.get("temp")) || "hány fok",
-                redirect: params.get("redirect") == 0 ? false : true || true
+                redirect: params.get("redirect") == 0 ? false : true || false
             };
         }
 
@@ -53,7 +53,8 @@
 
             const displayTitleArea = document.getElementById("display-title");
             const styleStringTitle = 'style="font-size:28px; text-align: center; font-weight:bold"'
-            displayTitleArea.innerHTML = `<p ${styleStringTitle}>${loadParams.room_name}: ${loadParams.title}</p>`;
+            const requestTitle = loadParams.title.replace(/_/g, ' ');
+            displayTitleArea.innerHTML = `<p ${styleStringTitle}>${loadParams.room_name}: ${requestTitle}</p>`;
 
             const styleStringParams = 'style="font-size:25px; text-align: center;"'
 
