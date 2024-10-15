@@ -1159,7 +1159,11 @@ def read_pin_state(pin:int):
 
         if 'mode' not in GPIO_state[pin_key].keys():
             return 0
-        set_pin_mode(pin,GPIO.OUT if GPIO_state[pin_key]['mode']=='OUT' else GPIO.IN)
+        set_pin_mode(
+            pin,
+            GPIO.OUT if GPIO_state[pin_key]['mode']=='OUT' else GPIO.IN,
+            GPIO.PUD_OFF if GPIO_state[pin_key]['pud'] == "OFF" else GPIO.PUD_UP if GPIO_state[pin_key]['pud'] == GPIO.PUD_UP else GPIO.PUD_DOWN
+            )
         state = GPIO.input(pin)
         return state
     except Exception:
