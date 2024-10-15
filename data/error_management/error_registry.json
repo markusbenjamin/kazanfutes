@@ -339,5 +339,27 @@
         "reported_timestamp": "2024-10-15-00-00-03",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to acquire temperature and humidity data: couldn't read sensor state due to: failed to connect to Deconz API due to unexpected error: Error requesting data from 192.168.29.54: Cannot connect to host 192.168.29.54:80 ssl:default [Network is unreachable] (RequestError) (ModuleException).",
+        "severity": 3,
+        "origin": "temperature_and_humidity_logger.py:10 --> project.py/get_room_temps_and_humidity:775",
+        "origin_timestamp": "2024-10-15-09-21-34",
+        "registration_timestamp": "2024-10-15-09-21-34",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to initialize heating control: failed to interact with node 'system' via get: HTTPSConnectionPool(host='kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app', port=443): Max retries exceeded with url: /system/.json (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0xf5766490>: Failed to resolve 'kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app' ([Errno -3] Temporary failure in name resolution)\")) (ConnectionError).",
+        "severity": 3,
+        "origin": "heating_control.py:15 --> project.py/__init__:240 --> project.py/read:266 --> project.py/interact:260",
+        "origin_timestamp": "2024-10-15-09-21-34",
+        "registration_timestamp": "2024-10-15-09-21-34",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
