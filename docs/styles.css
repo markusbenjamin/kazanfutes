@@ -1,33 +1,56 @@
 body {
     background-color: #fffee4;
-    font-family: Arial, sans-serif; /* Set the font */
+    font-family: Arial, sans-serif;
+    /* Set the font */
     color: #e8cc15;
     margin: 0;
     padding: 0;
 }
+
 .container {
     text-align: center;
     margin: 0 auto;
     padding-top: 50px;
     width: 80%;
 }
+
 h1 {
     font-size: 36px;
-    color: #c5ab00;
+    color: #e8cc15;
     margin-bottom: 40px;
+    text-align: center;
 }
+
 ul {
     list-style-type: none;
     padding: 0;
 }
+
 li {
     margin: 20px 0;
 }
+
 a {
     text-decoration: none;
     font-size: 36px;
     color: #e8cc15;
 }
+
 a:hover {
     color: #c5ab00;
+}
+
+table {
+    margin: 0 auto;
+    border-collapse: collapse;
+    width: 50%;
+}
+
+th,
+td {
+    padding: 10px;
+    text-align: center;
+    border: 2px dotted #e8cc15;
+    color: #c5ab00;
+    font-size: 20px;
 }

@@ -152,7 +152,7 @@ def log(data: dict):
     calling_script_name = os.path.basename(inspect.stack()[1].filename).split('.')[0]
 
     # Relative path to the log file: default is services directory with the script name in this case
-    relative_log_file_path = os.path.join('service_execution', f'{calling_script_name}.json')
+    relative_log_file_path = os.path.join('service_execution', f'{calling_script_name}/{calling_script_name}.json')
     
     # Initialize the logger and log the data
     log_data(data,relative_log_file_path)
