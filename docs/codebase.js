@@ -10,6 +10,48 @@ function fetchJSONEndpoint(url) {
         });
 }
 
+function googleTimestamp(date = null) {
+    if(date == null){
+        date = new Date()
+    }
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');  // Months are 0-indexed
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+}
+
+function humanTimestamp(date = null) {
+    if(date == null){
+        date = new Date()
+    }
+    const year = now.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');  // Months are 0-indexed
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    
+    return `${year}.${month}.${day}. ${hours}:${minutes}`;
+}
+
+function timestamp(date = null) {
+    if(date == null){
+        date = new Date()
+    }
+    const year = now.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');  // Months are 0-indexed
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}-${hours}-${minutes}-${seconds}`;
+}
+
 function dateFromTimestamp(timestampString) {
     // Split the string by hyphens
     const parts = timestampString.split('-');
@@ -46,16 +88,52 @@ function timePassedSince(date, granularity = 'minutes') {
     }
 }
 
+function addTimeToDate(date, amount, granularity) {
+    const newDate = new Date(date);  // Create a copy of the original date
+
+    switch (granularity) {
+        case 'milliseconds':
+            newDate.setMilliseconds(newDate.getMilliseconds() + amount);
+            break;
+        case 'seconds':
+            newDate.setSeconds(newDate.getSeconds() + amount);
+            break;
+        case 'minutes':
+            newDate.setMinutes(newDate.getMinutes() + amount);
+            break;
+        case 'hours':
+            newDate.setHours(newDate.getHours() + amount);
+            break;
+        case 'days':
+            newDate.setDate(newDate.getDate() + amount);
+            break;
+        default:
+            throw new Error("Invalid granularity. Use 'milliseconds', 'seconds', 'minutes', 'hours', or 'days'.");
+    }
+
+    return newDate;
+}
+
 function roundTo(num, multiple) {
     return Math.round(num / multiple) * multiple;
 }
 
 function getUnixDay(date = null) {
-    if(date == null){
-        date = new Date()
+    if (date == null) {
+        date = new Date();
     }
-    const unixTime = date.getTime();  // Get the timestamp in milliseconds
-    const unixDay = Math.floor(unixTime / (1000 * 60 * 60 * 24));  // Convert to days
+
+    // Get the time zone offset for Budapest in milliseconds
+    const options = { timeZone: 'Europe/Budapest', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' };
+    const formatter = new Intl.DateTimeFormat('en-US', options);
+
+    // Use the formatter to convert to Budapest time
+    const parts = formatter.formatToParts(date);
+
+    // Reconstruct the adjusted time in the Budapest time zone
+    const adjustedDate = new Date(`${parts[4].value}-${parts[0].value}-${parts[2].value}T00:00:00Z`);
+    const unixDay = Math.floor(adjustedDate.getTime() / (1000 * 60 * 60 * 24));
+
     return unixDay;
 }
 
@@ -64,4 +142,8 @@ function getHourOfDay(date = null) {
         date = new Date()
     }
     return Number(date.toTimeString().slice(0,2));
+}
+
+function hasNoNullValues(obj) {
+    return Object.values(obj).every(value => value !== null);
 }

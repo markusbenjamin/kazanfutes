@@ -1251,6 +1251,12 @@ def timestamp(datetime_object:datetime = None):
         return datetime_object.strftime(settings['timestamp_format'])
     else:
         return datetime.now().strftime(settings['timestamp_format'])
+    
+def datetime_object_from_google_timestamp(google_timestamp:str):
+    """
+    Returns a timestamp string with the format specified in settings.
+    """
+    return datetime.now().strptime(google_timestamp,"%d/%m/%Y %H:%M:%S")
 
 def generate_timepoint_info(timepoint = None):
     """
