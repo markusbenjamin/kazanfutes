@@ -63,13 +63,17 @@ def get_and_export_system_state():
         report("Acquiring measured temps.",verbose=True)
         room_temps_and_humidity = get_room_temps_and_humidity()
         measured_temps = {}
+        sensor_last_updated = {}
         for room,vals in room_temps_and_humidity.items():
             if vals['temp']:
                 measured_temps[room] = vals['temp']/100
+                sensor_last_updated[room] = vals['last_updated']
             else:
                 measured_temps[room] = 0.5 # For non-temp controlled rooms
+                sensor_last_updated[room] = datetime.now().strftime(settings['timestamp_format'])
 
         system_state['measured_temps'] = measured_temps
+        system_state['sensor_last_updated'] = sensor_last_updated
 
         report("Successfully acquired measured temps.")
         success = True
@@ -180,13 +184,15 @@ def compare_and_command(heating_switch:dict, system_state:dict):
             set_temp = system_state['set_temps'][room]
             hysteresis_buffer = float(heating_config['hysteresis_buffer'])
             measured_temp = system_state['measured_temps'][room]
+            sensor_last_updated = system_state['sensor_last_updated'][room]
             set_low = set_temp - hysteresis_buffer
             set_high = set_temp + hysteresis_buffer
 
             room_vote = 0
             reason = 'None given'
             reason_control = 'none'
-            relation = str(measured_temp)
+            minutes_since_update = round(datetime.now() - datetime.strptime(sensor_last_updated,settings['timestamp_format']))
+            relation = f"{measured_temp} °C {minutes_since_update} mins ago"
             cycle = room_to_cycle(room)
 
             if set_temp != -1 and heating_switch['cycles'][cycle] == 0: # Cycle is room controlled
@@ -195,17 +201,17 @@ def compare_and_command(heating_switch:dict, system_state:dict):
                         room_vote = 1
                         reason = 'Below set temp'
                         reason_control = 'below'
-                        relation = f"{measured_temp} < {set_low}"
+                        relation = f"{measured_temp} < {set_low} °C {minutes_since_update} mins ago"
                     elif set_high < measured_temp:
                         room_vote = 0 # Does nothing in current vote-additive logic just included for completeness
                         reason = 'Above set temp'
                         reason_control = 'above'
-                        relation = f"{set_high} < {measured_temp}"
+                        relation = f"{set_high} < {measured_temp} °C {minutes_since_update} mins ago"
                     else:
                         room_vote = system_state['pump_states'][cycle]
                         reason = 'Off hysteresis' if system_state['pump_states'][cycle] == 0 else 'On hysteresis'
                         reason_control = 'h_off' if system_state['pump_states'][cycle] == 0 else 'h_on'
-                        relation = f"{set_low} <= {measured_temp} <= {set_high}"
+                        relation = f"{set_low} <= {measured_temp} <= {set_high} °C {minutes_since_update} mins ago"
                 elif heating_switch['rooms'][room] == 1:
                     room_vote = 1
                     reason = 'Room master ON'
