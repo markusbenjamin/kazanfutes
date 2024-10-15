@@ -49,3 +49,19 @@ function timePassedSince(date, granularity = 'minutes') {
 function roundTo(num, multiple) {
     return Math.round(num / multiple) * multiple;
 }
+
+function getUnixDay(date = null) {
+    if(date == null){
+        date = new Date()
+    }
+    const unixTime = date.getTime();  // Get the timestamp in milliseconds
+    const unixDay = Math.floor(unixTime / (1000 * 60 * 60 * 24));  // Convert to days
+    return unixDay;
+}
+
+function getHourOfDay(date = null) {
+    if(date == null){
+        date = new Date()
+    }
+    return Number(date.toTimeString().slice(0,2));
+}

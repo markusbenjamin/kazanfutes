@@ -19,40 +19,36 @@
         function fetchAndUpdateTable() {
             fetchJSONEndpoint('https://raw.githubusercontent.com/markusbenjamin/kazanfutes/refs/heads/main/utils/settings.json').then(data => {
                 heatingControlConfig = data;
-                fetchJSONEndpoint(heatingControlConfig["firebase_url"] + "/system.json").then(data => {
-                    system = data;
-                    tableData = constructTableData(system);
-                    populateSystemStateTable(tableData);
+                fetchJSONEndpoint(heatingControlConfig["firebase_url"] + "/schedule.json").then(data => {
+                    schedule = data
+                    fetchJSONEndpoint(heatingControlConfig["firebase_url"] + "/system.json").then(data => {
+                        system = data;
+                        tableData = constructTableData(schedule, system);
+                        populateSystemStateTable(tableData);
+                    });
                 });
             });
         }
 
-        function constructTableData(system) {
-            lastUpdateDate = dateFromTimestamp(system['state']['last_updated'])
-            lastUpdateHMS = lastUpdateDate.toTimeString().slice(0, 5)
-            minutesSinceLastUpdate = timePassedSince(lastUpdateDate)
-            headerData = {
-                "utolsó frissítés": (minutesSinceLastUpdate < 1 ? "< 1 perce" : minutesSinceLastUpdate + " perce") +
-                    " (" + lastUpdateHMS + ")"
-            }
-
+        function constructTableData(schedule, system) {
             boilerData = {
                 "kazán": system['state']['boiler_state'] == 1 ? "BE" : "KI"
             }
 
             cyclesData = {}
+            cycleLabels = ['1-es kör', '2-es kör', '3-mas kör', '4-es kör']
             cyclesInfo = []
             for (let cycle = 1; cycle < 5; cycle++) {
                 cyclesData[
-                    system['setup']['cycles'][cycle.toString()]['name'] + " (" + ['1-es kör', '2-es kör', '3-mas kör', '4-es kör'][cycle - 1] + ")"
+                    system['setup']['cycles'][cycle.toString()]['name'] + " (" + cycleLabels[cycle - 1] + ")"
                 ] = system['state']['pump_states'][cycle] == 1 ? "BE" : "KI"
                 cyclesInfo.push(
-                    "kör "+cycle + ": " + (system['state']['pump_states'][cycle] == 1 ? "BE" : "KI")
+                    "kör " + cycle + ": " + (system['state']['pump_states'][cycle] == 1 ? "BE" : "KI")
                 )
             }
 
             heatingSystemData = {
-                "fűtés": "kazán: " + (system['state']['boiler_state'] == 1 ? "BE" : "KI") +", "+ cyclesInfo.join(', ')
+                "fűtés": "kazán: " + (system['state']['boiler_state'] == 1 ? "BE" : "KI") + ", " + cyclesInfo.join(', ')
             }
 
             roomsData = {}
@@ -71,19 +67,48 @@
             for (let room = 1; room < Object.keys(system['setup']['rooms']).length; room++) {
                 hoursSinceSensorLastUpdate = timePassedSince(dateFromTimestamp(system['state']['sensor_last_updated'][room]), granularity = 'hours')
 
-                tempControlled = system['state']['set_temps'][room] > 1
+                setTempForRoomAccordingToHeatingControl = system['state']['set_temps'][room]
+                setTempForRoomFromUploadedSchedule = schedule['condensed_schedule'][room][getUnixDay()][getHourOfDay()]
+                setTempForRoom = setTempForRoomFromUploadedSchedule
 
-                roomsData[system['setup']['rooms'][room.toString()]['name'] + " (" + system['setup']['rooms'][room.toString()]['cycle'] + ")"] =
+                tempControlled = setTempForRoom > 1
+
+                roomsData[system['setup']['rooms'][room.toString()]['name'] + " (" + cycleLabels[system['setup']['rooms'][room.toString()]['cycle'] - 1] + ")"] =
                     (room < 10 ? roundTo(system['state']['measured_temps'][room], 0.5) + "°C" + ", " : "") +
                     (tempControlled ?
-                        ("(" + roundTo(system['state']['set_temps'][room], 0.1) + "°C)" + ", ") :
+                        ("(" + roundTo(setTempForRoom, 0.1) + "°C)" + ", ") :
                         "") +
                     (system['control']['rooms'][room]['vote'] == 0 ? "nem kér fűtést" : "fűtést kér") + ", " +
                     reasonMapping[system['control']['rooms'][room]['reason']] +
                     (hoursSinceSensorLastUpdate > 1 ? (", ! szenzor " + roundTo(hoursSinceSensorLastUpdate, 0.5) + "órája nem frissült") : "")
             }
 
-            tableData = { ...headerData, ...heatingSystemData, ...roomsData }
+            stateLastUpdateDate = dateFromTimestamp(system['state']['last_updated'])
+            stateLastUpdateHMS = stateLastUpdateDate.toTimeString().slice(0, 5)
+            minutesSinceLastStateUpdate = timePassedSince(stateLastUpdateDate)
+
+            scheduleLastUpdateDate = dateFromTimestamp(schedule['last_updated'])
+            scheduleLastUpdateHMS = scheduleLastUpdateDate.toTimeString().slice(0, 5)
+            minutesSinceLastScheduleUpdate = timePassedSince(scheduleLastUpdateDate)
+            hoursSinceLastScheduleUpdate = roundTo(timePassedSince(scheduleLastUpdateDate, granularity = "hours"), 0.1)
+            daysSinceLastScheduleUpdate = roundTo(timePassedSince(scheduleLastUpdateDate, granularity = "days"), 1)
+
+            timeSinceLastUpdateInfo = minutesSinceLastScheduleUpdate < 60 ?
+                ((minutesSinceLastScheduleUpdate < 1 ? "< 1 perce" : minutesSinceLastScheduleUpdate + " perce")) :
+                (
+                    daysSinceLastScheduleUpdate < 1 ?
+                    hoursSinceLastScheduleUpdate + " órája" :
+                    daysSinceLastScheduleUpdate + " napja"
+                )
+
+            footerData = {
+                "vezérlés lefutott": (minutesSinceLastStateUpdate < 1 ? "< 1 perce" : minutesSinceLastStateUpdate + " perce") +
+                    " (" + stateLastUpdateHMS + ")",
+                "hőmérsékleti beállítások frissítve": timeSinceLastUpdateInfo +
+                    (daysSinceLastScheduleUpdate < 1 ? " (" + scheduleLastUpdateHMS + ")": "")
+            }
+
+            tableData = { ...heatingSystemData, ...roomsData, ...footerData }
             return tableData
         }
 
