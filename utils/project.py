@@ -1250,7 +1250,7 @@ def timestamp(datetime_object:datetime = None):
     if datetime_object:
         return datetime_object.strftime(settings['timestamp_format'])
     else:
-        datetime.now().strftime(settings['timestamp_format'])
+        return datetime.now().strftime(settings['timestamp_format'])
 
 def generate_timepoint_info(timepoint = None):
     """
