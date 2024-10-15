@@ -16,14 +16,6 @@
     </table>
 
     <script>
-        // Placeholder JSON object
-        /*const data = {
-            "temperature": "22°C",
-            "boiler": "On",
-            "room1": "21°C",
-            "room2": "19°C"
-        };*/
-
         function fetchAndUpdateTable() {
             fetchJSONEndpoint('https://raw.githubusercontent.com/markusbenjamin/kazanfutes/refs/heads/main/utils/settings.json').then(data => {
                 heatingControlConfig = data;
@@ -49,10 +41,18 @@
             }
 
             cyclesData = {}
+            cyclesInfo = []
             for (let cycle = 1; cycle < 5; cycle++) {
                 cyclesData[
                     system['setup']['cycles'][cycle.toString()]['name'] + " (" + ['1-es kör', '2-es kör', '3-mas kör', '4-es kör'][cycle - 1] + ")"
                 ] = system['state']['pump_states'][cycle] == 1 ? "BE" : "KI"
+                cyclesInfo.push(
+                    "kör "+cycle + ": " + (system['state']['pump_states'][cycle] == 1 ? "BE" : "KI")
+                )
+            }
+
+            heatingSystemData = {
+                "fűtés": "kazán: " + (system['state']['boiler_state'] == 1 ? "BE" : "KI") +", "+ cyclesInfo.join(', ')
             }
 
             roomsData = {}
@@ -68,22 +68,22 @@
                 'c_s_m_off': 'kör időzítetten lekapcsolva'
             }
 
-            for (let room = 1; room < Object.keys(system['setup']['rooms']).length - 1; room++) {
+            for (let room = 1; room < Object.keys(system['setup']['rooms']).length; room++) {
                 hoursSinceSensorLastUpdate = timePassedSince(dateFromTimestamp(system['state']['sensor_last_updated'][room]), granularity = 'hours')
 
                 tempControlled = system['state']['set_temps'][room] > 1
 
-                roomsData[system['setup']['rooms'][room.toString()]['name']] =
-                    (roundTo(system['state']['measured_temps'][room], 0.5) + "°C" + ", ") +
+                roomsData[system['setup']['rooms'][room.toString()]['name'] + " (" + system['setup']['rooms'][room.toString()]['cycle'] + ")"] =
+                    (room < 10 ? roundTo(system['state']['measured_temps'][room], 0.5) + "°C" + ", " : "") +
                     (tempControlled ?
-                        ("(kért: " + roundTo(system['state']['set_temps'][room], 0.1) + "°C)" + ", ") :
+                        ("(" + roundTo(system['state']['set_temps'][room], 0.1) + "°C)" + ", ") :
                         "") +
                     (system['control']['rooms'][room]['vote'] == 0 ? "nem kér fűtést" : "fűtést kér") + ", " +
                     reasonMapping[system['control']['rooms'][room]['reason']] +
                     (hoursSinceSensorLastUpdate > 1 ? (", ! szenzor " + roundTo(hoursSinceSensorLastUpdate, 0.5) + "órája nem frissült") : "")
             }
 
-            tableData = { ...headerData, ...boilerData, ...cyclesData, ...roomsData }
+            tableData = { ...headerData, ...heatingSystemData, ...roomsData }
             return tableData
         }
 
