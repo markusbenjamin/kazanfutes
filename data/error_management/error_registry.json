@@ -504,5 +504,38 @@
         "reported_timestamp": "2024-10-16-12-35-02",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while acquiring boiler state: couldn't read boiler state: couldn't read state of GPIO pin 4: unexpected error while loading system/GPIO_state.json to dict: Expecting value: line 1 column 1 (char 0) (JSONDecodeError) (ModuleException) (ModuleException).",
+        "severity": 3,
+        "origin": "heating_control.py/get_and_export_system_state:126 --> project.py/get_boiler_state:635",
+        "origin_timestamp": "2024-10-16-17-55-03",
+        "registration_timestamp": "2024-10-16-17-55-03",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while voting: 'boiler_state'.",
+        "severity": 3,
+        "origin": "heating_control.py/compare_and_command:276",
+        "origin_timestamp": "2024-10-16-17-55-03",
+        "registration_timestamp": "2024-10-16-17-55-03",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while issuing commands: 'boiler_state'.",
+        "severity": 3,
+        "origin": "heating_control.py/compare_and_command:323",
+        "origin_timestamp": "2024-10-16-17-55-03",
+        "registration_timestamp": "2024-10-16-17-55-03",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
