@@ -110,12 +110,11 @@
                     countdownTime--;
 
                     const styleStringCountdown = 'style="font-size:20px; text-align: center;"'
-                    redirectElement.innerHTML = `<p ${styleStringCountdown}>ugrás rendszerállapotra ${countdownTime} másodpercen belül...</p>`
+                    //redirectElement.innerHTML = `<p ${styleStringCountdown}>ugrás rendszerállapotra ${countdownTime} másodpercen belül...</p>`
 
-                    // Redirect when countdown reaches zero
                     if (countdownTime <= 0) {
-                        clearInterval(countdownInterval);  // Stop the countdown
-                        window.location.href = "./dashboard.html";  // Replace with your redirect URL
+                        clearInterval(countdownInterval);
+                        window.location.href = "./request_tracker.html?ref_source=qr";
                     }
                 }, 1000);
             }

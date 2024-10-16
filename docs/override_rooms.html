@@ -14,11 +14,11 @@
     <div class="container" id="formContainer">
         <iframe id="formIframe"
             src="https://docs.google.com/forms/d/e/1FAIpQLSfQAF-GPitY0SrgNjkhmtnC-8a9oBy1MNvCMDuwykw0vIcz4Q/viewform?embedded=true"
-            width="640" height="1200" frameborder="0" marginheight="0" marginwidth="0">form tölt...</iframe>
+            width="640" height="800" frameborder="0" marginheight="0" marginwidth="0">form tölt...</iframe>
     </div>
     <div class="container">
         <div id="postSubmission"></div>
-        <ul>
+        <ul id="links">
             <li><a href="index.html">> kezdőoldal</a></li>
             <li><a href="dashboard.html">> rendszerállapot</a></li>
         </ul>
@@ -33,16 +33,20 @@
                     if (secondsSinceLastUpdate < 2) {
                         document.getElementById("formIframe").style.display = "none";
                         document.getElementById("formContainer").style.display = "none";
-                    
+
                         const postSubmissionDiv = document.getElementById("postSubmission");
                         postSubmissionDiv.innerHTML = `<p style="font-size:30px; text-align: center; margin-top: 0px; margin-bottom: 50px; padding: 25px;"> kérés elküldve!</p>`;
+
+                        setTimeout(() => {
+                            window.location.href = "./request_tracker.html?ref_source=form";
+                        }, 3000);
                     }
                 });
             });
         }
 
         fetchSubmissionState();
-        setInterval(fetchSubmissionState, 900);
+        setInterval(fetchSubmissionState, 500);
     </script>
 </body>
 

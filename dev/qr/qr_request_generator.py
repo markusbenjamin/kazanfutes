@@ -42,6 +42,8 @@ for room_name in room_names[0:-1]:
 
         print(full_url)
 
+exit()
+
 for request_num in range(0,len(all_requests)):
     qr = qrcode.QRCode(
         version=4,  # Larger version to accommodate more data
