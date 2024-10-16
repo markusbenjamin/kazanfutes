@@ -78,8 +78,8 @@ system_node = JSONNodeAtURL(node_relative_path='system')
 
 #region Update local copy of heating control config
 def update_local_heating_control_config():
-    report('\nUPDATE HEATING CONFIG')
     if heating_config_update_info['update_needed']:
+        report('\nUPDATE HEATING CONFIG')
         success = False
         try:
             heating_control_config_online_version = transpose_2D_array(select_subtable_from_table(download_google_sheet_to_2D_array(heating_config['heating_control_config_id']),[1,-0],[0,-1]))
@@ -140,7 +140,7 @@ def check_scheduling_files_expiry(duration:float):
     report('\nCHECK SCHEDULING FILES EXPIRY')
     success = False
     try:
-        report("Checking if updates are due to expiry.")
+        report("Checking if updates are due to expiry.", verbose=True)
         for last_update_info in flatten_dict(last_update):
             update_path = list(last_update_info.keys())[0]
             update_time = list(last_update_info.values())[0]
@@ -150,7 +150,7 @@ def check_scheduling_files_expiry(duration:float):
             else:
                 update_nested_dict(update_needed,update_path,True)
         if 0<len(find_val_in_dict(update_needed,True)):
-            report(f"Update needed at: {find_val_in_dict(update_needed,True)}", verbose=True)
+            report(f"Update needed at: {find_val_in_dict(update_needed,True)}")
         success = True
     except ModuleException as e:
         ServiceException(f"Module error while checking if updates are due to expiry", original_exception=e, severity = 2)
@@ -160,8 +160,8 @@ def check_scheduling_files_expiry(duration:float):
     log({f"success_update_expiry_check":success})
 
 def update_local_scheduling_files():
-    report('\nUPDATE LOCAL SCHEDULING FILES')
     for update_path in find_val_in_dict(update_needed, True):
+        report('\nUPDATE LOCAL SCHEDULING FILES')
         success = False
         try:
             update_id = read_nested_dict(update_ids, update_path)
@@ -193,11 +193,11 @@ def update_local_scheduling_files():
 If there was an update to either the weekly cycles or the overrides or midnight has passed.
 """
 def generate_condensed_schedule(for_how_many_days : int):
-    report('\nGENERATE CONDENSED SCHEDULE')
     if condensed_schedule_update_info['last_updated']:
         if condensed_schedule_update_info['last_updated'].day != datetime.now().day:
             condensed_schedule_update_info['update_needed'] = True 
     if condensed_schedule_update_info['update_needed']:
+        report('\nGENERATE CONDENSED SCHEDULE')
         success = False
         try:
             override_commands_for_rooms = [

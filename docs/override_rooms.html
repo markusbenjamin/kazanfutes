@@ -30,7 +30,7 @@
                 fetchJSONEndpoint(heatingControlConfig["firebase_url"] + "/update.json").then(data => {
                     secondsSinceLastUpdate = timePassedSince(dateFromTimestamp(data['override_rooms']['last_update_timestamp']), granularity = 'seconds')
                     //console.log(secondsSinceLastUpdate)
-                    if (secondsSinceLastUpdate < 1) {
+                    if (secondsSinceLastUpdate < 2) {
                         document.getElementById("formIframe").style.display = "none";
                         document.getElementById("formContainer").style.display = "none";
                     
