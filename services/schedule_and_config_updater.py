@@ -339,7 +339,7 @@ def update_condensed_schedule_on_firebase(condensed_schedule:dict):
 #endregion
 
 if __name__ == "__main__":
-    settings['dev'] = True
+    #settings['dev'] = True
     #settings['verbosity'] = True
     
     while True:
