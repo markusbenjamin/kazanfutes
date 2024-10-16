@@ -1329,7 +1329,7 @@ def load_json_to_dict(relative_path:str):
     """
     try:
         with open(os.path.join(get_project_root(), relative_path), 'r', encoding='utf-8') as file:
-            loaded_dict = json.load(file)            
+            loaded_dict = json.load(file)
         return loaded_dict
     except Exception:
         raise ModuleException(f"unexpected error while loading {relative_path} to dict")

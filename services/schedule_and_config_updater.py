@@ -215,7 +215,7 @@ def generate_condensed_schedule(for_how_many_days : int):
                     select_subtable_from_table(load_csv_to_2D_array(local_scheduling_files_relative_path + '/override_rooms_qr.csv'),row_selection=[1,-0]),
                     ["google_timestamp","room_name","date","hour_of_day","duration","temp"]
                     )
-                if datetime.strptime(command['date']+'-'+command['hour_of_day'],'%d/%m/%Y-%H')+timedelta(hours=int(command['duration'])) >= datetime.now()
+                if datetime.strptime(command['date']+'-'+command['hour_of_day'],'%d/%m/%Y-%H')+timedelta(hours=int(command['duration'])) >= datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
                 ]
 
             override_commands_for_cycles = [
@@ -225,11 +225,12 @@ def generate_condensed_schedule(for_how_many_days : int):
                     select_subtable_from_table(load_csv_to_2D_array(local_scheduling_files_relative_path + '/override_cycles.csv'),row_selection=[1,-0]),
                     ["google_timestamp","cycle","date","hour_of_day","duration"]
                     )
-                if datetime.strptime(command['date']+'-'+command['hour_of_day'],'%d/%m/%Y-%H')+timedelta(hours=int(command['duration'])) >= datetime.now()
+                if datetime.strptime(command['date']+'-'+command['hour_of_day'],'%d/%m/%Y-%H')+timedelta(hours=int(command['duration'])) >= datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
                 ]
         
             rooms_list = list(rooms_info.keys())
 
+    
             condensed_schedule = {}
 
             for day_from_now in range(0,for_how_many_days):
