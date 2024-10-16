@@ -75,9 +75,9 @@
                 tempControlled = setTempForRoom > 1
 
                 roomsData[system['setup']['rooms'][room.toString()]['name'] + " (" + cycleLabels[system['setup']['rooms'][room.toString()]['cycle'] - 1] + ")"] =
-                    (room < 10 ? roundTo(system['state']['measured_temps'][room], 0.5) + "°C" + ", " : "") +
+                    (room < 10 ? (roundTo(system['state']['measured_temps'][room], 0.1)+"").slice(0,4) + " °C" + ", " : "") +
                     (tempControlled ?
-                        ("(" + roundTo(setTempForRoom, 0.1) + "°C)" + ", ") :
+                        ("(" + roundTo(setTempForRoom, 0.1) + " °C)" + ", ") :
                         "") +
                     (system['control']['rooms'][room]['vote'] == 0 ? "nem kér fűtést" : "fűtést kér") + ", " +
                     reasonMapping[system['control']['rooms'][room]['reason']] +
