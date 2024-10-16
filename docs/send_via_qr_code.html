@@ -3,7 +3,7 @@
 
 <head>
     <script src="codebase.js"></script>
-    <title>időzített fűtés kérés QR kódon keresztül</title>
+    <title>Kazán-Gólya Fűtés: azonnali fűtés kérés QR kódon keresztül</title>
     <link rel="stylesheet" type="text/css" href="styles.css">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
@@ -30,7 +30,7 @@
                 duration: Number(params.get("duration")) || null,
                 until: Number(params.get("until")) || null,
                 temp: Number(params.get("temp")) || "hány fok",
-                redirect: params.get("redirect") == 0 ? false : true || true
+                redirect: params.get("redirect") == 0 ? false : true || false
             };
         }
 
@@ -52,10 +52,11 @@
             const loadParams = getUrlParams();
 
             const displayTitleArea = document.getElementById("display-title");
-            const styleStringTitle = 'style="font-size:28px; text-align: center; font-weight:bold"'
-            displayTitleArea.innerHTML = `<p ${styleStringTitle}>${loadParams.room_name}: ${loadParams.title}</p>`;
+            const styleStringTitle = 'style="font-size:30px; text-align: center; font-weight:bold"'
+            const requestTitle = loadParams.title.replace(/_/g, ' ');
+            displayTitleArea.innerHTML = `<p ${styleStringTitle}>${loadParams.room_name}: ${requestTitle}</p>`;
 
-            const styleStringParams = 'style="font-size:25px; text-align: center;"'
+            const styleStringParams = 'style="font-size:28px; text-align: center;"'
 
             let expiryString = ``
             let durationToSend = null
