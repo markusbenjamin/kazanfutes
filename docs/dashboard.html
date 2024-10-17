@@ -68,7 +68,7 @@
             }
 
             for (let room = 1; room < Object.keys(system['setup']['rooms']).length; room++) {
-                hoursSinceSensorLastUpdate = timePassedSince(dateFromTimestamp(system['state']['sensor_last_updated'][room]), granularity = 'hours')
+                hoursSinceSensorLastUpdate = system['state']['sensor_last_updated'][room]== null ? null : timePassedSince(dateFromTimestamp(system['state']['sensor_last_updated'][room]), granularity = 'hours')
 
                 setTempForRoomAccordingToHeatingControl = system['state']['set_temps'][room]
                 setTempForRoomFromUploadedSchedule = schedule['condensed_schedule'][room][getUnixDay()][getHourOfDay()]
@@ -77,7 +77,7 @@
                 measuredTempForRoom = system['state']['measured_temps'][room]
 
                 reason = system['control']['rooms'][room]['reason']
-                tempControlled = reason == 't_on' || reason == 't_off' ? false : true
+                tempControlled = reason == 't_on' || reason == 't_off' || setTempForRoom <= 1? false : true
 
                 roomsData[system['setup']['rooms'][room.toString()]['name'] + " (" + cycleLabels[system['setup']['rooms'][room.toString()]['cycle'] - 1] + ")"] =
                     (measuredTempForRoom != null ? (roundTo(system['state']['measured_temps'][room], 0.1)+"").slice(0,4) + " °C" + ", " : "") +
