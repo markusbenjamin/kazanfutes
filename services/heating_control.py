@@ -192,11 +192,11 @@ def compare_and_command(heating_switch:dict, system_state:dict):
             reason = 'None given'
             reason_control = 'none'
             minutes_since_update = round((datetime.now() - datetime.strptime(sensor_last_updated,settings['timestamp_format'])).total_seconds()/60) if sensor_last_updated else None
-            relation = f"{measured_temp} °C, {minutes_since_update} mins ago" if minutes_since_update else relation = f"time controlled room"
+            relation = f"{measured_temp} °C, {minutes_since_update} mins ago" if minutes_since_update else f"time controlled room"
             cycle = room_to_cycle(room)
-            
-            if minutes_since_update and heating_config['temp_data_expiry'] < minutes_since_update:
-                set_temp = 0 if set_temp <= heating_config[f'room_{room}_threshold_temp'] else 1 # Turn set temp to binary on/off
+
+            if minutes_since_update and int(heating_config['temp_data_expiry']) < minutes_since_update:
+                set_temp = 0 if set_temp <= int(heating_config[f'room_{room}_threshold_temp']) else 1 # Turn set temp to binary on/off
                 relation = f"data expired, last data {minutes_since_update} mins ago"
 
             if set_temp != -1 and heating_switch['cycles'][cycle] == 0: # Cycle is room controlled
@@ -443,7 +443,7 @@ def execute_commands():
 
 if __name__ == '__main__':
     settings['verbosity'] = True #DEV
-    #settings['dev'] = True #DEV
+    settings['dev'] = True #DEV
     
     heating_switch = acquire_heating_switch()
     system_state = get_and_export_system_state()
