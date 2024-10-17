@@ -56,6 +56,8 @@
             reasonMapping = {
                 'above': 'beállított hőmérséklet felett',
                 'below': 'beállított hőmérséklet alatt',
+                't_on':'idővezérelt módban be',
+                't_off':'idővezérelt módban ki',
                 'h_on': 'alsó hiszterézis',
                 'h_off': 'felső hiszterézis',
                 'r_m_on': 'manuálisan bekapcsolva',
@@ -72,15 +74,18 @@
                 setTempForRoomFromUploadedSchedule = schedule['condensed_schedule'][room][getUnixDay()][getHourOfDay()]
                 setTempForRoom = setTempForRoomFromUploadedSchedule
 
-                tempControlled = setTempForRoom > 1
+                measuredTempForRoom = system['state']['measured_temps'][room]
+
+                reason = system['control']['rooms'][room]['reason']
+                tempControlled = reason == 't_on' || reason == 't_off' ? false : true
 
                 roomsData[system['setup']['rooms'][room.toString()]['name'] + " (" + cycleLabels[system['setup']['rooms'][room.toString()]['cycle'] - 1] + ")"] =
-                    (room < 10 ? (roundTo(system['state']['measured_temps'][room], 0.1)+"").slice(0,4) + " °C" + ", " : "") +
+                    (measuredTempForRoom != null ? (roundTo(system['state']['measured_temps'][room], 0.1)+"").slice(0,4) + " °C" + ", " : "") +
                     (tempControlled ?
                         ("(" + roundTo(setTempForRoom, 0.1) + " °C)" + ", ") :
                         "") +
                     (system['control']['rooms'][room]['vote'] == 0 ? "nem kér fűtést" : "fűtést kér") + ", " +
-                    reasonMapping[system['control']['rooms'][room]['reason']] +
+                    reasonMapping[reason] +
                     (hoursSinceSensorLastUpdate > 1 ? (", ! szenzor " + roundTo(hoursSinceSensorLastUpdate, 0.5) + " órája nem frissült") : "")
             }
 
