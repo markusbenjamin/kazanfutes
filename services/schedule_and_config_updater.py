@@ -353,7 +353,9 @@ if __name__ == "__main__":
             export_condensed_schedule_locally(condensed_schedule)
             update_condensed_schedule_on_firebase(condensed_schedule)
         if settings['dev']:
-            exit()
+            #exit()
+            report('\nSLEEPING FOR 10 SECS')
+            time.sleep(10)
         else:
             report('\nSLEEPING FOR 10 SECS')
             time.sleep(10)

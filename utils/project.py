@@ -745,7 +745,10 @@ def get_room_temps_and_humidity():
 
         sensor_temps_and_hums = {}
         for sensor_id, sensor in sensors_state:
-            last_updated = datetime.strptime(sensor.raw['state']['lastupdated'], "%Y-%m-%dT%H:%M:%S.%f").replace(tzinfo=pytz.UTC).astimezone(tzlocal.get_localzone()).strftime(settings['timestamp_format'])
+            try:
+                last_updated = datetime.strptime(sensor.raw['state']['lastupdated'], "%Y-%m-%dT%H:%M:%S.%f").replace(tzinfo=pytz.UTC).astimezone(tzlocal.get_localzone()).strftime(settings['timestamp_format'])
+            except:
+                last_updated = None
             if sensor.type == "ZHATemperature":
                 if sensor.name not in sensor_temps_and_hums:
                     sensor_temps_and_hums[sensor.name] = {'temp':'none','hum':'none','last_updated':'none'}
