@@ -548,5 +548,49 @@
         "reported_timestamp": "2024-10-17-02-40-05",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while exporting system state: name 'system_node' is not defined.",
+        "severity": 3,
+        "origin": "heating_control.py/get_and_export_system_state:140",
+        "origin_timestamp": "2024-10-17-22-05-09",
+        "registration_timestamp": "2024-10-17-22-05-09",
+        "reported": true,
+        "reported_timestamp": "2024-10-17-22-10-05",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while voting: name 'system_node' is not defined.",
+        "severity": 3,
+        "origin": "heating_control.py/compare_and_command:279",
+        "origin_timestamp": "2024-10-17-22-05-09",
+        "registration_timestamp": "2024-10-17-22-05-09",
+        "reported": true,
+        "reported_timestamp": "2024-10-17-22-10-08",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while issuing commands: name 'COMMANDS_PATH' is not defined.",
+        "severity": 3,
+        "origin": "heating_control.py/compare_and_command:315",
+        "origin_timestamp": "2024-10-17-22-05-09",
+        "registration_timestamp": "2024-10-17-22-05-09",
+        "reported": true,
+        "reported_timestamp": "2024-10-17-22-10-10",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while executing commands: name 'COMMANDS_PATH' is not defined.",
+        "severity": 3,
+        "origin": "heating_control.py/execute_commands:378",
+        "origin_timestamp": "2024-10-17-22-05-09",
+        "registration_timestamp": "2024-10-17-22-05-09",
+        "reported": true,
+        "reported_timestamp": "2024-10-17-22-10-11",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
