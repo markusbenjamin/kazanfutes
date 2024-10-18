@@ -78,6 +78,7 @@
 
                 reason = system['control']['rooms'][room]['reason']
                 tempControlled = reason == 't_on' || reason == 't_off' || setTempForRoom <= 1? false : true
+                lostSignal = (reason == 't_on' || reason == 't_off') && setTempForRoom > 1? true : false
 
                 roomsData[system['setup']['rooms'][room.toString()]['name'] + " (" + cycleLabels[system['setup']['rooms'][room.toString()]['cycle'] - 1] + ")"] =
                     (measuredTempForRoom != null ? (roundTo(system['state']['measured_temps'][room], 0.1)+"").slice(0,4) + " °C" + ", " : "") +
@@ -85,7 +86,7 @@
                         ("(" + roundTo(setTempForRoom, 0.1) + " °C)" + ", ") :
                         "") +
                     (system['control']['rooms'][room]['vote'] == 0 ? "nem kér fűtést" : "fűtést kér") + ", " +
-                    reasonMapping[reason] +
+                    + (lostSignal ? 'elavult hőmérsékleti adat, ' : '') + reasonMapping[reason] +
                     (hoursSinceSensorLastUpdate > 1 ? (", ! szenzor " + roundTo(hoursSinceSensorLastUpdate, 0.5) + " órája nem frissült") : "")
             }
 
