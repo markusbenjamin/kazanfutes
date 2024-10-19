@@ -86,8 +86,8 @@
                         ("(" + roundTo(setTempForRoom, 0.1) + " °C), ") :
                         "") +
                     ((system['control']['rooms'][room]['vote'] == 0) ? "nem kér fűtést" : "fűtést kér") + ", " + 
-                    (lostSignal ? 'elavult hőmérsékleti adat, ' : '') + reasonMapping[reason] +
-                    (hoursSinceSensorLastUpdate > 1 ? (", ! szenzor " + roundTo(hoursSinceSensorLastUpdate, 0.5) + " órája nem frissült") : "")
+                    (lostSignal ? 'elavult hőmérsékleti adat, ' : '') + reasonMapping[reason] 
+                    //+ (hoursSinceSensorLastUpdate > 1 ? (", ! szenzor " + roundTo(hoursSinceSensorLastUpdate, 0.5) + " órája nem frissült") : "")
             }
 
             stateLastUpdateDate = dateFromTimestamp(system['state']['last_updated'])
