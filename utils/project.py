@@ -596,6 +596,27 @@ def generate_call_origin():
 #region Wrappers
 """Wrapper functions for everything IO."""
 
+def scrape_external_temperature(lat:float = 47.4984, lon:float = 19.0405):
+    """
+    Scrapes temp from open-meteo for the specified location or for site if not specified.
+    """
+    url = "https://api.open-meteo.com/v1/forecast"
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        "current_weather": "true"
+    }
+
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        return data['current_weather']['temperature']
+
+    except Exception:
+        raise ModuleException(f"error during external temperature scraping")
+
 def generate_and_save_cycle_crops(relative_path:str, crop_rectangles:list, del_original_on_success:bool = True):
     """
     Generates, saves and returns the crop for each cycle from a passed Pillow image.
