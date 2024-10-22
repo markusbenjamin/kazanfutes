@@ -109,6 +109,7 @@
                 )
 
             footerData = {
+                "külső hőmérséklet": system['state']['external_temp']+" °C",
                 "vezérlés lefutott": (minutesSinceLastStateUpdate < 1 ? "< 1 perce" : minutesSinceLastStateUpdate + " perce") +
                     " (" + stateLastUpdateHMS + ")",
                 "hőmérsékleti beállítások frissítve": timeSinceLastUpdateInfo +
