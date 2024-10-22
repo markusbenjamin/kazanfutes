@@ -6,7 +6,7 @@ from utils.project import *
 
 success = False
 try:
-    external_temp = system_node = JSONNodeAtURL(node_relative_path='system')
+    external_temp = scrape_external_temperature()
     system_node = JSONNodeAtURL(node_relative_path='system')
     system_node.write({"external_temp":external_temp},"state")
     log_data({"external_temp":external_temp},'external_temp/external_temp.json')
