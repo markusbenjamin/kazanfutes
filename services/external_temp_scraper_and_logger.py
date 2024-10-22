@@ -6,7 +6,10 @@ from utils.project import *
 
 success = False
 try:
-    log_data({"external_temp":scrape_external_temperature()},'external_temp/external_temp.json')
+    external_temp = system_node = JSONNodeAtURL(node_relative_path='system')
+    system_node = JSONNodeAtURL(node_relative_path='system')
+    system_node.write({"external_temp":external_temp},"state")
+    log_data({"external_temp":external_temp},'external_temp/external_temp.json')
     success = True
 except ModuleException as e:
     ServiceException("Module error while trying to scrape and log external temperature", original_exception=e, severity = 2)
