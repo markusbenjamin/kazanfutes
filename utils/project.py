@@ -948,7 +948,6 @@ def read_deconz_state():
 
         parsed_url = urlparse(full_url)
         ip = parsed_url.hostname
-        #ip = full_url[full_url.index('http://')+7:full_url.index(':80/api')] # Previous hardcoded way stored for fallback if needed
     except Exception:
         raise ModuleException("unexpected error occurred while extracting Deconz URL",severity=3)
     port = '80'
@@ -958,14 +957,6 @@ def read_deconz_state():
         async with aiohttp.ClientSession() as session:
             deconz_session = DeconzSession(session, ip, port, api_key)
             await deconz_session.refresh_state()
-
-            #for sensor_id, sensor in deconz_session.sensors.items():
-            #    report(f"Sensor ID: {sensor_id}, Name: {sensor.name}")
-            #for sensor_id, sensor in deconz_session.sensors.items():
-            #    if sensor.type == "ZHATemperature":
-            #        report(f"Sensor ID: {sensor.name}, Temperature: {sensor.temperature}")
-            #    elif sensor.type == "ZHAHumidity":
-            #        report(f"Sensor ID: {sensor.name}, Humidity: {sensor.humidity}")
             return deconz_session
     
     try:
