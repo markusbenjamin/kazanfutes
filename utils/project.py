@@ -596,6 +596,27 @@ def generate_call_origin():
 #region Wrappers
 """Wrapper functions for everything IO."""
 
+def scrape_external_temperature(lat:float = 47.4984, lon:float = 19.0405):
+    """
+    Scrapes temp from open-meteo for the specified location or for site if not specified.
+    """
+    url = "https://api.open-meteo.com/v1/forecast"
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        "current_weather": "true"
+    }
+
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        return data['current_weather']['temperature']
+
+    except Exception:
+        raise ModuleException(f"error during external temperature scraping")
+
 def generate_and_save_cycle_crops(relative_path:str, crop_rectangles:list, del_original_on_success:bool = True):
     """
     Generates, saves and returns the crop for each cycle from a passed Pillow image.
@@ -948,7 +969,6 @@ def read_deconz_state():
 
         parsed_url = urlparse(full_url)
         ip = parsed_url.hostname
-        #ip = full_url[full_url.index('http://')+7:full_url.index(':80/api')] # Previous hardcoded way stored for fallback if needed
     except Exception:
         raise ModuleException("unexpected error occurred while extracting Deconz URL",severity=3)
     port = '80'
@@ -958,14 +978,6 @@ def read_deconz_state():
         async with aiohttp.ClientSession() as session:
             deconz_session = DeconzSession(session, ip, port, api_key)
             await deconz_session.refresh_state()
-
-            #for sensor_id, sensor in deconz_session.sensors.items():
-            #    report(f"Sensor ID: {sensor_id}, Name: {sensor.name}")
-            #for sensor_id, sensor in deconz_session.sensors.items():
-            #    if sensor.type == "ZHATemperature":
-            #        report(f"Sensor ID: {sensor.name}, Temperature: {sensor.temperature}")
-            #    elif sensor.type == "ZHAHumidity":
-            #        report(f"Sensor ID: {sensor.name}, Humidity: {sensor.humidity}")
             return deconz_session
     
     try:
