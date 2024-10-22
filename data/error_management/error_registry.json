@@ -603,5 +603,16 @@
         "reported_timestamp": "2024-10-17-22-40-08",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to scrape and log external temperature: failed to interact with node 'system' via patch: Object of type JSONNodeAtURL is not JSON serializable (TypeError).",
+        "severity": 2,
+        "origin": "external_temp_scraper_and_logger.py:11 --> project.py/write:280 --> project.py/interact:260",
+        "origin_timestamp": "2024-10-22-12-29-43",
+        "registration_timestamp": "2024-10-22-12-29-43",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
