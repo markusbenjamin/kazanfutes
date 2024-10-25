@@ -1,0 +1,68 @@
+[
+    {
+        "message": "Module error while acquiring measured temps: couldn't read sensor state due to: failed to connect to Deconz API due to unexpected error: Error requesting data from 192.168.29.54: Cannot connect to host 192.168.29.54:80 ssl:default [Connect call failed ('192.168.29.54', 80)] (RequestError) (ModuleException).",
+        "severity": 3,
+        "origin": "heating_control.py/get_and_export_system_state:64 --> project.py/get_room_temps_and_humidity:775",
+        "origin_timestamp": "2024-10-15-09-21-34",
+        "registration_timestamp": null,
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while acquiring measured temps: unexpected error while reading sensor state: time data 'none' does not match format '%Y-%m-%dT%H:%M:%S.%f' (ValueError).",
+        "severity": 3,
+        "origin": "heating_control.py/get_and_export_system_state:64 --> project.py/get_room_temps_and_humidity:777",
+        "origin_timestamp": "2024-10-15-09-25-04",
+        "registration_timestamp": null,
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while voting: 'measured_temps'.",
+        "severity": 3,
+        "origin": "heating_control.py/compare_and_command:182",
+        "origin_timestamp": "2024-10-15-09-25-04",
+        "registration_timestamp": null,
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while issuing commands: cannot access local variable 'pump_votes' where it is not associated with a value.",
+        "severity": 3,
+        "origin": "heating_control.py/compare_and_command:314",
+        "origin_timestamp": "2024-10-15-09-25-04",
+        "registration_timestamp": null,
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while acquiring measured temps: unexpected error while reading sensor state: time data 'none' does not match format '%Y-%m-%dT%H:%M:%S.%f' (ValueError).",
+        "severity": 3,
+        "origin": "heating_control.py/get_and_export_system_state:64 --> project.py/get_room_temps_and_humidity:777",
+        "origin_timestamp": "2024-10-17-22-40-05",
+        "registration_timestamp": null,
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while voting: 'measured_temps'.",
+        "severity": 3,
+        "origin": "heating_control.py/compare_and_command:186",
+        "origin_timestamp": "2024-10-17-22-40-06",
+        "registration_timestamp": null,
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    }
+]
