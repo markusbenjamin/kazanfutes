@@ -51,6 +51,8 @@ Menetrend:
 
 
 Hibák:
+- nem frissit a schedule updater -- egyáltalán mi az oka? olyan, mintha "tartósan" elromlana egy sessionben, ha egyszer nem ment át neki a frissités, akkor többet meg sem próbálja? vagy vmi ilyesmi -- lehet, h ennek se folyamatosan kéne futnia?
+    - ?!
 - leesik egy hőmérő
     - modellezze a hőmérséklet esést kimértek alapján és csak aszerint kapcsolja
 - nem veszem észre, hogy nem megy valamelyik service
@@ -58,6 +60,6 @@ Hibák:
 - tovább megy egy service script úgy, hogy nem tudott lefutni valamelyik alapozó rész:
     - legyen continuation parameter a service scripteknél ha építenek az előző részekre
 - kiesik egy égő:
-    - legyen idővezérelt fallback program
-    - ne legyen weak link a hálózatban
+    // - legyen idővezérelt fallback program
+    / - ne legyen weak link a hálózatban
     - legyen script ami végigteszteli az összes égőt
