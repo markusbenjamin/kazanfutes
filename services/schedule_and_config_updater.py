@@ -13,6 +13,7 @@ settings['verbosity'] = False
 
 #region Initialize settings and else
 report('\nINITIALIZE')
+startup_time = time.time()
 rooms_info = get_rooms_info()
 
 heating_config = load_json_to_dict('config/heating_control_config.json')
@@ -359,3 +360,5 @@ if __name__ == "__main__":
         else:
             report('\nSLEEPING FOR 10 SECS')
             time.sleep(10)
+        if time.time() - startup_time >= 1*3600:
+            exit()
