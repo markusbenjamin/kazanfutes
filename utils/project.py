@@ -782,13 +782,7 @@ def get_room_temps_and_humidity(just_controlled:bool = True):
                 sensor_temps_and_hums[sensor.name]['hum'] = sensor.humidity
                 sensor_temps_and_hums[sensor.name]['last_updated'] = last_updated
 
-        all_rooms_info = get_rooms_info()
-
-        if just_controlled:
-            rooms_info = {room: info for room, info in all_rooms_info.items() if info["controlled"]}
-        else:
-            rooms_info = all_rooms_info
-
+        rooms_info = get_rooms_info(just_controlled)
 
         room_temps_and_hums = {}
         for room in rooms_info:
@@ -1198,8 +1192,18 @@ def read_pin_state(pin:int):
 #region Config
 """Utility functions related to config."""
 
-def get_rooms_info():
-    return get_system_setup("rooms")
+def get_rooms_info(just_controlled:bool = True):
+    """
+    Returns the rooms node of the system config.
+    If just_controlled is set to false, returns all rooms,
+    else just the controlled rooms.
+    """
+    all_rooms_info = get_system_setup("rooms")
+    if just_controlled:
+        rooms_info = {room: info for room, info in all_rooms_info.items() if info["controlled"]}
+    else:
+        rooms_info = all_rooms_info
+    return rooms_info
 
 def get_cycles_info():
     return get_system_setup("cycles")
