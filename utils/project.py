@@ -756,9 +756,10 @@ def get_room_temps_and_humidity_dev():
                 }
     return room_temps_and_hums
 
-def get_room_temps_and_humidity():
+def get_room_temps_and_humidity(just_controlled:bool = True):
     """
-    Returns dated temperature and humidity readings for all rooms in config.
+    Returns dated temperature and humidity readings for controlled rooms in config,
+    unless just_controlled = False, in that case, it returns it for all rooms.
     """
 
     try:
@@ -781,7 +782,13 @@ def get_room_temps_and_humidity():
                 sensor_temps_and_hums[sensor.name]['hum'] = sensor.humidity
                 sensor_temps_and_hums[sensor.name]['last_updated'] = last_updated
 
-        rooms_info = get_rooms_info()
+        all_rooms_info = get_rooms_info()
+
+        if just_controlled:
+            rooms_info = {room: info for room, info in all_rooms_info.items() if info["controlled"]}
+        else:
+            rooms_info = all_rooms_info
+
 
         room_temps_and_hums = {}
         for room in rooms_info:
