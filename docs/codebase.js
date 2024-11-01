@@ -124,18 +124,25 @@ function getUnixDay(date = null) {
     }
 
     // Get the time zone offset for Budapest in milliseconds
-    const options = { timeZone: 'Europe/Budapest', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' };
+    const options = { timeZone: 'Europe/Budapest', year: 'numeric', month: '2-digit', day: '2-digit' };
     const formatter = new Intl.DateTimeFormat('en-US', options);
 
     // Use the formatter to convert to Budapest time
     const parts = formatter.formatToParts(date);
 
+    // Ensure proper extraction of year, month, and day
+    const year = parts.find(part => part.type === 'year').value;
+    const month = parts.find(part => part.type === 'month').value;
+    const day = parts.find(part => part.type === 'day').value;
+
     // Reconstruct the adjusted time in the Budapest time zone
-    const adjustedDate = new Date(`${parts[4].value}-${parts[0].value}-${parts[2].value}T00:00:00Z`);
+    const adjustedDate = new Date(`${year}-${month}-${day}T00:00:00Z`);
+    console.log(adjustedDate);  // Check the constructed date
     const unixDay = Math.floor(adjustedDate.getTime() / (1000 * 60 * 60 * 24));
 
     return unixDay;
 }
+
 
 function getHourOfDay(date = null) {
     if(date == null){
