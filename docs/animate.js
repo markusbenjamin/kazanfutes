@@ -91,6 +91,48 @@ function updateRoomColor(roomId, temp) {
     d3.select(roomId).style("fill", colorScale(temp));
 }
 
+const tooltipData = {
+    1: { roomID: "#Oktopusz", name: "Oktopusz szita", temp: null },
+    2: { roomID: "#Gólyafészek", name: "Gólyafészek", temp: null },
+    3: { roomID: "#PK", name: "PK", temp: null },
+    4: { roomID: "#SZGK", name: "SZGK", temp: null },
+    5: { roomID: "#Mérce", name: "Mérce", temp: null },
+    6: { roomID: "#Lahmacun", name: "Lahmacun", temp: null },
+    7: { roomID: "#Gólyairoda", name: "Gólyairoda", temp: null },
+    8: { roomID: "#kisterem", name: "kisterem", temp: null },
+    9: { roomID: "#vendégtér", name: "vendégtér", temp: null },
+    11: { roomID: "#OktopuszKeramia", name: "Oktopusz kerámia", temp: null }
+};
+
+function setupTooltip() {
+    // Setup tooltip
+    const tooltip = d3.select("#tooltip");
+
+    // Attach tooltip functionality to all path elements during initialization
+    Object.keys(tooltipData).forEach(key => {
+        const roomTooltipData = tooltipData[key]; // Access the value using the key
+        d3.select(roomTooltipData.roomID)
+            .on("mouseover", function (event) {
+                if (roomTooltipData.temp != null) {
+                    tooltip.transition().duration(200).style("visibility", "visible");
+                    tooltip.html(roomTooltipData.name+"<br>"+roomTooltipData.temp+"°C")
+                        .style("left", (event.pageX + 5) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                }
+                else {
+                    tooltip.transition().duration(200).style("visibility", "hidden");
+                }
+            })
+            .on("mousemove", function (event) {
+                tooltip.style("left", (event.pageX + 5) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+            })
+            .on("mouseout", function () {
+                tooltip.transition().duration(500).style("visibility", "hidden");
+            });
+    });
+}
+
 function pollFirebase() {
     const url = "https://kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app/system.json"; // Update with your Firebase URL
     setInterval(() => {
@@ -98,8 +140,13 @@ function pollFirebase() {
             .then(systemJSON => {
                 const roomNums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
                 roomNums.forEach(roomNum => {
-                    updateRoomColor("#"+systemJSON.setup.rooms[roomNum].name, systemJSON.state['measured_temps'][roomNum]);
+                    const roomTemp = roundTo(systemJSON.state['measured_temps'][roomNum],0.1);
+                    updateRoomColor("#" + systemJSON.setup.rooms[roomNum].name, roomTemp);
+                    tooltipData[roomNum].temp = (roomTemp.toFixed(2).slice(0, 4));
                 });
+                const roomTemp = roundTo((systemJSON.state['oktopusz_keramia'][1] + systemJSON.state['oktopusz_keramia'][2]) / 2,0.1);
+                updateRoomColor("#OktopuszKeramia", roomTemp);
+                tooltipData[11].temp = (roomTemp.toFixed(2).slice(0, 4));
             })
             .catch(error => {
                 console.error('Error fetching data:', error);
@@ -110,6 +157,8 @@ function pollFirebase() {
 d3.xml("drawing.svg").then(fileData => {
     insertDrawingFromFile(fileData)
     centerAndZoomRelativePointOfDrawing(0.5, 0.5, 5);
+
+    setupTooltip();
 
     pollFirebase();
 });
