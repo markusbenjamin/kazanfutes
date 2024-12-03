@@ -713,5 +713,16 @@
         "reported_timestamp": "2024-11-23-11-15-07",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to acquire temperature and humidity data: couldn't read sensor state due to: failed to connect to Deconz API due to unexpected error: Error requesting data from 192.168.29.54: Cannot connect to host 192.168.29.54:80 ssl:default [Network is unreachable] (RequestError) (ModuleException).",
+        "severity": 3,
+        "origin": "temperature_and_humidity_logger.py:10 --> project.py/get_room_temps_and_humidity:800",
+        "origin_timestamp": "2024-12-03-15-58-56",
+        "registration_timestamp": "2024-12-03-15-58-56",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
