@@ -144,8 +144,8 @@ function pollFirebase() {
                     updateRoomColor("#" + systemJSON.setup.rooms[roomNum].name, roomTemp);
                     tooltipData[roomNum].temp = (roomTemp.toFixed(2).slice(0, 4));
                 });
-                //const roomTemp = roundTo((systemJSON.state['oktopusz_keramia'][1] + systemJSON.state['oktopusz_keramia'][2]) / 2,0.1);
-                const roomTemp = roundTo(systemJSON.state['oktopusz_keramia'][1],0.1);
+                const roomTemp = roundTo((systemJSON.state['oktopusz_keramia'][1] + systemJSON.state['oktopusz_keramia'][2]) / 2,0.1);
+                //const roomTemp = roundTo(systemJSON.state['oktopusz_keramia'][1],0.1);
                 updateRoomColor("#OktopuszKeramia", roomTemp);
                 tooltipData[11].temp = (roomTemp.toFixed(2).slice(0, 4));
             })
