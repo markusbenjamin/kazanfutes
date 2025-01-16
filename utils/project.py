@@ -155,26 +155,29 @@ def log(data: dict):
     relative_log_file_path = os.path.join('service_execution', f'{calling_script_name}/{calling_script_name}.json')
     
     # Initialize the logger and log the data
-    log_data(data,relative_log_file_path)
+    log_data(data, relative_log_file_path)
 
 def log_data(data: dict, relative_log_file_path: str):
     """
     Used for feature logging.
-    Logs the provided data to a specified log file.
+    Logs the provided data to a specified log file if settings['log'] is true, else prints to the console.
     
     Args:
         data (dict): The data to be logged.
         log_file_path (str): Relative path to log file in data/logs/.
     """
-    # Initialize the logger and log the data
-    init_logger(relative_log_file_path)
-    logger = logging.getLogger()
     log_entry = {'timestamp': timestamp()}
     log_entry.update(data)  # Add the rest of the data
-    logger.info(json.dumps(log_entry))
-    for handler in logger.handlers:
-        handler.close()
-        logger.removeHandler(handler)
+    if settings['log']:
+        # Initialize the logger and log the data
+        init_logger(relative_log_file_path)
+        logger = logging.getLogger()
+        logger.info(json.dumps(log_entry))
+        for handler in logger.handlers:
+            handler.close()
+            logger.removeHandler(handler)
+    else:
+        print(f"Log: {log_entry} at {relative_log_file_path}")
 
 def init_logger(relative_log_file_path: str):
     """
@@ -1391,25 +1394,40 @@ def load_ndjson_to_array_of_jsons(relative_path: str):
     except Exception:
         raise ModuleException(f"unexpected error while loading {relative_path} to array of JSONs")
     
-def save_array_of_jsons_to_ndjson(json_array, relative_path: str):
+def export_array_of_jsons_to_ndjson(json_array, relative_path: str):
     """
     Saves an array of JSON entries into a new-line delimited JSON file.
     """
     try:
-        with open(os.path.join(get_project_root(), relative_path), 'w', encoding='utf-8') as file:
+        # Get the full path by combining project root and relative path
+        full_path = os.path.join(get_project_root(), relative_path)
+
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+
+        # Do the write
+        with open(full_path, 'w', encoding='utf-8') as file:
             for entry in json_array:
                 file.write(json.dumps(entry) + '\n')
     except Exception:
         raise ModuleException(f"unexpected error while saving array of JSONs to {relative_path}")
     
-def save_array_of_jsons_to_json_file(json_array, relative_path: str):
+def export_array_of_jsons_to_json_file(json_array, relative_path: str):
     """
     Saves an array of JSON entries into a single JSON array file.
     Suitable for exporting structured data in a standard JSON format.
     """
     try:
-        with open(os.path.join(get_project_root(), relative_path), 'w', encoding='utf-8') as file:
+        # Get the full path by combining project root and relative path
+        full_path = os.path.join(get_project_root(), relative_path)
+
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+
+        # Do the write
+        with open(full_path, 'w', encoding='utf-8') as file:
             json.dump(json_array, file, indent=2)
+
     except Exception:
         raise ModuleException(f"unexpected error while saving array of JSONs to {relative_path}")
 
