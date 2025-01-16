@@ -30,24 +30,29 @@ Menetrend:
             //- linkek: AppsScriptet indítanak el az override SpreadSheetben, ami egy másik sheetre teszi be a parancsot
             //- a schedule updaterben be kell állítani, hogy azt is letöltse, és simítsa egybe
             //- QR kódokat legenerálni és tesztelni
-            - QR kódokat kitenni
-            - RasPin frissíteni a schedule updatert, hogy kezelje az új adatforrást
+            //- QR kódokat kitenni
+            //- RasPin frissíteni a schedule updatert, hogy kezelje az új adatforrást
         - schedule megjelenítés
-        - szobák heti ciklusát csekkolni, elkezdeni leegyeztetni felhasználókkal
+        //- szobák heti ciklusát csekkolni, elkezdeni leegyeztetni felhasználókkal
     
     később:
         - heating control dev tovább
-            - kezdjen valamit azzal, ha régi a hőmérséklet adat egy szobából
+            //- kezdjen valamit azzal, ha régi a hőmérséklet adat egy szobából
             - jelenlét szenzor Lahmacunba
             - lehessen hozzáadni kapcsolható hősugárzót
             - ez a sor problémás, ha törlődik egy hőmérő a rendszerből: measured_temps[room] = 0.5 # For non-temp controlled rooms
         - system integrity checker
         - eszközlistát megírni
-        - kinézni új helyeket az égőknek
-        - meglévő égőket barátságos színűre állítani / lekapcsolni
+        //- kinézni új helyeket az égőknek
+        //- meglévő égőket barátságos színűre állítani / lekapcsolni
         - munkaállomást kiépíteni
         - dashboardot felállítani
         - helyi GUI-t felállítani
+
+
+Dashboard dev:
+- random ötletek:
+    - Oktopusz is szerepeljen, mint lekapcsolt, nem kontrollált szoba
 
 
 Hibák:
@@ -61,5 +66,5 @@ Hibák:
     - legyen continuation parameter a service scripteknél ha építenek az előző részekre
 - kiesik egy égő:
     // - legyen idővezérelt fallback program
-    / - ne legyen weak link a hálózatban
+    // - ne legyen weak link a hálózatban
     - legyen script ami végigteszteli az összes égőt
