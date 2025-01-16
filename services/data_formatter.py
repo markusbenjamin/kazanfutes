@@ -45,17 +45,21 @@ data_types_to_digest = ['room_measurements','room_set_temps','external_temp','ga
 
 for digestion_day in digestion_days:
     digestion_daystamp = digestion_day.strftime('%Y-%m-%d')
+    if parse_old_logs:
+        log_file_suffix = f".{digestion_daystamp}"
+    else:
+        log_file_suffix = ""
 
     #region Room measurements
     if 'room_measurements' in data_types_to_digest:
         success = False
-        log_file_path = r"data\logs\temperature_and_humidity\temperature_and_humidity.json"
+        log_file_path = "data/logs/temperature_and_humidity/temperature_and_humidity.json"
         action_string = f'formatting daily room measurements for {digestion_daystamp}'
 
         rooms_info = get_rooms_info()
 
         try:
-            loaded_log = load_ndjson_to_json_list(f"{log_file_path}.{digestion_daystamp}")
+            loaded_log = load_ndjson_to_json_list(f"{log_file_path}{log_file_suffix}")
             for room, info in rooms_info.items():
                 formatted_data = []
                 
@@ -69,7 +73,7 @@ for digestion_day in digestion_days:
                         if formatted_entry not in formatted_data:
                             formatted_data.append(formatted_entry)
                 
-                export_json_list_to_json_file(formatted_data,f"data\\formatted\\{digestion_daystamp}\\room_{room}_measurements.json")
+                export_json_list_to_json_file(formatted_data,f"data/formatted/{digestion_daystamp}/room_{room}_measurements.json")
 
             report(f"Done: {action_string}.",verbose=True)
             success = True
@@ -86,13 +90,13 @@ for digestion_day in digestion_days:
     #region Room set temps
     if 'room_set_temps' in data_types_to_digest:
         success = False
-        log_file_path = r"data\logs\service_execution\heating_control\heating_control.json"
+        log_file_path = r"data/logs/service_execution/heating_control/heating_control.json"
         action_string = f'formatting daily room set temps for {digestion_daystamp}'
 
         rooms_info = get_rooms_info()
 
         try:
-            loaded_log = load_ndjson_to_json_list(f"{log_file_path}.{digestion_daystamp}")
+            loaded_log = load_ndjson_to_json_list(f"{log_file_path}{log_file_suffix}")
             for room, info in rooms_info.items():
                 formatted_data = []
                 
@@ -105,7 +109,7 @@ for digestion_day in digestion_days:
                         if formatted_entry not in formatted_data:
                             formatted_data.append(formatted_entry)
                 
-                export_json_list_to_json_file(formatted_data,f"data\\formatted\\{digestion_daystamp}\\room_{room}_set_temps.json")
+                export_json_list_to_json_file(formatted_data,f"data/formatted/{digestion_daystamp}/room_{room}_set_temps.json")
 
             report(f"Done: {action_string}.",verbose=True)
             success = True
@@ -122,11 +126,11 @@ for digestion_day in digestion_days:
     #region External temp
     if 'external_temp' in data_types_to_digest:
         success = False
-        log_file_path = r"data\logs\external_temp\external_temp.json"
+        log_file_path = r"data/logs/external_temp/external_temp.json"
         action_string = f'formatting external temp for {digestion_daystamp}'
 
         try:
-            loaded_log = load_ndjson_to_json_list(f"{log_file_path}.{digestion_daystamp}")
+            loaded_log = load_ndjson_to_json_list(f"{log_file_path}{log_file_suffix}")
 
             formatted_data = []
             
@@ -138,7 +142,7 @@ for digestion_day in digestion_days:
                 if formatted_entry not in formatted_data:
                     formatted_data.append(formatted_entry)
             
-            export_json_list_to_json_file(formatted_data,f"data\\formatted\\{digestion_daystamp}\\external_temp.json")
+            export_json_list_to_json_file(formatted_data,f"data/formatted/{digestion_daystamp}/external_temp.json")
 
             report(f"Done: {action_string}.",verbose=True)
             success = True
@@ -155,11 +159,11 @@ for digestion_day in digestion_days:
     #region Gas consumption
     if 'gas_consumption' in data_types_to_digest:
         success = False
-        log_file_path = r"data\logs\gas_consumption\gas_relay_turns.json"
+        log_file_path = r"data/logs/gas_consumption/gas_relay_turns.json"
         action_string = f'formatting gas consumption for {digestion_daystamp}'
 
         try:
-            loaded_log = load_ndjson_to_json_list(f"{log_file_path}.{digestion_daystamp}")
+            loaded_log = load_ndjson_to_json_list(f"{log_file_path}{log_file_suffix}")
 
             formatted_data = []
 
@@ -186,7 +190,7 @@ for digestion_day in digestion_days:
                 else:
                     previous_turn_end = datetime.strptime(raw_entry['timestamp'],settings['timestamp_format'])
             
-            export_json_list_to_json_file(formatted_data,f"data\\formatted\\{digestion_daystamp}\\gas_usage.json")
+            export_json_list_to_json_file(formatted_data,f"data/formatted/{digestion_daystamp}/gas_usage.json")
 
             report(f"Done: {action_string}.",verbose=True)
             success = True
@@ -203,11 +207,11 @@ for digestion_day in digestion_days:
     #region Heating state
     if 'heating_state' in data_types_to_digest:
         success = False
-        log_file_path = r"data\logs\service_execution\heating_control\heating_control.json"
+        log_file_path = r"data/logs/service_execution/heating_control/heating_control.json"
         action_string = f'formatting heating state for {digestion_daystamp}'
 
         try:
-            loaded_log = load_ndjson_to_json_list(f"{log_file_path}.{digestion_daystamp}")
+            loaded_log = load_ndjson_to_json_list(f"{log_file_path}{log_file_suffix}")
 
             formatted_data = []
             
@@ -229,7 +233,7 @@ for digestion_day in digestion_days:
                     current_timestamp = raw_entry['timestamp']
                     formatted_entry = {'timestamp':raw_entry['timestamp']}
             
-            export_json_list_to_json_file(formatted_data,f"data\\formatted\\{digestion_daystamp}\\heating_state.json")
+            export_json_list_to_json_file(formatted_data,f"data/formatted/{digestion_daystamp}/heating_state.json")
 
             report(f"Done: {action_string}.",verbose=True)
             success = True
