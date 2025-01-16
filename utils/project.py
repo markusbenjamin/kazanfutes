@@ -1382,19 +1382,19 @@ def export_dict_as_json(data, relative_path: str):
     except:
         raise ModuleException(f"couldn't export dict to {relative_path}")
     
-def load_ndjson_to_array_of_jsons(relative_path: str):
+def load_ndjson_to_json_list(relative_path: str):
     """
     Loads a new-line delimited JSON file into an array of JSON entries.
     Most log files are in this format.
     """
     try:
         with open(os.path.join(get_project_root(), relative_path), 'r', encoding='utf-8') as file:
-            loaded_json_array =  [json.loads(line) for line in file if line.strip()]
-        return loaded_json_array
+            loaded_json_list =  [json.loads(line) for line in file if line.strip()]
+        return loaded_json_list
     except Exception:
         raise ModuleException(f"unexpected error while loading {relative_path} to array of JSONs")
     
-def export_array_of_jsons_to_ndjson(json_array, relative_path: str):
+def export_json_list_to_ndjson(json_array, relative_path: str):
     """
     Saves an array of JSON entries into a new-line delimited JSON file.
     """
@@ -1412,7 +1412,7 @@ def export_array_of_jsons_to_ndjson(json_array, relative_path: str):
     except Exception:
         raise ModuleException(f"unexpected error while saving array of JSONs to {relative_path}")
     
-def export_array_of_jsons_to_json_file(json_array, relative_path: str):
+def export_json_list_to_json_file(json_array, relative_path: str):
     """
     Saves an array of JSON entries into a single JSON array file.
     Suitable for exporting structured data in a standard JSON format.
