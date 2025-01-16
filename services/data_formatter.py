@@ -78,9 +78,9 @@ for digestion_day in digestion_days:
             report(f"Done: {action_string}.",verbose=True)
             success = True
         except ModuleException as e:
-            ServiceException(f"Module error while {action_string}.", original_exception=e, severity = 3)
+            ServiceException(f"Module error while {action_string}.", original_exception=e, severity = 2)
         except Exception:
-            ServiceException(f"Module error while {action_string}.", severity = 3)
+            ServiceException(f"Module error while {action_string}.", severity = 2)
 
         # Log execution
         log({f"success {action_string}":success})
@@ -114,9 +114,9 @@ for digestion_day in digestion_days:
             report(f"Done: {action_string}.",verbose=True)
             success = True
         except ModuleException as e:
-            ServiceException(f"Module error while {action_string}.", original_exception=e, severity = 3)
+            ServiceException(f"Module error while {action_string}.", original_exception=e, severity = 2)
         except Exception:
-            ServiceException(f"Module error while {action_string}.", severity = 3)
+            ServiceException(f"Module error while {action_string}.", severity = 2)
 
         # Log execution
         log({f"success {action_string}":success})
@@ -147,9 +147,9 @@ for digestion_day in digestion_days:
             report(f"Done: {action_string}.",verbose=True)
             success = True
         except ModuleException as e:
-            ServiceException(f"Module error while {action_string}.", original_exception=e, severity = 3)
+            ServiceException(f"Module error while {action_string}.", original_exception=e, severity = 2)
         except Exception:
-            ServiceException(f"Module error while {action_string}.", severity = 3)
+            ServiceException(f"Module error while {action_string}.", severity = 2)
 
         # Log execution
         log({f"success {action_string}":success})
@@ -195,9 +195,9 @@ for digestion_day in digestion_days:
             report(f"Done: {action_string}.",verbose=True)
             success = True
         except ModuleException as e:
-            ServiceException(f"Module error while {action_string}.", original_exception=e, severity = 3)
+            ServiceException(f"Module error while {action_string}.", original_exception=e, severity = 2)
         except Exception:
-            ServiceException(f"Module error while {action_string}.", severity = 3)
+            ServiceException(f"Module error while {action_string}.", severity = 2)
 
         # Log execution
         log({f"success {action_string}":success})
@@ -238,9 +238,9 @@ for digestion_day in digestion_days:
             report(f"Done: {action_string}.",verbose=True)
             success = True
         except ModuleException as e:
-            ServiceException(f"Module error while {action_string}.", original_exception=e, severity = 3)
+            ServiceException(f"Module error while {action_string}.", original_exception=e, severity = 2)
         except Exception:
-            ServiceException(f"Module error while {action_string}.", severity = 3)
+            ServiceException(f"Module error while {action_string}.", severity = 2)
 
         # Log execution
         log({f"success {action_string}":success})
