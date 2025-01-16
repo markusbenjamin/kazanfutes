@@ -101,6 +101,7 @@ const tooltipData = {
     7: { roomID: "#Gólyairoda", name: "Gólyairoda", temp: null },
     8: { roomID: "#kisterem", name: "kisterem", temp: null },
     9: { roomID: "#vendégtér", name: "vendégtér", temp: null },
+    10: { roomID: "#Trafóház", name: "Trafóház", temp: null },
     11: { roomID: "#OktopuszKeramia", name: "Oktopusz kerámia", temp: null }
 };
 
@@ -134,11 +135,11 @@ function setupTooltip() {
 }
 
 function pollFirebase() {
-    const url = "https://kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app/system.json"; // Update with your Firebase URL
+    const url = "https://kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app/system.json";
     setInterval(() => {
         fetchJSONEndpoint(url)
             .then(systemJSON => {
-                const roomNums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+                const roomNums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
                 roomNums.forEach(roomNum => {
                     const roomTemp = roundTo(systemJSON.state['measured_temps'][roomNum],0.1);
                     updateRoomColor("#" + systemJSON.setup.rooms[roomNum].name, roomTemp);
