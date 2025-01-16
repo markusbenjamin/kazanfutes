@@ -1,4 +1,7 @@
 """
+
+INCOMPLETE
+
 Checks the accessibility of various physical peripheries and virtual interfaces:
     > Deconz:
         - ZigBee mesh components
