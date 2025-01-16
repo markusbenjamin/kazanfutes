@@ -53,7 +53,7 @@ def initialize_settings():
         return settings_dict
     except Exception as e:
         print(f"Can't load settings due to {e}")
-    
+
 settings = initialize_settings()
 settings['on_raspi'] = on_raspi
 
@@ -1378,6 +1378,40 @@ def export_dict_as_json(data, relative_path: str):
 
     except:
         raise ModuleException(f"couldn't export dict to {relative_path}")
+    
+def load_ndjson_to_array_of_jsons(relative_path: str):
+    """
+    Loads a new-line delimited JSON file into an array of JSON entries.
+    Most log files are in this format.
+    """
+    try:
+        with open(os.path.join(get_project_root(), relative_path), 'r', encoding='utf-8') as file:
+            loaded_json_array =  [json.loads(line) for line in file if line.strip()]
+        return loaded_json_array
+    except Exception:
+        raise ModuleException(f"unexpected error while loading {relative_path} to array of JSONs")
+    
+def save_array_of_jsons_to_ndjson(json_array, relative_path: str):
+    """
+    Saves an array of JSON entries into a new-line delimited JSON file.
+    """
+    try:
+        with open(os.path.join(get_project_root(), relative_path), 'w', encoding='utf-8') as file:
+            for entry in json_array:
+                file.write(json.dumps(entry) + '\n')
+    except Exception:
+        raise ModuleException(f"unexpected error while saving array of JSONs to {relative_path}")
+    
+def save_array_of_jsons_to_json_file(json_array, relative_path: str):
+    """
+    Saves an array of JSON entries into a single JSON array file.
+    Suitable for exporting structured data in a standard JSON format.
+    """
+    try:
+        with open(os.path.join(get_project_root(), relative_path), 'w', encoding='utf-8') as file:
+            json.dump(json_array, file, indent=2)
+    except Exception:
+        raise ModuleException(f"unexpected error while saving array of JSONs to {relative_path}")
 
 def jsonify_array(data):
     """
