@@ -157,12 +157,11 @@ function pollFirebase() {
 }
 
 function pollGitHub() { //add day, file params
-    const url = "https://raw.githubusercontent.com/markusbenjamin/kazanfutes/refs/heads/main/data/formatted/"+daystamp()+"/gas_usage.json";
+    const url = "https://raw.githubusercontent.com/markusbenjamin/kazanfutes/refs/heads/main/data/formatted/" + daystamp() + "/gas_usage.json";
     setInterval(() => {
         fetchJSONEndpoint(url)
             .then(dataJSON => {
-                plotCurve('wireframe', 'gas-graph', dataJSON, 175, 160 * 2 / 3, 100, 180, ["óra","ráta (m³/h)"], "mai gázfogyás (össz: "+d3.max(dataJSON, d => d.burnt_volume)+" m³)");
-                
+                plotCurve('wireframe', 'gas-graph', dataJSON, 175, 160 * 2 / 3, 100, 180, ["óra", "ráta (m³/h)"], "mai gázfogyás (össz: " + Math.round(d3.max(dataJSON, d => d.burnt_volume) * 10) / 10 + " m³)");
             })
             .catch(error => {
                 console.error('Error fetching data from GitHub:', error);
@@ -170,7 +169,7 @@ function pollGitHub() { //add day, file params
     }, 1 * 1000);
 }
 
-function plotCurve(parentContainerId = "drawing", graphContainerId, plotData, width = 100, height = 100, posX = 0, posY = 0, axesLabel = ["",""], plotLabel = "") {
+function plotCurve(parentContainerId = "drawing", graphContainerId, plotData, width = 100, height = 100, posX = 0, posY = 0, axesLabel = ["", ""], plotLabel = "") {
     // Ensure the parent container exists
     const parentContainer = d3.select(`#${parentContainerId}`);
     if (parentContainer.empty()) {
@@ -200,6 +199,9 @@ function plotCurve(parentContainerId = "drawing", graphContainerId, plotData, wi
             console.error(`Failed to parse timestamp: ${d.timestamp}`);
         }
     });
+
+    // Apply moving average smoothing to burnt_volume
+    const smoothedData = calculateMovingAverage(plotData, "burn_rate_in_m3_per_h", 60); // Adjust window size as needed
 
     // Set up dimensions
     const margin = { top: 10, right: 10, bottom: 20, left: 25 };
@@ -267,18 +269,6 @@ function plotCurve(parentContainerId = "drawing", graphContainerId, plotData, wi
         .style("font-family", "Consolas")
         .style("text-anchor", "end"); // Set font size for tick labels
 
-    // Draw the line
-    const line = d3.line()
-        .x(d => x(d.date))
-        .y(d => y(d.burn_rate_in_m3_per_h));
-
-    g.append("path")
-        .datum(plotData)
-        .attr("fill", "none")
-        .attr("stroke", "red")
-        .attr("stroke-width", 0.5)
-        .attr("d", line);
-
     // X-axis label
     g.append("text")
         .attr("x", width / 2)
@@ -307,15 +297,27 @@ function plotCurve(parentContainerId = "drawing", graphContainerId, plotData, wi
         .style("font-family", "Consolas")
         .text(plotLabel);
 
-
     // Add dots (optional)
-    //g.selectAll(".dot")
-    //    .data(plotData)
-    //    .enter().append("circle")
-    //    .attr("cx", d => x(d.date))
-    //    .attr("cy", d => y(d.burnt_volume))
-    //    .attr("r", 1)
-    //    .attr("fill", "red");
+    g.selectAll(".dot")
+        .data(plotData)
+        .enter().append("circle")
+        .attr("cx", d => x(d.date))
+        .attr("cy", d => y(d.burn_rate_in_m3_per_h))
+        .attr("r", 0.25)
+        .attr("fill", "gray");
+
+    // Draw the line
+    const line = d3.line()
+        .x(d => x(d.date))
+        .y(d => y(d.burn_rate_in_m3_per_h))
+        .curve(d3.curveBasis);
+
+    g.append("path")
+        .datum(smoothedData)
+        .attr("fill", "none")
+        .attr("stroke", "red")
+        .attr("stroke-width", 1.5)
+        .attr("d", line);
 }
 
 d3.xml("drawing.svg").then(fileData => {

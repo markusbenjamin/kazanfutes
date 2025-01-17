@@ -11,7 +11,7 @@ function fetchJSONEndpoint(url) {
 }
 
 function googleTimestamp(date = null) {
-    if(date == null){
+    if (date == null) {
         date = new Date()
     }
     const day = String(date.getDate()).padStart(2, '0');
@@ -20,12 +20,12 @@ function googleTimestamp(date = null) {
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     const seconds = String(date.getSeconds()).padStart(2, '0');
-    
+
     return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
 }
 
 function humanTimestamp(date = null) {
-    if(date == null){
+    if (date == null) {
         date = new Date()
     }
     const year = date.getFullYear();
@@ -34,23 +34,23 @@ function humanTimestamp(date = null) {
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     const seconds = String(date.getSeconds()).padStart(2, '0');
-    
+
     return `${year}.${month}.${day}. ${hours}:${minutes}`;
 }
 
 function daystamp(date = null) {
-    if(date == null){
+    if (date == null) {
         date = new Date()
     }
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');  // Months are 0-indexed
     const day = String(date.getDate()).padStart(2, '0');
-    
+
     return `${year}-${month}-${day}`;
 }
 
 function timestamp(date = null) {
-    if(date == null){
+    if (date == null) {
         date = new Date()
     }
     const year = date.getFullYear();
@@ -59,7 +59,7 @@ function timestamp(date = null) {
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     const seconds = String(date.getSeconds()).padStart(2, '0');
-    
+
     return `${year}-${month}-${day}-${hours}-${minutes}-${seconds}`;
 }
 
@@ -129,6 +129,17 @@ function roundTo(num, multiple) {
     return Math.round(num / multiple) * multiple;
 }
 
+// Function to calculate moving average
+function calculateMovingAverage(data, field, windowSize) {
+    return data.map((d, i, arr) => {
+        const start = Math.max(0, i - Math.floor(windowSize / 2));
+        const end = Math.min(arr.length, i + Math.floor(windowSize / 2) + 1);
+        const subset = arr.slice(start, end);
+        const average = d3.mean(subset, v => v[field]); // Compute the mean of the specified field
+        return { ...d, [field]: average }; // Return the original object with the smoothed field
+    });
+}
+
 function getUnixDay(date = null) {
     if (date == null) {
         date = new Date();
@@ -156,10 +167,10 @@ function getUnixDay(date = null) {
 
 
 function getHourOfDay(date = null) {
-    if(date == null){
+    if (date == null) {
         date = new Date()
     }
-    return Number(date.toTimeString().slice(0,2));
+    return Number(date.toTimeString().slice(0, 2));
 }
 
 function hasNoNullValues(obj) {
