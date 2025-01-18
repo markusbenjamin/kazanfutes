@@ -812,5 +812,16 @@
         "reported_timestamp": "2025-01-18-00-25-06",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to scrape and log external temperature: error during external temperature scraping: HTTPSConnectionPool(host='api.open-meteo.com', port=443): Max retries exceeded with url: /v1/forecast?latitude=47.4984&longitude=19.0405&current_weather=true (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xf51e4ad0>: Failed to establish a new connection: [Errno 101] Network is unreachable')) (ConnectionError).",
+        "severity": 2,
+        "origin": "external_temp_scraper_and_logger.py:9 --> project.py/scrape_external_temperature:621",
+        "origin_timestamp": "2025-01-18-20-12-18",
+        "registration_timestamp": "2025-01-18-20-12-18",
+        "reported": true,
+        "reported_timestamp": "2025-01-18-20-15-06",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
