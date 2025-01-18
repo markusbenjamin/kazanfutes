@@ -176,3 +176,16 @@ function getHourOfDay(date = null) {
 function hasNoNullValues(obj) {
     return Object.values(obj).every(value => value !== null);
 }
+
+let mousePosition = { x: 0, y: 0 };
+
+// Add an event listener to track mouse position
+window.addEventListener("pointermove", (event) => {
+    mousePosition.x = event.clientX; // X-coordinate in viewport space
+    mousePosition.y = event.clientY; // Y-coordinate in viewport space
+});
+
+// Function to poll the current mouse position
+function getMousePosition() {
+    return { ...mousePosition }; // Return a copy of the current mouse position
+}

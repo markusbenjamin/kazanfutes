@@ -67,21 +67,32 @@ function centerAndZoomRelativePointOfDrawing(targetX, targetY, zoomLevel, durati
     const drawing = container.select("#drawing")
     const wireframe = drawing.select("#wireframe");
 
-    const zoomToPoint = d3.zoom()
-        .on("zoom", ({ transform }) => {
-            wireframe.transition().duration(duration).attr("transform", transform);
-        });
-    container.call(zoomToPoint.transform, d3.zoomIdentity.translate(
-        drawingDimensions.idioticShift[0] * zoomLevel + scalingCorrection[0] + (drawingDimensions.size[0] / 2 - target[0]) * zoomLevel,
-        drawingDimensions.idioticShift[1] * zoomLevel + scalingCorrection[1] + (drawingDimensions.size[1] / 2 - target[1]) * zoomLevel
-    ).scale(zoomLevel));
-
-    const zoomWithMouse = d3.zoom()
+    const zoom = d3.zoom()
         .scaleExtent([0.1, 50])
         .on("zoom", ({ transform }) => {
-            wireframe.transition().duration(10).attr("transform", transform);
+            console.log(transform);
+            wireframe.attr("transform", transform);
+            const { x, y, k } = transform;
+            wireframe.attr("transform", `translate(${x}, ${y}) scale(${k})`);
+            // Also update the other element
+            mousePosition = getMousePosition();
+            console.log(mousePosition);
+            d3.select("#tooltip")
+                .style("left", `${mousePosition.x + 5}px`)
+                .style("top", `${mousePosition.y - 28}px`);
         });
-    container.call(zoomWithMouse);
+
+    container.call(zoom);
+
+    // Then programmatically set the transform once at startup
+    container.call(
+        zoom.transform,
+        d3.zoomIdentity
+            .translate(
+                drawingDimensions.idioticShift[0] * zoomLevel + scalingCorrection[0] + (drawingDimensions.size[0] / 2 - target[0]) * zoomLevel,
+                drawingDimensions.idioticShift[1] * zoomLevel + scalingCorrection[1] + (drawingDimensions.size[1] / 2 - target[1]) * zoomLevel)
+            .scale(zoomLevel)
+    );
 }
 
 function updateRoomColor(roomId, temp) {
@@ -130,7 +141,28 @@ function setupTooltip() {
             })
             .on("mouseout", function () {
                 tooltip.transition().duration(500).style("visibility", "hidden");
-            });
+            })
+
+        //.call(
+        //    d3.drag()
+        //        .on("start", function (event) {
+        //            // Optionally show tooltip immediately when drag starts
+        //            if (roomTooltipData.temp != null) {
+        //                tooltip.transition().duration(200).style("visibility", "visible");
+        //            }
+        //        })
+        //        .on("drag", function (event) {
+        //            // event.sourceEvent has the original mouse event with pageX/pageY
+        //            if (roomTooltipData.temp != null) {
+        //                tooltip.style("left", (event.sourceEvent.pageX + 5) + "px")
+        //                    .style("top", (event.sourceEvent.pageY - 28) + "px");
+        //            }
+        //        })
+        //        .on("end", function (event) {
+        //            // Optionally hide tooltip or leave it up at the end of drag
+        //            tooltip.transition().duration(500).style("visibility", "hidden");
+        //        })
+        //);
     });
 }
 
@@ -201,7 +233,7 @@ function plotCurve(parentContainerId = "drawing", graphContainerId, plotData, wi
     });
 
     // Apply moving average smoothing to burnt_volume
-    const smoothedData = calculateMovingAverage(plotData, "burn_rate_in_m3_per_h", 60); // Adjust window size as needed
+    const smoothedData = calculateMovingAverage(plotData, "burn_rate_in_m3_per_h", 25); // Adjust window size as needed
 
     // Set up dimensions
     const margin = { top: 10, right: 10, bottom: 20, left: 25 };
@@ -224,7 +256,8 @@ function plotCurve(parentContainerId = "drawing", graphContainerId, plotData, wi
         .range([0, width]); // Map to the graph's width
 
     const y = d3.scaleLinear()
-        .domain([0, Math.max(10, d3.max(plotData, d => d.burn_rate_in_m3_per_h) || 0)])
+        //.domain([0, Math.max(10, d3.max(plotData, d => d.burn_rate_in_m3_per_h) || 0)])
+        .domain([0, 10])
         .nice()
         .range([height, 0]);
 
