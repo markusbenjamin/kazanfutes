@@ -38,7 +38,7 @@ function humanTimestamp(date = null) {
     return `${year}.${month}.${day}. ${hours}:${minutes}`;
 }
 
-function daystamp(date = null) {
+function dayStamp(date = null) {
     if (date == null) {
         date = new Date()
     }

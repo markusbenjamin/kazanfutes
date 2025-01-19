@@ -1,82 +1,93 @@
-function insertDrawingFromFile(fileData) {
+let canvasInserted = false;
+
+function insertCanvasFromFile(fileData) {
     // Extract the original SVG element
-    const originalSVG = fileData.documentElement;
+    const drawingFile = fileData.documentElement;
 
     // Create a new SVG element
-    const newSVG = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    newSVG.id = "drawing";
-    newSVG.setAttribute("originalWidth", originalSVG.getAttribute("width"))
-    newSVG.setAttribute("originalHeight", originalSVG.getAttribute("height"))
-    newSVG.setAttribute("viewBox", `0 0 ${window.innerWidth} ${window.innerHeight}`);
-    newSVG.setAttribute("width", "100%");  // Make SVG cover the viewport
-    newSVG.setAttribute("height", "100%");
+    const newDrawingGroup = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    newDrawingGroup.id = "canvas";
+    newDrawingGroup.setAttribute("originalWidth", drawingFile.getAttribute("width"))
+    newDrawingGroup.setAttribute("originalHeight", drawingFile.getAttribute("height"))
+    newDrawingGroup.setAttribute("viewBox", `0 0 ${window.innerWidth} ${window.innerHeight}`);
+    newDrawingGroup.setAttribute("width", "100%");  // Make SVG cover the viewport
+    newDrawingGroup.setAttribute("height", "100%");
 
-    // Select all <g> elements in the original SVG
-    const groups = originalSVG.querySelectorAll("g");
-    groups.forEach(group => {
-        // Create a new <g> element
-        const newGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    // Select the drawing <g> element in the original SVG file
+    const originalDrawingGroup = drawingFile.getElementById("drawing");
+    const idioticShift = originalDrawingGroup.getAttribute("transform").match(/-?\d+\.\d+/g).map(num => Math.floor(parseFloat(num)));
 
-        // Set the new group ID based on `inkscape:label`
-        newGroup.id = group.getAttribute("inkscape:label"); // Use inkscape:label as the ID
-        const idioticShift = group.getAttribute("transform").match(/-?\d+\.\d+/g).map(num => Math.floor(parseFloat(num)));
-        newGroup.setAttribute("idioticShiftX", idioticShift[0]); // To counteract the idiotic & unnecessary export shift of Inkscape
-        newGroup.setAttribute("idioticShiftY", idioticShift[1]);
+    // Create a new <g> element
+    const newGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
-        // Clone child nodes (like paths, shapes) and append them to the new group
-        group.childNodes.forEach(child => {
-            newGroup.appendChild(child.cloneNode(true));
-        });
+    // Set the new group ID based on `inkscape:label`
+    newGroup.id = originalDrawingGroup.getAttribute("inkscape:label"); // Use inkscape:label as the ID
+    newGroup.setAttribute("idioticShiftX", idioticShift[0]); // To counteract the idiotic & unnecessary export shift of Inkscape
+    newGroup.setAttribute("idioticShiftY", idioticShift[1]);
 
-        // Append the cleaned group to the new SVG
-        newSVG.appendChild(newGroup);
+    // Clone child nodes (like paths, shapes) and append them to the new group
+    originalDrawingGroup.childNodes.forEach(child => {
+        if (child.nodeType === 1) {
+            child.id = child.getAttribute("inkscape:label");
+        }
+        newGroup.appendChild(child.cloneNode(true));
     });
 
+    // Append the cleaned group to the new SVG
+    newDrawingGroup.appendChild(newGroup);
+
+
+    const p5jsDrawing = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    p5jsDrawing.id = "p5jsDrawing";
+    newDrawingGroup.appendChild(p5jsDrawing);
+
     // Append the new SVG to the container in the HTML
-    document.getElementById("container").appendChild(newSVG);
+    document.getElementById("container").appendChild(newDrawingGroup);
+    canvasInserted = true;
+    console.log("Canvas inserted from file.");
 }
 
-function getDrawingDimensions() {
+function getCanvasDimensions() {
     const container = d3.select("#container");
-    const drawing = container.select("#drawing")
-    const wireframe = drawing.select("#wireframe");  // Select the inner layer using layerReference
+    const canvas = container.select("#canvas")
+    const drawing = canvas.select("#drawing");  // Select the inner layer using layerReference
 
-    const zeroPositionShiftX = parseInt(wireframe.node().getAttribute("idioticShiftX"))
-    const zeroPositionShiftY = parseInt(wireframe.node().getAttribute("idioticShiftY"))
-    const drawingWidth = parseInt(drawing.node().getAttribute("originalWidth"))
-    const drawingHeight = parseInt(drawing.node().getAttribute("originalHeight"))
+    const zeroPositionShiftX = parseInt(drawing.node().getAttribute("idioticShiftX"))
+    const zeroPositionShiftY = parseInt(drawing.node().getAttribute("idioticShiftY"))
+    const canvasWidth = parseInt(canvas.node().getAttribute("originalWidth"))
+    const canvasHeight = parseInt(canvas.node().getAttribute("originalHeight"))
     return {
         idioticShift: [zeroPositionShiftX, zeroPositionShiftY],
-        size: [drawingWidth, drawingHeight]
+        size: [canvasWidth, canvasHeight]
     }
 }
 
-function centerAndZoomRelativePointOfDrawing(targetX, targetY, zoomLevel, duration = 10) {
+function centerAndZoomRelativePointOfCanvas(targetX, targetY, zoomLevel, duration = 10) {
     const container = d3.select("#container");
 
-    const drawingDimensions = getDrawingDimensions();
+    const canvasDimensions = getCanvasDimensions();
     const scalingCorrection = [
-        (window.innerWidth - drawingDimensions.size[0] * zoomLevel) / 2,
-        (window.innerHeight - drawingDimensions.size[1] * zoomLevel) / 2
+        (window.innerWidth - canvasDimensions.size[0] * zoomLevel) / 2,
+        (window.innerHeight - canvasDimensions.size[1] * zoomLevel) / 2
     ]
     const target = [
-        targetX * drawingDimensions.size[0], // In original drawing coordinates!
-        targetY * drawingDimensions.size[1]
+        targetX * canvasDimensions.size[0], // In original canvas coordinates!
+        targetY * canvasDimensions.size[1]
     ]
 
-    const drawing = container.select("#drawing")
-    const wireframe = drawing.select("#wireframe");
+    const canvas = container.select("#canvas")
+    const drawing = canvas.select("#drawing");
+    const p5jsDrawing = canvas.select("#p5jsDrawing");
 
     const zoom = d3.zoom()
         .scaleExtent([0.1, 50])
         .on("zoom", ({ transform }) => {
-            console.log(transform);
-            wireframe.attr("transform", transform);
-            const { x, y, k } = transform;
-            wireframe.attr("transform", `translate(${x}, ${y}) scale(${k})`);
-            // Also update the other element
+            drawing.attr("transform", transform);
+
+            p5jsDrawing.attr("transform", transform);
+
+            // Also update tooltip
             mousePosition = getMousePosition();
-            console.log(mousePosition);
             d3.select("#tooltip")
                 .style("left", `${mousePosition.x + 5}px`)
                 .style("top", `${mousePosition.y - 28}px`);
@@ -89,8 +100,8 @@ function centerAndZoomRelativePointOfDrawing(targetX, targetY, zoomLevel, durati
         zoom.transform,
         d3.zoomIdentity
             .translate(
-                drawingDimensions.idioticShift[0] * zoomLevel + scalingCorrection[0] + (drawingDimensions.size[0] / 2 - target[0]) * zoomLevel,
-                drawingDimensions.idioticShift[1] * zoomLevel + scalingCorrection[1] + (drawingDimensions.size[1] / 2 - target[1]) * zoomLevel)
+                canvasDimensions.idioticShift[0] * zoomLevel + scalingCorrection[0] + (canvasDimensions.size[0] / 2 - target[0]) * zoomLevel,
+                canvasDimensions.idioticShift[1] * zoomLevel + scalingCorrection[1] + (canvasDimensions.size[1] / 2 - target[1]) * zoomLevel)
             .scale(zoomLevel)
     );
 }
@@ -100,6 +111,29 @@ function updateRoomColor(roomId, temp) {
     const colorScale = d3.scaleSequential(d3.interpolateRgb("blue", "red"))
         .domain([15, 25]); // Set the input domain (10°C to 30°C)
     d3.select(roomId).style("fill", colorScale(temp));
+}
+
+function updateCycleColor(cycle, state) {
+    d3.select("#cycle" + cycle).style("stroke", state == 1 ? "rgba(255,0,0,0.75)" : "rgba(0,0,255,0.75)");
+    d3.select("#cycle" + cycle).style("stroke-opacity", "1");
+
+    d3.select("#cycle" + cycle + "_radiators").selectAll("*").style("fill", state == 1 ? "rgba(255,0,0,1)" : "rgba(0,0,255,1)");
+    d3.select("#cycle" + cycle + "_radiators").selectAll("*").style("fill-opacity", "1");
+}
+
+let boilerState = null;
+
+function updateBoilerColor(state) {
+    //d3.select("#boiler").style("stroke", state == 1 ? "rgba(255,0,0,1)" : "rgba(0,0,255,1)");
+    d3.select("#boiler").style("stroke-opacity", "0");
+    //d3.select("#boiler").style("fill", state == 1 ? "rgba(255,0,0,0.5)" : "rgba(0,0,255,0.5)");
+
+    d3.select("#flame_nest").style("fill", "rgba(0.2,0.2,0.2,1)");
+    d3.select("#flame_nest").style("fill-opacity", "1");
+
+    d3.select("#boiler_body").style("stroke", state == 1 ? "rgba(255,0,0,1)" : "rgba(0,0,255,1)");
+    d3.select("#boiler_body").style("stroke-opacity", "1");
+    boilerState = state;
 }
 
 const tooltipData = {
@@ -160,6 +194,16 @@ function pollFirebase() {
                 //const roomTemp = roundTo(systemJSON.state['oktopusz_keramia'][1],0.1);
                 updateRoomColor("#OktopuszKeramia", roomTemp);
                 tooltipData[11].temp = (roomTemp.toFixed(2).slice(0, 4));
+
+                const cycles = [1, 2, 3, 4];
+                let states = 0;
+                cycles.forEach(cycleNum => {
+                    const cycleState = systemJSON.control.cycles[cycleNum];
+                    states += cycleState;
+                    updateCycleColor(cycleNum, cycleState);
+                }
+                );
+                updateBoilerColor(states > 0 ? 1 : 0);
             })
             .catch(error => {
                 console.error('Error fetching data from Firebase:', error);
@@ -167,12 +211,54 @@ function pollFirebase() {
     }, 1 * 1000);
 }
 
+function writeGasUsageToDial(gasData = null) {
+    if (gasData == null) {
+        getDataFromGitHub(dayStamp(), "gas_usage", writeGasUsageToDial)
+    }
+    else {
+        d3.select("#gas_piping").style("stroke", "rgba(0.2,0.2,0.2,1)");
+        d3.select("#gas_piping").style("stroke-opacity", "1");
+        d3.select("#gas_meter").style("fill", "rgba(0.2,0.2,0.2,1)");
+        d3.select("#gas_meter").style("fill-opacity", "1");
+        d3.select("#gas_meter2").style("fill", "rgba(0.2,0.2,0.2,1)");
+        d3.select("#gas_meter2").style("fill-opacity", "1");
+
+        let gasTotal = Math.round(gasData[gasData.length - 1].burnt_volume);
+        if (gasTotal == NaN) { gasTotal = 0 };
+        const dialBoxBB = getBBoxDrawingDimensions("gas_dial");
+        let textXOffsetFactor = 0.15;
+        if (gasTotal < 10) {
+            textXOffsetFactor = 0.24;
+        }
+        d3.select("#drawing")
+            .append("text")
+            .attr("x", dialBoxBB.x + dialBoxBB.width * textXOffsetFactor)
+            .attr("y", dialBoxBB.y + dialBoxBB.height * 0.7)
+            .text(gasTotal + " m³")
+            .style("font-family", "Consolas")
+            .style("font-size", "5.25px")
+            .style("fill", "black");
+
+    }
+}
+
+function getDataFromGitHub(day, dataType, callback) {
+    const url = "https://raw.githubusercontent.com/markusbenjamin/kazanfutes/refs/heads/main/data/formatted/" + day + "/" + dataType + ".json";
+    fetchJSONEndpoint(url)
+        .then(dataJSON => {
+            callback(dataJSON);
+        })
+        .catch(error => {
+            console.error('Error fetching data from GitHub:', error);
+        });
+}
+
 function pollGitHub() { //add day, file params
-    const url = "https://raw.githubusercontent.com/markusbenjamin/kazanfutes/refs/heads/main/data/formatted/" + daystamp() + "/gas_usage.json";
+    const url = "https://raw.githubusercontent.com/markusbenjamin/kazanfutes/refs/heads/main/data/formatted/" + dayStamp() + "/gas_usage.json";
     setInterval(() => {
         fetchJSONEndpoint(url)
             .then(dataJSON => {
-                plotCurve('wireframe', 'gas-graph', dataJSON, 175, 160 * 2 / 3, 100, 200, ["óra", "ráta (m³/h)"], "mai gázfogyás (össz: " + Math.round(d3.max(dataJSON, d => d.burnt_volume) * 10) / 10 + " m³)");
+                plotCurve('drawing', 'gas-graph', dataJSON, 175, 100, 200, 160 * 2 / 3, ["óra", "ráta (m³/h)"], "mai gázfogyás");
             })
             .catch(error => {
                 console.error('Error fetching data from GitHub:', error);
@@ -180,12 +266,23 @@ function pollGitHub() { //add day, file params
     }, 1 * 1000);
 }
 
-function plotCurve(parentContainerId = "drawing", graphContainerId, plotData, width = 100, height = 100, posX = 0, posY = 0, axesLabel = ["", ""], plotLabel = "") {
+function plotCurve(parentContainerId = "canvas", graphContainerId, plotData, posX = 0, posY = 0, width = 100, height = 100, axesLabel = ["", ""], plotLabel = "") {
     // Ensure the parent container exists
     const parentContainer = d3.select(`#${parentContainerId}`);
     if (parentContainer.empty()) {
         throw new Error(`No element found with id: ${parentContainerId}`);
     }
+
+    graphBBoxPosAndSize = d3.select("#graph").node().getBBox();
+
+    const graphXMargin = 0.035;
+    const graphYMargin = 0.12;
+    const graphXOffset = 0;
+    const graphYOffset = 3;
+    posX = graphBBoxPosAndSize.x + graphBBoxPosAndSize.width * graphXMargin / 2 + graphXOffset;
+    posY = graphBBoxPosAndSize.y + graphBBoxPosAndSize.height * graphYMargin / 2 + graphYOffset;
+    width = graphBBoxPosAndSize.width * (1 - graphXMargin);
+    height = graphBBoxPosAndSize.height * (1 - graphYMargin);
 
     // Check if the graph container group already exists, otherwise create it
     let graphContainer = parentContainer.select(`g#${graphContainerId}`);
@@ -193,8 +290,8 @@ function plotCurve(parentContainerId = "drawing", graphContainerId, plotData, wi
         graphContainer = parentContainer.append("g").attr("id", graphContainerId);
     }
 
-    // Get the current zoom/pan transform from #wireframe
-    //const wireframe = d3.select("#wireframe");
+    // Get the current zoom/pan transform from #drawing
+    //const drawing = d3.select("#drawing");
     graphContainer.attr("transform", `translate(${posX}, ${posY})`); // Use x and y from parameters
 
     // Clear any existing content in the graph container
@@ -225,7 +322,7 @@ function plotCurve(parentContainerId = "drawing", graphContainerId, plotData, wi
         .attr("height", height + margin.top + margin.bottom)
         .attr("fill", "white");
 
-    // Create the main drawing area
+    // Create the main canvas area
     const g = graphContainer.append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
@@ -332,12 +429,13 @@ function plotCurve(parentContainerId = "drawing", graphContainerId, plotData, wi
         .attr("d", line);
 }
 
-d3.xml("drawing.svg").then(fileData => {
-    insertDrawingFromFile(fileData);
-    centerAndZoomRelativePointOfDrawing(0.5, 0.5, 3);
+d3.xml("canvas.svg").then(fileData => {
+    insertCanvasFromFile(fileData);
+    centerAndZoomRelativePointOfCanvas(0.5, 0.5, 3);
 
     setupTooltip();
 
     pollFirebase();
     pollGitHub();
+    writeGasUsageToDial();
 });
