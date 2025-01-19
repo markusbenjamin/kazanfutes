@@ -834,5 +834,16 @@
         "reported_timestamp": "2025-01-19-00-05-04",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to initialize heating control: failed to interact with node 'system' via get: HTTPSConnectionPool(host='kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app', port=443): Max retries exceeded with url: /system/.json (Caused by SSLError(SSLZeroReturnError(6, 'TLS/SSL connection has been closed (EOF) (_ssl.c:992)'))) (SSLError).",
+        "severity": 3,
+        "origin": "heating_control.py:15 --> project.py/__init__:243 --> project.py/read:269 --> project.py/interact:263",
+        "origin_timestamp": "2025-01-19-10-08-55",
+        "registration_timestamp": "2025-01-19-10-08-55",
+        "reported": true,
+        "reported_timestamp": "2025-01-19-10-10-08",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
