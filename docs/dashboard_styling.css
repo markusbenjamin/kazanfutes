@@ -9,11 +9,11 @@ html, body {
 #tooltip {
     position: absolute;
     visibility: hidden;
-    background-color: rgba(0, 0, 0, 0.05) !important;
+    pointer-events: none;
+    background-color: rgba(0, 0, 0, 0.15) !important;
     padding: 5px;
     border:none !important;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);;
-    pointer-events: none;
     color: white;
     font-family: Arial, sans-serif; /* Font style */
     font-size: 20px; /* Font size */

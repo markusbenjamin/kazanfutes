@@ -142,27 +142,6 @@ function setupTooltip() {
             .on("mouseout", function () {
                 tooltip.transition().duration(500).style("visibility", "hidden");
             })
-
-        //.call(
-        //    d3.drag()
-        //        .on("start", function (event) {
-        //            // Optionally show tooltip immediately when drag starts
-        //            if (roomTooltipData.temp != null) {
-        //                tooltip.transition().duration(200).style("visibility", "visible");
-        //            }
-        //        })
-        //        .on("drag", function (event) {
-        //            // event.sourceEvent has the original mouse event with pageX/pageY
-        //            if (roomTooltipData.temp != null) {
-        //                tooltip.style("left", (event.sourceEvent.pageX + 5) + "px")
-        //                    .style("top", (event.sourceEvent.pageY - 28) + "px");
-        //            }
-        //        })
-        //        .on("end", function (event) {
-        //            // Optionally hide tooltip or leave it up at the end of drag
-        //            tooltip.transition().duration(500).style("visibility", "hidden");
-        //        })
-        //);
     });
 }
 
@@ -193,7 +172,7 @@ function pollGitHub() { //add day, file params
     setInterval(() => {
         fetchJSONEndpoint(url)
             .then(dataJSON => {
-                plotCurve('wireframe', 'gas-graph', dataJSON, 175, 160 * 2 / 3, 100, 180, ["óra", "ráta (m³/h)"], "mai gázfogyás (össz: " + Math.round(d3.max(dataJSON, d => d.burnt_volume) * 10) / 10 + " m³)");
+                plotCurve('wireframe', 'gas-graph', dataJSON, 175, 160 * 2 / 3, 100, 200, ["óra", "ráta (m³/h)"], "mai gázfogyás (össz: " + Math.round(d3.max(dataJSON, d => d.burnt_volume) * 10) / 10 + " m³)");
             })
             .catch(error => {
                 console.error('Error fetching data from GitHub:', error);
