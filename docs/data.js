@@ -584,6 +584,19 @@ function initializeCycleMarkers() {
     }
 }
 
+function initializeInfoboxes() {
+    d3.select("#general_infobox")
+        .style("stroke", "rgba(250,250,250,1)")
+        .style("stroke-opacity", "1")
+        .style("stroke-width", "3");
+    for (let cycle = 1; cycle < 5; cycle++) {
+        d3.select("#cycle" + cycle + "_infobox")
+            .style("stroke", "rgba(250,250,250,1)")
+            .style("stroke-opacity", "1")
+            .style("stroke-width", "2");
+    }
+}
+
 const mainGraphDefaultSetting = {
     title: "heating_state",
     types: ["heating_state"],
@@ -765,6 +778,7 @@ d3.xml("canvas.svg").then(fileData => {
     centerAndZoomRelativePointOfCanvas(0.5, 0.5, 2.8);
     setupTooltip();
     initializeCycleMarkers();
+    initializeInfoboxes();
 
     runOnceThenSetInterval(joinMainGrapDataSourceToElements, 10);
     runOnceThenSetInterval(getDataFromFirebase, 5 * 1000);
