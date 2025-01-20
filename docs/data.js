@@ -172,7 +172,12 @@ function collectDataFromGitHub(day, dataTypes, drawFunction) {
     // A helper to parse timestamps if present
     const parseTime = d3.timeParse("%Y-%m-%d-%H-%M-%S");
     function convertTimestamps(dataJSON) {
-        if (!dataJSON || !dataJSON.length) return [];
+        if (!Array.isArray(dataJSON)) {
+            return [];
+        }
+        if (!dataJSON || !dataJSON.length) {
+            return [];
+        }
         return dataJSON
             .map(d => {
                 const parsedDate = parseTime(d.timestamp);
@@ -404,7 +409,7 @@ function drawPlot(plotData, userOptions) {
         // Plot title
         plotElement.append("text")
             .attr("x", plotDims.w / 2)
-            .attr("y", -plotDims.h * ops.margins.top)
+            .attr("y", -plotDims.h * ops.margins.top * 0.75)
             .style("text-anchor", "middle")
             .style("font-size", "7px")
             .style("font-family", "Consolas")
@@ -412,7 +417,7 @@ function drawPlot(plotData, userOptions) {
     }
 
     if (ops.smoothing.bottom > 0) {
-        plotData = calculateMovingAverage(plotData, ops.dataKeys.bottom, ops.smoothing.bottom);
+        plotData = calculateMovingAverage(plotData, ops.dataKeys.bottom, ops.smoothing.bottom); //move to segmentation... DEV
     }
     if (ops.smoothing.left > 0) {
         plotData = calculateMovingAverage(plotData, ops.dataKeys.left, ops.smoothing.left);
@@ -642,93 +647,86 @@ function drawMainGraph(graphData = null) {
     }
     else {
         clearMainGraphs();
-        switch (mainGraphSetting.title) {
-            case "gas_usage":
-                drawPlot(
-                    graphData["gas_usage"],
-                    {
-                        parentId: "graph",
-                        smoothing: { bottom: 0, left: 0 },
-                        plotRange: { bottom: [0, 24], left: [0, 10] },
-                        dataKeys: { bottom: "h_of_day_frac", left: "burn_rate_in_m3_per_h" },
-                        axesLabel: { bottom: "óra", left: "ráta (m³/h)" },
-                        plotLabel: "mai gázfogyasztás",
-                    }
-                );
-                drawPlot(
-                    graphData["gas_usage"],
-                    {
-                        parentId: "graph",
-                        smoothing: { bottom: 0, left: 25 },
-                        plotRange: { bottom: [0, 24], left: [0, 10] },
-                        dataKeys: { bottom: "h_of_day_frac", left: "burn_rate_in_m3_per_h" },
-                        background: { present: false },
-                        plotStyle: { joined: true, col: "rgb(0, 0, 0)", thickness: "2" }
-                    }
-                );
-                break;
-            case "heating_state":
-                for (let cycle = 1; cycle < 5; cycle++) {
-                    let maxHFrac = 0;
-                    const cycleOnData = [];
-                    const cycleOffData = [];
-                    graphData["heating_state"].filter(entry => entry.cycle_states)
-                        .forEach(entry => {
-                            if (maxHFrac < entry.h_of_day_frac) {
-                                maxHFrac = entry.h_of_day_frac;
-                            }
-
-                            if (entry.cycle_states[cycle] == 1) {
-                                cycleOnData.push({
-                                    h_of_day_frac: entry.h_of_day_frac,
-                                    cycle_state: cycle
-                                });
-                            }
-                            else {
-                                cycleOffData.push({
-                                    h_of_day_frac: entry.h_of_day_frac,
-                                    cycle_state: cycle
-                                });
-                            }
-                        });
+        if (!Object.values(graphData).includes(undefined)) {
+            switch (mainGraphSetting.title) {
+                case "gas_usage":
                     drawPlot(
-                        cycleOnData,
+                        graphData["gas_usage"],
                         {
                             parentId: "graph",
                             smoothing: { bottom: 0, left: 0 },
-                            axes: { left: cycle == 1 ? true : false, bottom: cycle == 1 ? true : false },
-                            plotRange: { bottom: [0, 24], left: [0.5, 4.5] },
-                            dataKeys: { bottom: "h_of_day_frac", left: "cycle_state" },
-                            background: { present: cycle == 1 ? true : false, col: "white" },
-                            plotStyle: { joined: true, col: "rgba(255, 64, 0, 0.75)", thickness: "8", endCap: false },
-                            tickVals: { bottom: false, left: [1, 2, 3, 4] },
-                            axesLabel: { bottom: "óra", left: "kör" },
-                            plotLabel: cycle == 1 ? "körök kapcsolási mintázata" : false,
-                            present: { show: cycle == 1, pos: maxHFrac },
-                            segment: { do: true, gap: 30 / (24 * 60) }
+                            plotRange: { bottom: [0, 24], left: [0, 10] },
+                            dataKeys: { bottom: "h_of_day_frac", left: "burn_rate_in_m3_per_h" },
+                            axesLabel: { bottom: "óra", left: "ráta (m³/h)" },
+                            plotLabel: "mai gázfogyasztás",
                         }
                     );
                     drawPlot(
-                        cycleOffData,
+                        graphData["gas_usage"],
                         {
                             parentId: "graph",
-                            smoothing: { bottom: 0, left: 0 },
-                            axes: { left: cycle == 1 ? true : false, bottom: cycle == 1 ? true : false },
-                            plotRange: { bottom: [0, 24], left: [0.5, 4.5] },
-                            dataKeys: { bottom: "h_of_day_frac", left: "cycle_state" },
-                            background: { present: false, col: "white" },
-                            plotStyle: { joined: true, col: "rgba(8, 86, 222, 0.23)", thickness: "6", endCap: false },
-                            tickVals: { bottom: false, left: [1, 2, 3, 4] },
-                            axesLabel: { bottom: "óra", left: "kör" },
-                            plotLabel: cycle == 1 ? "körök kapcsolási mintázata" : false,
-                            present: { show: cycle == 1, pos: maxHFrac },
-                            segment: { do: true, gap: 30 / (24 * 60) }
+                            smoothing: { bottom: 0, left: 25 },
+                            plotRange: { bottom: [0, 24], left: [0, 10] },
+                            dataKeys: { bottom: "h_of_day_frac", left: "burn_rate_in_m3_per_h" },
+                            background: { present: false },
+                            plotStyle: { joined: true, col: "rgb(0, 0, 0)", thickness: "2" }
                         }
                     );
-                }
-                break;
-            case "room_plot":
-                if (graphData) {
+                    break;
+                case "heating_state":
+                    for (let cycle = 1; cycle < 5; cycle++) {
+                        let maxHFrac = 0;
+                        const cycleOnData = [];
+                        const cycleOffData = [];
+                        graphData["heating_state"].filter(entry => entry.cycle_states)
+                            .forEach(entry => {
+                                if (maxHFrac < entry.h_of_day_frac) {
+                                    maxHFrac = entry.h_of_day_frac;
+                                }
+                                if (entry.cycle_states[cycle] == 1) {
+                                    cycleOnData.push({
+                                        h_of_day_frac: entry.h_of_day_frac,
+                                        cycle_state: cycle
+                                    });
+                                }
+                                else {
+                                    cycleOffData.push({
+                                        h_of_day_frac: entry.h_of_day_frac,
+                                        cycle_state: cycle
+                                    });
+                                }
+                            });
+                        drawPlot(
+                            cycleOnData,
+                            {
+                                parentId: "graph",
+                                axes: { left: cycle == 1, bottom: cycle == 1 },
+                                plotRange: { bottom: [0, 24], left: [0.5, 4.5] },
+                                dataKeys: { bottom: "h_of_day_frac", left: "cycle_state" },
+                                background: { present: cycle == 1, col: "white" },
+                                plotStyle: { joined: true, col: "rgba(255, 64, 0, 0.75)", thickness: "8", endCap: false },
+                                tickVals: { left: [1, 2, 3, 4] },
+                                axesLabel: { bottom: cycle == 1 ? "óra" : false, left: cycle == 1 ? "kör" : false },
+                                plotLabel: cycle == 1 ? "körök kapcsolási mintázata" : false,
+                                present: { show: cycle == 1, pos: maxHFrac },
+                                segment: { do: true, gap: 30 / (24 * 60) }
+                            }
+                        );
+                        drawPlot(
+                            cycleOffData,
+                            {
+                                parentId: "graph",
+                                plotRange: { bottom: [0, 24], left: [0.5, 4.5] },
+                                dataKeys: { bottom: "h_of_day_frac", left: "cycle_state" },
+                                background: { present: false, col: "white" },
+                                tickVals: { left: [1, 2, 3, 4] },
+                                plotStyle: { joined: true, col: "rgba(8, 86, 222, 0.23)", thickness: "6", endCap: false },
+                                segment: { do: true, gap: 30 / (24 * 60) }
+                            }
+                        );
+                    }
+                    break;
+                case "room_plot":
                     drawPlot(
                         graphData["room_" + mainGraphSetting.roomNumToPlot + "_set_temps"],//.sort((a, b) => a["h_of_day_frac"] - b["h_of_day_frac"]),
                         {
@@ -742,7 +740,7 @@ function drawMainGraph(graphData = null) {
                         }
                     );
                     drawPlot(
-                        graphData["room_" + mainGraphSetting.roomNumToPlot + "_measurements"],//.sort((a, b) => a["h_of_day_frac"] - b["h_of_day_frac"]),
+                        graphData["room_" + mainGraphSetting.roomNumToPlot + "_measurements"],
                         {
                             parentId: "graph",
                             background: { present: false },
@@ -754,11 +752,11 @@ function drawMainGraph(graphData = null) {
                             plotLabel: roomDataAndState[mainGraphSetting.roomNumToPlot].name + " kért és mért hőmérséklet"
                         }
                     );
-                }
-                break;
+                    break;
+            }
+            d3.select("#graph").style("fill", "rgba(0,0,0,0)");
+            d3.select("#graph").style("fill-opacity", "0");
         }
-        d3.select("#graph").style("fill", "rgba(0,0,0,0)");
-        d3.select("#graph").style("fill-opacity", "0");
     }
 }
 

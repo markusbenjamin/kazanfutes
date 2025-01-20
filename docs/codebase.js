@@ -131,14 +131,39 @@ function roundTo(num, multiple) {
 
 // Function to calculate moving average
 function calculateMovingAverage(data, field, windowSize) {
+    // Ensure data is actually an array
+    if (!Array.isArray(data)) {
+        console.warn("calculateMovingAverage: 'data' is not an array:", data);
+        return [];
+    }
+
+    // If empty array, just return an empty array
+    if (data.length === 0) {
+        return [];
+    }
+
+    // Main logic
     return data.map((d, i, arr) => {
+        if (!d) {
+            // If an element is null/undefined, you can decide how to handle it:
+            // either return it as is, or create a fallback object, etc.
+            return d;
+        }
+
         const start = Math.max(0, i - Math.floor(windowSize / 2));
         const end = Math.min(arr.length, i + Math.floor(windowSize / 2) + 1);
+
+        // slice out the subset
         const subset = arr.slice(start, end);
-        const average = d3.mean(subset, v => v[field]); // Compute the mean of the specified field
-        return { ...d, [field]: average }; // Return the original object with the smoothed field
+
+        // compute mean for 'field'
+        const average = d3.mean(subset, v => v && v[field]);
+
+        // return a new object with the smoothed field
+        return { ...d, [field]: average };
     });
 }
+
 
 function getUnixDay(date = null) {
     if (date == null) {
