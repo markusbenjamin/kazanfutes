@@ -115,7 +115,15 @@ function getBBoxRelativeDimensions(id) {
 }
 
 function getBBoxDrawingDimensions(id) {
-    return d3.select("#" + id).node().getBBox();
+    const d3Dims =  d3.select("#" + id).node().getBBox();
+    return {
+        x: d3Dims.x,
+        y: d3Dims.y,
+        w: d3Dims.width,
+        h: d3Dims.height,
+        width: d3Dims.width,
+        height: d3Dims.height
+    } // Overloaded for safety
 }
 
 function clearp5JSDrawingWithinCanvas() {

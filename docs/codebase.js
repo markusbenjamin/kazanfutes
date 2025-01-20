@@ -165,12 +165,19 @@ function getUnixDay(date = null) {
     return unixDay;
 }
 
-
 function getHourOfDay(date = null) {
     if (date == null) {
         date = new Date()
     }
     return Number(date.toTimeString().slice(0, 2));
+}
+
+function getFractionalHourOfDay(date = null) {
+    if (date == null) {
+        date = new Date()
+    }
+    
+    return date.getHours() + date.getMinutes() / 60 + date.getSeconds() / 3600;
 }
 
 function hasNoNullValues(obj) {
@@ -188,4 +195,61 @@ window.addEventListener("pointermove", (event) => {
 // Function to poll the current mouse position
 function getMousePosition() {
     return { ...mousePosition }; // Return a copy of the current mouse position
+}
+
+function runOnceThenSetInterval(functionToRun, interval) {
+    functionToRun();
+    setInterval(functionToRun, interval);
+}
+
+function deepObjectMerger(target, source) {
+    // If the target isn't an object or is null, set it to an empty object
+    if (typeof target !== 'object' || target === null) {
+        target = {};
+    }
+    
+    // Go through each property in the source
+    for (const key in source) {
+        if (Object.prototype.hasOwnProperty.call(source, key)) {
+            const sourceValue = source[key];
+            const targetValue = target[key];
+            
+            // If sourceValue is a non-array object, recurse
+            if (
+                typeof sourceValue === 'object' && 
+                sourceValue !== null && 
+                !Array.isArray(sourceValue)
+            ) {
+                target[key] = deepObjectMerger(targetValue, sourceValue);
+            } else {
+                // Otherwise just overwrite the property
+                target[key] = sourceValue;
+            }
+        }
+    }
+    return target;
+}
+
+function splitDataIntoSegments(data, xKey, gapThreshold) {
+    const segments = [];
+    if (!data || data.length === 0) return segments;
+
+    let currentSegment = [data[0]];
+
+    for (let i = 1; i < data.length; i++) {
+        const prev = data[i - 1];
+        const curr = data[i];
+
+        // If the gap is too large, start a new segment
+        if ((curr[xKey] - prev[xKey]) > gapThreshold) {
+            segments.push(currentSegment);
+            currentSegment = [curr];
+        } else {
+            currentSegment.push(curr);
+        }
+    }
+    // Push whatever is left as the last segment
+    segments.push(currentSegment);
+
+    return segments;
 }
