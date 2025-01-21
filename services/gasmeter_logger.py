@@ -22,6 +22,7 @@ if __name__ == "__main__":
                 if last_state_1_to_0_time and state == 0 and prev_state == 1:
                     elapsed_time = (datetime.now() - last_state_1_to_0_time).total_seconds()
                     system_node.write({"dial_turn_secs":elapsed_time},'state/gas')
+                    last_state_1_to_0_time = datetime.now()
                 if not last_state_1_to_0_time and state == 0 and prev_state == 1:
                     last_state_1_to_0_time = datetime.now()
                 
