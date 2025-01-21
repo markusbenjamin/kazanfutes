@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="codebase.js"></script>
+    <meta charset="UTF-8">
+    <title>Kazán-Gólya Fűtés: rendszerállapot</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+
+<body>
+    <h1>rendszerállapot</h1>
+
+    <table id="data-table" border="1">
+        <tbody></tbody>
+    </table>
+
+    <script>
+        function fetchAndUpdateTable() {
+            fetchJSONEndpoint('https://raw.githubusercontent.com/markusbenjamin/kazanfutes/refs/heads/main/utils/settings.json').then(data => {
+                heatingControlConfig = data;
+                fetchJSONEndpoint(heatingControlConfig["firebase_url"] + "/schedule.json").then(data => {
+                    schedule = data
+                    fetchJSONEndpoint(heatingControlConfig["firebase_url"] + "/system.json").then(data => {
+                        system = data;
+                        tableData = constructTableData(schedule, system);
+                        populateSystemStateTable(tableData);
+                    });
+                });
+            });
+        }
+
+        function constructTableData(schedule, system) {
+            boilerData = {
+                "kazán": system['state']['boiler_state'] == 1 ? "BE" : "KI"
+            }
+
+            cyclesData = {}
+            cycleLabels = ['1-es kör', '2-es kör', '3-mas kör', '4-es kör']
+            cyclesInfo = []
+            for (let cycle = 1; cycle < 5; cycle++) {
+                cyclesData[
+                    system['setup']['cycles'][cycle.toString()]['name'] + " (" + cycleLabels[cycle - 1] + ")"
+                ] = system['state']['pump_states'][cycle] == 1 ? "BE" : "KI"
+                cyclesInfo.push(
+                    "kör " + cycle + ": " + (system['state']['pump_states'][cycle] == 1 ? "BE" : "KI")
+                )
+            }
+
+            heatingSystemData = {
+                "fűtés": "kazán: " + (system['state']['boiler_state'] == 1 ? "BE" : "KI") + ", " + cyclesInfo.join(', ')
+            }
+
+            roomsData = {}
+            reasonMapping = {
+                'above': 'beállított hőmérséklet felett',
+                'below': 'beállított hőmérséklet alatt',
+                't_on':'idővezérelt módban be',
+                't_off':'idővezérelt módban ki',
+                'h_on': 'alsó hiszterézis',
+                'h_off': 'felső hiszterézis',
+                'r_m_on': 'manuálisan bekapcsolva',
+                'r_m_off': 'manuálisan lekapcsolva',
+                'c_m_on': 'kör manuálisan bekapcsolva',
+                'c_m_off': 'kör manuálisan lekapcsolva',
+                'c_s_m_off': 'kör időzítetten lekapcsolva'
+            }
+
+            for (let room = 1; room < Object.keys(system['setup']['rooms']).length; room++) {
+                hoursSinceSensorLastUpdate = system['state']['sensor_last_updated'][room]== null ? null : timePassedSince(dateFromTimestamp(system['state']['sensor_last_updated'][room]), granularity = 'hours')
+
+                setTempForRoomAccordingToHeatingControl = system['state']['set_temps'][room]
+                setTempForRoomFromUploadedSchedule = schedule['condensed_schedule'][room][getUnixDay()][getHourOfDay()]
+                setTempForRoom = setTempForRoomFromUploadedSchedule
+
+                measuredTempForRoom = system['state']['measured_temps'][room]
+
+                reason = system['control']['rooms'][room]['reason']
+                tempControlled = reason == 't_on' || reason == 't_off' || setTempForRoom <= 1? false : true
+                lostSignal = ((reason == 't_on' || reason == 't_off') && setTempForRoom > 1)? true : false
+
+                roomsData[system['setup']['rooms'][room.toString()]['name'] + " (" + cycleLabels[system['setup']['rooms'][room.toString()]['cycle'] - 1] + ")"] =
+                    (measuredTempForRoom != null ? (roundTo(system['state']['measured_temps'][room], 0.1)+"").slice(0,4) + " °C" + ", " : "") +
+                    (tempControlled ?
+                        ("(" + roundTo(setTempForRoom, 0.1) + " °C), ") :
+                        "") +
+                    ((system['control']['rooms'][room]['vote'] == 0) ? "nem kér fűtést" : "fűtést kér") + ", " + 
+                    (lostSignal ? 'elavult hőmérsékleti adat, ' : '') + reasonMapping[reason] 
+                    //+ (hoursSinceSensorLastUpdate > 1 ? (", ! szenzor " + roundTo(hoursSinceSensorLastUpdate, 0.5) + " órája nem frissült") : "")
+            }
+
+            stateLastUpdateDate = dateFromTimestamp(system['state']['last_updated'])
+            stateLastUpdateHMS = stateLastUpdateDate.toTimeString().slice(0, 5)
+            minutesSinceLastStateUpdate = timePassedSince(stateLastUpdateDate)
+
+            scheduleLastUpdateDate = dateFromTimestamp(schedule['last_updated'])
+            scheduleLastUpdateHMS = scheduleLastUpdateDate.toTimeString().slice(0, 5)
+            minutesSinceLastScheduleUpdate = timePassedSince(scheduleLastUpdateDate)
+            hoursSinceLastScheduleUpdate = roundTo(timePassedSince(scheduleLastUpdateDate, granularity = "hours"), 0.1)
+            daysSinceLastScheduleUpdate = roundTo(timePassedSince(scheduleLastUpdateDate, granularity = "days"), 1)
+
+            timeSinceLastUpdateInfo = minutesSinceLastScheduleUpdate < 60 ?
+                ((minutesSinceLastScheduleUpdate < 1 ? "< 1 perce" : minutesSinceLastScheduleUpdate + " perce")) :
+                (
+                    daysSinceLastScheduleUpdate < 1 ?
+                    hoursSinceLastScheduleUpdate + " órája" :
+                    daysSinceLastScheduleUpdate + " napja"
+                )
+
+            footerData = {
+                "külső hőmérséklet": system['state']['external_temp']+" °C",
+                "vezérlés lefutott": (minutesSinceLastStateUpdate < 1 ? "< 1 perce" : minutesSinceLastStateUpdate + " perce") +
+                    " (" + stateLastUpdateHMS + ")",
+                "hőmérsékleti beállítások frissítve": timeSinceLastUpdateInfo +
+                    (daysSinceLastScheduleUpdate < 1 ? " (" + scheduleLastUpdateHMS + ")": "")
+            }
+
+            tableData = { ...heatingSystemData, ...roomsData, ...footerData }
+            return tableData
+        }
+
+        function populateSystemStateTable(data) {
+            const tbody = document.querySelector('#data-table tbody');
+            tbody.innerHTML = '';  // Clear the existing rows
+
+            for (let key in data) {
+                const row = document.createElement('tr');  // Create a row
+                const keyCell = document.createElement('td');  // Key cell
+                const valueCell = document.createElement('td');  // Value cell
+
+                keyCell.textContent = key;  // Set key text
+                valueCell.textContent = data[key];  // Set value text
+
+                row.appendChild(keyCell);  // Add key cell to row
+                row.appendChild(valueCell);  // Add value cell to row
+
+                tbody.appendChild(row);  // Append the row to the table body
+            }
+        }
+
+        fetchAndUpdateTable();
+        setInterval(fetchAndUpdateTable, 10000);
+    </script>
+    <div class="container">
+        <ul>
+            <li><a href="index.html">> kezdőoldal</a></li>
+        </ul>
+    </div>
+</body>
+
+</html>
