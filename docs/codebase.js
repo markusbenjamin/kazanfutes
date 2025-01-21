@@ -291,3 +291,8 @@ function splitDataIntoSegments(data, xKey, gapThreshold) {
 
     return segments;
 }
+
+function isValidNumber(value) {
+    return typeof value === 'number' && !isNaN(value) && isFinite(value);
+  }
+  

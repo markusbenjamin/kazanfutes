@@ -257,8 +257,8 @@ function getDataFromFirebase() {
                 );
 
                 // Update misc data
-                currentGasUsageRate = roundTo(0.1 / (systemJSON.state.gas.dial_turn_secs / 3600), 0.1);
-                if (currentGasUsageRate == NaN) { currentGasUsageRate = 0 };
+                let newGasUsageRate = roundTo(0.1 / (systemJSON.state.gas.dial_turn_secs / 3600), 0.1);
+                currentGasUsageRate = isValidNumber(newGasUsageRate) ? newGasUsageRate : currentGasUsageRate
             });
         })
         .catch(error => {
@@ -664,7 +664,8 @@ function updateBoilerColor(state) {
 }
 
 
-let currentGasUsageRate, currentGasTotal;
+let currentGasUsageRate = "adat töltődik.";
+let currentGasTotal;
 
 function writeGasUsageToDial(gasData = null) {
     if (gasData == null) {
@@ -796,7 +797,7 @@ function updateGeneralInfobox(info) {
     }
 
     addLineToBox(info.cyclesOn, 0.02, lineHeight * 8, lineFontSize);
-    addLineToBox("Gázfogyasztási ráta: " + currentGasUsageRate + " m³/h.", 0.02, lineHeight * 9, lineFontSize);
+    addLineToBox("Gázfogyasztási ráta: " + currentGasUsageRate + (isValidNumber(currentGasUsageRate) ? " m³/h.": ""), 0.02, lineHeight * 9, lineFontSize);
     addLineToBox("Összes elégett gáz: " + currentGasTotal + " m³.", 0.02, lineHeight * 10, lineFontSize);
     addLineToBox("Összköltség kb. " + roundTo(currentGasTotal * 350, 1) + " Ft.", 0.02, lineHeight * 11, lineFontSize);
 }
