@@ -745,7 +745,7 @@ function updateGeneralInfobox(info) {
     addLineToBox(info.controlLastRan, 0.02, lineHeight * 4, lineFontSize);
     addLineToBox(info.scheduleLastUpdated, 0.02, lineHeight * 5, lineFontSize);
     if (info.averageControlDiff != 0) {
-        let averageControlDiffPre = info.averageControlDiff < 0 ? "-" : "+";
+        let averageControlDiffPre = info.averageControlDiff < 0 ? "" : "+";
         addLineToBox("Átlagos eltérés: " + averageControlDiffPre + info.averageControlDiff + " °C", 0.02, lineHeight * 6, lineFontSize);
     }
 
@@ -777,7 +777,7 @@ function updateCycleInfobox(cycle, info) {
 
     addLineToBox("Átlagos eltérés:", 0.08, 0.13 * 2.1, 5.5)
     if (info.averageControlDiff != 0) {
-        let averageControlDiffPre = info.averageControlDiff < 0 ? "-" : "+";
+        let averageControlDiffPre = info.averageControlDiff < 0 ? "" : "+";
         addLineToBox(averageControlDiffPre + info.averageControlDiff + " °C", 0.12, 0.13 * 3.1, 5.5)
     }
     else {
