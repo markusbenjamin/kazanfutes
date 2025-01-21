@@ -38,16 +38,24 @@ function humanTimestamp(date = null) {
     return `${year}.${month}.${day}. ${hours}:${minutes}`;
 }
 
-function dayStamp(date = null) {
+function dayStamp(date = null, useYesterdayBeforeNMinutes = false, nMinutes = 0) {
     if (date == null) {
-        date = new Date()
+        date = new Date();
     }
+    
+    const currentMinutes = date.getHours() * 60 + date.getMinutes();
+
+    if (useYesterdayBeforeNMinutes && currentMinutes < nMinutes) {
+        date.setDate(date.getDate() - 1); // Go to yesterday
+    }
+
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');  // Months are 0-indexed
     const day = String(date.getDate()).padStart(2, '0');
 
     return `${year}-${month}-${day}`;
 }
+
 
 function timestamp(date = null) {
     if (date == null) {
@@ -140,6 +148,13 @@ function roundTo(num, multiple) {
 
     // Use toFixed(...) to limit decimal places, then convert back to Number
     return Number(raw.toFixed(decimals));
+}
+
+function insertSubstringEveryNFromRight(input, substring, n) {
+    return input.toString().split("").reverse().join("") // Reverse the string
+        .replace(new RegExp(`.{1,${n}}`, 'g'), (match) => match + substring) // Insert substring every n characters
+        .slice(0, -substring.length) // Remove trailing substring
+        .split("").reverse().join(""); // Reverse back to original order
 }
 
 // Function to calculate moving average

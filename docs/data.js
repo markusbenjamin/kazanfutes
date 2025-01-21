@@ -140,6 +140,8 @@ function setupTooltip() {
     });
 }
 
+let condensedSchedule;
+
 function getDataFromFirebase() {
     const url = "https://kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app/.json";
     fetchJSONEndpoint(url)
@@ -147,6 +149,8 @@ function getDataFromFirebase() {
             const systemJSON = fullFirebaseDataJSON.system;
             const scheduleJSON = fullFirebaseDataJSON.schedule;
             const updateJSON = fullFirebaseDataJSON.update;
+
+            condensedSchedule = scheduleJSON.condensed_schedule;
 
             // Update rooms
             const roomNums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -266,11 +270,41 @@ function getDataFromFirebase() {
         });
 }
 
+function extractRoomScheduleFromCondensedSchedule(roomNum) {
+    if (condensedSchedule === undefined) { return undefined }
+    else {
+        let roomSchedule = [];
+        condensedSchedule[roomNum][getUnixDay()].forEach((setTemp, hour) => {
+            roomSchedule.push(
+                {
+                    "h_of_day_frac": hour,
+                    "set_temp": setTemp
+                }
+            );
+            roomSchedule.push(
+                {
+                    "h_of_day_frac": hour + 0.999,
+                    "set_temp": setTemp
+                }
+            );
+            if (hour == 23) {
+                roomSchedule.push(
+                    {
+                        "h_of_day_frac": 24,
+                        "set_temp": setTemp
+                    }
+                );
+            }
+        });
+        return roomSchedule
+    }
+}
+
 function collectDataFromGitHub(day, dataTypes, drawFunction) {
     // We'll store our results here:
     const dataCollected = {};
 
-    // A helper to parse timestamps if present
+    // A helper to parse timestamps if show
     const parseTime = d3.timeParse("%Y-%m-%d-%H-%M-%S");
     function convertTimestamps(dataJSON) {
         if (!Array.isArray(dataJSON)) {
@@ -362,6 +396,8 @@ function applyStripePatternToPathById(svg, pathId, options = {}) {
 }
 
 function drawPlot(plotData, userOptions) {
+    //plotData instanceof Promise ? console.log("promise") : "";
+    //plotData === undefined ? console.log("undefined") : "";
     var defaultOptions = {
         dev: false,
         parentId: "background",
@@ -369,8 +405,8 @@ function drawPlot(plotData, userOptions) {
         positioning: { x: 0.5, y: 0.5, w: 1, h: 1 }, // Relative positioning and size compared to parent
         margins: { top: 0.1, right: 0.1, bottom: 0.1, left: 0.1 }, // Affecting the plot elements within the content element
 
-        background: { present: true, col: "white" },
-        plotStyle: { joined: false, col: "gray", thickness: "0.25", endCap: true },
+        background: { show: true, col: "white" },
+        plotStyle: { joined: false, col: "gray", thickness: "0.25", startCap: true, endCap: true, smoothCurve: true },
         plotRange: { bottom: null, left: null },
         smoothing: { bottom: 0, left: 0 },
         axes: { top: false, right: false, left: true, bottom: true },
@@ -378,10 +414,10 @@ function drawPlot(plotData, userOptions) {
 
         axesLabel: { top: false, right: false, left: "", bottom: "" },
         plotLabel: "",
-        present: { show: false },
-        segment: { do: false, gap: null }
+        now: { show: false, pos: null },
+        segment: { do: false, gap: null },
+        curveEndText: { show: false, fontSize: null, text: null, col: null, xOffset: 13, yOffset: 3 }
     }
-    //ops = { ...defaultOptions, ...userOptions }; // Fold user ops with default ops
     ops = deepObjectMerger(defaultOptions, userOptions);
 
     // Find parent element
@@ -433,7 +469,7 @@ function drawPlot(plotData, userOptions) {
             .attr("fill", "rgba(0,0,0,0)")
     }
 
-    if (ops.background.present) {
+    if (ops.background.show) {
         containerElement.append("rect")
             .attr("width", containerDims.w)
             .attr("height", containerDims.h)
@@ -542,7 +578,7 @@ function drawPlot(plotData, userOptions) {
     }
 
     if (ops.plotLabel != "") {
-        // Plot title
+        // Plot label
         plotElement.append("text")
             .attr("x", plotDims.w / 2)
             .attr("y", -plotDims.h * ops.margins.top * 0.75)
@@ -552,63 +588,95 @@ function drawPlot(plotData, userOptions) {
             .text(ops.plotLabel);
     }
 
-    if (ops.smoothing.bottom > 0) {
-        plotData = calculateMovingAverage(plotData, ops.dataKeys.bottom, ops.smoothing.bottom); //move to segmentation... DEV
-    }
-    if (ops.smoothing.left > 0) {
-        plotData = calculateMovingAverage(plotData, ops.dataKeys.left, ops.smoothing.left);
-    }
-
-    if (ops.plotStyle.joined) {
-        const line = d3.line()
-            .x(d => bottomScale(d[ops.dataKeys.bottom]))
-            .y(d => leftScale(d[ops.dataKeys.left]))
-            .curve(d3.curveBasis);
-
-        const segments = ops.segment.do ? splitDataIntoSegments(plotData, ops.dataKeys.bottom, ops.segment.gap) : [plotData];
-
-        // Draw a path for each segment
-        segments.forEach(segment => {
-            if (!segment || segment.length === 0) return;
-
-            // Draw the segment as a line
-            plotElement.append("path")
-                .datum(segment)
-                .attr("fill", "none")
-                .attr("stroke", ops.plotStyle.col)
-                .attr("stroke-width", ops.plotStyle.thickness)
-                .attr("d", line);
-
-            // Optionally cap the end of each segment (rather than just the very last one)
-            if (ops.plotStyle.endCap) {
-                const lastPoint = segment[segment.length - 1];
-                plotElement.append("circle")
-                    .attr("cx", bottomScale(lastPoint[ops.dataKeys.bottom]))
-                    .attr("cy", leftScale(lastPoint[ops.dataKeys.left]))
-                    .attr("r", ops.plotStyle.thickness * 1.05)
-                    .attr("fill", ops.plotStyle.col);
-            }
-        });
+    if (plotData === undefined) {
+        plotElement.append("text")
+            .attr("x", plotDims.w / 2)
+            .attr("y", plotDims.h / 2)
+            .style("text-anchor", "middle")
+            .style("font-size", "7px")
+            .style("font-family", "Consolas")
+            .text("Adat betöltése.");
     }
     else {
-        plotElement.selectAll(".dot")
-            .data(plotData)
-            .enter().append("circle")
-            .attr("cx", d => bottomScale(d[ops.dataKeys.bottom]))
-            .attr("cy", d => leftScale(d[ops.dataKeys.left]))
-            .attr("r", ops.plotStyle.thickness)
-            .attr("fill", ops.plotStyle.col);
-    }
+        if (ops.smoothing.bottom > 0) {
+            plotData = calculateMovingAverage(plotData, ops.dataKeys.bottom, ops.smoothing.bottom); //move to segmentation... DEV
+        }
+        if (ops.smoothing.left > 0) {
+            plotData = calculateMovingAverage(plotData, ops.dataKeys.left, ops.smoothing.left);
+        }
 
-    if (ops.present.show) {
-        plotElement.append("line")
-            .attr("x1", bottomScale(ops.present.pos))
-            .attr("y1", 0)
-            .attr("x2", bottomScale(ops.present.pos))
-            .attr("y2", plotDims.h)
-            .attr("stroke", "gray")
-            .attr("stroke-width", 0.5)
-            .attr("stroke-dasharray", "1 2");
+        if (ops.plotStyle.joined) {
+            const line = d3.line()
+                .x(d => bottomScale(d[ops.dataKeys.bottom]))
+                .y(d => leftScale(d[ops.dataKeys.left]))
+                .curve(ops.plotStyle.smoothCurve ? d3.curveBasis : d3.curveStep);
+
+            const segments = ops.segment.do ? splitDataIntoSegments(plotData, ops.dataKeys.bottom, ops.segment.gap) : [plotData];
+
+            // Draw a path for each segment
+            segments.forEach((segment, index) => {
+                if (!segment || segment.length === 0) return;
+
+                // Draw the segment as a line
+                plotElement.append("path")
+                    .datum(segment)
+                    .attr("fill", "none")
+                    .attr("stroke", ops.plotStyle.col)
+                    .attr("stroke-width", ops.plotStyle.thickness)
+                    .attr("d", line);
+
+                // Optionally cap the end of each segment (rather than just the very last one)
+                if (ops.plotStyle.startCap) {
+                    const lastPoint = segment[0];
+                    plotElement.append("circle")
+                        .attr("cx", bottomScale(lastPoint[ops.dataKeys.bottom]))
+                        .attr("cy", leftScale(lastPoint[ops.dataKeys.left]))
+                        .attr("r", ops.plotStyle.thickness * 1.05)
+                        .attr("fill", ops.plotStyle.col);
+                }
+
+                if (ops.plotStyle.endCap) {
+                    const lastPoint = segment[segment.length - 1];
+                    plotElement.append("circle")
+                        .attr("cx", bottomScale(lastPoint[ops.dataKeys.bottom]))
+                        .attr("cy", leftScale(lastPoint[ops.dataKeys.left]))
+                        .attr("r", ops.plotStyle.thickness * 1.05)
+                        .attr("fill", ops.plotStyle.col);
+                }
+
+                if (ops.curveEndText.show && index === segments.length - 1) { // Only draw end text at the last segment
+                    const lastPoint = segment[segment.length - 1];
+                    plotElement.append("text")
+                        .attr("x", bottomScale(lastPoint[ops.dataKeys.bottom]) + ops.curveEndText.xOffset)
+                        .attr("y", leftScale(lastPoint[ops.dataKeys.left]) + ops.curveEndText.yOffset)
+                        .style("text-anchor", "middle")
+                        .style("font-size", ops.curveEndText.fontSize + "px")
+                        .style("font-family", "Consolas")
+                        .style("fill", ops.curveEndText.col ? ops.curveEndText.col : "black")
+                        .text(ops.curveEndText.text);
+                }
+            });
+        }
+        else {
+            plotElement.selectAll(".dot")
+                .data(plotData)
+                .enter().append("circle")
+                .attr("cx", d => bottomScale(d[ops.dataKeys.bottom]))
+                .attr("cy", d => leftScale(d[ops.dataKeys.left]))
+                .attr("r", ops.plotStyle.thickness)
+                .attr("fill", ops.plotStyle.col);
+        }
+
+        if (ops.now.show) {
+            plotElement.append("line")
+                .attr("x1", bottomScale(ops.now.pos))
+                .attr("y1", 0)
+                .attr("x2", bottomScale(ops.now.pos))
+                .attr("y2", plotDims.h)
+                .attr("stroke", "gray")
+                .attr("stroke-width", 0.5)
+                .attr("stroke-dasharray", "1 2");
+        }
     }
 }
 
@@ -668,7 +736,7 @@ let currentGasUsageRate, currentGasTotal;
 
 function writeGasUsageToDial(gasData = null) {
     if (gasData == null) {
-        collectDataFromGitHub(dayStamp(), ["gas_usage"], writeGasUsageToDial);
+        collectDataFromGitHub(dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), ["gas_usage"], writeGasUsageToDial);
     }
     else {
         gasData = gasData["gas_usage"];
@@ -701,7 +769,6 @@ function writeGasUsageToDial(gasData = null) {
             .attr("id", "gas_dial_text")
             .attr("x", dialBoxBB.x + dialBoxBB.width * textXOffsetFactor)
             .attr("y", dialBoxBB.y + dialBoxBB.height * 0.7)
-            //.text(gasTotal + " m³")
             .text(gasTotal)
             .style("font-family", "Consolas")
             .style("font-size", "6.5px")
@@ -709,7 +776,7 @@ function writeGasUsageToDial(gasData = null) {
         d3.select("#drawing")
             .append("text")
             .attr("id", "gas_dial_text")
-            .attr("x", dialBoxBB.x + dialBoxBB.width * 0.75)
+            .attr("x", dialBoxBB.x + dialBoxBB.width * 0.732)
             .attr("y", dialBoxBB.y + dialBoxBB.height * 0.69)
             .text(" m³")
             .style("font-family", "Consolas")
@@ -799,8 +866,10 @@ function updateGeneralInfobox(info) {
 
     addLineToBox(info.cyclesOn, 0.02, lineHeight * 8, lineFontSize);
     addLineToBox("Gázfogyasztási ráta: " + currentGasUsageRate + (isValidNumber(currentGasUsageRate) ? " m³/h." : ""), 0.02, lineHeight * 9, lineFontSize);
-    addLineToBox("Összes elégett gáz: " + currentGasTotal + " m³.", 0.02, lineHeight * 10, lineFontSize);
-    addLineToBox("Összköltség kb. " + roundTo(currentGasTotal * 350, 1) + " Ft.", 0.02, lineHeight * 11, lineFontSize);
+    if (isValidNumber(currentGasTotal)) {
+        addLineToBox("Összes elégett gáz: " + currentGasTotal + " m³.", 0.02, lineHeight * 10, lineFontSize);
+        addLineToBox("Összköltség kb. " + insertSubstringEveryNFromRight(roundTo(currentGasTotal * 350, 1), " ", 3) + " Ft.", 0.02, lineHeight * 11, lineFontSize);
+    }
 }
 
 function updateCycleInfobox(cycle, info) {
@@ -822,7 +891,7 @@ function updateCycleInfobox(cycle, info) {
     addLineToBox(cycle + ["-es", "-es", "-mas", "-es"][cycle - 1] + " kör: " + ["ki", "be"][info.state], 0.08, 0.13, 7)
         .style("text-decoration", "underline");
 
-    addLineToBox("Átlagos eltérés:", 0.08, 0.13 * 2.1, 5.5)
+    addLineToBox(cycle < 4 ? "Átlagos eltérés:" : "Eltérés:", 0.08, 0.13 * 2.1, 5.5)
     if (info.totalControlDiff != 0.0) {
         let reportedControlDiff = roundTo(info.totalControlDiff / info.rooms.length, 0.1)
         let reportedeControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
@@ -851,10 +920,13 @@ function updateCycleInfobox(cycle, info) {
     }
 }
 
+let dataWaitTime = 30;
+let dayDataNotAvailable = false;
+
 const mainGraphDefaultSetting = {
     title: "heating_state",
     types: ["heating_state"],
-    day: dayStamp()
+    day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime)
 };
 
 let mainGraphSetting = mainGraphDefaultSetting;
@@ -862,17 +934,17 @@ let mainGraphSetting = mainGraphDefaultSetting;
 let mainGraphContentLocked = false;
 
 const elementToGrapSettingMapping = {
-    "gas_dial_hover_area": { title: "gas_usage", types: ["gas_usage"], day: dayStamp() },
-    "Oktopusz": { title: "room_plot", types: ["room_1_measurements", "room_1_set_temps", "heating_state"], day: dayStamp(), roomNumToPlot: 1 },
-    "Gólyafészek": { title: "room_plot", types: ["room_2_measurements", "room_2_set_temps", "heating_state"], day: dayStamp(), roomNumToPlot: 2 },
-    "PK": { title: "room_plot", types: ["room_3_measurements", "room_3_set_temps", "heating_state"], day: dayStamp(), roomNumToPlot: 3 },
-    "SZGK": { title: "room_plot", types: ["room_4_measurements", "room_4_set_temps", "heating_state"], day: dayStamp(), roomNumToPlot: 4 },
-    "Mérce": { title: "room_plot", types: ["room_5_measurements", "room_5_set_temps", "heating_state"], day: dayStamp(), roomNumToPlot: 5 },
-    "Lahmacun": { title: "room_plot", types: ["room_6_measurements", "room_6_set_temps", "heating_state"], day: dayStamp(), roomNumToPlot: 6 },
-    "Gólyairoda": { title: "room_plot", types: ["room_7_measurements", "room_7_set_temps", "heating_state"], day: dayStamp(), roomNumToPlot: 7 },
-    "kisterem": { title: "room_plot", types: ["room_8_measurements", "room_8_set_temps", "heating_state"], day: dayStamp(), roomNumToPlot: 8 },
-    "vendégtér": { title: "room_plot", types: ["room_9_measurements", "room_9_set_temps", "heating_state"], day: dayStamp(), roomNumToPlot: 9 },
-    "Trafóház": { title: "room_plot", types: ["room_10_measurements", "room_10_set_temps", "heating_state"], day: dayStamp(), roomNumToPlot: 10 },
+    "gas_dial_hover_area": { title: "gas_usage", types: ["gas_usage"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime) },
+    "Oktopusz": { title: "room_plot", types: ["room_1_measurements", "room_1_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 1 },
+    "Gólyafészek": { title: "room_plot", types: ["room_2_measurements", "room_2_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 2 },
+    "PK": { title: "room_plot", types: ["room_3_measurements", "room_3_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 3 },
+    "SZGK": { title: "room_plot", types: ["room_4_measurements", "room_4_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 4 },
+    "Mérce": { title: "room_plot", types: ["room_5_measurements", "room_5_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 5 },
+    "Lahmacun": { title: "room_plot", types: ["room_6_measurements", "room_6_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 6 },
+    "Gólyairoda": { title: "room_plot", types: ["room_7_measurements", "room_7_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 7 },
+    "kisterem": { title: "room_plot", types: ["room_8_measurements", "room_8_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 8 },
+    "vendégtér": { title: "room_plot", types: ["room_9_measurements", "room_9_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 9 },
+    "Trafóház": { title: "room_plot", types: ["room_10_measurements", "room_10_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 10 },
     "background": mainGraphDefaultSetting
 };
 
@@ -935,8 +1007,8 @@ function drawMainGraph(graphData = null) {
                             smoothing: { bottom: 0, left: 25 },
                             plotRange: { bottom: [0, 24], left: [0, 10] },
                             dataKeys: { bottom: "h_of_day_frac", left: "burn_rate_in_m3_per_h" },
-                            background: { present: false },
-                            plotStyle: { joined: true, col: "rgb(0, 0, 0)", thickness: "2" }
+                            background: { show: false },
+                            plotStyle: { joined: true, col: "rgb(0, 0, 0)", thickness: "2", startCap: false }
                         }
                     );
                     break;
@@ -970,12 +1042,12 @@ function drawMainGraph(graphData = null) {
                                 axes: { left: cycle == 1, bottom: cycle == 1 },
                                 plotRange: { bottom: [0, 24], left: [0.5, 4.5] },
                                 dataKeys: { bottom: "h_of_day_frac", left: "cycle_state" },
-                                background: { present: cycle == 1, col: "white" },
-                                plotStyle: { joined: true, col: "rgba(255, 64, 0, 0.75)", thickness: "8", endCap: false },
+                                background: { show: cycle == 1, col: "white" },
+                                plotStyle: { joined: true, col: "rgba(255, 64, 0, 0.75)", thickness: "8", startCap: false, endCap: false },
                                 tickVals: { left: [1, 2, 3, 4] },
                                 axesLabel: { bottom: cycle == 1 ? "óra" : false, left: cycle == 1 ? "kör" : false },
                                 plotLabel: cycle == 1 ? "körök kapcsolási mintázata" : false,
-                                present: { show: cycle == 1, pos: maxHFrac },
+                                show: { show: cycle == 1, pos: maxHFrac },
                                 segment: { do: true, gap: 30 / (24 * 60) }
                             }
                         );
@@ -985,9 +1057,9 @@ function drawMainGraph(graphData = null) {
                                 parentId: "graph",
                                 plotRange: { bottom: [0, 24], left: [0.5, 4.5] },
                                 dataKeys: { bottom: "h_of_day_frac", left: "cycle_state" },
-                                background: { present: false, col: "white" },
+                                background: { show: false, col: "white" },
                                 tickVals: { left: [1, 2, 3, 4] },
-                                plotStyle: { joined: true, col: "rgba(8, 86, 222, 0.23)", thickness: "6", endCap: false },
+                                plotStyle: { joined: true, col: "rgba(8, 86, 222, 0.23)", thickness: "6", startCap: false, endCap: false },
                                 segment: { do: true, gap: 30 / (24 * 60) }
                             }
                         );
@@ -995,14 +1067,15 @@ function drawMainGraph(graphData = null) {
                     break;
                 case "room_plot":
                     drawPlot(
-                        graphData["room_" + mainGraphSetting.roomNumToPlot + "_set_temps"],//.sort((a, b) => a["h_of_day_frac"] - b["h_of_day_frac"]),
+                        //graphData["room_" + mainGraphSetting.roomNumToPlot + "_set_temps"],//.sort((a, b) => a["h_of_day_frac"] - b["h_of_day_frac"]),
+                        extractRoomScheduleFromCondensedSchedule(mainGraphSetting.roomNumToPlot),
                         {
                             parentId: "graph",
                             smoothing: { bottom: 0, left: 0 },
                             plotRange: { bottom: [0, 24], left: [10, 24] },
                             dataKeys: { bottom: "h_of_day_frac", left: "set_temp" },
                             axesLabel: { bottom: "óra", left: "°C" },
-                            plotStyle: { joined: true, col: "rgba(28, 185, 0,0.5)", thickness: "3", endCap: false },
+                            plotStyle: { joined: true, col: "rgba(28, 185, 0,0.5)", thickness: "3", startCap: false, endCap: false, smoothCurve: false},
                             plotLabel: roomDataAndState[mainGraphSetting.roomNumToPlot].name + " kért és mért hőmérséklet"
                         }
                     );
@@ -1010,11 +1083,12 @@ function drawMainGraph(graphData = null) {
                         graphData["room_" + mainGraphSetting.roomNumToPlot + "_measurements"],
                         {
                             parentId: "graph",
-                            background: { present: false },
+                            background: { show: false },
                             smoothing: { bottom: 0, left: 10 },
                             plotRange: { bottom: [0, 24], left: [10, 24] },
                             dataKeys: { bottom: "h_of_day_frac", left: "temp" },
-                            plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2" }
+                            plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2", startCap: false, endCap: true },
+                            curveEndText: { show: false, fontSize: 10, text: "bla", col: "red" } //DEV
                         }
                     );
                     break;
@@ -1027,7 +1101,7 @@ function drawMainGraph(graphData = null) {
 
 d3.xml("canvas.svg").then(fileData => {
     insertCanvasFromFile(fileData);
-    centerAndZoomRelativePointOfCanvas(0.5, 0.5, 2.8);
+    centerAndZoomRelativePointOfCanvas(0.5, 0.5, 2.2);
     setupTooltip();
     initializeCycleMarkers();
     initializeInfoboxes();
