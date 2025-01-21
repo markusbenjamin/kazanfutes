@@ -664,8 +664,7 @@ function updateBoilerColor(state) {
 }
 
 
-let currentGasUsageRate = "adat töltődik.";
-let currentGasTotal;
+let currentGasUsageRate, currentGasTotal;
 
 function writeGasUsageToDial(gasData = null) {
     if (gasData == null) {
@@ -683,8 +682,10 @@ function writeGasUsageToDial(gasData = null) {
         currentGasTotal = roundTo(gasData[gasData.length - 1].burnt_volume, 0.1);
         if (currentGasTotal == NaN) { currentGasTotal = 0 };
 
-        //currentGasUsageRate = roundTo(gasData[gasData.length - 1].burn_rate_in_m3_per_h, 0.1);
-    
+        if (isValidNumber(currentGasUsageRate) == false) {
+            currentGasUsageRate = roundTo(gasData[gasData.length - 1].burn_rate_in_m3_per_h, 0.1);
+        }
+
         const dialBoxBB = getBBoxDrawingDimensions("gas_dial");
         let textXOffsetFactor;
         gasTotal = roundTo(gasData[gasData.length - 1].burnt_volume, 0.1);
@@ -797,7 +798,7 @@ function updateGeneralInfobox(info) {
     }
 
     addLineToBox(info.cyclesOn, 0.02, lineHeight * 8, lineFontSize);
-    addLineToBox("Gázfogyasztási ráta: " + currentGasUsageRate + (isValidNumber(currentGasUsageRate) ? " m³/h.": ""), 0.02, lineHeight * 9, lineFontSize);
+    addLineToBox("Gázfogyasztási ráta: " + currentGasUsageRate + (isValidNumber(currentGasUsageRate) ? " m³/h." : ""), 0.02, lineHeight * 9, lineFontSize);
     addLineToBox("Összes elégett gáz: " + currentGasTotal + " m³.", 0.02, lineHeight * 10, lineFontSize);
     addLineToBox("Összköltség kb. " + roundTo(currentGasTotal * 350, 1) + " Ft.", 0.02, lineHeight * 11, lineFontSize);
 }
