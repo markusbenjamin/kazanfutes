@@ -21,6 +21,7 @@ if __name__ == "__main__":
                 if last_state_1_time and state == 1:
                     elapsed_time = (datetime.now() - last_state_1_time).total_seconds()
                     system_node.write({"dial_turn_secs":elapsed_time},'state/gas')
+                if not last_state_1_time and state == 1:
                     last_state_1_time = datetime.now()
                 
             time.sleep(random.uniform(0.5, 2.5))
