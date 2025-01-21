@@ -219,7 +219,7 @@ function getDataFromFirebase() {
             }
             updateGeneralInfobox(
                 {
-                    cyclesOn: onCycles.length > 0 ? "Bekapcsolt körök:" + onCycles.join(", ") : "Senki nem kér fűtést.",
+                    cyclesOn: onCycles.length > 0 ? "Bekapcsolt körök: " + onCycles.join(", ") : "Senki nem kér fűtést.",
                     externalTemp: "Külső hőmérséklet: " + systemJSON.state.external_temp + " °C.",
                     controlLastRan: "Vezérlés lefutott: " + timeSinceControlLastRan + lastControlRanGranularity,
                     scheduleLastUpdated: "Beállítások frissítve: " + timeSinceLastScheduleUpdate + schedLastUpdateGranularity,
