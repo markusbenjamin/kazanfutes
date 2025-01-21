@@ -126,7 +126,20 @@ function addTimeToDate(date, amount, granularity) {
 }
 
 function roundTo(num, multiple) {
-    return Math.round(num / multiple) * multiple;
+    // Helper to count decimals in the multiple
+    function countDecimals(val) {
+        // Convert to string, split on ".", and look at the fractional part
+        const parts = val.toString().split(".");
+        return (parts[1] || "").length;
+    }
+
+    const decimals = countDecimals(multiple);
+
+    // Perform the rounding
+    const raw = Math.round(num / multiple) * multiple;
+
+    // Use toFixed(...) to limit decimal places, then convert back to Number
+    return Number(raw.toFixed(decimals));
 }
 
 // Function to calculate moving average

@@ -113,11 +113,12 @@ function setupTooltip() {
     // Attach tooltip functionality to all path elements during initialization
     Object.keys(roomDataAndState).forEach(key => {
         const roomTooltipData = roomDataAndState[key]; // Access the value using the key
+
         d3.select("#" + roomTooltipData.roomID)
             .on("mouseover.tooltip", function (event) {
                 if (roomTooltipData.temp != null) {
                     tooltip.transition().duration(200).style("visibility", "visible");
-                    tooltip.html(roomTooltipData.name + "<br>" + roomTooltipData.temp + "°C")
+                    tooltip.html(roomTooltipData.name + "<br>" + roomTooltipData.temp + (!isNaN(roomTooltipData.temp) ? " °C" : ""))
                         .style("left", (event.pageX + 5) + "px")
                         .style("top", (event.pageY - 28) + "px");
                 }
@@ -136,29 +137,118 @@ function setupTooltip() {
 }
 
 function getDataFromFirebase() {
-    const url = "https://kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app/system.json";
+    const url = "https://kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app/.json";
     fetchJSONEndpoint(url)
-        .then(systemJSON => {
+        .then(fullFirebaseDataJSON => {
+            const systemJSON = fullFirebaseDataJSON.system;
+            const scheduleJSON = fullFirebaseDataJSON.schedule;
+            const updateJSON = fullFirebaseDataJSON.update;
+
+            // Update rooms
             const roomNums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+            let controlDiffs = {};
+            let totalControlDiff = 0;
+            let averagerCount = 0;
             roomNums.forEach(roomNum => {
+                const roomLastUpdated = systemJSON.state['sensor_last_updated'][roomNum];
+                roomDataAndState[roomNum].lastUpdated = roomLastUpdated;
+
                 const roomTemp = roundTo(systemJSON.state['measured_temps'][roomNum], 0.1);
-                updateRoomColor(systemJSON.setup.rooms[roomNum].name, roomTemp);
-                roomDataAndState[roomNum].temp = (roomTemp.toFixed(2).slice(0, 4));
+                if (timePassedSince(dateFromTimestamp(roomLastUpdated)) > 60) {
+                    roomDataAndState[roomNum].temp = "szenzor hiba";
+                }
+                else {
+                    roomDataAndState[roomNum].temp = (roomTemp.toFixed(2).slice(0, 4));
+                }
+
+                updateRoomColor(systemJSON.setup.rooms[roomNum].name, roomTemp, roomLastUpdated);
+
+                if (timePassedSince(dateFromTimestamp(roomLastUpdated)) > 60) {
+                    controlDiffs[roomNum] = "missing";
+                }
+                else {
+                    controlDiffs[roomNum] = systemJSON.state['measured_temps'][roomNum] - systemJSON.state['set_temps'][roomNum];
+                    totalControlDiff += controlDiffs[roomNum];
+                    averagerCount++;
+                }
             });
+            let averageControlDiff = roundTo(totalControlDiff / averagerCount, 0.1);
+
             const roomTemp = roundTo((systemJSON.state['oktopusz_keramia'][1] + systemJSON.state['oktopusz_keramia'][2]) / 2, 0.1);
             //const roomTemp = roundTo(systemJSON.state['oktopusz_keramia'][1],0.1);
-            updateRoomColor("OktopuszKeramia", roomTemp);
+            updateRoomColor("OktopuszKeramia", roomTemp, timestamp());
             roomDataAndState[11].temp = (roomTemp.toFixed(2).slice(0, 4));
 
+            // Update piping
             const cycles = [1, 2, 3, 4];
             let states = 0;
             cycles.forEach(cycleNum => {
-                const cycleState = systemJSON.control.cycles[cycleNum];
+                const cycleState = systemJSON.state.pump_states[cycleNum];
                 states += cycleState;
                 updateCycleColor(cycleNum, cycleState);
             }
             );
             updateBoilerColor(states > 0 ? 1 : 0);
+
+            // Update infoboxes
+            let onCycles = [];
+            cycles.forEach(cycleNum => {
+                systemJSON.state.pump_states[cycleNum] == 1 ? onCycles.push(cycleNum) : "";
+            });
+
+            let timeSinceControlLastRan = timePassedSince(dateFromTimestamp(systemJSON.state.last_updated), 'seconds');
+            let lastControlRanGranularity = ' másodperce.'
+            if (timeSinceControlLastRan > 90) {
+                timeSinceControlLastRan = roundTo(timeSinceControlLastRan / 60, 0.1);
+                lastControlRanGranularity = ' perce.'
+            }
+            else if (timeSinceControlLastRan > 90 * 30) {
+                timeSinceControlLastRan = roundTo(timeSinceControlLastRan / 60 * 60, 0.1);
+                lastControlRanGranularity = ' órája.'
+            }
+            if (timeSinceControlLastRan < 0) {
+                timeSinceControlLastRan = 0
+            }
+
+            let timeSinceLastScheduleUpdate = timePassedSince(dateFromTimestamp(scheduleJSON.last_updated), 'minutes');
+            let schedLastUpdateGranularity = ' perce.';
+
+            if (timeSinceLastScheduleUpdate > 90) {
+                timeSinceLastScheduleUpdate = roundTo(timeSinceLastScheduleUpdate / 60, 0.1);
+                schedLastUpdateGranularity = ' órája.'
+            }
+            updateGeneralInfobox(
+                {
+                    cyclesOn: onCycles.length > 0 ? "Bekapcsolt körök:" + onCycles.join(", ") : "Senki nem kér fűtést.",
+                    externalTemp: "Külső hőmérséklet: " + systemJSON.state.external_temp + " °C.",
+                    controlLastRan: "Vezérlés lefutott: " + timeSinceControlLastRan + lastControlRanGranularity,
+                    scheduleLastUpdated: "Beállítások frissítve: " + timeSinceLastScheduleUpdate + schedLastUpdateGranularity,
+                    averageControlDiff: averageControlDiff
+                }
+            );
+
+            cycles.forEach(cycleNum => {
+                let roomsOnCycle = systemJSON.setup.cycles[cycleNum].rooms;
+                //console.log(roomsOnCycle);
+                let roomsThatWantHeating = [];
+                let averageControlDiffOnCycle = 0;
+                roomsOnCycle.forEach(roomNum => {
+                    systemJSON.control.rooms[roomNum].vote == 1 ? roomsThatWantHeating.push(systemJSON.setup.rooms[roomNum].name) : "";
+                    averageControlDiffOnCycle = controlDiffs[roomNum] == "missing" ? averageControlDiffOnCycle : averageControlDiffOnCycle + controlDiffs[roomNum];
+                });
+                averageControlDiffOnCycle = roundTo(averageControlDiffOnCycle / roomsOnCycle.length, 0.1);
+
+                updateCycleInfobox(
+                    cycleNum,
+                    {
+                        state: systemJSON.state.pump_states[cycleNum],
+                        set: systemJSON.control.cycles[cycleNum],
+                        rooms: roomsOnCycle,
+                        wantHeating: roomsThatWantHeating,
+                        averageControlDiff: averageControlDiffOnCycle
+                    }
+                );
+            });
         })
         .catch(error => {
             console.error('Error fetching data from Firebase:', error);
@@ -481,24 +571,29 @@ function clearMainGraphs() {
 }
 
 const roomDataAndState = {
-    1: { roomID: "Oktopusz", name: "Oktopusz szita", temp: null },
-    2: { roomID: "Gólyafészek", name: "Gólyafészek", temp: null },
-    3: { roomID: "PK", name: "PK", temp: null },
-    4: { roomID: "SZGK", name: "SZGK", temp: null },
-    5: { roomID: "Mérce", name: "Mérce", temp: null },
-    6: { roomID: "Lahmacun", name: "Lahmacun", temp: null },
-    7: { roomID: "Gólyairoda", name: "Gólyairoda", temp: null },
-    8: { roomID: "kisterem", name: "kisterem", temp: null },
-    9: { roomID: "vendégtér", name: "vendégtér", temp: null },
-    10: { roomID: "Trafóház", name: "Trafóház", temp: null },
-    11: { roomID: "OktopuszKeramia", name: "Oktopusz kerámia", temp: null }
+    1: { roomID: "Oktopusz", name: "Oktopusz szita", temp: null, lastUpdated: null },
+    2: { roomID: "Gólyafészek", name: "Gólyafészek", temp: null, lastUpdated: null },
+    3: { roomID: "PK", name: "PK", temp: null, lastUpdated: null },
+    4: { roomID: "SZGK", name: "SZGK", temp: null, lastUpdated: null },
+    5: { roomID: "Mérce", name: "Mérce", temp: null, lastUpdated: null },
+    6: { roomID: "Lahmacun", name: "Lahmacun", temp: null, lastUpdated: null },
+    7: { roomID: "Gólyairoda", name: "Gólyairoda", temp: null, lastUpdated: null },
+    8: { roomID: "kisterem", name: "kisterem", temp: null, lastUpdated: null },
+    9: { roomID: "vendégtér", name: "vendégtér", temp: null, lastUpdated: null },
+    10: { roomID: "Trafóház", name: "Trafóház", temp: null, lastUpdated: null },
+    11: { roomID: "OktopuszKeramia", name: "Oktopusz kerámia", temp: null, lastUpdated: null }
 };
 
-function updateRoomColor(roomId, temp) {
-    // Create a color scale
-    const colorScale = d3.scaleSequential(d3.interpolateRgb("blue", "red"))
-        .domain([15, 25]); // Set the input domain (10°C to 30°C)
-    d3.select("#" + roomId).style("fill", colorScale(temp));
+function updateRoomColor(roomId, temp, lastUpdated) {
+    if (timePassedSince(dateFromTimestamp(lastUpdated)) > 60) {
+        d3.select("#" + roomId).style("fill", "rgba(140, 140, 140,1)");
+    }
+    else {
+        // Create a color scale
+        const colorScale = d3.scaleSequential(d3.interpolateRgb("blue", "red"))
+            .domain([15, 25]); // Set the input domain (10°C to 30°C)
+        d3.select("#" + roomId).style("fill", colorScale(temp));
+    }
 }
 
 function updateCycleColor(cycle, state) {
@@ -522,6 +617,9 @@ function updateBoilerColor(state) {
     boilerState = state;
 }
 
+
+let currentGasUsageRate, currentGasTotal;
+
 function writeGasUsageToDial(gasData = null) {
     if (gasData == null) {
         collectDataFromGitHub(dayStamp(), ["gas_usage"], writeGasUsageToDial);
@@ -535,12 +633,20 @@ function writeGasUsageToDial(gasData = null) {
         d3.select("#gas_meter2").style("fill", "rgba(0.2,0.2,0.2,1)");
         d3.select("#gas_meter2").style("fill-opacity", "1");
 
-        let gasTotal = Math.round(gasData[gasData.length - 1].burnt_volume);
-        if (gasTotal == NaN) { gasTotal = 0 };
+        currentGasTotal = roundTo(gasData[gasData.length - 1].burnt_volume, 0.1);
+        if (currentGasTotal == NaN) { currentGasTotal = 0 };
+
+        currentGasUsageRate = roundTo(gasData[gasData.length - 1].burn_rate_in_m3_per_h, 0.1);
+        if (currentGasUsageRate == NaN) { currentGasUsageRate = 0 };
+
         const dialBoxBB = getBBoxDrawingDimensions("gas_dial");
-        let textXOffsetFactor = 0.085;
+        let textXOffsetFactor;
+        gasTotal = roundTo(gasData[gasData.length - 1].burnt_volume, 0.1);
         if (gasTotal < 10) {
-            textXOffsetFactor = 0.24;
+            textXOffsetFactor = 0.16;
+        }
+        else {
+            textXOffsetFactor = 0.05;
         }
         d3.selectAll("#gas_dial_text").remove();
         d3.select("#drawing")
@@ -548,9 +654,19 @@ function writeGasUsageToDial(gasData = null) {
             .attr("id", "gas_dial_text")
             .attr("x", dialBoxBB.x + dialBoxBB.width * textXOffsetFactor)
             .attr("y", dialBoxBB.y + dialBoxBB.height * 0.7)
-            .text(gasTotal + " m³")
+            //.text(gasTotal + " m³")
+            .text(gasTotal)
             .style("font-family", "Consolas")
-            .style("font-size", "7px")
+            .style("font-size", "6.5px")
+            .style("fill", "black");
+        d3.select("#drawing")
+            .append("text")
+            .attr("id", "gas_dial_text")
+            .attr("x", dialBoxBB.x + dialBoxBB.width * 0.75)
+            .attr("y", dialBoxBB.y + dialBoxBB.height * 0.69)
+            .text(" m³")
+            .style("font-family", "Consolas")
+            .style("font-size", "5px")
             .style("fill", "black");
         d3.select("#drawing")
             .append("rect")
@@ -586,14 +702,104 @@ function initializeCycleMarkers() {
 
 function initializeInfoboxes() {
     d3.select("#general_infobox")
+        .style("fill", "rgba(250,250,250,1)")
+        .style("fill-opacity", "1")
         .style("stroke", "rgba(250,250,250,1)")
         .style("stroke-opacity", "1")
         .style("stroke-width", "3");
-    for (let cycle = 1; cycle < 5; cycle++) {
-        d3.select("#cycle" + cycle + "_infobox")
-            .style("stroke", "rgba(250,250,250,1)")
-            .style("stroke-opacity", "1")
-            .style("stroke-width", "2");
+    d3.select("#cycles_infobox")
+        .style("fill", "rgba(250,250,250,1)")
+        .style("fill-opacity", "1")
+        .style("stroke", "rgba(250,250,250,1)")
+        .style("stroke-opacity", "1")
+        .style("stroke-width", "3");
+}
+
+function updateGeneralInfobox(info) {
+    boxDims = getBBoxDrawingDimensions("general_infobox");
+
+    d3.selectAll(".general-infobox-content").remove();
+
+    function addLineToBox(message, xFactor, yFactor, fontSize) {
+        return d3.select("#drawing")
+            .append("text")
+            .attr("class", "general-infobox-content")
+            .attr("x", boxDims.x + boxDims.width * xFactor)
+            .attr("y", boxDims.y + boxDims.height * 0.025 + boxDims.height * yFactor)
+            .text(message)
+            .style("font-family", "Consolas")
+            .style("font-size", fontSize + "px");
+    }
+
+    // Draw title
+    addLineToBox("Rendszerállapot", 0.02, 0.045, 9)
+        .style("text-decoration", "underline");
+
+    // Draw content
+
+    let lineFontSize = 6.5;
+    let lineHeight = 0.069;
+
+    addLineToBox(info.externalTemp, 0.02, lineHeight * 2, lineFontSize);
+
+    addLineToBox(info.controlLastRan, 0.02, lineHeight * 4, lineFontSize);
+    addLineToBox(info.scheduleLastUpdated, 0.02, lineHeight * 5, lineFontSize);
+    if (info.averageControlDiff != 0) {
+        let averageControlDiffPre = info.averageControlDiff < 0 ? "-" : "+";
+        addLineToBox("Átlagos eltérés: " + averageControlDiffPre + info.averageControlDiff + " °C", 0.02, lineHeight * 6, lineFontSize);
+    }
+
+    addLineToBox(info.cyclesOn, 0.02, lineHeight * 8, lineFontSize);
+    addLineToBox("Gázfogyasztási ráta: " + currentGasUsageRate + " m³/h.", 0.02, lineHeight * 9, lineFontSize);
+    addLineToBox("Összes elégett gáz: " + currentGasTotal + " m³.", 0.02, lineHeight * 10, lineFontSize);
+    addLineToBox("Összköltség kb. " + roundTo(currentGasTotal * 350, 1) + " Ft.", 0.02, lineHeight * 11, lineFontSize);
+}
+
+function updateCycleInfobox(cycle, info) {
+    boxDims = getBBoxDrawingDimensions("cycle" + cycle + "_infobox");
+
+    d3.selectAll(".cycle" + cycle + "-infobox-content").remove();
+
+    function addLineToBox(message, xFactor, yFactor, fontSize) {
+        return d3.select("#drawing")
+            .append("text")
+            .attr("class", "cycle" + cycle + "-infobox-content")
+            .attr("x", boxDims.x + boxDims.width * xFactor)
+            .attr("y", boxDims.y + boxDims.width * 0.025 + boxDims.width * yFactor)
+            .text(message)
+            .style("font-family", "Consolas")
+            .style("font-size", fontSize + "px");
+    }
+
+    addLineToBox(cycle + ["-es", "-es", "-mas", "-es"][cycle - 1] + " kör: " + ["ki", "be"][info.state], 0.08, 0.13, 7)
+        .style("text-decoration", "underline");
+
+
+    addLineToBox("Átlagos eltérés:", 0.08, 0.13 * 2.1, 5.5)
+    if (info.averageControlDiff != 0) {
+        let averageControlDiffPre = info.averageControlDiff < 0 ? "-" : "+";
+        addLineToBox(averageControlDiffPre + info.averageControlDiff + " °C", 0.12, 0.13 * 3.1, 5.5)
+    }
+    else {
+        addLineToBox("?", 0.12, 0.13 * 3, 5.5)
+    }
+
+    if (cycle < 4) {
+        if (info.wantHeating) {
+            if (info.wantHeating.length > 0) {
+                addLineToBox("Fűtést kér:", 0.08, 0.13 * 4.5, 5.5);
+                let lineNum = 1;
+                info.wantHeating.forEach(roomName => {
+                    addLineToBox(roomName, 0.12, 0.13 * (4.5 + lineNum), 5.5);
+                    lineNum++;
+                });
+            } else {
+                addLineToBox("Nem kér fűtést.", 0.08, 0.13 * 4.5, 5.5);
+            }
+        }
+    }
+    else {
+        addLineToBox(["Nem kér fűtést.", "Fűtést kér."][info.set], 0.08, 0.13 * 4.5, 5.5);
     }
 }
 
@@ -760,9 +966,7 @@ function drawMainGraph(graphData = null) {
                             smoothing: { bottom: 0, left: 10 },
                             plotRange: { bottom: [0, 24], left: [10, 24] },
                             dataKeys: { bottom: "h_of_day_frac", left: "temp" },
-                            axesLabel: { bottom: "óra", left: "°C" },
-                            plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2" },
-                            plotLabel: roomDataAndState[mainGraphSetting.roomNumToPlot].name + " kért és mért hőmérséklet"
+                            plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2" }
                         }
                     );
                     break;
@@ -781,7 +985,7 @@ d3.xml("canvas.svg").then(fileData => {
     initializeInfoboxes();
 
     runOnceThenSetInterval(joinMainGrapDataSourceToElements, 10);
-    runOnceThenSetInterval(getDataFromFirebase, 5 * 1000);
     runOnceThenSetInterval(writeGasUsageToDial, 60 * 1000);
+    runOnceThenSetInterval(getDataFromFirebase, 0.25 * 1000);
     runOnceThenSetInterval(drawMainGraph, 60 * 1000);
 });
