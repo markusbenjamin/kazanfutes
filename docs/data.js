@@ -118,7 +118,11 @@ function setupTooltip() {
             .on("mouseover.tooltip", function (event) {
                 if (roomTooltipData.temp != null) {
                     tooltip.transition().duration(200).style("visibility", "visible");
-                    tooltip.html(roomTooltipData.name + "<br>" + roomTooltipData.temp + (!isNaN(roomTooltipData.temp) ? " °C" : ""))
+                    tooltip.html(
+                        roomTooltipData.name + "<br>" +
+                        roomTooltipData.temp + (!isNaN(roomTooltipData.temp) ? " °C" : "") +
+                        (roomTooltipData.set != null ? "<br>(" + roomTooltipData.set + (!isNaN(roomTooltipData.set) ? " °C)" : ")") : "")
+                    )
                         .style("left", (event.pageX + 5) + "px")
                         .style("top", (event.pageY - 28) + "px");
                 }
@@ -154,7 +158,8 @@ function getDataFromFirebase() {
                 roomDataAndState[roomNum].lastUpdated = roomLastUpdated;
 
                 const roomTemp = roundTo(systemJSON.state['measured_temps'][roomNum], 0.1);
-                if (timePassedSince(dateFromTimestamp(roomLastUpdated)) > 60) {
+                const timeSinceLastSensorUpdate = timePassedSince(dateFromTimestamp(roomLastUpdated));
+                if (timeSinceLastSensorUpdate > 60) {
                     roomDataAndState[roomNum].temp = "szenzor hiba";
                 }
                 else {
@@ -163,16 +168,20 @@ function getDataFromFirebase() {
 
                 updateRoomColor(systemJSON.setup.rooms[roomNum].name, roomTemp, roomLastUpdated);
 
-                if (timePassedSince(dateFromTimestamp(roomLastUpdated)) > 60) {
+                const roomSet = systemJSON.state['set_temps'][roomNum];
+                roomDataAndState[roomNum].set = roomSet;
+
+                if (timeSinceLastSensorUpdate > 60) {
                     controlDiffs[roomNum] = "missing";
+
                 }
                 else {
-                    controlDiffs[roomNum] = systemJSON.state['measured_temps'][roomNum] - systemJSON.state['set_temps'][roomNum];
+                    controlDiffs[roomNum] = roomTemp - roomSet;
                     totalControlDiff += controlDiffs[roomNum];
                     averagerCount++;
                 }
             });
-            let averageControlDiff = roundTo(totalControlDiff / averagerCount, 0.1);
+            let averageControlDiff = totalControlDiff / averagerCount;
 
             const roomTemp = roundTo((systemJSON.state['oktopusz_keramia'][1] + systemJSON.state['oktopusz_keramia'][2]) / 2, 0.1);
             //const roomTemp = roundTo(systemJSON.state['oktopusz_keramia'][1],0.1);
@@ -229,14 +238,12 @@ function getDataFromFirebase() {
 
             cycles.forEach(cycleNum => {
                 let roomsOnCycle = systemJSON.setup.cycles[cycleNum].rooms;
-                //console.log(roomsOnCycle);
                 let roomsThatWantHeating = [];
-                let averageControlDiffOnCycle = 0;
+                let totalControlDiffOnCycle = 0;
                 roomsOnCycle.forEach(roomNum => {
                     systemJSON.control.rooms[roomNum].vote == 1 ? roomsThatWantHeating.push(systemJSON.setup.rooms[roomNum].name) : "";
-                    averageControlDiffOnCycle = controlDiffs[roomNum] == "missing" ? averageControlDiffOnCycle : averageControlDiffOnCycle + controlDiffs[roomNum];
+                    totalControlDiffOnCycle = controlDiffs[roomNum] == "missing" ? totalControlDiffOnCycle : totalControlDiffOnCycle + controlDiffs[roomNum];
                 });
-                averageControlDiffOnCycle = roundTo(averageControlDiffOnCycle / roomsOnCycle.length, 0.1);
 
                 updateCycleInfobox(
                     cycleNum,
@@ -245,7 +252,7 @@ function getDataFromFirebase() {
                         set: systemJSON.control.cycles[cycleNum],
                         rooms: roomsOnCycle,
                         wantHeating: roomsThatWantHeating,
-                        averageControlDiff: averageControlDiffOnCycle
+                        totalControlDiff: totalControlDiffOnCycle
                     }
                 );
             });
@@ -571,22 +578,22 @@ function clearMainGraphs() {
 }
 
 const roomDataAndState = {
-    1: { roomID: "Oktopusz", name: "Oktopusz szita", temp: null, lastUpdated: null },
-    2: { roomID: "Gólyafészek", name: "Gólyafészek", temp: null, lastUpdated: null },
-    3: { roomID: "PK", name: "PK", temp: null, lastUpdated: null },
-    4: { roomID: "SZGK", name: "SZGK", temp: null, lastUpdated: null },
-    5: { roomID: "Mérce", name: "Mérce", temp: null, lastUpdated: null },
-    6: { roomID: "Lahmacun", name: "Lahmacun", temp: null, lastUpdated: null },
-    7: { roomID: "Gólyairoda", name: "Gólyairoda", temp: null, lastUpdated: null },
-    8: { roomID: "kisterem", name: "kisterem", temp: null, lastUpdated: null },
-    9: { roomID: "vendégtér", name: "vendégtér", temp: null, lastUpdated: null },
-    10: { roomID: "Trafóház", name: "Trafóház", temp: null, lastUpdated: null },
-    11: { roomID: "OktopuszKeramia", name: "Oktopusz kerámia", temp: null, lastUpdated: null }
+    1: { roomID: "Oktopusz", name: "Oktopusz szita", temp: null, set: null, lastUpdated: null },
+    2: { roomID: "Gólyafészek", name: "Gólyafészek", temp: null, set: null, lastUpdated: null },
+    3: { roomID: "PK", name: "PK", temp: null, set: null, lastUpdated: null },
+    4: { roomID: "SZGK", name: "SZGK", temp: null, set: null, lastUpdated: null },
+    5: { roomID: "Mérce", name: "Mérce", temp: null, set: null, lastUpdated: null },
+    6: { roomID: "Lahmacun", name: "Lahmacun", temp: null, set: null, lastUpdated: null },
+    7: { roomID: "Gólyairoda", name: "Gólyairoda", temp: null, set: null, lastUpdated: null },
+    8: { roomID: "kisterem", name: "kisterem", temp: null, set: null, lastUpdated: null },
+    9: { roomID: "vendégtér", name: "vendégtér", temp: null, set: null, lastUpdated: null },
+    10: { roomID: "Trafóház", name: "Trafóház", temp: null, set: null, lastUpdated: null },
+    11: { roomID: "OktopuszKeramia", name: "Oktopusz kerámia", temp: null, set: null, lastUpdated: null }
 };
 
 function updateRoomColor(roomId, temp, lastUpdated) {
     if (timePassedSince(dateFromTimestamp(lastUpdated)) > 60) {
-        d3.select("#" + roomId).style("fill", "rgba(140, 140, 140,1)");
+        d3.select("#" + roomId).style("fill", "rgb(31, 31, 32,0.8)");
     }
     else {
         // Create a color scale
@@ -744,9 +751,10 @@ function updateGeneralInfobox(info) {
 
     addLineToBox(info.controlLastRan, 0.02, lineHeight * 4, lineFontSize);
     addLineToBox(info.scheduleLastUpdated, 0.02, lineHeight * 5, lineFontSize);
-    if (info.averageControlDiff != 0) {
-        let averageControlDiffPre = info.averageControlDiff < 0 ? "" : "+";
-        addLineToBox("Átlagos eltérés: " + averageControlDiffPre + info.averageControlDiff + " °C", 0.02, lineHeight * 6, lineFontSize);
+    if (info.averageControlDiff != 0.0) {
+        let reportedControlDiff = roundTo(info.averageControlDiff, 0.1);
+        let averageControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
+        addLineToBox("Átlagos eltérés: " + averageControlDiffPre + reportedControlDiff + " °C", 0.02, lineHeight * 6, lineFontSize);
     }
 
     addLineToBox(info.cyclesOn, 0.02, lineHeight * 8, lineFontSize);
@@ -774,14 +782,14 @@ function updateCycleInfobox(cycle, info) {
     addLineToBox(cycle + ["-es", "-es", "-mas", "-es"][cycle - 1] + " kör: " + ["ki", "be"][info.state], 0.08, 0.13, 7)
         .style("text-decoration", "underline");
 
-
     addLineToBox("Átlagos eltérés:", 0.08, 0.13 * 2.1, 5.5)
-    if (info.averageControlDiff != 0) {
-        let averageControlDiffPre = info.averageControlDiff < 0 ? "" : "+";
-        addLineToBox(averageControlDiffPre + info.averageControlDiff + " °C", 0.12, 0.13 * 3.1, 5.5)
+    if (info.totalControlDiff != 0.0) {
+        let reportedControlDiff = roundTo(info.totalControlDiff / info.rooms.length, 0.1)
+        let reportedeControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
+        addLineToBox(reportedeControlDiffPre + reportedControlDiff + " °C", 0.2, 0.13 * 3.1, 5.5)
     }
     else {
-        addLineToBox("?", 0.12, 0.13 * 3, 5.5)
+        addLineToBox("?", 0.25, 0.13 * 3, 5.5)
     }
 
     if (cycle < 4) {
@@ -790,7 +798,7 @@ function updateCycleInfobox(cycle, info) {
                 addLineToBox("Fűtést kér:", 0.08, 0.13 * 4.5, 5.5);
                 let lineNum = 1;
                 info.wantHeating.forEach(roomName => {
-                    addLineToBox(roomName, 0.12, 0.13 * (4.5 + lineNum), 5.5);
+                    addLineToBox("- "+roomName, 0.12, 0.13 * (4.5 + lineNum), 5.5);
                     lineNum++;
                 });
             } else {
