@@ -19,6 +19,7 @@ from logging.handlers import TimedRotatingFileHandler
 import google.auth
 from googleapiclient.discovery import build
 from google.oauth2.service_account import Credentials
+import itertools
 
 on_raspi = False
 if os.name == 'posix':
