@@ -255,6 +255,10 @@ function getDataFromFirebase() {
                         totalControlDiff: totalControlDiffOnCycle
                     }
                 );
+
+                // Update misc data
+                currentGasUsageRate = roundTo(0.1 / (systemJSON.state.gas.dial_turn_secs / 3600), 0.1);
+                if (currentGasUsageRate == NaN) { currentGasUsageRate = 0 };
             });
         })
         .catch(error => {
@@ -321,6 +325,41 @@ function collectDataFromGitHub(day, dataTypes, drawFunction) {
     fetchNextType(0);
 }
 
+function applyStripePatternToPathById(svg, pathId, options = {}) {
+    // Default options for the stripe pattern
+    const {
+        patternId = "stripePattern",
+        stripeColor = "black",
+        backgroundColor = "white",
+        stripeWidth = 5,
+        stripeSpacing = 10,
+        stripeAngle = 45
+    } = options;
+
+    // Define the stripe pattern
+    const defs = svg.append("defs");
+    const pattern = defs.append("pattern")
+        .attr("id", patternId)
+        .attr("width", stripeSpacing)
+        .attr("height", stripeSpacing)
+        .attr("patternUnits", "userSpaceOnUse")
+        .attr("patternTransform", `rotate(${stripeAngle})`);
+
+    pattern.append("rect")
+        .attr("width", stripeWidth)
+        .attr("height", stripeSpacing)
+        .attr("fill", stripeColor);
+
+    pattern.append("rect")
+        .attr("x", stripeWidth)
+        .attr("width", stripeSpacing - stripeWidth)
+        .attr("height", stripeSpacing)
+        .attr("fill", backgroundColor);
+
+    // Select the path by ID and apply the pattern
+    svg.select(`#${pathId}`)
+        .attr("fill", `url(#${patternId})`);
+}
 
 function drawPlot(plotData, userOptions) {
     var defaultOptions = {
@@ -643,9 +682,8 @@ function writeGasUsageToDial(gasData = null) {
         currentGasTotal = roundTo(gasData[gasData.length - 1].burnt_volume, 0.1);
         if (currentGasTotal == NaN) { currentGasTotal = 0 };
 
-        currentGasUsageRate = roundTo(gasData[gasData.length - 1].burn_rate_in_m3_per_h, 0.1);
-        if (currentGasUsageRate == NaN) { currentGasUsageRate = 0 };
-
+        //currentGasUsageRate = roundTo(gasData[gasData.length - 1].burn_rate_in_m3_per_h, 0.1);
+    
         const dialBoxBB = getBBoxDrawingDimensions("gas_dial");
         let textXOffsetFactor;
         gasTotal = roundTo(gasData[gasData.length - 1].burnt_volume, 0.1);
@@ -798,7 +836,7 @@ function updateCycleInfobox(cycle, info) {
                 addLineToBox("Fűtést kér:", 0.08, 0.13 * 4.5, 5.5);
                 let lineNum = 1;
                 info.wantHeating.forEach(roomName => {
-                    addLineToBox("- "+roomName, 0.12, 0.13 * (4.5 + lineNum), 5.5);
+                    addLineToBox("- " + roomName, 0.12, 0.13 * (4.5 + lineNum), 5.5);
                     lineNum++;
                 });
             } else {
@@ -994,6 +1032,8 @@ d3.xml("canvas.svg").then(fileData => {
 
     runOnceThenSetInterval(joinMainGrapDataSourceToElements, 10);
     runOnceThenSetInterval(writeGasUsageToDial, 60 * 1000);
-    runOnceThenSetInterval(getDataFromFirebase, 0.25 * 1000);
+    runOnceThenSetInterval(getDataFromFirebase, 5 * 1000);
     runOnceThenSetInterval(drawMainGraph, 60 * 1000);
+
+    //applyStripePatternToPathById("canvas", "Trafóház", options = {});
 });
