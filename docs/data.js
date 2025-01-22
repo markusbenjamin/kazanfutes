@@ -246,8 +246,6 @@ function getDataFromFirebase() {
             let requestOrigin = timePassedSince(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp))
                 > timePassedSince(dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp)) ? "QR" : "form"
             let requestTarget = requestOrigin == "QR" ? updateJSON.override_rooms_qr.room_name : updateJSON.override_rooms.room_name
-            requestOrigin = "form"
-            requestTarget = "Oktopusz"
             updateGeneralInfobox(
                 {
                     cyclesOn: onCycles.length > 0 ? "Bekapcsolt körök: " + onCycles.join(", ") + "." : "Senki nem kér fűtést.",
