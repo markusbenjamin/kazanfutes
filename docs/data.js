@@ -245,13 +245,14 @@ function getDataFromFirebase() {
 
             let requestOrigin = timePassedSince(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp))
                 > timePassedSince(dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp)) ? "QR, " : "form, "
+            let requestTarget = requestOrigin == "QR" ? updateJSON.override_rooms_qr.room_name : updateJSON.override_rooms.room_name
 
             updateGeneralInfobox(
                 {
                     cyclesOn: onCycles.length > 0 ? "Bekapcsolt körök: " + onCycles.join(", ") + "." : "Senki nem kér fűtést.",
                     externalTemp: "Külső hőmérséklet: " + systemJSON.state.external_temp + " °C.",
                     controlLastRan: "Vezérlés lefutott: " + timeSinceControlLastRan + lastControlRanGranularity,
-                    latestRequest: "Utolsó kérés: " + requestOrigin + timeSinceLastRequest + timeSinceLastRequestGranularity,
+                    latestRequest: "Utolsó kérés: " + requestOrigin + requestTarget + ", " + timeSinceLastRequest + timeSinceLastRequestGranularity,
                     scheduleLastUpdated: "Beállítások frissítve: " + timeSinceLastScheduleUpdate + schedLastUpdateGranularity,
                     averageControlDiff: averageControlDiff
                 }
