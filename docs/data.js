@@ -884,7 +884,7 @@ function updateGeneralInfobox(info) {
     }
 
     addLineToBox(info.cyclesOn, 0.02, lineHeight * 8, lineFontSize);
-    addLineToBox("Gázfogyasztási ráta: " + currentGasUsageRate + (isValidNumber(currentGasUsageRate) ? " m³/h." : ""), 0.02, lineHeight * 9, lineFontSize);
+    addLineToBox("Gázfogyasztási ráta: " + (isValidNumber(currentGasUsageRate) ? currentGasUsageRate : "" ) + (isValidNumber(currentGasUsageRate) ? " m³/h." : ""), 0.02, lineHeight * 9, lineFontSize);
     if (isValidNumber(currentGasTotal)) {
         let gasTotalString = currentGasTotal;
         if (Number.isInteger(gasTotalString)) {
@@ -1144,16 +1144,22 @@ function setViewParameters(centeredId) {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    // Determine the smaller viewport dimension
     smallerDimension = Math.min(width, height);
-    // Detect if the device is mobile (basic check)
     isMobile = /Mobi|Android/i.test(navigator.userAgent);
+    params = new URLSearchParams(window.location.search);
+    fromRequest = params.get("ref_source") == "qr" || params.get("ref_source") == "form";
+
     let centeringOffsetFactor = { x: 1, y: 1 }
     if (isMobile) {
         initialZoom = smallerDimension * 0.006;
         centeredId = "general_infobox";
         centeringOffsetFactor.y = 1.2;
     }
+    /*else if (fromRequest) {
+        initialZoom = smallerDimension * 0.003;
+        centeredId = "general_infobox";
+        centeringOffsetFactor.y = 1.1;
+    }*/
     else {
         initialZoom = smallerDimension * 0.003;
     }
