@@ -163,7 +163,6 @@ function getDataFromFirebase() {
 
                 const roomTemp = roundTo(systemJSON.state['measured_temps'][roomNum], 0.1);
                 const timeSinceLastSensorUpdate = timePassedSince(dateFromTimestamp(roomLastUpdated));
-                console.log(timeSinceLastSensorUpdate)
                 if (timeSinceLastSensorUpdate > 2 * 60) {
                     roomDataAndState[roomNum].temp = "szenzor hiba";
                 }
@@ -241,7 +240,6 @@ function getDataFromFirebase() {
                 timeSinceLastRequest = roundTo(timeSinceLastRequest / 60, 0.5);
                 timeSinceLastRequestGranularity = ' órája.'
             }
-            console.log(timeSinceLastRequest);
 
             let requestOrigin = timePassedSince(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp))
                 > timePassedSince(dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp)) ? "QR, " : "form, "
@@ -915,7 +913,7 @@ function updateCycleInfobox(cycle, info) {
         .style("text-decoration", "underline");
 
     addLineToBox(cycle < 4 ? "Átlagos eltérés:" : "Eltérés:", 0.08, 0.13 * 2.1, 5.5)
-    if (info.totalControlDiff != 0.0) {
+    if (isValidNumber(info.totalControlDiff)) {
         let reportedControlDiff = roundTo(info.totalControlDiff / info.rooms.length, 0.1)
         let reportedeControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
         addLineToBox(reportedeControlDiffPre + reportedControlDiff + " °C", 0.2, 0.13 * 3.1, 5.5)

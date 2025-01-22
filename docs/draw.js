@@ -172,7 +172,6 @@ function getBBoxRelativeDimensions(id) {
     }
     relativeDims["cx"] = relativeDims.x + relativeDims.w / 2;
     relativeDims["cy"] = relativeDims.y + relativeDims.h / 2;
-    console.log(relativeDims);
     return relativeDims;
 }
 
