@@ -230,11 +230,24 @@ function getDataFromFirebase() {
                 timeSinceLastScheduleUpdate = roundTo(timeSinceLastScheduleUpdate / 60, 0.1);
                 schedLastUpdateGranularity = ' órája.'
             }
+
+            let timeSinceLastRequest = Math.min(
+                timePassedSince(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp)),
+                timePassedSince(dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp))
+            )
+            timeSinceLastRequestGranularity = ' perce.'
+            if (timeSinceLastRequest > 90) {
+                timeSinceLastRequest = roundTo(timeSinceLastRequest / 60, 0.7);
+                timeSinceLastRequestGranularity = ' órája.'
+            }
+            console.log(timeSinceLastRequest);
+
             updateGeneralInfobox(
                 {
-                    cyclesOn: onCycles.length > 0 ? "Bekapcsolt körök: " + onCycles.join(", ")+"." : "Senki nem kér fűtést.",
+                    cyclesOn: onCycles.length > 0 ? "Bekapcsolt körök: " + onCycles.join(", ") + "." : "Senki nem kér fűtést.",
                     externalTemp: "Külső hőmérséklet: " + systemJSON.state.external_temp + " °C.",
                     controlLastRan: "Vezérlés lefutott: " + timeSinceControlLastRan + lastControlRanGranularity,
+                    latestRequest: "Utolsó beérkezett kérés: " + timeSinceLastRequest + timeSinceLastRequestGranularity,
                     scheduleLastUpdated: "Beállítások frissítve: " + timeSinceLastScheduleUpdate + schedLastUpdateGranularity,
                     averageControlDiff: averageControlDiff
                 }
@@ -854,12 +867,13 @@ function updateGeneralInfobox(info) {
 
     addLineToBox(info.externalTemp, 0.02, lineHeight * 2, lineFontSize);
 
-    addLineToBox(info.controlLastRan, 0.02, lineHeight * 4, lineFontSize);
-    addLineToBox(info.scheduleLastUpdated, 0.02, lineHeight * 5, lineFontSize);
+    addLineToBox(info.controlLastRan, 0.02, lineHeight * 3.5, lineFontSize);
+    addLineToBox(info.latestRequest, 0.02, lineHeight * 4.5, lineFontSize);
+    addLineToBox(info.scheduleLastUpdated, 0.02, lineHeight * 5.5, lineFontSize);
     if (info.averageControlDiff != 0.0) {
         let reportedControlDiff = roundTo(info.averageControlDiff, 0.1);
         let averageControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
-        addLineToBox("Átlagos eltérés: " + averageControlDiffPre + reportedControlDiff + " °C.", 0.02, lineHeight * 6, lineFontSize);
+        addLineToBox("Átlagos eltérés: " + averageControlDiffPre + reportedControlDiff + " °C.", 0.02, lineHeight * 6.5, lineFontSize);
     }
 
     addLineToBox(info.cyclesOn, 0.02, lineHeight * 8, lineFontSize);
@@ -1084,7 +1098,7 @@ function drawMainGraph(graphData = null) {
                             axesLabel: { bottom: "óra", left: "°C" },
                             plotStyle: { joined: true, col: "rgba(28, 185, 0,0.5)", thickness: "3", startCap: false, endCap: false, smoothCurve: false },
                             plotLabel: roomDataAndState[mainGraphSetting.roomNumToPlot].name + " kért és mért hőmérséklet",
-                            markers: { when: "after", list: requestMarkers, col: "rgba(245,245,0,1)", thickness: 1.5, dashed: true, dashing: "6,3", endCap: true, endCapSize: 2}
+                            markers: { when: "after", list: requestMarkers, col: "rgba(245,245,0,1)", thickness: 1.5, dashed: true, dashing: "6,3", endCap: true, endCapSize: 2 }
                         }
                     );
                     drawPlot(
