@@ -709,10 +709,10 @@ function updateRoomColor(roomId, temp, lastUpdated) {
 }
 
 function updateCycleColor(cycle, state) {
-    d3.select("#cycle" + cycle).style("stroke", state == 1 ? "rgba(255,0,0,0.75)" : "rgba(0,0,255,0.75)");
+    d3.select("#cycle" + cycle).style("stroke", state == 1 ? "rgba(255,0,0,0.75)" : "rgba(0,0,200,0.75)");
     d3.select("#cycle" + cycle).style("stroke-opacity", "1");
 
-    d3.select("#cycle" + cycle + "_radiators").selectAll("*").style("fill", state == 1 ? "rgba(255,0,0,1)" : "rgba(0,0,255,1)");
+    d3.select("#cycle" + cycle + "_radiators").selectAll("*").style("fill", state == 1 ? "rgba(255,0,0,1)" : "rgba(0,0,200,1)");
     d3.select("#cycle" + cycle + "_radiators").selectAll("*").style("fill-opacity", "1");
 }
 
