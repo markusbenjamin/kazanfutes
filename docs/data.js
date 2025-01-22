@@ -232,7 +232,7 @@ function getDataFromFirebase() {
             }
             updateGeneralInfobox(
                 {
-                    cyclesOn: onCycles.length > 0 ? "Bekapcsolt körök: " + onCycles.join(", ") : "Senki nem kér fűtést.",
+                    cyclesOn: onCycles.length > 0 ? "Bekapcsolt körök: " + onCycles.join(", ")+"." : "Senki nem kér fűtést.",
                     externalTemp: "Külső hőmérséklet: " + systemJSON.state.external_temp + " °C.",
                     controlLastRan: "Vezérlés lefutott: " + timeSinceControlLastRan + lastControlRanGranularity,
                     scheduleLastUpdated: "Beállítások frissítve: " + timeSinceLastScheduleUpdate + schedLastUpdateGranularity,
@@ -859,7 +859,7 @@ function updateGeneralInfobox(info) {
     if (info.averageControlDiff != 0.0) {
         let reportedControlDiff = roundTo(info.averageControlDiff, 0.1);
         let averageControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
-        addLineToBox("Átlagos eltérés: " + averageControlDiffPre + reportedControlDiff + " °C", 0.02, lineHeight * 6, lineFontSize);
+        addLineToBox("Átlagos eltérés: " + averageControlDiffPre + reportedControlDiff + " °C.", 0.02, lineHeight * 6, lineFontSize);
     }
 
     addLineToBox(info.cyclesOn, 0.02, lineHeight * 8, lineFontSize);
@@ -1058,7 +1058,7 @@ function drawMainGraph(graphData = null) {
                                 background: { show: false, col: "white" },
                                 tickVals: { left: [1, 2, 3, 4] },
                                 plotStyle: { joined: true, col: "rgba(8, 86, 222, 0.23)", thickness: "6", startCap: false, endCap: false },
-                                segment: { do: true, gap: 30 / (24 * 60) }
+                                segment: { do: true, gap: 100 / (24 * 60) }
                             }
                         );
                     }
