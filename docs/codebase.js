@@ -212,7 +212,6 @@ function getUnixDay(date = null) {
 
     // Reconstruct the adjusted time in the Budapest time zone
     const adjustedDate = new Date(`${year}-${month}-${day}T00:00:00Z`);
-    console.log(adjustedDate);  // Check the constructed date
     const unixDay = Math.floor(adjustedDate.getTime() / (1000 * 60 * 60 * 24));
 
     return unixDay;

@@ -1,14 +1,16 @@
 //- jelölje előre a beállított hőmérsékletet: local override copyk alapján, data formatter service generáljon belőle fájlt, ezt olvassa be dashboard
-- jelezze a ploton a beérkezett kéréseket: firebase condensed schedule alapján, dashboard
+//- jelezze a ploton a beérkezett kéréseket: firebase condensed schedule alapján, dashboard
+- írja ki a rendszerállapotba, hogy milyen kérés érkezett legutoljára
 //- 4-es körnél nem átlagos eltérés
 - körök neve a száma helyett?:/
 //- kis függőleges szaggatott vonal a kör infóboxok közé?
 //- "adat tölt" a grafikonra amig megjelenik az adat
 - vezérlés lefutott inherens számlálóval legyen, és akkor kevesebbet kell a firebaset pollozni
-- plotnál véghez rakott szöveg
+- legyen plotban plotRange option (vagyis h vágja le az adatból, ami azon kívül esik)
+//- plotnál véghez rakott szöveg
 //- legyen külön gázos adatokat küldő service hogy élőbb legyen a dashboard
 - pörgő gázóra
-- összköltség ezresekkel tagolva
+//- összköltség ezresekkel tagolva
 - miért van a kapcsolási mintázatnál ez a fura szakadás?
 - két félre bontani Oktopusz kerámiát a két hőmérő szerint
 - csíkos error

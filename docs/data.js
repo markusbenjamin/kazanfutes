@@ -300,36 +300,35 @@ function extractRoomScheduleFromCondensedSchedule(roomNum) {
     }
 }
 
+function convertTimestamps(dataJSON, day) {
+    const parseTime = d3.timeParse("%Y-%m-%d-%H-%M-%S");
+    if (!Array.isArray(dataJSON)) {
+        return [];
+    }
+    if (!dataJSON || !dataJSON.length) {
+        return [];
+    }
+    return dataJSON
+        .map(d => {
+            const parsedDate = parseTime(d.timestamp);
+            if (!parsedDate) return null;
+
+            // Keep only items that match the day in 'day'
+            if (parsedDate.getDay() !== new Date(day).getDay()) {
+                return null;
+            }
+
+            // If kept, compute fractional hour
+            d.h_of_day_frac = parsedDate.getHours() + parsedDate.getMinutes() / 60;
+            return d;
+        })
+        // Filter out the nulls (mismatched days or unparsable timestamps)
+        .filter(Boolean);
+}
+
 function collectDataFromGitHub(day, dataTypes, drawFunction) {
     // We'll store our results here:
     const dataCollected = {};
-
-    // A helper to parse timestamps if show
-    const parseTime = d3.timeParse("%Y-%m-%d-%H-%M-%S");
-    function convertTimestamps(dataJSON) {
-        if (!Array.isArray(dataJSON)) {
-            return [];
-        }
-        if (!dataJSON || !dataJSON.length) {
-            return [];
-        }
-        return dataJSON
-            .map(d => {
-                const parsedDate = parseTime(d.timestamp);
-                if (!parsedDate) return null;
-
-                // Keep only items that match the day in 'day'
-                if (parsedDate.getDay() !== new Date(day).getDay()) {
-                    return null;
-                }
-
-                // If kept, compute fractional hour
-                d.h_of_day_frac = parsedDate.getHours() + parsedDate.getMinutes() / 60;
-                return d;
-            })
-            // Filter out the nulls (mismatched days or unparsable timestamps)
-            .filter(Boolean);
-    }
 
     // Recursive function to handle fetching each type one by one
     function fetchNextType(index) {
@@ -346,7 +345,13 @@ function collectDataFromGitHub(day, dataTypes, drawFunction) {
         fetchJSONEndpoint(url)
             .then(dataJSON => {
                 // Convert timestamps if needed
-                dataCollected[currentType] = convertTimestamps(dataJSON);
+                if (Array.isArray(dataJSON)) {
+                    dataCollected[currentType] = convertTimestamps(dataJSON, day);
+
+                }
+                else {
+                    dataCollected[currentType] = dataJSON;
+                }
                 // Move on to the next type
                 fetchNextType(index + 1);
             })
@@ -357,42 +362,6 @@ function collectDataFromGitHub(day, dataTypes, drawFunction) {
 
     // Start fetching from the first type
     fetchNextType(0);
-}
-
-function applyStripePatternToPathById(svg, pathId, options = {}) {
-    // Default options for the stripe pattern
-    const {
-        patternId = "stripePattern",
-        stripeColor = "black",
-        backgroundColor = "white",
-        stripeWidth = 5,
-        stripeSpacing = 10,
-        stripeAngle = 45
-    } = options;
-
-    // Define the stripe pattern
-    const defs = svg.append("defs");
-    const pattern = defs.append("pattern")
-        .attr("id", patternId)
-        .attr("width", stripeSpacing)
-        .attr("height", stripeSpacing)
-        .attr("patternUnits", "userSpaceOnUse")
-        .attr("patternTransform", `rotate(${stripeAngle})`);
-
-    pattern.append("rect")
-        .attr("width", stripeWidth)
-        .attr("height", stripeSpacing)
-        .attr("fill", stripeColor);
-
-    pattern.append("rect")
-        .attr("x", stripeWidth)
-        .attr("width", stripeSpacing - stripeWidth)
-        .attr("height", stripeSpacing)
-        .attr("fill", backgroundColor);
-
-    // Select the path by ID and apply the pattern
-    svg.select(`#${pathId}`)
-        .attr("fill", `url(#${patternId})`);
 }
 
 function drawPlot(plotData, userOptions) {
@@ -407,7 +376,7 @@ function drawPlot(plotData, userOptions) {
 
         background: { show: true, col: "white" },
         plotStyle: { joined: false, col: "gray", thickness: "0.25", startCap: true, endCap: true, smoothCurve: true },
-        plotRange: { bottom: null, left: null },
+        domain: { bottom: null, left: null },
         smoothing: { bottom: 0, left: 0 },
         axes: { top: false, right: false, left: true, bottom: true },
         tickVals: { top: false, right: false, left: false, bottom: false },
@@ -416,7 +385,8 @@ function drawPlot(plotData, userOptions) {
         plotLabel: "",
         now: { show: false, pos: null },
         segment: { do: false, gap: null },
-        curveEndText: { show: false, fontSize: null, text: null, col: null, xOffset: 13, yOffset: 3 }
+        curveEndText: { show: false, fontSize: null, text: null, col: null, xOffset: 13, yOffset: 3 },
+        markers: false //Usage: markers: {when: "before", list:[{pos: 12, h: 2}], col: "#ff0000", thickness: 2, dashed: false, dashing: "4,4", endCap: true, thickness: 5}
     }
     ops = deepObjectMerger(defaultOptions, userOptions);
 
@@ -497,7 +467,7 @@ function drawPlot(plotData, userOptions) {
     let bottomScale, bottomAxis;
 
     bottomScale = d3.scaleLinear()
-        .domain(ops.plotRange.bottom ? ops.plotRange.bottom : d3.extent(plotData, d => d[ops.dataKeys.bottom]))
+        .domain(ops.domain.bottom ? ops.domain.bottom : d3.extent(plotData, d => d[ops.dataKeys.bottom]))
         .range([0, plotDims.w]);
 
     if (ops.axes.bottom) {
@@ -538,7 +508,7 @@ function drawPlot(plotData, userOptions) {
     let leftScale, leftAxis;
 
     leftScale = d3.scaleLinear()
-        .domain(ops.plotRange.left ? ops.plotRange.left : d3.extent(plotData, d => d[ops.dataKeys.left]))
+        .domain(ops.domain.left ? ops.domain.left : d3.extent(plotData, d => d[ops.dataKeys.left]))
         .nice()
         .range([plotDims.h, 0]);
 
@@ -605,6 +575,30 @@ function drawPlot(plotData, userOptions) {
             plotData = calculateMovingAverage(plotData, ops.dataKeys.left, ops.smoothing.left);
         }
 
+        function drawMarkers() {
+            ops.markers.list.forEach(marker => {
+                let markerElement = plotElement.append("line")
+                    .attr("x1", bottomScale(marker.pos))
+                    .attr("y1", leftScale(ops.domain.left[0]))
+                    .attr("x2", bottomScale(marker.pos))
+                    .attr("y2", leftScale(marker.h))
+                    .attr("stroke", ops.markers.col)
+                    .attr("stroke-width", ops.markers.thickness);
+                if (ops.markers.dashed) { markerElement.attr("stroke-dasharray", ops.markers.dashing); }
+                if (ops.markers.endCap) {
+                    plotElement.append("circle")
+                        .attr("cx", bottomScale(marker.pos))
+                        .attr("cy", leftScale(marker.h))
+                        .attr("r", ops.markers.thickness * ops.markers.endCapSize)
+                        .attr("fill", ops.markers.col);
+                }
+            });
+        }
+
+        if (ops.markers && ops.markers.when == "before") {
+            drawMarkers();
+        }
+
         if (ops.plotStyle.joined) {
             const line = d3.line()
                 .x(d => bottomScale(d[ops.dataKeys.bottom]))
@@ -665,6 +659,10 @@ function drawPlot(plotData, userOptions) {
                 .attr("cy", d => leftScale(d[ops.dataKeys.left]))
                 .attr("r", ops.plotStyle.thickness)
                 .attr("fill", ops.plotStyle.col);
+        }
+
+        if (ops.markers && ops.markers.when == "after") {
+            drawMarkers()
         }
 
         if (ops.now.show) {
@@ -935,16 +933,16 @@ let mainGraphContentLocked = false;
 
 const elementToGrapSettingMapping = {
     "gas_dial_hover_area": { title: "gas_usage", types: ["gas_usage"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime) },
-    "Oktopusz": { title: "room_plot", types: ["room_1_measurements", "room_1_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 1 },
-    "Gólyafészek": { title: "room_plot", types: ["room_2_measurements", "room_2_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 2 },
-    "PK": { title: "room_plot", types: ["room_3_measurements", "room_3_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 3 },
-    "SZGK": { title: "room_plot", types: ["room_4_measurements", "room_4_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 4 },
-    "Mérce": { title: "room_plot", types: ["room_5_measurements", "room_5_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 5 },
-    "Lahmacun": { title: "room_plot", types: ["room_6_measurements", "room_6_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 6 },
-    "Gólyairoda": { title: "room_plot", types: ["room_7_measurements", "room_7_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 7 },
-    "kisterem": { title: "room_plot", types: ["room_8_measurements", "room_8_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 8 },
-    "vendégtér": { title: "room_plot", types: ["room_9_measurements", "room_9_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 9 },
-    "Trafóház": { title: "room_plot", types: ["room_10_measurements", "room_10_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 10 },
+    "Oktopusz": { title: "room_plot", types: ["room_1_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 1 },
+    "Gólyafészek": { title: "room_plot", types: ["room_2_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 2 },
+    "PK": { title: "room_plot", types: ["room_3_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 3 },
+    "SZGK": { title: "room_plot", types: ["room_4_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 4 },
+    "Mérce": { title: "room_plot", types: ["room_5_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 5 },
+    "Lahmacun": { title: "room_plot", types: ["room_6_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 6 },
+    "Gólyairoda": { title: "room_plot", types: ["room_7_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 7 },
+    "kisterem": { title: "room_plot", types: ["room_8_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 8 },
+    "vendégtér": { title: "room_plot", types: ["room_9_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 9 },
+    "Trafóház": { title: "room_plot", types: ["room_10_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 10 },
     "background": mainGraphDefaultSetting
 };
 
@@ -986,7 +984,7 @@ function drawMainGraph(graphData = null) {
     }
     else {
         clearMainGraphs();
-        if (!Object.values(graphData).includes(undefined)) {
+        if (mainGraphSetting.types.length == Object.keys(graphData).length) {
             switch (mainGraphSetting.title) {
                 case "gas_usage":
                     drawPlot(
@@ -994,7 +992,7 @@ function drawMainGraph(graphData = null) {
                         {
                             parentId: "graph",
                             smoothing: { bottom: 0, left: 0 },
-                            plotRange: { bottom: [0, 24], left: [0, 10] },
+                            domain: { bottom: [0, 24], left: [0, 10] },
                             dataKeys: { bottom: "h_of_day_frac", left: "burn_rate_in_m3_per_h" },
                             axesLabel: { bottom: "óra", left: "ráta (m³/h)" },
                             plotLabel: "mai gázfogyasztás",
@@ -1005,7 +1003,7 @@ function drawMainGraph(graphData = null) {
                         {
                             parentId: "graph",
                             smoothing: { bottom: 0, left: 25 },
-                            plotRange: { bottom: [0, 24], left: [0, 10] },
+                            domain: { bottom: [0, 24], left: [0, 10] },
                             dataKeys: { bottom: "h_of_day_frac", left: "burn_rate_in_m3_per_h" },
                             background: { show: false },
                             plotStyle: { joined: true, col: "rgb(0, 0, 0)", thickness: "2", startCap: false }
@@ -1040,14 +1038,14 @@ function drawMainGraph(graphData = null) {
                             {
                                 parentId: "graph",
                                 axes: { left: cycle == 1, bottom: cycle == 1 },
-                                plotRange: { bottom: [0, 24], left: [0.5, 4.5] },
+                                domain: { bottom: [0, 24], left: [0.5, 4.5] },
                                 dataKeys: { bottom: "h_of_day_frac", left: "cycle_state" },
                                 background: { show: cycle == 1, col: "white" },
                                 plotStyle: { joined: true, col: "rgba(255, 64, 0, 0.75)", thickness: "8", startCap: false, endCap: false },
                                 tickVals: { left: [1, 2, 3, 4] },
                                 axesLabel: { bottom: cycle == 1 ? "óra" : false, left: cycle == 1 ? "kör" : false },
                                 plotLabel: cycle == 1 ? "körök kapcsolási mintázata" : false,
-                                show: { show: cycle == 1, pos: maxHFrac },
+                                now: { show: cycle == 1, pos: maxHFrac },
                                 segment: { do: true, gap: 30 / (24 * 60) }
                             }
                         );
@@ -1055,7 +1053,7 @@ function drawMainGraph(graphData = null) {
                             cycleOffData,
                             {
                                 parentId: "graph",
-                                plotRange: { bottom: [0, 24], left: [0.5, 4.5] },
+                                domain: { bottom: [0, 24], left: [0.5, 4.5] },
                                 dataKeys: { bottom: "h_of_day_frac", left: "cycle_state" },
                                 background: { show: false, col: "white" },
                                 tickVals: { left: [1, 2, 3, 4] },
@@ -1066,17 +1064,27 @@ function drawMainGraph(graphData = null) {
                     }
                     break;
                 case "room_plot":
+                    let roomOverrides = graphData["override_requests"][mainGraphSetting.roomNumToPlot];
+                    let requestMarkers = []
+                    if (roomOverrides.length > 0) {
+                        roomOverrides.forEach(request => {
+                            requestMarkers.push({
+                                pos: getFractionalHourOfDay(dateFromTimestamp(request.time)),
+                                h: parseInt(request.set_temp)
+                            })
+                        });
+                    }
                     drawPlot(
-                        //graphData["room_" + mainGraphSetting.roomNumToPlot + "_set_temps"],//.sort((a, b) => a["h_of_day_frac"] - b["h_of_day_frac"]),
                         extractRoomScheduleFromCondensedSchedule(mainGraphSetting.roomNumToPlot),
                         {
                             parentId: "graph",
                             smoothing: { bottom: 0, left: 0 },
-                            plotRange: { bottom: [0, 24], left: [10, 24] },
+                            domain: { bottom: [0, 24], left: [10, 24] },
                             dataKeys: { bottom: "h_of_day_frac", left: "set_temp" },
                             axesLabel: { bottom: "óra", left: "°C" },
-                            plotStyle: { joined: true, col: "rgba(28, 185, 0,0.5)", thickness: "3", startCap: false, endCap: false, smoothCurve: false},
-                            plotLabel: roomDataAndState[mainGraphSetting.roomNumToPlot].name + " kért és mért hőmérséklet"
+                            plotStyle: { joined: true, col: "rgba(28, 185, 0,0.5)", thickness: "3", startCap: false, endCap: false, smoothCurve: false },
+                            plotLabel: roomDataAndState[mainGraphSetting.roomNumToPlot].name + " kért és mért hőmérséklet",
+                            markers: { when: "after", list: requestMarkers, col: "rgba(200,250,0,0.8)", thickness: 3, dashed: false, dashing: "4,4", endCap: true, endCapSize: 1.2}
                         }
                     );
                     drawPlot(
@@ -1085,7 +1093,7 @@ function drawMainGraph(graphData = null) {
                             parentId: "graph",
                             background: { show: false },
                             smoothing: { bottom: 0, left: 10 },
-                            plotRange: { bottom: [0, 24], left: [10, 24] },
+                            domain: { bottom: [0, 24], left: [10, 24] },
                             dataKeys: { bottom: "h_of_day_frac", left: "temp" },
                             plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2", startCap: false, endCap: true },
                             curveEndText: { show: false, fontSize: 10, text: "bla", col: "red" } //DEV
@@ -1096,6 +1104,12 @@ function drawMainGraph(graphData = null) {
             d3.select("#graph").style("fill", "rgba(0,0,0,0)");
             d3.select("#graph").style("fill-opacity", "0");
         }
+    }
+}
+
+function rescueMainGraph() {
+    if (d3.select(".main-graph-instance").size() == 0) {
+        resetMainGraph()
     }
 }
 
@@ -1111,5 +1125,5 @@ d3.xml("canvas.svg").then(fileData => {
     runOnceThenSetInterval(getDataFromFirebase, 5 * 1000);
     runOnceThenSetInterval(drawMainGraph, 60 * 1000);
 
-    //applyStripePatternToPathById("canvas", "Trafóház", options = {});
+    runOnceThenSetInterval(rescueMainGraph, 100);
 });
