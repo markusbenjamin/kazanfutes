@@ -115,13 +115,14 @@ function draw() {
     }
 }
 
-function extractMappingParameters() {
-    const topLeft = d3.select("#status").node().getBBox();
-    const bottomRight = d3.select("#graph").node().getBBox();
+function extractMappingParameters() { //The whole scheme is not really used, should be removed
+    const backgroundBBox = d3.select("#background").node().getBBox();
+    let topLeft = { x: backgroundBBox.x, y: backgroundBBox.y };
+    let bottomRight = { x: backgroundBBox.x + backgroundBBox.width, y: backgroundBBox.y + backgroundBBox.height };
     xOffset = topLeft.x;
     yOffset = topLeft.y;
-    drawingWidth = (bottomRight.x + bottomRight.width) - xOffset;
-    drawingHeight = (bottomRight.y + bottomRight.height) - yOffset;
+    drawingWidth = bottomRight.x - xOffset;
+    drawingHeight = bottomRight.y - yOffset;
     aspectRatio = drawingWidth / drawingHeight;
     zoomFactor = 1 / 3;
 }
@@ -142,8 +143,9 @@ function mapSize(wRelative, hRelative) {
     }
 }
 
+
 function getBBoxP5jsDimensions(id) {
-    const relativeDims = getBBoxRelativeDimensions(id);
+    const relativeDims = getBBoxRelativeDimensionsOld(id);
     let p = mapPos(relativeDims.x, relativeDims.y);
     let s = mapSize(relativeDims.w, relativeDims.h);
     let c = mapPos(relativeDims.cx, relativeDims.cy);
@@ -158,6 +160,23 @@ function getBBoxP5jsDimensions(id) {
 }
 
 function getBBoxRelativeDimensions(id) {
+    const bgDims = d3.select("#background").node().getBBox();
+    const targetDims = d3.select("#" + id).node().getBBox();
+    let relativeDims = {
+        x: (targetDims.x - bgDims.x)/bgDims.width,
+        y: (targetDims.y - bgDims.y)/bgDims.height,
+        w: targetDims.width / bgDims.width,
+        h: targetDims.height / bgDims.height,
+        width: targetDims.width / bgDims.width,
+        height: targetDims.height / bgDims.height
+    }
+    relativeDims["cx"] = relativeDims.x + relativeDims.w / 2;
+    relativeDims["cy"] = relativeDims.y + relativeDims.h / 2;
+    console.log(relativeDims);
+    return relativeDims;
+}
+
+function getBBoxRelativeDimensionsOld(id) {
     const bBoxAbsoluteDims = d3.select("#" + id).node().getBBox();
     return {
         x: (bBoxAbsoluteDims.x - xOffset) / drawingWidth,
@@ -174,6 +193,8 @@ function getBBoxDrawingDimensions(id) {
     return {
         x: d3Dims.x,
         y: d3Dims.y,
+        cx: d3Dims.x + d3Dims.width / 2,
+        cy: d3Dims.y + d3Dims.height / 2,
         w: d3Dims.width,
         h: d3Dims.height,
         width: d3Dims.width,

@@ -237,13 +237,13 @@ function getDataFromFirebase() {
             )
             timeSinceLastRequestGranularity = ' perce.'
             if (timeSinceLastRequest > 90) {
-                timeSinceLastRequest = roundTo(timeSinceLastRequest / 60, 0.7);
+                timeSinceLastRequest = roundTo(timeSinceLastRequest / 60, 0.5);
                 timeSinceLastRequestGranularity = ' órája.'
             }
             console.log(timeSinceLastRequest);
 
             let requestOrigin = timePassedSince(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp))
-        > timePassedSince(dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp)) ? "QR, " : "form, "
+                > timePassedSince(dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp)) ? "QR, " : "form, "
 
             updateGeneralInfobox(
                 {
@@ -567,7 +567,7 @@ function drawPlot(plotData, userOptions) {
         // Plot label
         plotElement.append("text")
             .attr("x", plotDims.w / 2)
-            .attr("y", -plotDims.h * ops.margins.top * 0.75)
+            .attr("y", -plotDims.h * ops.margins.top * 0.5)
             .style("text-anchor", "middle")
             .style("font-size", "7px")
             .style("font-family", "Consolas")
@@ -771,6 +771,9 @@ function writeGasUsageToDial(gasData = null) {
         const dialBoxBB = getBBoxDrawingDimensions("gas_dial");
         let textXOffsetFactor;
         gasTotal = roundTo(gasData[gasData.length - 1].burnt_volume, 0.1);
+        if (Number.isInteger(gasTotal)) {
+            gasTotal += ".0";
+        }
         if (gasTotal < 10) {
             textXOffsetFactor = 0.16;
         }
@@ -882,8 +885,12 @@ function updateGeneralInfobox(info) {
     addLineToBox(info.cyclesOn, 0.02, lineHeight * 8, lineFontSize);
     addLineToBox("Gázfogyasztási ráta: " + currentGasUsageRate + (isValidNumber(currentGasUsageRate) ? " m³/h." : ""), 0.02, lineHeight * 9, lineFontSize);
     if (isValidNumber(currentGasTotal)) {
-        addLineToBox("Összes elégett gáz: " + currentGasTotal + " m³.", 0.02, lineHeight * 10, lineFontSize);
-        addLineToBox("Összköltség kb. " + insertSubstringEveryNFromRight(roundTo(currentGasTotal * 350, 1), ",", 3) + " Ft.", 0.02, lineHeight * 11, lineFontSize);
+        let gasTotalString = currentGasTotal;
+        if (Number.isInteger(gasTotalString)) {
+            gasTotalString += ".0";
+        }
+        addLineToBox("Összes elégett gáz: " + gasTotalString + " m³.", 0.02, lineHeight * 10, lineFontSize);
+        addLineToBox("Összköltség kb. " + roundTo(currentGasTotal * 350 / 1000, 0.1) + " eFt.", 0.02, lineHeight * 11, lineFontSize);
     }
 }
 
@@ -1130,9 +1137,31 @@ function rescueMainGraph() {
     }
 }
 
+let isMobile, smallerDimension, initialZoom, initialPos;
+
+function setViewParameters(centeredId) {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    // Determine the smaller viewport dimension
+    smallerDimension = Math.min(width, height);
+    // Detect if the device is mobile (basic check)
+    isMobile = /Mobi|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+        initialZoom = smallerDimension * 0.006;
+        centeredId = "general_infobox";
+    }
+    else {
+        initialZoom = smallerDimension * 0.003;
+    }
+    let centeredDims = getBBoxRelativeDimensions(centeredId);
+    initialPos = { x: centeredDims.cx, y: centeredDims.cy };
+}
+
 d3.xml("canvas.svg").then(fileData => {
     insertCanvasFromFile(fileData);
-    centerAndZoomRelativePointOfCanvas(0.5, 0.5, 2.2);
+    setViewParameters("background");
+    centerAndZoomRelativePointOfCanvas(initialPos.x, initialPos.y, initialZoom);
     setupTooltip();
     initializeCycleMarkers();
     initializeInfoboxes();
