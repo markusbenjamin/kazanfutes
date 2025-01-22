@@ -11,7 +11,7 @@ Usual logging and reporting.
 from utils.project import *
 
 export_path_prefix = ""
-#export_path_prefix = "dev/"
+export_path_prefix = "dev/"
 
 #region Initialize settings and else
 report('\nINITIALIZE')
@@ -404,10 +404,13 @@ def update_valid_requests_on_firebase():
 #endregion
 
 if __name__ == "__main__":
-    settings['dev'] = False
+    settings['dev'] = True
     if settings['dev']:
         settings['verbosity'] = True
         settings['log'] = False
+    
+    update_valid_requests_on_firebase()
+    exit()
 
     while True:
         updated_heating_config = update_local_heating_control_config()

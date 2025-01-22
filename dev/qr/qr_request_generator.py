@@ -12,7 +12,7 @@ def wrap_text(max_chars, text):
 #temp: params.get("temp") || "hány fok"
 
 
-#base_url = 'https://markusbenjamin.github.io/kazanfutes/send_via_qr_code.html'
+base_url = 'https://markusbenjamin.github.io/kazanfutes/send_via_qr_code.html'
 types = list(range(0,3))
 
 #room_names = [info['name'] for info in get_rooms_info().values()]
@@ -23,7 +23,7 @@ types = list(range(0,3))
 base_url = 'http://127.0.0.1:5500/docs/send_via_qr_code.html'
 room_names = ["SZGK"]
 titles = ["test"]
-untils = ["16"]
+untils = ["18"]
 temps = [20]
 
 request_titles = []
