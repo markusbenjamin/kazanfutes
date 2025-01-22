@@ -255,9 +255,9 @@ function getDataFromFirebase() {
                 {
                     cyclesOn: onCycles.length > 0 ? "Bekapcsolt körök: " + onCycles.join(", ") + "." : "Senki nem kér fűtést.",
                     externalTemp: "Külső hőmérséklet: " + systemJSON.state.external_temp + " °C.",
-                    controlLastRan: "Vezérlés lefutott: " + hourStamp(lastControlRan,true)+".",
+                    controlLastRan: "Vezérlés lefutott: " + hourStamp(lastControlRan, true) + ".",
                     latestRequest: { target: requestTarget, origin: requestOrigin, timeSince: timeSinceLastRequest, granularity: timeSinceLastRequestGranularity, hourStamp: lastRequestHourStamp },
-                    scheduleLastUpdated: "Beállítások frissítve: " + hourStamp(lastScheduleUpdate)+".",
+                    scheduleLastUpdated: "Beállítások frissítve: " + hourStamp(lastScheduleUpdate) + ".",
                     averageControlDiff: averageControlDiff
                 }
             );
@@ -629,6 +629,10 @@ function drawPlot(plotData, userOptions) {
 
             const segments = ops.segment.do ? splitDataIntoSegments(plotData, ops.dataKeys.bottom, ops.segment.gap) : [plotData];
 
+            if (segments.length > 1 && ops.plotLabel.length > 2) {
+                console.log(ops.plotLabel + ", " + segments.length)
+            }
+
             // Draw a path for each segment
             segments.forEach((segment, index) => {
                 if (!segment || segment.length === 0) return;
@@ -639,6 +643,7 @@ function drawPlot(plotData, userOptions) {
                     .attr("fill", "none")
                     .attr("stroke", ops.plotStyle.col)
                     .attr("stroke-width", ops.plotStyle.thickness)
+                    .attr("stroke-linecap", "butt")
                     .attr("d", line);
 
                 // Optionally cap the end of each segment (rather than just the very last one)
@@ -1088,30 +1093,30 @@ function drawMainGraph(graphData = null) {
                                 }
                             });
                         drawPlot(
-                            cycleOnData,
+                            cycleOffData,
                             {
                                 parentId: "graph",
                                 axes: { left: cycle == 1, bottom: cycle == 1 },
                                 domain: { bottom: [0, 24], left: [0.5, 4.5] },
                                 dataKeys: { bottom: "h_of_day_frac", left: "cycle_state" },
                                 background: { show: cycle == 1, col: "white" },
-                                plotStyle: { joined: true, col: "rgba(255, 64, 0, 0.75)", thickness: "8", startCap: false, endCap: false },
+                                plotStyle: { joined: true, col: "rgba(8, 86, 222, 0.23)", thickness: "6", startCap: false, endCap: false },
                                 tickVals: { left: [1, 2, 3, 4] },
                                 axesLabel: { bottom: cycle == 1 ? "óra" : false, left: cycle == 1 ? "kör" : false },
                                 plotLabel: cycle == 1 ? "körök kapcsolási mintázata" : false,
                                 now: { show: cycle == 1, pos: maxHFrac },
-                                segment: { do: true, gap: 30 / (24 * 60) }
+                                segment: { do: true, gap: 100 / (24 * 60) }
                             }
                         );
                         drawPlot(
-                            cycleOffData,
+                            cycleOnData,
                             {
                                 parentId: "graph",
                                 domain: { bottom: [0, 24], left: [0.5, 4.5] },
                                 dataKeys: { bottom: "h_of_day_frac", left: "cycle_state" },
-                                background: { show: false, col: "white" },
+                                background: { show: false},
                                 tickVals: { left: [1, 2, 3, 4] },
-                                plotStyle: { joined: true, col: "rgba(8, 86, 222, 0.23)", thickness: "6", startCap: false, endCap: false },
+                                plotStyle: { joined: true, col: "rgba(255, 64, 0, 0.75)", thickness: "8", startCap: false, endCap: false },
                                 segment: { do: true, gap: 100 / (24 * 60) }
                             }
                         );
@@ -1120,7 +1125,6 @@ function drawMainGraph(graphData = null) {
                 case "room_plot":
                     let roomOverrides = graphData["override_requests"][mainGraphSetting.roomNumToPlot];
                     roomOverrides = requestLists[mainGraphSetting.roomNumToPlot];
-                    console.log(roomOverrides);
                     requestMarkers = [];
                     if (roomOverrides) {
                         roomOverrides.forEach(request => {
