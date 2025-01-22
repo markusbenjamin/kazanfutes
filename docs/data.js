@@ -1149,7 +1149,7 @@ function drawMainGraph(graphData = null) {
                         {
                             parentId: "graph",
                             smoothing: { bottom: 0, left: 0 },
-                            domain: { bottom: [0, 24], left: [10, 24] },
+                            domain: { bottom: [0, 24], left: [13, 24] },
                             dataKeys: { bottom: "h_of_day_frac", left: "set_temp" },
                             axesLabel: { bottom: "óra", left: "°C" },
                             plotStyle: { joined: true, col: "rgba(28, 185, 0,0.5)", thickness: "3", startCap: false, endCap: false, smoothCurve: false },
@@ -1163,7 +1163,7 @@ function drawMainGraph(graphData = null) {
                             parentId: "graph",
                             background: { show: false },
                             smoothing: { bottom: 0, left: 10 },
-                            domain: { bottom: [0, 24], left: [10, 24] },
+                            domain: { bottom: [0, 24], left: [13, 24] },
                             dataKeys: { bottom: "h_of_day_frac", left: "temp" },
                             plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2", startCap: false, endCap: true },
                             curveEndText: { show: false, fontSize: 10, text: "bla", col: "red" } //DEV
