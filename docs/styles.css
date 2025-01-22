@@ -1,6 +1,6 @@
 body {
-    background-color: #fffee4;
-    font-family: Arial, sans-serif;
+    background-color: rgba(245,245,0,0);
+    font-family: Consolas, sans-serif, sans-serif;
     /* Set the font */
     /*color: #e8cc15;*/
     margin: 0;
@@ -10,14 +10,15 @@ body {
 .container {
     text-align: center;
     margin: 0 auto;
-    padding-top: 10px;
+    padding-top: 30px;
     padding-bottom: 0px;
     width: 80%;
 }
 
 h1 {
     font-size: 36px;
-    color: #e8cc15;
+    color: #000000ab;
+    padding-top: 25px;
     margin-bottom: 40px;
     text-align: center;
 }
@@ -34,11 +35,12 @@ li {
 a {
     text-decoration: none;
     font-size: 36px;
-    color: #e8cc15;
+    color: #000000ab;
 }
 
 a:hover {
-    color: #c5ab00;
+    text-decoration: none;
+    color: #000000;
 }
 
 table {
@@ -57,7 +59,7 @@ th,
 td {
     padding: 10px;
     text-align: center;
-    border: 2px dotted #e8cc15;
-    color: #c5ab00;
+    border: 2px dotted #000000ab;
+    color: #000000;
     font-size: 20px;
 }

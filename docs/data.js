@@ -163,7 +163,8 @@ function getDataFromFirebase() {
 
                 const roomTemp = roundTo(systemJSON.state['measured_temps'][roomNum], 0.1);
                 const timeSinceLastSensorUpdate = timePassedSince(dateFromTimestamp(roomLastUpdated));
-                if (timeSinceLastSensorUpdate > 60) {
+                console.log(timeSinceLastSensorUpdate)
+                if (timeSinceLastSensorUpdate > 2 * 60) {
                     roomDataAndState[roomNum].temp = "szenzor hiba";
                 }
                 else {
@@ -175,7 +176,7 @@ function getDataFromFirebase() {
                 const roomSet = systemJSON.state['set_temps'][roomNum];
                 roomDataAndState[roomNum].set = roomSet;
 
-                if (timeSinceLastSensorUpdate > 60) {
+                if (timeSinceLastSensorUpdate > 2 * 60) {
                     controlDiffs[roomNum] = "missing";
 
                 }
@@ -185,7 +186,7 @@ function getDataFromFirebase() {
                     averagerCount++;
                 }
             });
-            let averageControlDiff = totalControlDiff / averagerCount;
+            let averageControlDiff = (totalControlDiff - controlDiffs[10]) / (averagerCount - 1);
 
             const roomTemp = roundTo((systemJSON.state['oktopusz_keramia'][1] + systemJSON.state['oktopusz_keramia'][2]) / 2, 0.1);
             //const roomTemp = roundTo(systemJSON.state['oktopusz_keramia'][1],0.1);
@@ -713,7 +714,7 @@ const roomDataAndState = {
 };
 
 function updateRoomColor(roomId, temp, lastUpdated) {
-    if (timePassedSince(dateFromTimestamp(lastUpdated)) > 60) {
+    if (timePassedSince(dateFromTimestamp(lastUpdated)) > 2 * 60) {
         d3.select("#" + roomId).style("fill", "rgb(31, 31, 32,0.8)");
     }
     else {
@@ -1147,15 +1148,17 @@ function setViewParameters(centeredId) {
     smallerDimension = Math.min(width, height);
     // Detect if the device is mobile (basic check)
     isMobile = /Mobi|Android/i.test(navigator.userAgent);
+    let centeringOffsetFactor = { x: 1, y: 1 }
     if (isMobile) {
         initialZoom = smallerDimension * 0.006;
         centeredId = "general_infobox";
+        centeringOffsetFactor.y = 1.2;
     }
     else {
         initialZoom = smallerDimension * 0.003;
     }
     let centeredDims = getBBoxRelativeDimensions(centeredId);
-    initialPos = { x: centeredDims.cx, y: centeredDims.cy };
+    initialPos = { x: centeredDims.cx * centeringOffsetFactor.x, y: centeredDims.cy * centeringOffsetFactor.y };
 }
 
 d3.xml("canvas.svg").then(fileData => {

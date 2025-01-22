@@ -11,21 +11,26 @@ def wrap_text(max_chars, text):
 #until: params.get("until") || null,
 #temp: params.get("temp") || "hány fok"
 
-#base_url = 'http://127.0.0.1:5500/docs/send_via_qr_code.html'
-base_url = 'https://markusbenjamin.github.io/kazanfutes/send_via_qr_code.html'
+
+#base_url = 'https://markusbenjamin.github.io/kazanfutes/send_via_qr_code.html'
 types = list(range(0,3))
 
-room_names = [info['name'] for info in get_rooms_info().values()]
+#room_names = [info['name'] for info in get_rooms_info().values()]
+#titles = ['fűtés_délutánig_be','fűtés_éjfélig_be','fűtés_éjfélig_ki']
+#untils = ['18','24','24']
+#temps = ['21','21','16']
 
-titles = ['fűtés_délutánig_be','fűtés_éjfélig_be','fűtés_éjfélig_ki']
-untils = ['18','24','24']
-temps = ['21','21','16']
+base_url = 'http://127.0.0.1:5500/docs/send_via_qr_code.html'
+room_names = ["SZGK"]
+titles = ["test"]
+untils = ["16"]
+temps = [20]
 
 request_titles = []
 request_room_names = []
 all_requests = []
 
-for room_name in room_names[0:-1]:
+for room_name in room_names:
     for request_type in range(0,len(titles)):
         request = []
         request.append(f'room_name={room_name}')
