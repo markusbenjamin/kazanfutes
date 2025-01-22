@@ -867,5 +867,16 @@
         "reported_timestamp": "2025-01-22-00-05-05",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to initialize heating control: failed to interact with node 'system' via get: HTTPSConnectionPool(host='kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app', port=443): Max retries exceeded with url: /system/.json (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xf56e2a30>: Failed to establish a new connection: [Errno 101] Network is unreachable')) (ConnectionError).",
+        "severity": 3,
+        "origin": "heating_control.py:15 --> project.py/__init__:244 --> project.py/read:270 --> project.py/interact:264",
+        "origin_timestamp": "2025-01-22-04-26-26",
+        "registration_timestamp": "2025-01-22-04-26-26",
+        "reported": true,
+        "reported_timestamp": "2025-01-22-04-30-08",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
