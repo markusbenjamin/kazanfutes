@@ -888,7 +888,7 @@ function updateGeneralInfobox(info) {
     // Draw content
 
     let lineFontSize = 6.5;
-    let lineHeight = 0.065;
+    let lineHeight = 0.07;
     let lineShift = 0;
 
     addLineToBox(info.externalTemp, 0.02, lineHeight * 2, lineFontSize);
