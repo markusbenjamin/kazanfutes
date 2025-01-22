@@ -900,5 +900,16 @@
         "reported_timestamp": "2025-01-22-14-55-06",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to update local copy of weekly_cycle/1: failed to set up Google Sheets API: <HttpError 503 when requesting https://sheets.googleapis.com/v4/spreadsheets/1OmcLOB4OvFqmVw6Jq1lxu5fo7FchPBNMM6MFoNgM7r4?alt=json returned \"The service is currently unavailable.\". Details: \"The service is currently unavailable.\"> (HttpError).",
+        "severity": 3,
+        "origin": "schedule_and_config_updater.py/update_local_scheduling_files:173 --> project.py/download_google_sheet_to_2D_array:1596",
+        "origin_timestamp": "2025-01-22-21-40-15",
+        "registration_timestamp": "2025-01-22-21-40-15",
+        "reported": true,
+        "reported_timestamp": "2025-01-22-21-45-12",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
