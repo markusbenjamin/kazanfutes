@@ -284,13 +284,31 @@ function getDataFromFirebase() {
 
                 // Update misc data
                 let newGasUsageRate = roundTo(0.1 / (systemJSON.state.gas.dial_turn_secs / 3600), 0.1);
-                currentGasUsageRate = isValidNumber(newGasUsageRate) ? newGasUsageRate : currentGasUsageRate
+                if(!currentGasUsageRate){
+                    currentGasUsageRate = newGasUsageRate;   
+                }
+                else if (isValidNumber(newGasUsageRate) && Math.abs(newGasUsageRate - currentGasUsageRate) > 0.05) {
+                    prevGasUsageRate = currentGasUsageRate;
+                    currentGasUsageRate = newGasUsageRate;
+                    if (lastGasUpdate) {
+                        timeItTookToUpdateGasUsage = new Date() - lastGasUpdate
+                        lastGasUpdate = new Date();
+                    }
+                    else {
+                        lastGasUpdate = new Date();
+                    }
+                }
+                console.log(lastGasUpdate)
+                console.log(currentGasUsageRate)
+                console.log(timeItTookToUpdateGasUsage)
             });
         })
         .catch(error => {
             console.error('Error fetching data from Firebase:', error);
         });
 }
+
+let lastGasUpdate, timeItTookToUpdateGasUsage, prevGasUsageRate;
 
 function extractRoomScheduleFromCondensedSchedule(roomNum) {
     if (condensedSchedule === undefined) { return undefined }
@@ -775,9 +793,9 @@ function writeGasUsageToDial(gasData = null) {
         currentGasTotal = roundTo(gasData[gasData.length - 1].burnt_volume, 0.1);
         if (currentGasTotal == NaN) { currentGasTotal = 0 };
 
-        if (isValidNumber(currentGasUsageRate) == false) {
-            currentGasUsageRate = roundTo(gasData[gasData.length - 1].burn_rate_in_m3_per_h, 0.1);
-        }
+        //if (isValidNumber(currentGasUsageRate) == false) {
+        //    currentGasUsageRate = roundTo(gasData[gasData.length - 1].burn_rate_in_m3_per_h, 0.1);
+        //}
 
         const dialBoxBB = getBBoxDrawingDimensions("gas_dial");
         let textXOffsetFactor;
@@ -1114,7 +1132,7 @@ function drawMainGraph(graphData = null) {
                                 parentId: "graph",
                                 domain: { bottom: [0, 24], left: [0.5, 4.5] },
                                 dataKeys: { bottom: "h_of_day_frac", left: "cycle_state" },
-                                background: { show: false},
+                                background: { show: false },
                                 tickVals: { left: [1, 2, 3, 4] },
                                 plotStyle: { joined: true, col: "rgba(255, 64, 0, 0.75)", thickness: "8", startCap: false, endCap: false },
                                 segment: { do: true, gap: 100 / (24 * 60) }
