@@ -1084,7 +1084,7 @@ function drawMainGraph(graphData = null) {
                             axesLabel: { bottom: "óra", left: "°C" },
                             plotStyle: { joined: true, col: "rgba(28, 185, 0,0.5)", thickness: "3", startCap: false, endCap: false, smoothCurve: false },
                             plotLabel: roomDataAndState[mainGraphSetting.roomNumToPlot].name + " kért és mért hőmérséklet",
-                            markers: { when: "after", list: requestMarkers, col: "rgba(200,250,0,0.8)", thickness: 3, dashed: false, dashing: "4,4", endCap: true, endCapSize: 1.2}
+                            markers: { when: "after", list: requestMarkers, col: "rgba(245,245,0,1)", thickness: 1.5, dashed: true, dashing: "6,3", endCap: true, endCapSize: 2}
                         }
                     );
                     drawPlot(
