@@ -140,7 +140,7 @@ function setupTooltip() {
     });
 }
 
-let condensedSchedule;
+let condensedSchedule, requestLists;
 
 function getDataFromFirebase() {
     const url = "https://kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app/.json";
@@ -151,6 +151,8 @@ function getDataFromFirebase() {
             const updateJSON = fullFirebaseDataJSON.update;
 
             condensedSchedule = scheduleJSON.condensed_schedule;
+            requestLists = scheduleJSON.request_lists;
+
 
             // Update rooms
             const roomNums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -593,16 +595,16 @@ function drawPlot(plotData, userOptions) {
         function drawMarkers() {
             ops.markers.list.forEach(marker => {
                 let markerElement = plotElement.append("line")
-                    .attr("x1", bottomScale(marker.pos))
+                    .attr("x1", bottomScale(marker.pos ? marker.pos : marker.x1))
                     .attr("y1", leftScale(ops.domain.left[0]))
-                    .attr("x2", bottomScale(marker.pos))
+                    .attr("x2", bottomScale(marker.pos ? marker.pos : marker.x2))
                     .attr("y2", leftScale(marker.h))
                     .attr("stroke", ops.markers.col)
                     .attr("stroke-width", ops.markers.thickness);
                 if (ops.markers.dashed) { markerElement.attr("stroke-dasharray", ops.markers.dashing); }
                 if (ops.markers.endCap) {
                     plotElement.append("circle")
-                        .attr("cx", bottomScale(marker.pos))
+                        .attr("cx", bottomScale(marker.pos ? marker.pos : marker.x2))
                         .attr("cy", leftScale(marker.h))
                         .attr("r", ops.markers.thickness * ops.markers.endCapSize)
                         .attr("fill", ops.markers.col);
@@ -882,7 +884,7 @@ function updateGeneralInfobox(info) {
     }
 
     addLineToBox(info.cyclesOn, 0.02, lineHeight * 8, lineFontSize);
-    addLineToBox("Gázfogyasztási ráta: " + (isValidNumber(currentGasUsageRate) ? currentGasUsageRate : "" ) + (isValidNumber(currentGasUsageRate) ? " m³/h." : ""), 0.02, lineHeight * 9, lineFontSize);
+    addLineToBox("Gázfogyasztási ráta: " + (isValidNumber(currentGasUsageRate) ? currentGasUsageRate : "") + (isValidNumber(currentGasUsageRate) ? " m³/h." : ""), 0.02, lineHeight * 9, lineFontSize);
     if (isValidNumber(currentGasTotal)) {
         let gasTotalString = currentGasTotal;
         if (Number.isInteger(gasTotalString)) {
@@ -1088,13 +1090,25 @@ function drawMainGraph(graphData = null) {
                     break;
                 case "room_plot":
                     let roomOverrides = graphData["override_requests"][mainGraphSetting.roomNumToPlot];
-                    let requestMarkers = []
-                    if (roomOverrides.length > 0) {
+                    roomOverrides = requestLists[mainGraphSetting.roomNumToPlot];
+                    console.log(roomOverrides);
+                    requestMarkers = [];
+                    if (roomOverrides) {
                         roomOverrides.forEach(request => {
-                            requestMarkers.push({
-                                pos: getFractionalHourOfDay(dateFromTimestamp(request.time)),
-                                h: parseInt(request.set_temp)
-                            })
+                            if (getUnixDay() == getUnixDay(dateFromTimestamp(request.time)) && getUnixDay() == getUnixDay(dateFromTimestamp(request.timestamp))) {
+                                requestMarkers.push({
+                                    //x1: getFractionalHourOfDay(dateFromTimestamp(request.timestamp)),
+                                    //x2: getFractionalHourOfDay(dateFromTimestamp(request.time)),
+                                    pos: getFractionalHourOfDay(dateFromTimestamp(request.time)),
+                                    h: parseInt(request.set_temp)
+                                })
+                            }
+                            else if (getUnixDay() == getUnixDay(dateFromTimestamp(request.time))) {
+                                requestMarkers.push({
+                                    pos: getFractionalHourOfDay(dateFromTimestamp(request.time)),
+                                    h: parseInt(request.set_temp)
+                                })
+                            }
                         });
                     }
                     drawPlot(
