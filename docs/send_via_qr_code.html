@@ -36,7 +36,7 @@
 
         // Function to send data to Google Sheets
         function sendDataToGoogleSheet(data) {
-            fetch("https://script.google.com/macros/s/AKfycbzuVwrycuJ-a3RQeqbfCt49I_5u4VTsm2EIeV4kKYQCApZgQS-OcyyQzkNduFXZrzi1pg/exec", {
+            fetch("https://script.google.com/macros/s/AKfycbwcAM0W6kodeoSNBP4bHeDJnS-pS1_4MV2R47BYJZmQstf_KQO6wXvqEeTfUWeOu5zO/exec", {
                 method: "POST",
                 mode: "no-cors",  // Prevent CORS issues
                 headers: {
@@ -44,7 +44,10 @@
                 },
                 body: JSON.stringify(data)
             })
-                .then(response => console.log("Data sent successfully"))
+                .then(response => {
+                    console.log("Data sent successfully:");
+                    console.log(JSON.stringify(data));
+                })
                 .catch(error => console.error("Error:", error));
         }
 
