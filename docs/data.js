@@ -211,7 +211,8 @@ function getDataFromFirebase() {
                 systemJSON.state.pump_states[cycleNum] == 1 ? onCycles.push(cycleNum) : "";
             });
 
-            let timeSinceControlLastRan = timePassedSince(dateFromTimestamp(systemJSON.state.last_updated), 'seconds');
+            let lastControlRan = dateFromTimestamp(systemJSON.state.last_updated);
+            let timeSinceControlLastRan = timePassedSince(lastControlRan, 'seconds');
             let lastControlRanGranularity = ' másodperce.'
             if (timeSinceControlLastRan > 90) {
                 timeSinceControlLastRan = roundTo(timeSinceControlLastRan / 60, 0.1);
@@ -225,7 +226,8 @@ function getDataFromFirebase() {
                 timeSinceControlLastRan = 0
             }
 
-            let timeSinceLastScheduleUpdate = timePassedSince(dateFromTimestamp(scheduleJSON.last_updated), 'minutes');
+            let lastScheduleUpdate = dateFromTimestamp(scheduleJSON.last_updated)
+            let timeSinceLastScheduleUpdate = timePassedSince(lastScheduleUpdate, 'minutes');
             let schedLastUpdateGranularity = ' perce.';
 
             if (timeSinceLastScheduleUpdate > 90) {
@@ -246,13 +248,16 @@ function getDataFromFirebase() {
             let requestOrigin = timePassedSince(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp))
                 > timePassedSince(dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp)) ? "QR" : "form"
             let requestTarget = requestOrigin == "QR" ? updateJSON.override_rooms_qr.room_name : updateJSON.override_rooms.room_name
+
+            let lastRequestHourStamp = hourStamp(requestOrigin == "QR" ? dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp) : dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp));
+
             updateGeneralInfobox(
                 {
                     cyclesOn: onCycles.length > 0 ? "Bekapcsolt körök: " + onCycles.join(", ") + "." : "Senki nem kér fűtést.",
                     externalTemp: "Külső hőmérséklet: " + systemJSON.state.external_temp + " °C.",
-                    controlLastRan: "Vezérlés lefutott: " + timeSinceControlLastRan + lastControlRanGranularity,
-                    latestRequest: { target: requestTarget, origin: requestOrigin, timeSince: timeSinceLastRequest, granularity: timeSinceLastRequestGranularity },
-                    scheduleLastUpdated: "Beállítások frissítve: " + timeSinceLastScheduleUpdate + schedLastUpdateGranularity,
+                    controlLastRan: "Vezérlés lefutott: " + hourStamp(lastControlRan,true)+".",
+                    latestRequest: { target: requestTarget, origin: requestOrigin, timeSince: timeSinceLastRequest, granularity: timeSinceLastRequestGranularity, hourStamp: lastRequestHourStamp },
+                    scheduleLastUpdated: "Beállítások frissítve: " + hourStamp(lastScheduleUpdate)+".",
                     averageControlDiff: averageControlDiff
                 }
             );
@@ -890,20 +895,12 @@ function updateGeneralInfobox(info) {
 
     addLineToBox(info.controlLastRan, 0.02, lineHeight * 3.5, lineFontSize);
 
-    let latestRequestString = "Utolsó kérés: " + info.latestRequest.target + ", " + info.latestRequest.timeSince + " " + info.latestRequest.granularity + ", (" + info.latestRequest.origin + ").";
+    let latestRequestString = "Utolsó kérés: " + info.latestRequest.hourStamp + ", " + info.latestRequest.origin + ", " + info.latestRequest.target + "."
     if (info.latestRequest.granularity == "órája" && info.latestRequest.timeSince > getFractionalHourOfDay()) {
         latestRequestString = "Ma még nem érkezett kérés."
     }
     if (latestRequestString.length > 35) {
-        //lineShift = 0;
-        //let latestRequestString1 = "Utolsó kérés: " + info.latestRequest.target + ", " + info.latestRequest.timeSince + " " + info.latestRequest.granularity + ",";
-        //let latestRequestString2 = info.latestRequest.origin + "."
-        //addLineToBox(latestRequestString1, 0.02, lineHeight * 4.5, lineFontSize);
-        //addLineToBox(latestRequestString2, 0.02, lineHeight * 5.5, lineFontSize);
-        //latestRequestString = "Utolsó kérés: " + info.latestRequest.target + ", " + info.latestRequest.timeSince + " " + info.latestRequest.granularity + ", " + (info.latestRequest.origin == "QR" ? "QR." : "f.");
-        //addLineToBox(latestRequestString, 0.02, lineHeight * 4.5, lineFontSize);
-
-        latestRequestString = "Utolsó kérés: " + roomAbbreviations[info.latestRequest.target] + ", " + info.latestRequest.timeSince + " " + info.latestRequest.granularity + ", " + info.latestRequest.origin + ".";
+        latestRequestString = "Utolsó kérés: " + info.latestRequest.hourStamp + ", " + info.latestRequest.origin + ", " + roomAbbreviations[info.latestRequest.target] + ".";
     }
     addLineToBox(latestRequestString, 0.02, lineHeight * 4.5, lineFontSize);
 
