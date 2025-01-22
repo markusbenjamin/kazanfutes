@@ -186,7 +186,7 @@ function getDataFromFirebase() {
                     averagerCount++;
                 }
             });
-            let averageControlDiff = (totalControlDiff - controlDiffs[10]) / (averagerCount - 1);
+            let averageControlDiff = (totalControlDiff - (isValidNumber(controlDiffs[10]) ? controlDiffs[10] : 0)) / (averagerCount - 1);
 
             const roomTemp = roundTo((systemJSON.state['oktopusz_keramia'][1] + systemJSON.state['oktopusz_keramia'][2]) / 2, 0.1);
             //const roomTemp = roundTo(systemJSON.state['oktopusz_keramia'][1],0.1);
