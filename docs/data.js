@@ -237,22 +237,23 @@ function getDataFromFirebase() {
                 timePassedSince(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp)),
                 timePassedSince(dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp))
             )
-            timeSinceLastRequestGranularity = ' perce.'
+            timeSinceLastRequestGranularity = 'perce'
             if (timeSinceLastRequest > 90) {
                 timeSinceLastRequest = roundTo(timeSinceLastRequest / 60, 0.5);
-                timeSinceLastRequestGranularity = ' órája.'
+                timeSinceLastRequestGranularity = 'órája'
             }
 
             let requestOrigin = timePassedSince(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp))
                 > timePassedSince(dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp)) ? "QR" : "form"
             let requestTarget = requestOrigin == "QR" ? updateJSON.override_rooms_qr.room_name : updateJSON.override_rooms.room_name
-
+            requestOrigin = "form"
+            requestTarget = "Oktopusz"
             updateGeneralInfobox(
                 {
                     cyclesOn: onCycles.length > 0 ? "Bekapcsolt körök: " + onCycles.join(", ") + "." : "Senki nem kér fűtést.",
                     externalTemp: "Külső hőmérséklet: " + systemJSON.state.external_temp + " °C.",
                     controlLastRan: "Vezérlés lefutott: " + timeSinceControlLastRan + lastControlRanGranularity,
-                    latestRequest: "Utolsó kérés: " + requestOrigin +", "+ requestTarget + ", " + timeSinceLastRequest + timeSinceLastRequestGranularity,
+                    latestRequest: { target: requestTarget, origin: requestOrigin, timeSince: timeSinceLastRequest, granularity: timeSinceLastRequestGranularity },
                     scheduleLastUpdated: "Beállítások frissítve: " + timeSinceLastScheduleUpdate + schedLastUpdateGranularity,
                     averageControlDiff: averageControlDiff
                 }
@@ -848,6 +849,19 @@ function initializeInfoboxes() {
         .style("stroke-width", "3");
 }
 
+let roomAbbreviations = {
+    "Oktopusz": "Okt.",
+    "Gólyafészek": "Gólyaf.",
+    "PK": "PK",
+    "SZGK": "SZGK",
+    "Mérce": "Mérce",
+    "Gólyairoda": "Gólyai.",
+    "Lahmacun": "Lahma.",
+    "vendégtér": "vendégt.",
+    "kisterem": "kist.",
+    "Trafóház": "Traf."
+}
+
 function updateGeneralInfobox(info) {
     boxDims = getBBoxDrawingDimensions("general_infobox");
 
@@ -871,28 +885,47 @@ function updateGeneralInfobox(info) {
     // Draw content
 
     let lineFontSize = 6.5;
-    let lineHeight = 0.069;
+    let lineHeight = 0.065;
+    let lineShift = 0;
 
     addLineToBox(info.externalTemp, 0.02, lineHeight * 2, lineFontSize);
 
     addLineToBox(info.controlLastRan, 0.02, lineHeight * 3.5, lineFontSize);
-    addLineToBox(info.latestRequest, 0.02, lineHeight * 4.5, lineFontSize);
-    addLineToBox(info.scheduleLastUpdated, 0.02, lineHeight * 5.5, lineFontSize);
+
+    let latestRequestString = "Utolsó kérés: " + info.latestRequest.target + ", " + info.latestRequest.timeSince + " " + info.latestRequest.granularity + ", (" + info.latestRequest.origin + ").";
+    if (info.latestRequest.granularity == "órája" && info.latestRequest.timeSince > getFractionalHourOfDay()) {
+        latestRequestString = "Ma még nem érkezett kérés."
+    }
+    if (latestRequestString.length > 35) {
+        //lineShift = 0;
+        //let latestRequestString1 = "Utolsó kérés: " + info.latestRequest.target + ", " + info.latestRequest.timeSince + " " + info.latestRequest.granularity + ",";
+        //let latestRequestString2 = info.latestRequest.origin + "."
+        //addLineToBox(latestRequestString1, 0.02, lineHeight * 4.5, lineFontSize);
+        //addLineToBox(latestRequestString2, 0.02, lineHeight * 5.5, lineFontSize);
+        //latestRequestString = "Utolsó kérés: " + info.latestRequest.target + ", " + info.latestRequest.timeSince + " " + info.latestRequest.granularity + ", " + (info.latestRequest.origin == "QR" ? "QR." : "f.");
+        //addLineToBox(latestRequestString, 0.02, lineHeight * 4.5, lineFontSize);
+
+        latestRequestString = "Utolsó kérés: " + roomAbbreviations[info.latestRequest.target] + ", " + info.latestRequest.timeSince + " " + info.latestRequest.granularity + ", " + info.latestRequest.origin + ".";
+    }
+    addLineToBox(latestRequestString, 0.02, lineHeight * 4.5, lineFontSize);
+
+
+    addLineToBox(info.scheduleLastUpdated, 0.02, lineHeight * (5.5 + lineShift), lineFontSize);
     if (info.averageControlDiff != 0.0) {
         let reportedControlDiff = roundTo(info.averageControlDiff, 0.1);
         let averageControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
-        addLineToBox("Átlagos eltérés: " + averageControlDiffPre + reportedControlDiff + " °C.", 0.02, lineHeight * 6.5, lineFontSize);
+        addLineToBox("Átlagos eltérés: " + averageControlDiffPre + reportedControlDiff + " °C.", 0.02, lineHeight * (6.5 + lineShift), lineFontSize);
     }
 
-    addLineToBox(info.cyclesOn, 0.02, lineHeight * 8, lineFontSize);
-    addLineToBox("Gázfogyasztási ráta: " + (isValidNumber(currentGasUsageRate) ? currentGasUsageRate : "") + (isValidNumber(currentGasUsageRate) ? " m³/h." : ""), 0.02, lineHeight * 9, lineFontSize);
+    addLineToBox(info.cyclesOn, 0.02, lineHeight * (8 + lineShift), lineFontSize);
+    addLineToBox("Gázfogyasztási ráta: " + (isValidNumber(currentGasUsageRate) ? currentGasUsageRate : "") + (isValidNumber(currentGasUsageRate) ? " m³/h." : ""), 0.02, lineHeight * (9 + lineShift), lineFontSize);
     if (isValidNumber(currentGasTotal)) {
         let gasTotalString = currentGasTotal;
         if (Number.isInteger(gasTotalString)) {
             gasTotalString += ".0";
         }
-        addLineToBox("Összes elégett gáz: " + gasTotalString + " m³.", 0.02, lineHeight * 10, lineFontSize);
-        addLineToBox("Összköltség kb. " + roundTo(currentGasTotal * 350 / 1000, 0.1) + " eFt.", 0.02, lineHeight * 11, lineFontSize);
+        addLineToBox("Összes elégett gáz: " + gasTotalString + " m³.", 0.02, lineHeight * (10 + lineShift), lineFontSize);
+        addLineToBox("Összköltség kb. " + roundTo(currentGasTotal * 350 / 1000, 0.1) + " eFt.", 0.02, lineHeight * (11 + lineShift), lineFontSize);
     }
 }
 
