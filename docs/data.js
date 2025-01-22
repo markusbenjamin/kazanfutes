@@ -866,7 +866,7 @@ function updateGeneralInfobox(info) {
     addLineToBox("Gázfogyasztási ráta: " + currentGasUsageRate + (isValidNumber(currentGasUsageRate) ? " m³/h." : ""), 0.02, lineHeight * 9, lineFontSize);
     if (isValidNumber(currentGasTotal)) {
         addLineToBox("Összes elégett gáz: " + currentGasTotal + " m³.", 0.02, lineHeight * 10, lineFontSize);
-        addLineToBox("Összköltség kb. " + insertSubstringEveryNFromRight(roundTo(currentGasTotal * 350, 1), " ", 3) + " Ft.", 0.02, lineHeight * 11, lineFontSize);
+        addLineToBox("Összköltség kb. " + insertSubstringEveryNFromRight(roundTo(currentGasTotal * 350, 1), ",", 3) + " Ft.", 0.02, lineHeight * 11, lineFontSize);
     }
 }
 
