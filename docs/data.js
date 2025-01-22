@@ -242,12 +242,15 @@ function getDataFromFirebase() {
             }
             console.log(timeSinceLastRequest);
 
+            let requestOrigin = timePassedSince(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp))
+        > timePassedSince(dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp)) ? "QR, " : "form, "
+
             updateGeneralInfobox(
                 {
                     cyclesOn: onCycles.length > 0 ? "Bekapcsolt körök: " + onCycles.join(", ") + "." : "Senki nem kér fűtést.",
                     externalTemp: "Külső hőmérséklet: " + systemJSON.state.external_temp + " °C.",
                     controlLastRan: "Vezérlés lefutott: " + timeSinceControlLastRan + lastControlRanGranularity,
-                    latestRequest: "Utolsó beérkezett kérés: " + timeSinceLastRequest + timeSinceLastRequestGranularity,
+                    latestRequest: "Utolsó kérés: " + requestOrigin + timeSinceLastRequest + timeSinceLastRequestGranularity,
                     scheduleLastUpdated: "Beállítások frissítve: " + timeSinceLastScheduleUpdate + schedLastUpdateGranularity,
                     averageControlDiff: averageControlDiff
                 }
