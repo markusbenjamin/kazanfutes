@@ -15,7 +15,7 @@ function draw() {
 
         //rect(xOffset, yOffset, drawingWidth, drawingHeight);
 
-        let maxGasUsage = 7;
+        let maxGasUsage = 9;
         let mappedGasUsage = constrain(currentGasUsageRate, 0, maxGasUsage) / maxGasUsage;
         if (boilerState != null) {
             const boxDims = getBBoxP5jsDimensions("flame_nest");

@@ -2,13 +2,20 @@ function fetchJSONEndpoint(url) {
     return fetch(url)
         .then(response => response.json())
         .then(data => {
-            return data;
+            // Validate that the data is an array or an object
+            if (Array.isArray(data) || (data !== null && typeof data === 'object')) {
+                return data;
+            } else {
+                console.warn('Fetched data is not an array or object. Returning an empty array.');
+                return undefined;
+            }
         })
         .catch(error => {
             console.error('Error fetching data:', error);
             throw error;
         });
 }
+
 
 function googleTimestamp(date = null) {
     if (date == null) {
