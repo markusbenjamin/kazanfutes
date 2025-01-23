@@ -1101,7 +1101,7 @@ function drawMainGraph(graphData = null) {
                             dataKeys: { bottom: "h_of_day_frac", left: "burn_rate_in_m3_per_h" },
                             background: { show: false },
                             plotStyle: { joined: true, col: "rgb(0, 0, 0)", thickness: "2", startCap: false, endCap: true },
-                            segment: { do: true, gap: 0.5, endCaps: true, startCaps: true}
+                            segment: { do: true, gap: 1, endCaps: true, startCaps: true}
                         }
                     );
                     break;
