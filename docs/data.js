@@ -255,7 +255,7 @@ function getDataFromFirebase() {
                 {
                     cyclesOn: onCycles.length > 0 ? "Bekapcsolt körök: " + onCycles.join(", ") + "." : "Senki nem kér fűtést.",
                     externalTemp: "Külső hőmérséklet: " + systemJSON.state.external_temp + " °C.",
-                    controlLastRan: "Vezérlés lefutott: " + hourStamp(lastControlRan, true) + ".",
+                    controlLastRan: "Vezérlés lefutott: " + timeSinceControlLastRan +" " +lastControlRanGranularity,
                     latestRequest: { target: requestTarget, origin: requestOrigin, timeSince: timeSinceLastRequest, granularity: timeSinceLastRequestGranularity, hourStamp: lastRequestHourStamp },
                     scheduleLastUpdated: "Beállítások frissítve: " + hourStamp(lastScheduleUpdate) + ".",
                     averageControlDiff: averageControlDiff
@@ -284,8 +284,8 @@ function getDataFromFirebase() {
 
                 // Update misc data
                 let newGasUsageRate = roundTo(0.1 / (systemJSON.state.gas.dial_turn_secs / 3600), 0.1);
-                if(!currentGasUsageRate){
-                    currentGasUsageRate = newGasUsageRate;   
+                if (!currentGasUsageRate) {
+                    currentGasUsageRate = newGasUsageRate;
                 }
                 else if (isValidNumber(newGasUsageRate) && Math.abs(newGasUsageRate - currentGasUsageRate) > 0.05) {
                     prevGasUsageRate = currentGasUsageRate;
@@ -652,7 +652,7 @@ function drawPlot(plotData, userOptions) {
             }
 
             // Draw a path for each segment
-            segments.forEach((segment, index) => {
+            segments.forEach((segment, segmentIndex) => {
                 if (!segment || segment.length === 0) return;
 
                 // Draw the segment as a line
@@ -664,17 +664,16 @@ function drawPlot(plotData, userOptions) {
                     .attr("stroke-linecap", "butt")
                     .attr("d", line);
 
-                // Optionally cap the end of each segment (rather than just the very last one)
-                if (ops.plotStyle.startCap) {
-                    const lastPoint = segment[0];
+                if (ops.plotStyle.startCap && segmentIndex == 0) {
+                    const firstPoint = segment[0];
                     plotElement.append("circle")
-                        .attr("cx", bottomScale(lastPoint[ops.dataKeys.bottom]))
-                        .attr("cy", leftScale(lastPoint[ops.dataKeys.left]))
+                        .attr("cx", bottomScale(firstPoint[ops.dataKeys.bottom]))
+                        .attr("cy", leftScale(firstPoint[ops.dataKeys.left]))
                         .attr("r", ops.plotStyle.thickness * 1.05)
                         .attr("fill", ops.plotStyle.col);
                 }
 
-                if (ops.plotStyle.endCap) {
+                if (ops.plotStyle.endCap && segmentIndex == segments.length - 1) {
                     const lastPoint = segment[segment.length - 1];
                     plotElement.append("circle")
                         .attr("cx", bottomScale(lastPoint[ops.dataKeys.bottom]))
@@ -683,7 +682,25 @@ function drawPlot(plotData, userOptions) {
                         .attr("fill", ops.plotStyle.col);
                 }
 
-                if (ops.curveEndText.show && index === segments.length - 1) { // Only draw end text at the last segment
+                if (ops.segment.startCaps && segmentIndex > 0) {
+                    const firstPoint = segment[0];
+                    plotElement.append("circle")
+                        .attr("cx", bottomScale(firstPoint[ops.dataKeys.bottom]))
+                        .attr("cy", leftScale(firstPoint[ops.dataKeys.left]))
+                        .attr("r", ops.plotStyle.thickness * 1.05)
+                        .attr("fill", ops.plotStyle.col);
+                }
+
+                if (ops.segment.endCaps && segmentIndex < segments.length - 1) {
+                    const lastPoint = segment[segment.length - 1];
+                    plotElement.append("circle")
+                        .attr("cx", bottomScale(lastPoint[ops.dataKeys.bottom]))
+                        .attr("cy", leftScale(lastPoint[ops.dataKeys.left]))
+                        .attr("r", ops.plotStyle.thickness * 1.05)
+                        .attr("fill", ops.plotStyle.col);
+                }
+
+                if (ops.curveEndText.show && segmentIndex == segments.length - 1) { // Only draw end text at the last segment
                     const lastPoint = segment[segment.length - 1];
                     plotElement.append("text")
                         .attr("x", bottomScale(lastPoint[ops.dataKeys.bottom]) + ops.curveEndText.xOffset)
@@ -1083,7 +1100,8 @@ function drawMainGraph(graphData = null) {
                             domain: { bottom: [0, 24], left: [0, 10] },
                             dataKeys: { bottom: "h_of_day_frac", left: "burn_rate_in_m3_per_h" },
                             background: { show: false },
-                            plotStyle: { joined: true, col: "rgb(0, 0, 0)", thickness: "2", startCap: false }
+                            plotStyle: { joined: true, col: "rgb(0, 0, 0)", thickness: "2", startCap: false, endCap: true },
+                            segment: { do: true, gap: 0.5, endCaps: true, startCaps: true}
                         }
                     );
                     break;
@@ -1123,7 +1141,7 @@ function drawMainGraph(graphData = null) {
                                 axesLabel: { bottom: cycle == 1 ? "óra" : false, left: cycle == 1 ? "kör" : false },
                                 plotLabel: cycle == 1 ? "körök kapcsolási mintázata" : false,
                                 now: { show: cycle == 1, pos: maxHFrac },
-                                segment: { do: true, gap: 100 / (24 * 60) }
+                                segment: { do: true, gap: 0.1 }
                             }
                         );
                         drawPlot(
@@ -1135,7 +1153,7 @@ function drawMainGraph(graphData = null) {
                                 background: { show: false },
                                 tickVals: { left: [1, 2, 3, 4] },
                                 plotStyle: { joined: true, col: "rgba(255, 64, 0, 0.75)", thickness: "8", startCap: false, endCap: false },
-                                segment: { do: true, gap: 100 / (24 * 60) }
+                                segment: { do: true, gap: 0.1 }
                             }
                         );
                     }
@@ -1184,7 +1202,8 @@ function drawMainGraph(graphData = null) {
                             domain: { bottom: [0, 24], left: [13, 24] },
                             dataKeys: { bottom: "h_of_day_frac", left: "temp" },
                             plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2", startCap: false, endCap: true },
-                            curveEndText: { show: false, fontSize: 10, text: "bla", col: "red" } //DEV
+                            curveEndText: { show: false, fontSize: 10, text: "bla", col: "red" },
+                            segment: { do: true, gap: 0.5, endCaps: true, startCaps: true}
                         }
                     );
                     break;
