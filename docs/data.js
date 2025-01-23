@@ -939,7 +939,8 @@ function updateGeneralInfobox(info) {
     if (info.latestRequest.granularity == "órája" && info.latestRequest.timeSince > getFractionalHourOfDay()) {
         latestRequestString = "Ma még nem érkezett kérés."
     }
-    if (latestRequestString.length > 35) {
+
+    if (latestRequestString.length > 36) {
         latestRequestString = "Utolsó kérés: " + info.latestRequest.hourStamp + ", " + info.latestRequest.origin + ", " + roomAbbreviations[info.latestRequest.target] + ".";
     }
     addLineToBox(latestRequestString, 0.02, lineHeight * 4.5, lineFontSize);
