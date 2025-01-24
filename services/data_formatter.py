@@ -146,8 +146,9 @@ for digestion_day in digestion_days:
                     if info['name'] in raw_entry:
                         request_datetime = datetime.strptime(raw_entry[0], "%d/%m/%Y %H:%M:%S")
                         request_timestamp = request_datetime.strftime(settings['timestamp_format'])
-                        if request_datetime.date() == digestion_day.date():
-                            time_timestamp = datetime.strptime(f"{raw_entry[2]}-{raw_entry[3]}", "%d/%m/%Y-%H").strftime(settings['timestamp_format'])
+                        time_datetime = datetime.strptime(f"{raw_entry[2]}-{raw_entry[3]}", "%d/%m/%Y-%H")
+                        time_timestamp = time_datetime.strftime(settings['timestamp_format'])
+                        if time_datetime.date() == digestion_day.date():
                             formatted_entry = {
                                 'timestamp': request_timestamp,
                                 'time': time_timestamp,
