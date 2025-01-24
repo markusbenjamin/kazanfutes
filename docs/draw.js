@@ -206,9 +206,9 @@ function draw() {
                     let rotateToVertical = PI / 2;
                     let labelAngleOffset = PI * 0.85;
                     let labelRadius = r * 0.84;
-                    textFont("Baskerville", 0.4);
+                    textFont("Courier New", 0.4);
                     fill(0, 0.1);
-                    textOnArcUprightWeighted("MB Műszertechnika", p.x, p.y, labelRadius, (0 + labelAngleOffset) + rotateToVertical, (TWO_PI - labelAngleOffset) + rotateToVertical);
+                    textOnArcUprightWeighted("M/B Műszertechnika", p.x, p.y, labelRadius, (0 + labelAngleOffset) + rotateToVertical, (TWO_PI - labelAngleOffset) + rotateToVertical);
                 }
             }
         }
@@ -432,12 +432,16 @@ function flipToCanvas() {
 
     const groups = drawingContext.__root.querySelectorAll("g"); // Get all <g> elements
     groups.forEach(group => {
-        select("#p5jsDrawing").elt.appendChild(group.cloneNode(true)); // Clone and append each <g>
+        const clonedGroup = group.cloneNode(true); // Clone the group
+        clonedGroup.setAttribute("class", "clickthrough"); // Set the class for the cloned element
+        select("#p5jsDrawing").elt.appendChild(clonedGroup); // Append the cloned group
     });
+
     document.getElementById("defaultCanvas0").style.display = "none";
 
     clear();
 }
+
 
 function drawFlame(x, y, w, h, colOuter, colInner, outer) {
     push();

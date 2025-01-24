@@ -111,8 +111,8 @@ function setupTooltip() {
     const tooltip = d3.select("#tooltip");
 
     // Attach tooltip functionality to all path elements during initialization
-    Object.keys(roomDataAndState).forEach(key => {
-        const roomTooltipData = roomDataAndState[key]; // Access the value using the key
+    Object.keys(roomsDataAndState).forEach(key => {
+        const roomTooltipData = roomsDataAndState[key]; // Access the value using the key
 
         d3.select("#" + roomTooltipData.roomID)
             .on("mouseover.tooltip", function (event) {
@@ -153,7 +153,6 @@ function getDataFromFirebase() {
             condensedSchedule = scheduleJSON.condensed_schedule;
             requestLists = scheduleJSON.request_lists;
 
-
             // Update rooms
             const roomNums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
             let controlDiffs = {};
@@ -161,21 +160,21 @@ function getDataFromFirebase() {
             let averagerCount = 0;
             roomNums.forEach(roomNum => {
                 const roomLastUpdated = systemJSON.state['sensor_last_updated'][roomNum];
-                roomDataAndState[roomNum].lastUpdated = roomLastUpdated;
+                roomsDataAndState[roomNum].lastUpdated = roomLastUpdated;
 
                 const roomTemp = roundTo(systemJSON.state['measured_temps'][roomNum], 0.1);
                 const timeSinceLastSensorUpdate = timePassedSince(dateFromTimestamp(roomLastUpdated));
                 if (timeSinceLastSensorUpdate > 2 * 60) {
-                    roomDataAndState[roomNum].temp = "szenzor hiba";
+                    roomsDataAndState[roomNum].temp = "szenzor hiba";
                 }
                 else {
-                    roomDataAndState[roomNum].temp = (roomTemp.toFixed(2).slice(0, 4));
+                    roomsDataAndState[roomNum].temp = (roomTemp.toFixed(2).slice(0, 4));
                 }
 
                 updateRoomColor(systemJSON.setup.rooms[roomNum].name, roomTemp, roomLastUpdated);
 
                 const roomSet = systemJSON.state['set_temps'][roomNum];
-                roomDataAndState[roomNum].set = roomSet;
+                roomsDataAndState[roomNum].set = roomSet;
 
                 if (timeSinceLastSensorUpdate > 2 * 60) {
                     controlDiffs[roomNum] = "missing";
@@ -189,10 +188,13 @@ function getDataFromFirebase() {
             });
             let averageControlDiff = (totalControlDiff - (isValidNumber(controlDiffs[10]) ? controlDiffs[10] : 0)) / (averagerCount - 1);
 
-            const roomTemp = roundTo((systemJSON.state['oktopusz_keramia'][1] + systemJSON.state['oktopusz_keramia'][2]) / 2, 0.1);
-            //const roomTemp = roundTo(systemJSON.state['oktopusz_keramia'][1],0.1);
-            updateRoomColor("OktopuszKeramia", roomTemp, timestamp());
-            roomDataAndState[11].temp = (roomTemp.toFixed(2).slice(0, 4));
+            const oktopuszKeramiaTemp = roundTo((systemJSON.state['measured_temps'][11] + systemJSON.state['measured_temps'][12]) / 2, 0.1);
+            updateRoomColor(
+                "OktopuszKeramia",
+                oktopuszKeramiaTemp,
+                timestamp()
+            );
+            roomsDataAndState[11].temp = oktopuszKeramiaTemp;
 
             // Update piping
             const cycles = [1, 2, 3, 4];
@@ -271,10 +273,12 @@ function getDataFromFirebase() {
                     totalControlDiffOnCycle = controlDiffs[roomNum] == "missing" ? totalControlDiffOnCycle : totalControlDiffOnCycle + controlDiffs[roomNum];
                 });
 
+                cyclesDataAndState[cycleNum].state = systemJSON.state.pump_states[cycleNum];
+
                 updateCycleInfobox(
                     cycleNum,
                     {
-                        state: systemJSON.state.pump_states[cycleNum],
+                        state: cyclesDataAndState[cycleNum].state,
                         set: systemJSON.control.cycles[cycleNum],
                         rooms: roomsOnCycle,
                         wantHeating: roomsThatWantHeating,
@@ -318,20 +322,23 @@ function extractRoomScheduleFromCondensedSchedule(roomNum) {
             roomSchedule.push(
                 {
                     "h_of_day_frac": hour,
-                    "set_temp": setTemp
+                    "set_temp": setTemp,
+                    "temp": setTemp //Overloading
                 }
             );
             roomSchedule.push(
                 {
                     "h_of_day_frac": hour + 0.999,
-                    "set_temp": setTemp
+                    "set_temp": setTemp,
+                    "temp": setTemp //Overloading
                 }
             );
             if (hour == 23) {
                 roomSchedule.push(
                     {
                         "h_of_day_frac": 24,
-                        "set_temp": setTemp
+                        "set_temp": setTemp,
+                        "temp": setTemp //Overloading
                     }
                 );
             }
@@ -366,38 +373,76 @@ function convertTimestamps(dataJSON, day) {
         .filter(Boolean);
 }
 
+let loadedData = {};
+let dataExpiry = 5; //Minutes
+
 function collectDataFromGitHub(day, dataTypes, drawFunction) {
     // We'll store our results here:
     const dataCollected = {};
 
-    // Recursive function to handle fetching each type one by one
+    // Recursive function to handle each type one by one
     function fetchNextType(index) {
         if (index >= dataTypes.length) {
-            // Once all data is fetched and processed, call the draw function
+            // Once all data is collected, call the draw function
             drawFunction(dataCollected);
             return;
         }
 
         const currentType = dataTypes[index];
-        const url = "https://raw.githubusercontent.com/markusbenjamin/kazanfutes/refs/heads/main/data/formatted/"
-            + day + "/" + currentType + ".json";
 
-        fetchJSONEndpoint(url)
-            .then(dataJSON => {
-                // Convert timestamps if needed
-                if (Array.isArray(dataJSON)) {
-                    dataCollected[currentType] = convertTimestamps(dataJSON, day);
+        // Make sure we have a structure for this `day` in loadedData
+        if (!loadedData[day]) {
+            loadedData[day] = {};
+        }
 
-                }
-                else {
-                    dataCollected[currentType] = dataJSON;
-                }
-                // Move on to the next type
-                fetchNextType(index + 1);
-            })
-        //.catch(error => {
-        //    console.error(`Error fetching data from GitHub for ${currentType}:`, error);
-        //});
+        // Check if the data already exists and is still fresh
+        const existingDataEntry = loadedData[day][currentType];
+        const now = new Date();
+
+        let isFresh = false;
+        if (existingDataEntry && existingDataEntry.timestamp) {
+            const lastLoadedTime = new Date(existingDataEntry.timestamp);
+            const ageInMinutes = (now - lastLoadedTime) / 1000 / 60; // difference in minutes
+
+            if (ageInMinutes < dataExpiry) {
+                isFresh = true;
+            }
+        }
+
+        if (isFresh) {
+            // Data is still fresh; use the existing loaded data
+            dataCollected[currentType] = existingDataEntry.data;
+            // Move on to the next type
+            fetchNextType(index + 1);
+        } else {
+            // Data doesn't exist or is older than n minutes, so fetch from GitHub
+            const url = "https://raw.githubusercontent.com/markusbenjamin/kazanfutes/refs/heads/main/data/formatted/"
+                + day + "/" + currentType + ".json";
+
+            fetchJSONEndpoint(url)
+                .then(dataJSON => {
+                    // Convert timestamps if needed
+                    if (Array.isArray(dataJSON)) {
+                        dataCollected[currentType] = convertTimestamps(dataJSON, day);
+                    } else {
+                        dataCollected[currentType] = dataJSON;
+                    }
+
+                    // Update loadedData with fresh data & current timestamp
+                    loadedData[day][currentType] = {
+                        data: dataCollected[currentType],
+                        timestamp: now.toISOString()
+                    };
+
+                    // Move on to the next type
+                    fetchNextType(index + 1);
+                })
+                .catch(err => {
+                    console.error("Error fetching or processing data:", err);
+                    // Even if error, proceed to next to avoid total block
+                    fetchNextType(index + 1);
+                });
+        }
     }
 
     // Start fetching from the first type
@@ -415,7 +460,7 @@ function drawPlot(plotData, userOptions) {
         margins: { top: 0.1, right: 0.1, bottom: 0.1, left: 0.1 }, // Affecting the plot elements within the content element
 
         background: { show: true, col: "white" },
-        plotStyle: { joined: false, col: "gray", thickness: "0.25", startCap: true, endCap: true, smoothCurve: true },
+        plotStyle: { joined: false, col: "gray", thickness: "0.25", startCap: true, endCap: true, smoothCurve: true, hoverableCurve: false },
         domain: { bottom: null, left: null },
         smoothing: { bottom: 0, left: 0 },
         axes: { top: false, right: false, left: true, bottom: true },
@@ -651,27 +696,20 @@ function drawPlot(plotData, userOptions) {
             segments.forEach((segment, segmentIndex) => {
                 if (!segment || segment.length === 0) return;
 
-                // Draw the segment as a line
-                plotElement.append("path")
-                    .datum(segment)
-                    .attr("fill", "none")
-                    .attr("stroke", ops.plotStyle.col)
-                    .attr("stroke-width", ops.plotStyle.thickness)
-                    .attr("stroke-linecap", "butt")
-                    .attr("d", line);
-
+                let startCap;
                 if (ops.plotStyle.startCap && segmentIndex == 0) {
                     const firstPoint = segment[0];
-                    plotElement.append("circle")
+                    startCap = plotElement.append("circle")
                         .attr("cx", bottomScale(firstPoint[ops.dataKeys.bottom]))
                         .attr("cy", leftScale(firstPoint[ops.dataKeys.left]))
                         .attr("r", ops.plotStyle.thickness * 1.05)
                         .attr("fill", ops.plotStyle.col);
                 }
 
+                let endCap;
                 if (ops.plotStyle.endCap && segmentIndex == segments.length - 1) {
                     const lastPoint = segment[segment.length - 1];
-                    plotElement.append("circle")
+                    endCap = plotElement.append("circle")
                         .attr("cx", bottomScale(lastPoint[ops.dataKeys.bottom]))
                         .attr("cy", leftScale(lastPoint[ops.dataKeys.left]))
                         .attr("r", ops.plotStyle.thickness * 1.05)
@@ -680,7 +718,7 @@ function drawPlot(plotData, userOptions) {
 
                 if (ops.segment.startCaps && segmentIndex > 0) {
                     const firstPoint = segment[0];
-                    plotElement.append("circle")
+                    startCap = plotElement.append("circle")
                         .attr("cx", bottomScale(firstPoint[ops.dataKeys.bottom]))
                         .attr("cy", leftScale(firstPoint[ops.dataKeys.left]))
                         .attr("r", ops.plotStyle.thickness * 1.05)
@@ -689,24 +727,68 @@ function drawPlot(plotData, userOptions) {
 
                 if (ops.segment.endCaps && segmentIndex < segments.length - 1) {
                     const lastPoint = segment[segment.length - 1];
-                    plotElement.append("circle")
+                    endCap = plotElement.append("circle")
                         .attr("cx", bottomScale(lastPoint[ops.dataKeys.bottom]))
                         .attr("cy", leftScale(lastPoint[ops.dataKeys.left]))
                         .attr("r", ops.plotStyle.thickness * 1.05)
                         .attr("fill", ops.plotStyle.col);
                 }
 
+                let endText;
                 if (ops.curveEndText.show && segmentIndex == segments.length - 1) { // Only draw end text at the last segment
+                    //if (forceEndText) { // Only draw end text at the last segment
                     const lastPoint = segment[segment.length - 1];
-                    plotElement.append("text")
+                    endText = plotElement.append("text")
                         .attr("x", bottomScale(lastPoint[ops.dataKeys.bottom]) + ops.curveEndText.xOffset)
                         .attr("y", leftScale(lastPoint[ops.dataKeys.left]) + ops.curveEndText.yOffset)
-                        .style("text-anchor", "middle")
+                        .style("text-anchor", "left")
                         .style("font-size", ops.curveEndText.fontSize + "px")
                         .style("font-family", dashboardFont)
                         .style("fill", ops.curveEndText.col ? ops.curveEndText.col : "black")
                         .text(ops.curveEndText.text);
                 }
+
+                // Draw the segment as a line
+                plotElement.append("path")
+                    .datum(segment)
+                    .attr("fill", "none")
+                    .attr("stroke", ops.plotStyle.col)
+                    .attr("stroke-width", ops.plotStyle.thickness)
+                    .attr("stroke-linecap", "butt")
+                    .attr("d", line)
+                    .attr("has-endtext", "0")
+                    .classed("hoverable-curve", ops.plotStyle.hoverableCurve) // Add a class if hoverable
+                    .on("mouseover", ops.plotStyle.hoverableCurve ? function (event) {
+                        // Define hover behavior here
+                        d3.select(this)
+                            .attr("stroke-width", ops.plotStyle.thickness * 2); // Thicker on hover
+                        if (startCap) {
+                            startCap.attr("r", ops.plotStyle.thickness * 1.05 * 2);
+                        }
+                        if (endCap) {
+                            endCap.attr("r", ops.plotStyle.thickness * 1.05 * 2);
+                        }
+                        if (endText) {
+                            endText.style("font-weight", "bold")
+                                .style("font-size", (ops.curveEndText.fontSize * 1.25) + "px");
+                            endText.node().parentNode.appendChild(text.node());
+                        }
+                    } : null)
+                    .on("mouseout", ops.plotStyle.hoverableCurve ? function (event) {
+                        // Define unhover behavior here
+                        d3.select(this)
+                            .attr("stroke-width", ops.plotStyle.thickness); // Revert to original thickness
+                        if (startCap) {
+                            startCap.attr("r", ops.plotStyle.thickness * 1.05);
+                        }
+                        if (endCap) {
+                            endCap.attr("r", ops.plotStyle.thickness * 1.05);
+                        }
+                        if (endText) {
+                            endText.style("font-weight", "normal")
+                                .style("font-size", ops.curveEndText.fontSize + "px");
+                        }
+                    } : null);
             });
         }
         else {
@@ -740,7 +822,7 @@ function clearMainGraphs() {
     d3.selectAll(".main-graph-instance").remove();
 }
 
-const roomDataAndState = {
+const roomsDataAndState = {
     1: { roomID: "Oktopusz", name: "Oktopusz szita", temp: null, set: null, lastUpdated: null },
     2: { roomID: "Gólyafészek", name: "Gólyafészek", temp: null, set: null, lastUpdated: null },
     3: { roomID: "PK", name: "PK", temp: null, set: null, lastUpdated: null },
@@ -822,10 +904,10 @@ function writeGasUsageToDial(gasData = null) {
         else {
             textXOffsetFactor = 0.05;
         }
-        d3.selectAll("#gas_dial_text").remove();
+        d3.selectAll(".gas_dial_text").remove();
         d3.select("#drawing")
             .append("text")
-            .attr("id", "gas_dial_text")
+            .attr("class", "gas_dial_text clickthrough")
             .attr("x", dialBoxBB.x + dialBoxBB.width * textXOffsetFactor)
             .attr("y", dialBoxBB.y + dialBoxBB.height * 0.7)
             .text(gasTotal)
@@ -834,22 +916,22 @@ function writeGasUsageToDial(gasData = null) {
             .style("fill", "black");
         d3.select("#drawing")
             .append("text")
-            .attr("id", "gas_dial_text")
+            .attr("class", "gas_dial_text clickthrough")
             .attr("x", dialBoxBB.x + dialBoxBB.width * 0.732)
             .attr("y", dialBoxBB.y + dialBoxBB.height * 0.69)
             .text(" m³")
             .style("font-family", dashboardFont)
             .style("font-size", "5px")
             .style("fill", "black");
-        d3.select("#drawing")
-            .append("rect")
-            .attr("id", "gas_dial_hover_area")
-            .attr("x", dialBoxBB.x)
-            .attr("y", dialBoxBB.y)
-            .attr("width", dialBoxBB.w)
-            .attr("height", dialBoxBB.h)
-            .style("fill", "transparent")
-            .style("pointer-events", "all");
+        //d3.select("#drawing")
+        //    .append("rect")
+        //    .attr("id", "gas_dial_hover_area")
+        //    .attr("x", dialBoxBB.x)
+        //    .attr("y", dialBoxBB.y)
+        //    .attr("width", dialBoxBB.w)
+        //    .attr("height", dialBoxBB.h)
+        //    .style("fill", "transparent")
+        //    .style("pointer-events", "all");
     }
 }
 
@@ -888,6 +970,21 @@ function initializeInfoboxes() {
         .style("stroke-width", "3");
 }
 
+function initializeMainGraphArea() {
+    let graphDims = getBBoxDrawingDimensions("graph");
+    d3.select("#graph").style("fill-opacity", "0")
+
+    d3.select("#drawing").append("text")
+        .attr("x", graphDims.cx) // X-coordinate
+        .attr("y", graphDims.cy) // Y-coordinate
+        .attr("text-anchor", "middle") // Horizontally center
+        .attr("dominant-baseline", "middle") // Vertically center
+        .text("Adatok betöltése.") // Text content
+        .attr("fill", "black") // Text color (SVG uses `fill` for text color)
+        .style("font-family", dashboardFont) // Font family
+        .style("font-size", "10px"); // Font size
+}
+
 let roomAbbreviations = {
     "Oktopusz": "Okt.",
     "Gólyafészek": "Gólyaf.",
@@ -902,7 +999,7 @@ let roomAbbreviations = {
 }
 
 function updateGeneralInfobox(info) {
-    boxDims = getBBoxDrawingDimensions("general_infobox");
+    let boxDims = getBBoxDrawingDimensions("general_infobox");
 
     d3.selectAll(".general-infobox-content").remove();
 
@@ -962,14 +1059,14 @@ function updateGeneralInfobox(info) {
 }
 
 function updateCycleInfobox(cycle, info) {
-    boxDims = getBBoxDrawingDimensions("cycle" + cycle + "_infobox");
+    let boxDims = getBBoxDrawingDimensions("cycle" + cycle + "_infobox");
 
     d3.selectAll(".cycle" + cycle + "-infobox-content").remove();
 
     function addLineToBox(message, xFactor, yFactor, fontSize) {
         return d3.select("#drawing")
             .append("text")
-            .attr("class", "cycle" + cycle + "-infobox-content")
+            .attr("class", "cycle" + cycle + "-infobox-content clickthrough")
             .attr("x", boxDims.x + boxDims.width * xFactor)
             .attr("y", boxDims.y + boxDims.width * 0.025 + boxDims.width * yFactor)
             .text(message)
@@ -1012,18 +1109,8 @@ function updateCycleInfobox(cycle, info) {
 let dataWaitTime = 30;
 let dayDataNotAvailable = false;
 
-const mainGraphDefaultSetting = {
-    title: "heating_state",
-    types: ["heating_state"],
-    day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime)
-};
-
-let mainGraphSetting = mainGraphDefaultSetting;
-
-let mainGraphContentLocked = false;
-
 const elementToGrapSettingMapping = {
-    "gas_dial_hover_area": { title: "gas_usage", types: ["gas_usage"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime) },
+    "gas_dial": { title: "gas_usage", types: ["gas_usage"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime) },
     "Oktopusz": { title: "room_plot", types: ["room_1_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 1 },
     "Gólyafészek": { title: "room_plot", types: ["room_2_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 2 },
     "PK": { title: "room_plot", types: ["room_3_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 3 },
@@ -1034,21 +1121,41 @@ const elementToGrapSettingMapping = {
     "kisterem": { title: "room_plot", types: ["room_8_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 8 },
     "vendégtér": { title: "room_plot", types: ["room_9_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 9 },
     "Trafóház": { title: "room_plot", types: ["room_10_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 10 },
-    "background": mainGraphDefaultSetting
+    "OktopuszKeramia": { title: "room_plot", types: ["room_11_measurements", "room_12_measurements"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 11 },
+    "boiler_body": {
+        title: "heating_state",
+        types: ["heating_state"],
+        day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime)
+    },
+    "background": { // Default
+        title: "all_rooms",
+        types: Array.from({ length: 11 }, (_, i) => {
+            const number = i + 1;
+            return `room_${number}_measurements`;
+        }),
+        day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime),
+        roomNumsToPlot: d3.range(1, 12, 1),
+        hoveredCycle: 0
+    }
 };
+
+
+let mainGraphContentLocked = false;
+const mainGraphDefaultSetting = elementToGrapSettingMapping["background"]; // Save so it can be reset
+let mainGraphSetting = mainGraphDefaultSetting;
 
 function joinMainGrapDataSourceToElements() {
     d3.selectAll(Object.keys(elementToGrapSettingMapping).map(id => `#${id}`).join(","))
         .on("mouseover.maingraph", function (event) {
             if (mainGraphContentLocked == false) {
                 mainGraphSetting = elementToGrapSettingMapping[this.id]; // Set based on mapping
-                resetMainGraph();
+                drawMainGraph();
             }
         })
         .on("mouseout.maingraph", function () {
             if (mainGraphContentLocked == false) {
                 mainGraphSetting = mainGraphDefaultSetting; // Reset on mouseout
-                resetMainGraph();
+                drawMainGraph();
             }
         })
         .on("click.maingraph", function (event) {
@@ -1060,22 +1167,52 @@ function joinMainGrapDataSourceToElements() {
             if (mainGraphContentLocked) {
                 mainGraphContentLocked = false;
                 mainGraphSetting = mainGraphDefaultSetting;
-                resetMainGraph();
+                drawMainGraph();
             }
         });
 }
 
-function resetMainGraph() {
-    runOnceThenSetInterval(drawMainGraph, 60 * 1000);
+let cyclesDataAndState = {
+    1: { rooms: [1, 2, 3] },
+    2: { rooms: [4, 5, 6, 7] },
+    3: { rooms: [8, 9] },
+    4: { rooms: [10] }
 }
+
+function setInfoboxHovers() {
+    for (let cycleNum = 1; cycleNum < 5; cycleNum++) {
+        d3.select("#cycle" + cycleNum + "_infobox")
+            .on("mouseover", function (event) {
+                if (mainGraphSetting.title == 'all_rooms') {
+                    mainGraphSetting.hoveredCycle = cycleNum;
+                    mainGraphSetting.roomNumsToPlot = cyclesDataAndState[cycleNum].rooms
+                    drawMainGraph();
+                }
+            })
+            .on("mouseout", function () {
+                if (mainGraphSetting.title == 'all_rooms' && !mainGraphContentLocked) {
+                    mainGraphSetting.roomNumsToPlot = d3.range(1, 12, 1);
+                    mainGraphSetting.hoveredCycle = 0;
+                    drawMainGraph();
+                }
+                drawMainGraph();
+            })
+            .on("click.cycles_infobox", function (event) {
+                event.stopPropagation();
+                mainGraphContentLocked = !mainGraphContentLocked;
+            });
+    }
+}
+
 
 function drawMainGraph(graphData = null) {
     if (graphData == null) {
         collectDataFromGitHub(mainGraphSetting.day, mainGraphSetting.types, drawMainGraph);
     }
     else {
-        clearMainGraphs();
         if (mainGraphSetting.types.length == Object.keys(graphData).length) {
+            clearMainGraphs();
+            let range;
             switch (mainGraphSetting.title) {
                 case "gas_usage":
                     drawPlot(
@@ -1136,7 +1273,7 @@ function drawMainGraph(graphData = null) {
                                 plotStyle: { joined: true, col: "rgba(8, 86, 222, 0.23)", thickness: "6", startCap: false, endCap: false },
                                 tickVals: { left: [1, 2, 3, 4] },
                                 axesLabel: { bottom: cycle == 1 ? "óra" : false, left: cycle == 1 ? "kör" : false },
-                                plotLabel: cycle == 1 ? "körök kapcsolási mintázata" : false,
+                                plotLabel: cycle == 1 ? "körök mai kapcsolási mintázata" : false,
                                 now: { show: cycle == 1, pos: maxHFrac },
                                 segment: { do: true, gap: 0.1 }
                             }
@@ -1156,68 +1293,123 @@ function drawMainGraph(graphData = null) {
                     }
                     break;
                 case "room_plot":
-                    let roomOverrides;
-                    let requestMarkers = [];
-                    if (requestLists) {
-                        roomOverrides = requestLists[mainGraphSetting.roomNumToPlot];
-                        if (roomOverrides) {
-                            roomOverrides.forEach(request => {
-                                if (getUnixDay() == getUnixDay(dateFromTimestamp(request.time)) && getUnixDay() == getUnixDay(dateFromTimestamp(request.timestamp))) {
-                                    requestMarkers.push({
-                                        //x1: getFractionalHourOfDay(dateFromTimestamp(request.timestamp)),
-                                        //x2: getFractionalHourOfDay(dateFromTimestamp(request.time)),
-                                        pos: getFractionalHourOfDay(dateFromTimestamp(request.time)),
-                                        h: parseInt(request.set_temp)
-                                    })
-                                }
-                                else if (getUnixDay() == getUnixDay(dateFromTimestamp(request.time))) {
-                                    requestMarkers.push({
-                                        pos: getFractionalHourOfDay(dateFromTimestamp(request.time)),
-                                        h: parseInt(request.set_temp)
-                                    })
-                                }
-                            });
+                    if (mainGraphSetting.roomNumToPlot != 11) {
+                        let roomOverrides;
+                        let requestMarkers = [];
+                        if (requestLists) {
+                            roomOverrides = requestLists[mainGraphSetting.roomNumToPlot];
+                            if (roomOverrides) {
+                                roomOverrides.forEach(request => {
+                                    if (getUnixDay() == getUnixDay(dateFromTimestamp(request.time)) && getUnixDay() == getUnixDay(dateFromTimestamp(request.timestamp))) {
+                                        requestMarkers.push({
+                                            //x1: getFractionalHourOfDay(dateFromTimestamp(request.timestamp)),
+                                            //x2: getFractionalHourOfDay(dateFromTimestamp(request.time)),
+                                            pos: getFractionalHourOfDay(dateFromTimestamp(request.time)),
+                                            h: parseInt(request.set_temp)
+                                        })
+                                    }
+                                    else if (getUnixDay() == getUnixDay(dateFromTimestamp(request.time))) {
+                                        requestMarkers.push({
+                                            pos: getFractionalHourOfDay(dateFromTimestamp(request.time)),
+                                            h: parseInt(request.set_temp)
+                                        })
+                                    }
+                                });
+                            }
                         }
+                        let roomScheduleData = extractRoomScheduleFromCondensedSchedule(mainGraphSetting.roomNumToPlot);
+                        let roomMeasurementData = graphData["room_" + mainGraphSetting.roomNumToPlot + "_measurements"];
+                        range = d3.extent(roomScheduleData.concat(roomMeasurementData).map(elem => elem['temp']));
+                        drawPlot(
+                            roomScheduleData,
+                            {
+                                parentId: "graph",
+                                smoothing: { bottom: 0, left: 0 },
+                                domain: { bottom: [0, 24], left: [Math.floor(range[0]) - 1, Math.ceil(range[1]) + 1] },
+                                dataKeys: { bottom: "h_of_day_frac", left: "set_temp" },
+                                axesLabel: { bottom: "óra", left: "°C" },
+                                tickVals: { left: d3.range(Math.floor(range[0]) - 1, Math.ceil(range[1]) + 2, 1) },
+                                plotStyle: { joined: true, col: "rgba(28, 185, 0,0.5)", thickness: "3", startCap: false, endCap: false, smoothCurve: false },
+                                plotLabel: roomsDataAndState[mainGraphSetting.roomNumToPlot].name + " kért és mért hőmérséklet",
+                                markers: { when: "after", list: requestMarkers, col: "rgba(245,245,0,1)", thickness: 1.5, dashed: true, dashing: "6,3", endCap: true, endCapSize: 2 }
+                            }
+                        );
+                        drawPlot(
+                            roomMeasurementData,
+                            {
+                                parentId: "graph",
+                                axes: { left: false, bottom: false },
+                                background: { show: false },
+                                smoothing: { bottom: 0, left: 10 },
+                                domain: { bottom: [0, 24], left: [Math.floor(range[0]) - 1, Math.ceil(range[1]) + 1] },
+                                dataKeys: { bottom: "h_of_day_frac", left: "temp" },
+                                plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2", startCap: false, endCap: true },
+                                segment: { do: true, gap: mainGraphSetting.roomNumToPlot == 10 ? 2 : 0.5, endCaps: true, startCaps: true }
+                            }
+                        );
                     }
-                    drawPlot(
-                        extractRoomScheduleFromCondensedSchedule(mainGraphSetting.roomNumToPlot),
-                        {
-                            parentId: "graph",
-                            smoothing: { bottom: 0, left: 0 },
-                            domain: { bottom: [0, 24], left: [13, 24] },
-                            dataKeys: { bottom: "h_of_day_frac", left: "set_temp" },
-                            axesLabel: { bottom: "óra", left: "°C" },
-                            plotStyle: { joined: true, col: "rgba(28, 185, 0,0.5)", thickness: "3", startCap: false, endCap: false, smoothCurve: false },
-                            plotLabel: roomDataAndState[mainGraphSetting.roomNumToPlot].name + " kért és mért hőmérséklet",
-                            markers: { when: "after", list: requestMarkers, col: "rgba(245,245,0,1)", thickness: 1.5, dashed: true, dashing: "6,3", endCap: true, endCapSize: 2 }
-                        }
-                    );
-                    drawPlot(
-                        graphData["room_" + mainGraphSetting.roomNumToPlot + "_measurements"],
-                        {
-                            parentId: "graph",
-                            background: { show: false },
-                            smoothing: { bottom: 0, left: 10 },
-                            domain: { bottom: [0, 24], left: [13, 24] },
-                            dataKeys: { bottom: "h_of_day_frac", left: "temp" },
-                            plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2", startCap: false, endCap: true },
-                            curveEndText: { show: false, fontSize: 10, text: "bla", col: "red" },
-                            segment: { do: true, gap: mainGraphSetting.roomNumToPlot == 10 ? 2 : 0.5, endCaps: true, startCaps: true }
-                        }
-                    );
+                    else { // Oktopusz kerámia
+                        let roomMeasurementData = graphData["room_11_measurements"].concat(graphData["room_12_measurements"]).sort((a, b) => a.h_of_day_frac - b.h_of_day_frac);;
+                        range = d3.extent(roomMeasurementData.map(elem => elem['temp']));
+                        drawPlot(
+                            roomMeasurementData,
+                            {
+                                parentId: "graph",
+                                background: { show: true },
+                                smoothing: { bottom: 0, left: 100 },
+                                domain: { bottom: [0, 24], left: [Math.floor(range[0]) - 1, Math.ceil(range[1]) + 1] },
+                                dataKeys: { bottom: "h_of_day_frac", left: "temp" },
+                                tickVals: { left: d3.range(Math.floor(range[0]) - 1, Math.ceil(range[1]) + 2, 1) },
+                                axesLabel: { bottom: "óra", left: "°C" },
+                                plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2", startCap: false, endCap: true },
+                                plotLabel: roomsDataAndState[mainGraphSetting.roomNumToPlot].name + " mért hőmérséklet",
+                                segment: { do: true, gap: mainGraphSetting.roomNumToPlot == 10 ? 2 : 0.5, endCaps: true, startCaps: true }
+                            }
+                        );
+                    }
                     break;
-                case "":
+                case "all_rooms":
+                    const colorScale = d3.scaleLinear().domain([1, 11]).range(["green", "orange"]);
+                    range = d3.extent(Object.values(graphData).map(value => value.map(elem => elem['temp'])).flat());
+                    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].forEach((roomNum, index) => {
+                        let firstRoom = index == 0;
+                        let dim = !mainGraphSetting.roomNumsToPlot.includes(roomNum);
+                        let plotColor = d3.color(colorScale(roomNum));
+                        let showEndText = true;
+                        let endTextColor = "rgba(0,0,0,1)";
+                        if (dim) {
+                            plotColor.opacity = 0.25;
+                            showEndText = false;
+                            endTextColor = "rgba(0,0,0,0.25)"
+                        }
+                        plotColor = plotColor.toString();
+                        drawPlot(
+                            graphData["room_" + roomNum + "_measurements"],
+                            {
+                                axes: { left: firstRoom, bottom: firstRoom },
+                                axesLabel: { bottom: "óra", left: "°C" },
+                                plotLabel: (firstRoom ? "szobák mai hőmérsékleti görbéje" + (mainGraphSetting.hoveredCycle > 0 ? " a" + ["z 1-es", " 2-es", " 3-mas", " 4-es"][mainGraphSetting.hoveredCycle - 1] + " körön" : "") : ""),
+                                parentId: "graph",
+                                background: { show: firstRoom },
+                                smoothing: { bottom: 0, left: 10 },
+                                domain: { bottom: [0, 24], left: [Math.floor(range[0]), Math.ceil(range[1])] },
+                                tickVals: { left: d3.range(Math.floor(range[0]), Math.ceil(range[1]) + 1, 1) },
+                                dataKeys: { bottom: "h_of_day_frac", left: "temp" },
+                                plotStyle: { joined: true, col: plotColor, thickness: "1", startCap: false, endCap: true, hoverableCurve: mainGraphSetting.hoveredCycle == 0 },
+                                curveEndText: { show: showEndText, fontSize: 5, text: roomsDataAndState[roomNum].name, col: plotColor, xOffset: 2.5, yOffset: 1.5 },
+                                segment: { do: true, gap: roomNum == 10 ? 2 : 0.5, endCaps: true, startCaps: true }
+                            }
+                        );
+                    });
                     break;
             }
-            //d3.select("#graph").style("fill", "rgba(0,0,0,0)");
-            d3.select("#graph").style("fill-opacity", "0");
         }
     }
 }
 
 function rescueMainGraph() {
-    if (d3.select(".main-graph-instance").size() == 0) {
-        resetMainGraph()
+    if (d3.selectAll(".main-graph-instance").size() == 0) {
+        drawMainGraph();
     }
 }
 
@@ -1232,7 +1424,7 @@ function setViewParameters(centeredId) {
     params = new URLSearchParams(window.location.search);
     fromRequest = params.get("ref_source") == "qr" || params.get("ref_source") == "form";
     let centeringOffsetFactor = { x: 1, y: 1.03 }
-    
+
     //isMobile = true;
     if (isMobile) {
         initialZoom = smallerDimension * 0.007;
@@ -1262,11 +1454,14 @@ d3.xml("canvas.svg").then(fileData => {
     setupTooltip();
     initializeCycleMarkers();
     initializeInfoboxes();
+    initializeMainGraphArea();
+
+    joinMainGrapDataSourceToElements();
+    setInfoboxHovers();
 
     runOnceThenSetInterval(joinMainGrapDataSourceToElements, 10);
     runOnceThenSetInterval(writeGasUsageToDial, 60 * 1000);
     runOnceThenSetInterval(getDataFromFirebase, 5 * 1000);
     runOnceThenSetInterval(drawMainGraph, 60 * 1000);
-
     runOnceThenSetInterval(rescueMainGraph, 100);
 });

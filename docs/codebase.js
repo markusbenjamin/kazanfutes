@@ -335,6 +335,10 @@ function isFractional(value) {
     return Math.abs(Math.round(value) - value) != 0 ? true : false
 }
 
+function isInteger(value) {
+    return !isFractional(value)
+}
+
 function getZoomLevel(elementId = "canvas") {
     // Select the element by ID
     const element = d3.select(`#${elementId}`);
@@ -360,4 +364,10 @@ function getCurrentTansform(elementId = "canvas") {
 
     // Return the zoom level (scale)
     return {x: transform.x, y: transform.y, k: transform.k/smallerDimension};
+}
+
+function logHoveredElement() {
+    document.addEventListener("mouseover", event => {
+        console.log("Hovered element:", event.target);
+    });
 }
