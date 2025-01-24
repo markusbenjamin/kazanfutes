@@ -1229,7 +1229,8 @@ function setViewParameters(centeredId) {
     isMobile = /Mobi|Android/i.test(navigator.userAgent);
     params = new URLSearchParams(window.location.search);
     fromRequest = params.get("ref_source") == "qr" || params.get("ref_source") == "form";
-
+    let centeringOffsetFactor = { x: 1, y: 1.03 }
+    isMobile=true;
     if (isMobile) {
         initialZoom = smallerDimension * 0.006;
         centeredId = "general_infobox";
@@ -1244,7 +1245,7 @@ function setViewParameters(centeredId) {
         initialZoom = smallerDimension * 0.0031;
     }
     let centeredDims = getBBoxRelativeDimensions(centeredId);
-    let centeringOffsetFactor = { x: 1, y: 1.03 }
+    
     initialPos = { x: centeredDims.cx * centeringOffsetFactor.x, y: centeredDims.cy * centeringOffsetFactor.y };
 }
 
