@@ -338,11 +338,26 @@ function isFractional(value) {
 function getZoomLevel(elementId = "canvas") {
     // Select the element by ID
     const element = d3.select(`#${elementId}`);
-    
+
     // Retrieve the current transformation
     const transform = d3.zoomTransform(element.node());
-    
+
     // Return the zoom level (scale)
     return transform.k;
-  }
-  
+}
+
+function getCurrentTansform(elementId = "canvas") {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    smallerDimension = Math.min(width, height);
+
+    // Select the element by ID
+    const element = d3.select(`#${elementId}`);
+
+    // Retrieve the current transformation
+    const transform = d3.zoomTransform(element.node());
+
+    // Return the zoom level (scale)
+    return {x: transform.x, y: transform.y, k: transform.k/smallerDimension};
+}

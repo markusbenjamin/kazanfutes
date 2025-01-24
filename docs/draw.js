@@ -138,7 +138,7 @@ function draw() {
                             push();
                             translate(p.x + secondaryTickNumberPosition * cos(tickAngle), p.y + secondaryTickNumberPosition * sin(tickAngle));
                             rotate(tickAngle + PI / 2);
-                            textFont("Consolas", secondaryTickFontSize);
+                            textFont(dashboardFont, secondaryTickFontSize);
                             //text(roundTo(gasUsageRateCorrespondingToAngle, 0.1), 0, 0);
                             pop();
                         }
@@ -170,7 +170,7 @@ function draw() {
                             push();
                             translate(p.x + primaryTickNumberPosition * cos(tickAngle), p.y + primaryTickNumberPosition * sin(tickAngle));
                             rotate(tickAngle + PI / 2);
-                            textFont("Consolas", primaryTickFontSize);
+                            textFont(dashboardFont, primaryTickFontSize);
                             text(roundTo(gasUsageRateCorrespondingToAngle, 0.1), 0, 0);
                             pop();
                         }
@@ -199,7 +199,7 @@ function draw() {
 
                 if (getZoomLevel() > 5) {
                     // Write labels
-                    textFont("Consolas", 0.8);
+                    textFont(dashboardFont, 0.8);
                     fill(0);
                     text("m³/h", p.x, p.y + r * 0.35);
 

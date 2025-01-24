@@ -1,9 +1,17 @@
+@font-face {
+    font-family: 'Consolas';
+    src: url('Consolas.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
 html, body {
     margin: 0;
     padding: 0;
     overflow: hidden;
     width: 100%;
     height: 100%;
+    font-family: Consolas, monospace;
 }
 
 #tooltip {
@@ -15,6 +23,6 @@ html, body {
     border:none !important;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);;
     color: white;
-    font-family: Consolas, sans-serif; /* Font style */
+    font-family: Consolas, monospace;
     font-size: 20px; /* Font size */
 }

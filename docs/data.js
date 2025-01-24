@@ -532,7 +532,7 @@ function drawPlot(plotData, userOptions) {
 
         bottomAxis.selectAll("text") // Select tick labels
             .attr("dy", "3")
-            .style("font-family", "Consolas")
+            .style("font-family", dashboardFont)
             .style("font-size", "5px"); // Set font size for tick labels
 
         // bottom axis label
@@ -541,7 +541,7 @@ function drawPlot(plotData, userOptions) {
             .attr("y", plotDims.h + plotDims.h * ops.margins.bottom * 1.8)
             .style("text-anchor", "middle")
             .style("font-size", "6px")
-            .style("font-family", "Consolas")
+            .style("font-family", dashboardFont)
             .text(ops.axesLabel.bottom);
     }
 
@@ -573,7 +573,7 @@ function drawPlot(plotData, userOptions) {
         leftAxis.selectAll("text")
             .attr("dx", "0")
             .style("font-size", "5px")
-            .style("font-family", "Consolas")
+            .style("font-family", dashboardFont)
             .style("text-anchor", "end"); // Set font size for tick labels
 
         // left-axis label
@@ -583,7 +583,7 @@ function drawPlot(plotData, userOptions) {
             .attr("y", -plotDims.w * ops.margins.left * 0.9)
             .style("text-anchor", "middle")
             .style("font-size", "6px")
-            .style("font-family", "Consolas")
+            .style("font-family", dashboardFont)
             .text(ops.axesLabel.left);
     }
 
@@ -594,7 +594,7 @@ function drawPlot(plotData, userOptions) {
             .attr("y", -plotDims.h * ops.margins.top * 0.5)
             .style("text-anchor", "middle")
             .style("font-size", "7px")
-            .style("font-family", "Consolas")
+            .style("font-family", dashboardFont)
             .text(ops.plotLabel);
     }
 
@@ -604,7 +604,7 @@ function drawPlot(plotData, userOptions) {
             .attr("y", plotDims.h / 2)
             .style("text-anchor", "middle")
             .style("font-size", "7px")
-            .style("font-family", "Consolas")
+            .style("font-family", dashboardFont)
             .text("Adat betöltése.");
     }
     else {
@@ -703,7 +703,7 @@ function drawPlot(plotData, userOptions) {
                         .attr("y", leftScale(lastPoint[ops.dataKeys.left]) + ops.curveEndText.yOffset)
                         .style("text-anchor", "middle")
                         .style("font-size", ops.curveEndText.fontSize + "px")
-                        .style("font-family", "Consolas")
+                        .style("font-family", dashboardFont)
                         .style("fill", ops.curveEndText.col ? ops.curveEndText.col : "black")
                         .text(ops.curveEndText.text);
                 }
@@ -829,7 +829,7 @@ function writeGasUsageToDial(gasData = null) {
             .attr("x", dialBoxBB.x + dialBoxBB.width * textXOffsetFactor)
             .attr("y", dialBoxBB.y + dialBoxBB.height * 0.7)
             .text(gasTotal)
-            .style("font-family", "Consolas")
+            .style("font-family", dashboardFont)
             .style("font-size", "6.5px")
             .style("fill", "black");
         d3.select("#drawing")
@@ -838,7 +838,7 @@ function writeGasUsageToDial(gasData = null) {
             .attr("x", dialBoxBB.x + dialBoxBB.width * 0.732)
             .attr("y", dialBoxBB.y + dialBoxBB.height * 0.69)
             .text(" m³")
-            .style("font-family", "Consolas")
+            .style("font-family", dashboardFont)
             .style("font-size", "5px")
             .style("fill", "black");
         d3.select("#drawing")
@@ -867,7 +867,7 @@ function initializeCycleMarkers() {
             .attr("x", markerBB.x + markerBB.width * 0.25)
             .attr("y", markerBB.y + markerBB.height * 0.75)
             .text(cycle)
-            .style("font-family", "Consolas")
+            .style("font-family", dashboardFont)
             .style("font-size", "2.5px")
             .style("fill", "black");
     }
@@ -913,7 +913,7 @@ function updateGeneralInfobox(info) {
             .attr("x", boxDims.x + boxDims.width * xFactor)
             .attr("y", boxDims.y + boxDims.height * 0.025 + boxDims.height * yFactor)
             .text(message)
-            .style("font-family", "Consolas")
+            .style("font-family", dashboardFont)
             .style("font-size", fontSize + "px");
     }
 
@@ -973,7 +973,7 @@ function updateCycleInfobox(cycle, info) {
             .attr("x", boxDims.x + boxDims.width * xFactor)
             .attr("y", boxDims.y + boxDims.width * 0.025 + boxDims.width * yFactor)
             .text(message)
-            .style("font-family", "Consolas")
+            .style("font-family", dashboardFont)
             .style("font-size", fontSize + "px");
     }
 
@@ -1206,8 +1206,10 @@ function drawMainGraph(graphData = null) {
                         }
                     );
                     break;
+                case "":
+                    break;
             }
-            d3.select("#graph").style("fill", "rgba(0,0,0,0)");
+            //d3.select("#graph").style("fill", "rgba(0,0,0,0)");
             d3.select("#graph").style("fill-opacity", "0");
         }
     }
@@ -1230,11 +1232,13 @@ function setViewParameters(centeredId) {
     params = new URLSearchParams(window.location.search);
     fromRequest = params.get("ref_source") == "qr" || params.get("ref_source") == "form";
     let centeringOffsetFactor = { x: 1, y: 1.03 }
-    isMobile=true;
+    
+    //isMobile = true;
     if (isMobile) {
-        initialZoom = smallerDimension * 0.006;
+        initialZoom = smallerDimension * 0.007;
         centeredId = "general_infobox";
-        centeringOffsetFactor.y = 1.2;
+        centeringOffsetFactor.y = 1.35;
+        centeringOffsetFactor.x = 1.05;
     }
     /*else if (fromRequest) {
         initialZoom = smallerDimension * 0.003;
@@ -1245,9 +1249,11 @@ function setViewParameters(centeredId) {
         initialZoom = smallerDimension * 0.0031;
     }
     let centeredDims = getBBoxRelativeDimensions(centeredId);
-    
+
     initialPos = { x: centeredDims.cx * centeringOffsetFactor.x, y: centeredDims.cy * centeringOffsetFactor.y };
 }
+
+let dashboardFont = "Consolas";
 
 d3.xml("canvas.svg").then(fileData => {
     insertCanvasFromFile(fileData);
