@@ -6,6 +6,7 @@ function setup() {
     colorMode(RGB, 1, 1, 1, 1);
     rectMode(CENTER);
     strokeCap(SQUARE);
+    textAlign(CENTER, CENTER);
 }
 
 function draw() {
@@ -15,15 +16,15 @@ function draw() {
 
         //rect(xOffset, yOffset, drawingWidth, drawingHeight);
 
-        let maxGasUsage = 10;
-        let mappedGasUsage = constrain(currentGasUsageRate, 0, maxGasUsage) / maxGasUsage;
+        let maxGasUsage = 10.5;
+        let mappedGasUsage = constrain(currentGasUsageRate, 0, maxGasUsage - 0.5) / (maxGasUsage - 0.5);
         if (boilerState != null) {
             const boxDims = getBBoxP5jsDimensions("flame_nest");
             let p = { x: boxDims.cx, y: boxDims.cy }
             let s = mapSize(0.05, 0.025 * aspectRatio);
 
-            //mappedGasUsage = 1;
-            let flameSize = 0.5 + mappedGasUsage * 0.7;
+            //mappedGasUsage = 0;
+            let flameSize = 0.3 + mappedGasUsage * 0.7;
             if (boilerState == 1) {
                 let wiggleAmount = 0.06;
                 //drawFlame(
@@ -44,12 +45,13 @@ function draw() {
                 //    color(1, 1, 0, 0.9),
                 //    true
                 //);
-                extraFlameNum = mappedGasUsage > 0.8 ? 2 : (mappedGasUsage < 0.25 ? 0 : 1.5);
+                //extraFlameNum = mappedGasUsage > 0.8 ? 2 : (mappedGasUsage < 0.25 ? 0 : 1.5);
+                extraFlameNum = 2;
                 if (true) {
-                    for (let i = -(3+extraFlameNum/2); i < 4+extraFlameNum/2; i += 2) {
+                    for (let i = -(3 + extraFlameNum / 2); i < 4 + extraFlameNum / 2; i += 2) {
                         drawFlame(
-                            p.x + boxDims.w * i / 10 * 1.2,
-                            p.y + boxDims.h * 0.2,
+                            p.x + boxDims.w / 2 * i / 10 * 2,
+                            p.y + boxDims.h * 0.43,
                             s.w * random(1 - wiggleAmount, 1 + wiggleAmount) * flameSize,
                             s.h * random(1 - wiggleAmount, 1 + wiggleAmount) * flameSize,
                             color(1, 0.5, 0, 0.875),
@@ -72,49 +74,266 @@ function draw() {
                     );
                 }
             }
+
             if (isValidNumber(currentGasUsageRate)) {
                 //console.log(currentGasUsageRate);
-                const boilerDims = getBBoxP5jsDimensions("boiler_body");
+                const dialDims = getBBoxP5jsDimensions("gas_rate_gauge");
+                //console.log(dialDims)
 
-                let p = { x: boilerDims.cx, y: boilerDims.cy - boilerDims.h * 0.2 };
-                let s = boilerDims.w * 0.5;
-                stroke(boilerState ? 1 : 0, 0, boilerState ? 0 : 1, 1);
+                let p = { x: dialDims.cx, y: dialDims.cy };
+                let s = dialDims.w;
+                let r = s / 2;
+
+                let gasUsageDialOffset = PI / 4;
+                let dialAngle = (PI / 2 + gasUsageDialOffset + (TWO_PI - 2 * gasUsageDialOffset) * mappedGasUsage) * random(0.997, 1.003);
+                let dialLength = s * 0.039;
+
+                let gasUsageDialTickNum = 100;
+                let primaryTickStartLength = r * 0.75;
+                let primaryTickEndLength = r * 1;
+                let primaryTickStrokeW = 0.15;
+                let primaryTickNumberPosition = r * 0.65;
+                let primaryTickColor = 0;
+                let primaryTickFontSize = 0.8;
+
+                let secondaryTickStartLength = r * 0.85;
+                let secondaryTickEndLength = r * 1;
+                let secondaryTickStrokeW = 0.05;
+                let secondaryTickNumberPosition = r * 0.75;
+                let secondaryTickColor = 0.3;
+                let secondaryTickFontSize = 0.4;
+                let tickNum = 0;
+                for (let tickAngle = PI / 2 + gasUsageDialOffset; tickAngle <= PI / 2 + (TWO_PI - gasUsageDialOffset); tickAngle += (TWO_PI - 2 * gasUsageDialOffset) / gasUsageDialTickNum) {
+                    // Determine gas usage corresponding to drawn angle
+                    let gasUsageRateCorrespondingToAngle = constrain(
+                        (tickAngle - (PI / 2 + gasUsageDialOffset)) * (maxGasUsage - 0.5) / (TWO_PI - 2 * gasUsageDialOffset),
+                        0,
+                        maxGasUsage - 0.5
+                    )
+
+                    if (getZoomLevel() > 7.5) {
+                        // Draw secondary ticks and numbers
+                        if (tickNum % 1 == 0) {
+                            strokeWeight(secondaryTickStrokeW);
+                            stroke(secondaryTickColor);
+                            line(
+                                p.x + secondaryTickStartLength * cos(tickAngle),
+                                p.y + secondaryTickStartLength * sin(tickAngle),
+                                p.x + secondaryTickEndLength * cos(tickAngle),
+                                p.y + secondaryTickEndLength * sin(tickAngle)
+                            );
+                        }
+                        if (tickNum % 10 == 5) {
+                            strokeWeight(secondaryTickStrokeW * 1.5);
+                            stroke(secondaryTickColor);
+                            line(
+                                p.x + secondaryTickStartLength * 0.95 * cos(tickAngle),
+                                p.y + secondaryTickStartLength * 0.95 * sin(tickAngle),
+                                p.x + secondaryTickEndLength * cos(tickAngle),
+                                p.y + secondaryTickEndLength * sin(tickAngle)
+                            );
+                            fill(secondaryTickColor);
+                            noStroke();
+
+                            push();
+                            translate(p.x + secondaryTickNumberPosition * cos(tickAngle), p.y + secondaryTickNumberPosition * sin(tickAngle));
+                            rotate(tickAngle + PI / 2);
+                            textFont("Consolas", secondaryTickFontSize);
+                            //text(roundTo(gasUsageRateCorrespondingToAngle, 0.1), 0, 0);
+                            pop();
+                        }
+                    }
+
+
+                    // Draw primary ticks and numbers
+                    if (!isFractional(roundTo(gasUsageRateCorrespondingToAngle, 0.1))) {
+                        stroke(primaryTickColor);
+                        if (getZoomLevel() > 5) {
+                            strokeWeight(primaryTickStrokeW);
+                        }
+                        else {
+                            strokeWeight(primaryTickStrokeW * 2);
+                            primaryTickStartLength = primaryTickNumberPosition;
+                        }
+                        line(
+                            p.x + primaryTickStartLength * cos(tickAngle),
+                            p.y + primaryTickStartLength * sin(tickAngle),
+                            p.x + primaryTickEndLength * cos(tickAngle),
+                            p.y + primaryTickEndLength * sin(tickAngle)
+                        );
+                    }
+                    if (getZoomLevel() > 5) {
+                        if (!isFractional(roundTo(gasUsageRateCorrespondingToAngle, 0.1))) {
+                            fill(primaryTickColor);
+                            noStroke();
+
+                            push();
+                            translate(p.x + primaryTickNumberPosition * cos(tickAngle), p.y + primaryTickNumberPosition * sin(tickAngle));
+                            rotate(tickAngle + PI / 2);
+                            textFont("Consolas", primaryTickFontSize);
+                            text(roundTo(gasUsageRateCorrespondingToAngle, 0.1), 0, 0);
+                            pop();
+                        }
+                    }
+
+                    tickNum++;
+                }
+
+                // Draw hand
+                strokeWeight(0.5);
+                stroke(0.1);
+                //line(p.x, p.y, p.x + s * dialLength * cos(dialAngle), p.y + s * dialLength * sin(dialAngle));
+                //strokeCap(SQUARE);
+                drawIsoscelesTriangle(
+                    p.x - r * 0.2 * cos(dialAngle), p.y - r * 0.2 * sin(dialAngle),
+                    0.201, r * 2, PI / 2 + dialAngle, 0.25);
+
+                // Draw gauge
                 stroke(0);
                 strokeWeight(0.6);
                 noFill();
                 ellipse(p.x, p.y, s, s);
                 fill(0);
                 ellipse(p.x, p.y, s * 0.1, s * 0.1);
+                noStroke();
 
+                if (getZoomLevel() > 5) {
+                    // Write labels
+                    textFont("Consolas", 0.8);
+                    fill(0);
+                    text("m³/h", p.x, p.y + r * 0.35);
 
-                let gasUsageDialOffset = PI / 3;
-                let gasUsageDialSpacing = PI / 6;
-
-                let dialAngle = (PI / 2 + gasUsageDialOffset + (TWO_PI - 2 * gasUsageDialOffset) * mappedGasUsage)*random(0.995,1.005);
-                let dialLength = s * 0.038;
-
-                let tickStartLength = s * 0.038 * 0.8;
-                for (let tickAngle = PI / 2 + gasUsageDialOffset; tickAngle <= PI / 2 + TWO_PI - gasUsageDialOffset + gasUsageDialSpacing; tickAngle += gasUsageDialSpacing) {
-                    strokeWeight(0.25);
-                    stroke(0.5);
-                    line(
-                        p.x + s * tickStartLength * cos(tickAngle),
-                        p.y + s * tickStartLength * sin(tickAngle),
-                        p.x + s * dialLength * cos(tickAngle),
-                        p.y + s * dialLength * sin(tickAngle)
-                    );
+                    let rotateToVertical = PI / 2;
+                    let labelAngleOffset = PI * 0.85;
+                    let labelRadius = r * 0.84;
+                    textFont("Baskerville", 0.4);
+                    fill(0, 0.1);
+                    textOnArcUprightWeighted("MB Műszertechnika", p.x, p.y, labelRadius, (0 + labelAngleOffset) + rotateToVertical, (TWO_PI - labelAngleOffset) + rotateToVertical);
                 }
-                strokeWeight(0.5);
-                stroke(0.1);
-                strokeCap(ROUND);
-                line(p.x, p.y, p.x + s * dialLength * cos(dialAngle), p.y + s * dialLength * sin(dialAngle));
-                strokeCap(SQUARE);
-
             }
         }
 
         flipToCanvas();
     }
+}
+
+function textOnArcUprightWeighted(
+    txt,
+    centerX,
+    centerY,
+    radius,
+    startAngle,
+    endAngle
+) {
+    const len = txt.length;
+    if (len === 0) return;
+
+    // 1) Measure the width of each character, so we know how to proportionally
+    //    distribute them along the arc.
+    let charWidths = [];
+    let totalWidth = 0;
+    for (let i = 0; i < len; i++) {
+        let w = textWidth(txt[i]);
+        charWidths.push(w);
+        totalWidth += w;
+    }
+
+    // 2) Keep track of how much width we've consumed so far
+    //    so we can find each character's position along the arc.
+    let consumedWidth = 0;
+
+    for (let i = 0; i < len; i++) {
+        // Character's own width
+        let w = charWidths[i];
+
+        // We want to place this character so that its *center* is allocated
+        // half of its own width beyond whatever we've placed so far.
+        let centerOfChar = consumedWidth + w / 2;
+
+        // Convert that center position into a fraction of the total string width
+        let fraction = centerOfChar / totalWidth;
+
+        // Interpolate the angle for this character’s center
+        let angle = TWO_PI - lerp(startAngle, endAngle, fraction);
+
+        push();
+        translate(
+            centerX + radius * cos(angle),
+            centerY + radius * sin(angle)
+        );
+
+        rotate(angle + PI + PI / 2);
+        text(txt[i], 0, 0);
+        pop();
+
+        // 3) Update consumedWidth to move past this character
+        consumedWidth += w;
+    }
+}
+
+function textOnArcUpright(
+    txt,
+    centerX,
+    centerY,
+    radius,
+    startAngle,
+    endAngle
+) {
+    const len = txt.length;
+    if (len === 0) return;
+
+    for (let i = 0; i < len; i++) {
+        // Interpolate the angle for this character.
+        // If you have only one character (len=1), angleStep is irrelevant, so just place it at startAngle.
+        let angle = (len > 1)
+            ? map(len - 1 - i, 0, len - 1, startAngle, endAngle)
+            : (startAngle + endAngle) / 2;
+
+        push();
+        // Move to the circle perimeter at this angle
+        translate(
+            centerX + radius * cos(angle),
+            centerY + radius * sin(angle)
+        );
+        rotate(angle + PI + PI / 2);
+        text(txt[i], 0, 0);
+        pop();
+    }
+}
+
+function drawIsoscelesTriangle(x, y, ratio, sideLength, rotationAngle, scaleFactor = 1) {
+    push();
+
+    // Translate to the desired position.
+    translate(x, y);
+
+    // Apply scaling.
+    scale(scaleFactor);
+
+    // Apply rotation.
+    rotate(rotationAngle);
+
+    // Calculate the base of the triangle.
+    let base = ratio * sideLength;
+
+    // Half of the base.
+    let halfBase = base / 2;
+
+    // The height of the isosceles triangle from Pythagorean theorem:
+    // sideLength^2 = height^2 + (base/2)^2
+    let height = sqrt(sideLength * sideLength - halfBase * halfBase);
+
+    // Draw the triangle using the p5.js triangle() function.
+    // The reference position is moved so that:
+    //   - The base is centered at (0, 0).
+    //   - The apex is at (0, -height).
+    triangle(
+        -halfBase, 0,       // left base corner
+        halfBase, 0,       // right base corner
+        0, -height  // apex
+    );
+
+    pop();
 }
 
 function extractMappingParameters() { //The whole scheme is not really used, should be removed
@@ -216,6 +435,7 @@ function flipToCanvas() {
         select("#p5jsDrawing").elt.appendChild(group.cloneNode(true)); // Clone and append each <g>
     });
     document.getElementById("defaultCanvas0").style.display = "none";
+
     clear();
 }
 

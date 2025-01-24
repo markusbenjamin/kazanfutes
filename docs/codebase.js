@@ -56,14 +56,14 @@ function hourStamp(date = null, withSeconds = false) {
     const minutes = String(date.getMinutes()).padStart(2, '0');
     const seconds = String(date.getSeconds()).padStart(2, '0');
 
-    return withSeconds ? `${hours}:${minutes}:${seconds}`:`${hours}:${minutes}`;
+    return withSeconds ? `${hours}:${minutes}:${seconds}` : `${hours}:${minutes}`;
 }
 
 function dayStamp(date = null, useYesterdayBeforeNMinutes = false, nMinutes = 0) {
     if (date == null) {
         date = new Date();
     }
-    
+
     const currentMinutes = date.getHours() * 60 + date.getMinutes();
 
     if (useYesterdayBeforeNMinutes && currentMinutes < nMinutes) {
@@ -249,7 +249,7 @@ function getFractionalHourOfDay(date = null) {
     if (date == null) {
         date = new Date()
     }
-    
+
     return date.getHours() + date.getMinutes() / 60 + date.getSeconds() / 3600;
 }
 
@@ -280,17 +280,17 @@ function deepObjectMerger(target, source) {
     if (typeof target !== 'object' || target === null) {
         target = {};
     }
-    
+
     // Go through each property in the source
     for (const key in source) {
         if (Object.prototype.hasOwnProperty.call(source, key)) {
             const sourceValue = source[key];
             const targetValue = target[key];
-            
+
             // If sourceValue is a non-array object, recurse
             if (
-                typeof sourceValue === 'object' && 
-                sourceValue !== null && 
+                typeof sourceValue === 'object' &&
+                sourceValue !== null &&
                 !Array.isArray(sourceValue)
             ) {
                 target[key] = deepObjectMerger(targetValue, sourceValue);
@@ -329,5 +329,20 @@ function splitDataIntoSegments(data, xKey, gapThreshold) {
 
 function isValidNumber(value) {
     return typeof value === 'number' && !isNaN(value) && isFinite(value);
+}
+
+function isFractional(value) {
+    return Math.abs(Math.round(value) - value) != 0 ? true : false
+}
+
+function getZoomLevel(elementId = "canvas") {
+    // Select the element by ID
+    const element = d3.select(`#${elementId}`);
+    
+    // Retrieve the current transformation
+    const transform = d3.zoomTransform(element.node());
+    
+    // Return the zoom level (scale)
+    return transform.k;
   }
   

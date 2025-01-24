@@ -255,7 +255,7 @@ function getDataFromFirebase() {
                 {
                     cyclesOn: onCycles.length > 0 ? "Bekapcsolt körök: " + onCycles.join(", ") + "." : "Senki nem kér fűtést.",
                     externalTemp: "Külső hőmérséklet: " + systemJSON.state.external_temp + " °C.",
-                    controlLastRan: "Vezérlés lefutott: " + timeSinceControlLastRan +" " +lastControlRanGranularity,
+                    controlLastRan: "Vezérlés lefutott: " + timeSinceControlLastRan + " " + lastControlRanGranularity,
                     latestRequest: { target: requestTarget, origin: requestOrigin, timeSince: timeSinceLastRequest, granularity: timeSinceLastRequestGranularity, hourStamp: lastRequestHourStamp },
                     scheduleLastUpdated: "Beállítások frissítve: " + hourStamp(lastScheduleUpdate) + ".",
                     averageControlDiff: averageControlDiff
@@ -298,9 +298,9 @@ function getDataFromFirebase() {
                         lastGasUpdate = new Date();
                     }
                 }
-                console.log(lastGasUpdate)
-                console.log(currentGasUsageRate)
-                console.log(timeItTookToUpdateGasUsage)
+                //console.log(lastGasUpdate)
+                //console.log(currentGasUsageRate)
+                //console.log(timeItTookToUpdateGasUsage)
             });
         })
         .catch(error => {
@@ -1102,7 +1102,7 @@ function drawMainGraph(graphData = null) {
                             dataKeys: { bottom: "h_of_day_frac", left: "burn_rate_in_m3_per_h" },
                             background: { show: false },
                             plotStyle: { joined: true, col: "rgb(0, 0, 0)", thickness: "2", startCap: false, endCap: true },
-                            segment: { do: true, gap: 1, endCaps: true, startCaps: true}
+                            segment: { do: true, gap: 1, endCaps: true, startCaps: true }
                         }
                     );
                     break;
@@ -1160,26 +1160,28 @@ function drawMainGraph(graphData = null) {
                     }
                     break;
                 case "room_plot":
-                    let roomOverrides = graphData["override_requests"][mainGraphSetting.roomNumToPlot];
-                    roomOverrides = requestLists[mainGraphSetting.roomNumToPlot];
-                    requestMarkers = [];
-                    if (roomOverrides) {
-                        roomOverrides.forEach(request => {
-                            if (getUnixDay() == getUnixDay(dateFromTimestamp(request.time)) && getUnixDay() == getUnixDay(dateFromTimestamp(request.timestamp))) {
-                                requestMarkers.push({
-                                    //x1: getFractionalHourOfDay(dateFromTimestamp(request.timestamp)),
-                                    //x2: getFractionalHourOfDay(dateFromTimestamp(request.time)),
-                                    pos: getFractionalHourOfDay(dateFromTimestamp(request.time)),
-                                    h: parseInt(request.set_temp)
-                                })
-                            }
-                            else if (getUnixDay() == getUnixDay(dateFromTimestamp(request.time))) {
-                                requestMarkers.push({
-                                    pos: getFractionalHourOfDay(dateFromTimestamp(request.time)),
-                                    h: parseInt(request.set_temp)
-                                })
-                            }
-                        });
+                    let roomOverrides;
+                    let requestMarkers = [];
+                    if (requestLists) {
+                        roomOverrides = requestLists[mainGraphSetting.roomNumToPlot];
+                        if (roomOverrides) {
+                            roomOverrides.forEach(request => {
+                                if (getUnixDay() == getUnixDay(dateFromTimestamp(request.time)) && getUnixDay() == getUnixDay(dateFromTimestamp(request.timestamp))) {
+                                    requestMarkers.push({
+                                        //x1: getFractionalHourOfDay(dateFromTimestamp(request.timestamp)),
+                                        //x2: getFractionalHourOfDay(dateFromTimestamp(request.time)),
+                                        pos: getFractionalHourOfDay(dateFromTimestamp(request.time)),
+                                        h: parseInt(request.set_temp)
+                                    })
+                                }
+                                else if (getUnixDay() == getUnixDay(dateFromTimestamp(request.time))) {
+                                    requestMarkers.push({
+                                        pos: getFractionalHourOfDay(dateFromTimestamp(request.time)),
+                                        h: parseInt(request.set_temp)
+                                    })
+                                }
+                            });
+                        }
                     }
                     drawPlot(
                         extractRoomScheduleFromCondensedSchedule(mainGraphSetting.roomNumToPlot),
@@ -1204,7 +1206,7 @@ function drawMainGraph(graphData = null) {
                             dataKeys: { bottom: "h_of_day_frac", left: "temp" },
                             plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2", startCap: false, endCap: true },
                             curveEndText: { show: false, fontSize: 10, text: "bla", col: "red" },
-                            segment: { do: true, gap: 0.5, endCaps: true, startCaps: true}
+                            segment: { do: true, gap: mainGraphSetting.roomNumToPlot == 10 ? 2 : 0.5, endCaps: true, startCaps: true }
                         }
                     );
                     break;
@@ -1232,7 +1234,6 @@ function setViewParameters(centeredId) {
     params = new URLSearchParams(window.location.search);
     fromRequest = params.get("ref_source") == "qr" || params.get("ref_source") == "form";
 
-    let centeringOffsetFactor = { x: 1, y: 1 }
     if (isMobile) {
         initialZoom = smallerDimension * 0.006;
         centeredId = "general_infobox";
@@ -1244,9 +1245,10 @@ function setViewParameters(centeredId) {
         centeringOffsetFactor.y = 1.1;
     }*/
     else {
-        initialZoom = smallerDimension * 0.003;
+        initialZoom = smallerDimension * 0.0031;
     }
     let centeredDims = getBBoxRelativeDimensions(centeredId);
+    let centeringOffsetFactor = { x: 1, y: 1.03 }
     initialPos = { x: centeredDims.cx * centeringOffsetFactor.x, y: centeredDims.cy * centeringOffsetFactor.y };
 }
 
