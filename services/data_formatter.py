@@ -59,7 +59,7 @@ for digestion_day in digestion_days:
         log_file_path = "data/logs/temperature_and_humidity/temperature_and_humidity.json"
         action_string = f'formatting daily room measurements for {digestion_daystamp}'
 
-        rooms_info = get_rooms_info()
+        rooms_info = get_rooms_info(just_controlled=False)
 
         try:
             loaded_log = load_ndjson_to_json_list(f"{log_file_path}{log_file_suffix}")
