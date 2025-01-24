@@ -647,10 +647,6 @@ function drawPlot(plotData, userOptions) {
 
             const segments = ops.segment.do ? splitDataIntoSegments(plotData, ops.dataKeys.bottom, ops.segment.gap) : [plotData];
 
-            if (segments.length > 1 && ops.plotLabel.length > 2) {
-                console.log(ops.plotLabel + ", " + segments.length)
-            }
-
             // Draw a path for each segment
             segments.forEach((segment, segmentIndex) => {
                 if (!segment || segment.length === 0) return;
