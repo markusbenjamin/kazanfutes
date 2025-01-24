@@ -61,7 +61,7 @@ def get_and_export_system_state():
     success = False
     try:
         report("Acquiring measured temps.",verbose=True)
-        room_temps_and_humidity = get_room_temps_and_humidity()
+        room_temps_and_humidity = get_room_temps_and_humidity(just_controlled=False)
         measured_temps = {}
         sensor_last_updated = {}
         for room, vals in room_temps_and_humidity.items():
