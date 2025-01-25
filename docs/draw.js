@@ -42,7 +42,7 @@ function drawExternalThermometer() {
         }
         let tempStripRange = [y + h * 0.425, y - h * 0.425]
         let tempLineX = x - w * 0.255;
-        let tempLineW = w * 0.18;
+        let tempLineW = w * 0.15;
         let extTempPos = map(externalTemp, tempRange[0], tempRange[1], tempStripRange[0], tempStripRange[1]);
         let extTempNorm = externalTemp / (tempRange[1] - tempRange[0]);
 
