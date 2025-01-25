@@ -362,6 +362,7 @@ def update_valid_requests_on_firebase():
                         latest_by_time[time_val] = entry
 
             return list(latest_by_time.values())
+       
         log_file_path_1 = f"{export_path_prefix}config/scheduling/local_scheduling_files/override_rooms.csv"
         log_file_path_2 = f"{export_path_prefix}config/scheduling/local_scheduling_files/override_rooms_qr.csv"
         action_string = f'updating daily room overrides on Firebase'
