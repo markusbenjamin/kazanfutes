@@ -1231,9 +1231,10 @@ function updateGeneralInfobox(info) {
     let lineShift = 0;
     let lineOffset = -0.025;
 
-    addLineToBox(info.externalTemp, 0.02, lineOffset + lineHeight * 2, lineFontSize);
+    //addLineToBox(info.externalTemp, 0.02, lineOffset + lineHeight * 2, lineFontSize);
+    addLineToBox(info.externalTemp, 0.02, lineOffset + lineHeight * 8, lineFontSize);
 
-    addLineToBox(info.controlLastRan, 0.02, lineOffset + lineHeight * 3.5, lineFontSize);
+    addLineToBox(info.controlLastRan, 0.02, lineOffset + lineHeight * 6.5, lineFontSize);
 
     let latestRequestString = "Utolsó kérés: " + info.latestRequest.hourStamp + ", " + info.latestRequest.origin + ", " + info.latestRequest.target + "."
     if (info.latestRequest.granularity == "órája" && info.latestRequest.timeSince > getFractionalHourOfDay()) {
@@ -1250,10 +1251,10 @@ function updateGeneralInfobox(info) {
     if (info.averageControlDiff != 0.0) {
         let reportedControlDiff = roundTo(info.averageControlDiff, 0.1);
         let averageControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
-        addLineToBox("Átlagos eltérés: " + averageControlDiffPre + reportedControlDiff + " °C.", 0.02, lineOffset + lineHeight * (6.5 + lineShift), lineFontSize);
+        addLineToBox("Átlagos eltérés: " + averageControlDiffPre + reportedControlDiff + " °C.", 0.02, lineOffset + lineHeight * (2 + lineShift), lineFontSize);
     }
 
-    addLineToBox(info.cyclesOn, 0.02, lineOffset + lineHeight * (8 + lineShift), lineFontSize);
+    addLineToBox(info.cyclesOn, 0.02, lineOffset + lineHeight * (3 + lineShift), lineFontSize);
     addLineToBox("Gázfogyasztási ráta: " + (isValidNumber(currentGasUsageRate) ? currentGasUsageRate : "") + (isValidNumber(currentGasUsageRate) ? " m³/h." : ""), 0.02, lineOffset + lineHeight * (9 + lineShift), lineFontSize);
     if (isValidNumber(currentGasTotal)) {
         let gasTotalString = currentGasTotal;
@@ -1283,8 +1284,14 @@ function updateCycleInfobox(cycle, info) {
             .style("font-size", fontSize + "px");
     }
 
-    addLineToBox(cycle + ["-es", "-es", "-mas", "-es"][cycle - 1] + " kör: " + ["ki", "be"][info.state], 0.08, 0.13, 7)
+    //addLineToBox(cycle + ["-es", "-es", "-mas", "-es"][cycle - 1] + " kör: " + ["ki", "be"][info.state], 0.08, 0.13, 7)
+    //    .style("text-decoration", "underline");
+
+    //addLineToBox(["Kazán 1", "Kazán 2", "Presszó", "Trafóház"][cycle - 1] + [": ki", ": be"][info.state], 0.08, 0.13, 7)
+    //    .style("text-decoration", "underline");
+    addLineToBox(["Kazán 1", "Kazán 2", "Presszó", "Trafóház"][cycle - 1] + ":", 0.08, 0.13, 6.5)
         .style("text-decoration", "underline");
+    addLineToBox(["ki", "be"][info.state], 0.76, 0.13, 5.5);
 
     addLineToBox(cycle < 4 ? "Átlagos eltérés:" : "Eltérés:", 0.08, 0.13 * 2.2, 5.5)
     if (isValidNumber(info.totalControlDiff)) {
@@ -1431,45 +1438,55 @@ const roomsColorScale = d3.scaleLinear().domain([1, 11]).range(["green", "orange
 
 function redrawRoomHovers(rooms, emphasis) {
     rooms.forEach(roomNum => {
-        let roomID = roomsDataAndState[roomNum].roomID;
-        let roomName = roomsDataAndState[roomNum].roomName;
-        let roomTemp = roomsDataAndState[roomNum].temp;
-        let roomColor = d3.color(roomsColorScale(roomNum));
-        let roomElement = d3.select("#" + roomID);
-        let roomBox = getBBoxDrawingDimensions(roomID);
-        let parentParentElement = d3.select(roomElement.node().parentNode.parentNode);
-        roomElement
-            .style("stroke", emphasis ? roomColor : "black")
-            .style("stroke-width", emphasis ? "2.5" : "0.25");
-        if (emphasis) {
-            let roomTextOffsets = {
-                "Oktopusz": { x: 0.05, y: 0 },
-                "Gólyafészek": { x: 0, y: 0 },
-                "PK": { x: 0, y: 0 },
-                "SZGK": { x: 0, y: 0 },
-                "Mérce": { x: 0, y: 0 },
-                "Lahmacun": { x: 0.05, y: 0.1 },
-                "Gólyairoda": { x: -0.05, y: 0 },
-                "kisterem": { x: 0, y: 0.12 },
-                "vendégtér": { x: 0.05, y: 0.07 },
-                "Trafóház": { x: -0.05, y: 0.15 },
-            }
-            roomElement.raise();
-            parentParentElement.append("text")
-                .attr("x", roomBox.x + roomBox.w / 2 + roomBox.w * roomTextOffsets[roomID].x) // Center horizontally
-                .attr("y", roomBox.y + roomBox.h / 2 + roomBox.h * roomTextOffsets[roomID].y) // Center vertically
-                .attr("text-anchor", "middle") // Align the text center horizontally
-                .attr("dominant-baseline", "middle") // Align the text center vertically
-                .style("fill", "white")
-                .style("font-size", roomNum == 7 ? "6" : "6")
-                .text(roomTemp)
-                .attr("class", "room-emphasis-text clickthrough")
-                .raise();
+        if (roomNum != 11) {
+            let roomID = roomsDataAndState[roomNum].roomID;
+            let roomName = roomsDataAndState[roomNum].roomName;
+            let roomTemp = roomsDataAndState[roomNum].temp;
+            let roomColor = d3.color(roomsColorScale(roomNum));
+            let roomElement = d3.select("#" + roomID);
+            let roomBox = getBBoxDrawingDimensions(roomID);
+            let parentParentElement = d3.select(roomElement.node().parentNode.parentNode);
+            // Clone the roomElement
+            let clonedElement = parentParentElement.append(() => roomElement.node().cloneNode(true));
 
+            // Style the cloned element
+            clonedElement
+                .style("fill-opacity", "0")
+                .style("stroke", emphasis ? roomColor : "black")
+                .style("stroke-width", emphasis ? "2.5" : "0.25")
+                .attr("class", "room-emphasis clickthrough")
+                .raise();
+            if (emphasis) {
+                let roomTextOffsets = {
+                    "Oktopusz": { x: 0.05, y: 0 },
+                    "Gólyafészek": { x: 0, y: 0 },
+                    "PK": { x: 0, y: 0 },
+                    "SZGK": { x: 0, y: 0 },
+                    "Mérce": { x: 0, y: 0 },
+                    "Lahmacun": { x: 0.05, y: 0.1 },
+                    "Gólyairoda": { x: -0.05, y: 0 },
+                    "kisterem": { x: 0, y: 0.12 },
+                    "vendégtér": { x: 0.05, y: 0.07 },
+                    "Trafóház": { x: -0.05, y: 0.16 },
+                }
+                roomElement.raise();
+                parentParentElement.append("text")
+                    .attr("x", roomBox.x + roomBox.w / 2 + roomBox.w * roomTextOffsets[roomID].x) // Center horizontally
+                    .attr("y", roomBox.y + roomBox.h / 2 + roomBox.h * roomTextOffsets[roomID].y) // Center vertically
+                    .attr("text-anchor", "middle") // Align the text center horizontally
+                    .attr("dominant-baseline", "middle") // Align the text center vertically
+                    .style("fill", "white")
+                    .style("font-size", roomNum == 7 ? "6" : "6")
+                    .text(roomTemp)
+                    .attr("class", "room-emphasis clickthrough")
+                    .raise();
+
+            }
         }
     });
+
     if (!emphasis) {
-        d3.selectAll(".room-emphasis-text").remove();
+        d3.selectAll(".room-emphasis").remove();
     }
 }
 
