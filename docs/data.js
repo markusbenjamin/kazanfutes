@@ -602,7 +602,7 @@ function drawPlot(plotData, userOptions) {
         let backgroundRect = containerElement.append("rect")
             .attr("width", containerDims.w)
             .attr("height", containerDims.h)
-            .attr("fill", mainGraphContentLocked ? "rgba(250,250,250,1)" : ops.background.col)
+            .attr("fill", mainGraphContentLocked ? "rgb(253, 253, 253)" : ops.background.col)
             .attr("opacity", ops.background.show ? 1 : 0);
 
         if (ops.parentId === 'graph' && mainGraphContentLocked) {
@@ -1135,9 +1135,9 @@ function initializeExternalThermometer() {
     d3.select("#external_thermometer")
         .style("fill", "rgba(253,253,253,1)")
         .style("fill-opacity", 1)
-        .style("stroke", "rgba(0,0,0,1)")
+        .style("stroke", "rgba(0,0,0,0.75)")
         .style("stroke-opacity", 1)
-        .style("stroke-width", 0.75);
+        .style("stroke-width", 0.5);
 }
 
 function initializeCycleMarkers() {
@@ -1397,6 +1397,7 @@ function resetAllRoomsPlotToAllCycles() {
     mainGraphSetting = mainGraphDefaultSetting;
     mainGraphSetting.roomNumsToPlot = d3.range(1, 12, 1);
     mainGraphSetting.hoveredCycle = 0;
+    redrawRoomHovers(mainGraphSetting.roomNumsToPlot, false);
 }
 
 function setInfoboxHovers() {
@@ -1407,6 +1408,7 @@ function setInfoboxHovers() {
                     mainGraphSetting.hoveredCycle = cycleNum;
                     mainGraphSetting.roomNumsToPlot = cyclesDataAndState[cycleNum].rooms
                     drawMainGraph();
+                    redrawRoomHovers(mainGraphSetting.roomNumsToPlot, true);
                 }
             })
             .on("mouseout", function () {
@@ -1425,6 +1427,51 @@ function setInfoboxHovers() {
     }
 }
 
+const roomsColorScale = d3.scaleLinear().domain([1, 11]).range(["green", "orange"]); // Ha újabb szobát kell hozzáadni, akkor kell majd egy mapping a szobaszámok és a szín között, ami nem lineáris
+
+function redrawRoomHovers(rooms, emphasis) {
+    rooms.forEach(roomNum => {
+        let roomID = roomsDataAndState[roomNum].roomID;
+        let roomName = roomsDataAndState[roomNum].roomName;
+        let roomTemp = roomsDataAndState[roomNum].temp;
+        let roomColor = d3.color(roomsColorScale(roomNum));
+        let roomElement = d3.select("#" + roomID);
+        let roomBox = getBBoxDrawingDimensions(roomID);
+        let parentParentElement = d3.select(roomElement.node().parentNode.parentNode);
+        roomElement
+            .style("stroke", emphasis ? roomColor : "black")
+            .style("stroke-width", emphasis ? "2.5" : "0.25");
+        if (emphasis) {
+            let roomTextOffsets = {
+                "Oktopusz": { x: 0.05, y: 0 },
+                "Gólyafészek": { x: 0, y: 0 },
+                "PK": { x: 0, y: 0 },
+                "SZGK": { x: 0, y: 0 },
+                "Mérce": { x: 0, y: 0 },
+                "Lahmacun": { x: 0.05, y: 0.1 },
+                "Gólyairoda": { x: -0.05, y: 0 },
+                "kisterem": { x: 0, y: 0.12 },
+                "vendégtér": { x: 0.05, y: 0.07 },
+                "Trafóház": { x: -0.05, y: 0.15 },
+            }
+            roomElement.raise();
+            parentParentElement.append("text")
+                .attr("x", roomBox.x + roomBox.w / 2 + roomBox.w * roomTextOffsets[roomID].x) // Center horizontally
+                .attr("y", roomBox.y + roomBox.h / 2 + roomBox.h * roomTextOffsets[roomID].y) // Center vertically
+                .attr("text-anchor", "middle") // Align the text center horizontally
+                .attr("dominant-baseline", "middle") // Align the text center vertically
+                .style("fill", "white")
+                .style("font-size", roomNum == 7 ? "6" : "6")
+                .text(roomTemp)
+                .attr("class", "room-emphasis-text clickthrough")
+                .raise();
+
+        }
+    });
+    if (!emphasis) {
+        d3.selectAll(".room-emphasis-text").remove();
+    }
+}
 
 function drawMainGraph(graphData = null) {
     if (graphData == null) {
@@ -1631,7 +1678,6 @@ function drawMainGraph(graphData = null) {
                     }
                     break;
                 case "all_rooms":
-                    const colorScale = d3.scaleLinear().domain([1, 11]).range(["green", "orange"]);
                     range = d3.extent(Object.values(graphData).map(value => value.map(elem => elem['temp'])).flat());
 
                     let drawForSingleCycle = mainGraphSetting.hoveredCycle > 0;
@@ -1668,7 +1714,7 @@ function drawMainGraph(graphData = null) {
                     );
                     [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].forEach(roomNum => {
                         let emphasis = mainGraphSetting.roomNumsToPlot.includes(roomNum);
-                        let plotColor = d3.color(colorScale(roomNum));
+                        let plotColor = d3.color(roomsColorScale(roomNum));
                         let showEndText = true;
                         let endTextColor = "rgba(0,0,0,1)";
                         if (!emphasis) {
@@ -1688,7 +1734,7 @@ function drawMainGraph(graphData = null) {
                                 smoothing: { bottom: 0, left: 10 },
                                 domain: { bottom: [0, 24], left: [Math.floor(range[0]), Math.ceil(range[1])] },
                                 dataKeys: { bottom: "h_of_day_frac", left: "temp" },
-                                plotStyle: { joined: true, col: plotColor, thickness: "1", startCap: false, endCap: true, hoverableCurve: emphasis },
+                                plotStyle: { joined: true, col: plotColor, thickness: "1.25", startCap: false, endCap: true, hoverableCurve: emphasis },
                                 curveEndText: { show: showEndText, fontSize: 5, text: roomsDataAndState[roomNum].name, col: plotColor, xOffset: 2.5, yOffset: 1.5 },
                                 segment: { do: true, gap: roomNum == 10 ? 2 : 0.5, endCaps: true, startCaps: true }
                             }
