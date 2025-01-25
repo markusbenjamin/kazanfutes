@@ -329,6 +329,54 @@ function getDataFromFirebase() {
 
 let lastGasUpdate, timeItTookToUpdateGasUsage, prevGasUsageRate;
 
+function extractHeatingPeriodsForCycleFromHeatingState(cycleNum, heatingState) {
+    let heatingPeriods = [];
+    let prevHeatingState = -1;
+    heatingState.forEach(timepoint => {
+        if (timepoint.cycle_states) {
+            if (prevHeatingState == -1) {
+                prevHeatingState = timepoint.cycle_states[cycleNum];
+            }
+            else {
+                let currentHeatingState = timepoint.cycle_states[cycleNum];
+                let currentHeatingSwitch = currentHeatingState - prevHeatingState;
+                if (currentHeatingState == 1 && currentHeatingSwitch == 1) { // Heating on, start of rect
+                    if (!heatingPeriods) { heatingPeriods = [] };
+                    heatingPeriods.push({
+                        "x1": timepoint.h_of_day_frac
+                    })
+                }
+                if (currentHeatingState == 0 && currentHeatingSwitch == -1) {
+                    if (!heatingPeriods) {
+                        heatingPeriods = [];
+                        heatingPeriods.push({
+                            "x2": timepoint.h_of_day_frac
+                        })
+                    }
+                    else {
+                        heatingPeriods[heatingPeriods.length - 1].x2 = timepoint.h_of_day_frac;
+                    }
+                }
+                prevHeatingState = timepoint.cycle_states[cycleNum];
+            }
+            //console.log("timepoint: " + timepoint.timestamp + ", heating state: " + currentHeatingState)
+        }
+    });
+    console.log("PRE")
+    console.log(heatingPeriods)
+    if (heatingPeriods.length > 0) {
+        if (!heatingPeriods[0].x1) {
+            heatingPeriods[0].x1 = 0;
+        }
+        if (!heatingPeriods[heatingPeriods.length - 1].x2) {
+            heatingPeriods[heatingPeriods.length - 1].x2 = getFractionalHourOfDay();
+        }
+    }
+    console.log("POST: ")
+    console.log(heatingPeriods)
+    return heatingPeriods;
+}
+
 function extractRoomScheduleFromCondensedSchedule(roomNum) {
     if (condensedSchedule === undefined) { return undefined }
     else {
@@ -486,6 +534,7 @@ function drawPlot(plotData, userOptions) {
         now: { show: false, pos: null },
         segment: { do: false, gap: null },
         curveEndText: { show: false, fontSize: null, text: null, col: null, xOffset: 13, yOffset: 3 },
+        rects: false, //Usage: rects: {when: "before", list:[{x1: 0, y1: 0, x2: 1, y2: 1, col:  fill: "#ff0000", stroke:"#ff0000", strokeWeight: 2, dashed: false, dashing: "4,4"}, {}...]}
         markers: false //Usage: markers: {when: "before", list:[{pos: 12, h: 2}], col: "#ff0000", thickness: 2, dashed: false, dashing: "4,4", endCap: true, thickness: 5}
     }
     ops = deepObjectMerger(defaultOptions, userOptions);
@@ -693,6 +742,24 @@ function drawPlot(plotData, userOptions) {
             plotData = calculateMovingAverage(plotData, ops.dataKeys.left, ops.smoothing.left);
         }
 
+        function drawRects() {
+            ops.rects.list.forEach(rect => {
+                plotElement.append("rect")
+                    .attr("x", bottomScale(rect.x1))
+                    .attr("y", leftScale(rect.y2))
+                    .attr("width", bottomScale(rect.x2) - bottomScale(rect.x1)) // Calculate width
+                    .attr("height", leftScale(rect.y1) - leftScale(rect.y2))//leftScale(rect.y2) - leftScale(rect.y1)) // Calculate height
+                    .style("fill", rect.fill || "none") // Default to no fill if not specified
+                    .style("stroke", rect.stroke || "none") // Default to no stroke if not specified
+                    .style("stroke-width", rect.strokeWeight || 0) // Default to 0 if not specified
+                    .style("stroke-dasharray", rect.dashed ? rect.dashing : null); // Set dashing if dashed is true
+            });
+        }
+
+        if (ops.rects && ops.rects.when == "before") {
+            drawRects();
+        }
+
         function drawMarkers() {
             ops.markers.list.forEach(marker => {
                 let markerElement = plotElement.append("line")
@@ -820,8 +887,8 @@ function drawPlot(plotData, userOptions) {
                         if (endText) {
                             endText.style("font-weight", "bold")
                                 .style("font-size", (ops.curveEndText.fontSize * 1.25) + "px")
-                                //.style("stroke", "white") // Outer stroke color
-                                //.style("stroke-width", 0.001); // Thickness of the stroke;
+                            //.style("stroke", "white") // Outer stroke color
+                            //.style("stroke-width", 0.001); // Thickness of the stroke;
                             endTextRect.style("fill-opacity", "0.25");
                         }
                     } : null)
@@ -838,8 +905,8 @@ function drawPlot(plotData, userOptions) {
                         if (endText) {
                             endText.style("font-weight", "normal")
                                 .style("font-size", ops.curveEndText.fontSize + "px")
-                                //.style("stroke", "rgba(255,255,255,0)") // Outer stroke color
-                                //.style("stroke-width", 0.5); // Thickness of the stroke;
+                            //.style("stroke", "rgba(255,255,255,0)") // Outer stroke color
+                            //.style("stroke-width", 0.5); // Thickness of the stroke;
                             endTextRect.style("fill-opacity", "0");
                         }
                     } : null);
@@ -853,6 +920,10 @@ function drawPlot(plotData, userOptions) {
                 .attr("cy", d => leftScale(d[ops.dataKeys.left]))
                 .attr("r", ops.plotStyle.thickness)
                 .attr("fill", ops.plotStyle.col);
+        }
+
+        if (ops.rects && ops.rects.when == "after") {
+            drawRects();
         }
 
         if (ops.markers && ops.markers.when == "after") {
@@ -877,17 +948,17 @@ function clearMainGraphs() {
 }
 
 const roomsDataAndState = {
-    1: { roomID: "Oktopusz", name: "Oktopusz szita", temp: null, set: null, lastUpdated: null },
-    2: { roomID: "Gólyafészek", name: "Gólyafészek", temp: null, set: null, lastUpdated: null },
-    3: { roomID: "PK", name: "PK", temp: null, set: null, lastUpdated: null },
-    4: { roomID: "SZGK", name: "SZGK", temp: null, set: null, lastUpdated: null },
-    5: { roomID: "Mérce", name: "Mérce", temp: null, set: null, lastUpdated: null },
-    6: { roomID: "Lahmacun", name: "Lahmacun", temp: null, set: null, lastUpdated: null },
-    7: { roomID: "Gólyairoda", name: "Gólyairoda", temp: null, set: null, lastUpdated: null },
-    8: { roomID: "kisterem", name: "kisterem", temp: null, set: null, lastUpdated: null },
-    9: { roomID: "vendégtér", name: "vendégtér", temp: null, set: null, lastUpdated: null },
-    10: { roomID: "Trafóház", name: "Trafóház", temp: null, set: null, lastUpdated: null },
-    11: { roomID: "OktopuszKeramia", name: "Oktopusz kerámia", temp: null, set: null, lastUpdated: null }
+    1: { roomID: "Oktopusz", name: "Oktopusz szita", cycle: 1, temp: null, set: null, lastUpdated: null },
+    2: { roomID: "Gólyafészek", name: "Gólyafészek", cycle: 1, temp: null, set: null, lastUpdated: null },
+    3: { roomID: "PK", name: "PK", cycle: 1, temp: null, set: null, lastUpdated: null },
+    4: { roomID: "SZGK", name: "SZGK", cycle: 2, temp: null, set: null, lastUpdated: null },
+    5: { roomID: "Mérce", name: "Mérce", cycle: 2, temp: null, set: null, lastUpdated: null },
+    6: { roomID: "Lahmacun", name: "Lahmacun", cycle: 2, temp: null, set: null, lastUpdated: null },
+    7: { roomID: "Gólyairoda", name: "Gólyairoda", cycle: 2, temp: null, set: null, lastUpdated: null },
+    8: { roomID: "kisterem", name: "kisterem", cycle: 3, temp: null, set: null, lastUpdated: null },
+    9: { roomID: "vendégtér", name: "vendégtér", cycle: 3, temp: null, set: null, lastUpdated: null },
+    10: { roomID: "Trafóház", name: "Trafóház", cycle: 4, temp: null, set: null, lastUpdated: null },
+    11: { roomID: "OktopuszKeramia", name: "Oktopusz kerámia", cycle: null, temp: null, set: null, lastUpdated: null }
 };
 
 function updateRoomColor(roomId, temp, lastUpdated) {
@@ -1171,16 +1242,16 @@ let dayDataNotAvailable = false;
 
 const elementToMainGraphSettingMapping = {
     "gas_dial": { title: "gas_usage", types: ["gas_usage"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime) },
-    "Oktopusz": { title: "room_plot", types: ["room_1_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 1 },
-    "Gólyafészek": { title: "room_plot", types: ["room_2_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 2 },
-    "PK": { title: "room_plot", types: ["room_3_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 3 },
-    "SZGK": { title: "room_plot", types: ["room_4_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 4 },
-    "Mérce": { title: "room_plot", types: ["room_5_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 5 },
-    "Lahmacun": { title: "room_plot", types: ["room_6_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 6 },
-    "Gólyairoda": { title: "room_plot", types: ["room_7_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 7 },
-    "kisterem": { title: "room_plot", types: ["room_8_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 8 },
-    "vendégtér": { title: "room_plot", types: ["room_9_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 9 },
-    "Trafóház": { title: "room_plot", types: ["room_10_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 10 },
+    "Oktopusz": { title: "room_plot", types: ["room_1_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 1 },
+    "Gólyafészek": { title: "room_plot", types: ["room_2_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 2 },
+    "PK": { title: "room_plot", types: ["room_3_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 3 },
+    "SZGK": { title: "room_plot", types: ["room_4_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 4 },
+    "Mérce": { title: "room_plot", types: ["room_5_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 5 },
+    "Lahmacun": { title: "room_plot", types: ["room_6_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 6 },
+    "Gólyairoda": { title: "room_plot", types: ["room_7_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 7 },
+    "kisterem": { title: "room_plot", types: ["room_8_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 8 },
+    "vendégtér": { title: "room_plot", types: ["room_9_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 9 },
+    "Trafóház": { title: "room_plot", types: ["room_10_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 10 },
     "OktopuszKeramia": { title: "room_plot", types: ["room_11_measurements", "room_12_measurements"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 11 },
     "boiler_body": {
         title: "heating_state",
@@ -1192,7 +1263,7 @@ const elementToMainGraphSettingMapping = {
         types: Array.from({ length: 11 }, (_, i) => {
             const number = i + 1;
             return `room_${number}_measurements`;
-        }),
+        }).concat(["heating_state"]),
         day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime),
         roomNumsToPlot: d3.range(1, 12, 1),
         hoveredCycle: 0
@@ -1358,6 +1429,26 @@ function drawMainGraph(graphData = null) {
                     break;
                 case "room_plot":
                     if (mainGraphSetting.roomNumToPlot != 11) {
+                        let roomNum = mainGraphSetting.roomNumToPlot;
+                        let cycleNum = roomsDataAndState[roomNum].cycle;
+
+                        let roomScheduleData = extractRoomScheduleFromCondensedSchedule(mainGraphSetting.roomNumToPlot);
+                        let roomMeasurementData = graphData["room_" + mainGraphSetting.roomNumToPlot + "_measurements"];
+                        range = d3.extent(roomScheduleData.concat(roomMeasurementData).map(elem => elem['temp']));
+
+                        let heatingState = graphData["heating_state"];
+                        let heatingPeriods = extractHeatingPeriodsForCycleFromHeatingState(cycleNum, heatingState);
+
+                        heatingPeriods.forEach(period => {
+                            period.y1 = Math.floor(range[0]) - 1;
+                            period.y2 = Math.ceil(range[1]) + 1;
+                            period.fill = "rgba(255,0,0,0.05)";
+                            period.stroke = "rgba(255,0,0,0.5)";
+                            period.strokeWeight = 0.25;
+                            period.dashed = true;
+                            period.dashing = "0.5,1";
+                        });
+
                         let roomOverrides;
                         let requestMarkers = [];
                         if (requestLists) {
@@ -1381,9 +1472,6 @@ function drawMainGraph(graphData = null) {
                                 });
                             }
                         }
-                        let roomScheduleData = extractRoomScheduleFromCondensedSchedule(mainGraphSetting.roomNumToPlot);
-                        let roomMeasurementData = graphData["room_" + mainGraphSetting.roomNumToPlot + "_measurements"];
-                        range = d3.extent(roomScheduleData.concat(roomMeasurementData).map(elem => elem['temp']));
                         drawPlot(
                             roomScheduleData,
                             {
@@ -1395,7 +1483,11 @@ function drawMainGraph(graphData = null) {
                                 tickVals: { left: d3.range(Math.floor(range[0]) - 1, Math.ceil(range[1]) + 2, 1) },
                                 plotStyle: { joined: true, col: "rgba(28, 185, 0,0.5)", thickness: "3", startCap: false, endCap: false, smoothCurve: false },
                                 plotLabel: roomsDataAndState[mainGraphSetting.roomNumToPlot].name + " kért és mért hőmérséklet",
-                                markers: { when: "after", list: requestMarkers, col: "rgba(245,245,0,1)", thickness: 1.5, dashed: true, dashing: "6,3", endCap: true, endCapSize: 2 }
+                                rects: { when: "before", list: heatingPeriods },
+                                markers:
+                                    heatingPeriods.length > 0 ?
+                                        { when: "after", list: requestMarkers, col: "rgba(245,245,0,1)", thickness: 1.5, dashed: true, dashing: "6,3", endCap: true, endCapSize: 2 } :
+                                        false
                             }
                         );
                         drawPlot(
@@ -1435,29 +1527,46 @@ function drawMainGraph(graphData = null) {
                 case "all_rooms":
                     const colorScale = d3.scaleLinear().domain([1, 11]).range(["green", "orange"]);
                     range = d3.extent(Object.values(graphData).map(value => value.map(elem => elem['temp'])).flat());
+
+                    let drawForSingleCycle = mainGraphSetting.hoveredCycle > 0;
+                    let heatingState = graphData["heating_state"];
+                    let heatingPeriods
+                    if (drawForSingleCycle) {
+                        heatingPeriods = extractHeatingPeriodsForCycleFromHeatingState(mainGraphSetting.hoveredCycle, heatingState);
+                        heatingPeriods.forEach(period => {
+                            period.y1 = Math.floor(range[0]);
+                            period.y2 = Math.ceil(range[1]);
+                            period.fill = "rgba(255,0,0,0.1)";
+                            period.stroke = "rgba(255,0,0,0.5)";
+                            period.strokeWeight = 0.25;
+                            period.dashed = true;
+                            period.dashing = "0.5,1";
+                        });
+                    }
+
                     drawPlot(
                         graphData["room_1_measurements"],//Placeholder, really, should be empty or something
                         {
                             axes: { left: true, bottom: true },
                             axesLabel: { bottom: "óra", left: "°C" },
-                            plotLabel: "szobák mai hőmérsékleti görbéje" + (mainGraphSetting.hoveredCycle > 0 ? " a" + ["z 1-es", " 2-es", " 3-mas", " 4-es"][mainGraphSetting.hoveredCycle - 1] + " körön" : ""),
+                            plotLabel: "szobák mai hőmérsékleti görbéje" + (drawForSingleCycle ? " a" + ["z 1-es", " 2-es", " 3-mas", " 4-es"][mainGraphSetting.hoveredCycle - 1] + " körön" : ""),
                             parentId: "graph",
                             background: { show: true },
                             domain: { bottom: [0, 24], left: [Math.floor(range[0]), Math.ceil(range[1])] },
                             tickVals: { left: d3.range(Math.floor(range[0]), Math.ceil(range[1]) + 1, 1) },
                             dataKeys: { bottom: "h_of_day_frac", left: "temp" },
                             plotStyle: { joined: true, col: "rgba(0,0,0,0)", thickness: "1", startCap: false, endCap: true, hoverableCurve: false },
-                            segment: { do: false, gap: 0, endCaps: true, startCaps: true }
+                            segment: { do: false, gap: 0, endCaps: true, startCaps: true },
+                            rects: drawForSingleCycle ? { when: "before", list: heatingPeriods } : false
                         }
                     );
-                    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].forEach((roomNum, index) => {
-                        let firstRoom = false;
+                    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].forEach(roomNum => {
                         let emphasis = mainGraphSetting.roomNumsToPlot.includes(roomNum);
                         let plotColor = d3.color(colorScale(roomNum));
                         let showEndText = true;
                         let endTextColor = "rgba(0,0,0,1)";
                         if (!emphasis) {
-                            plotColor.opacity = 0.25;
+                            plotColor.opacity = 0.1;
                             showEndText = false;
                             endTextColor = "rgba(0,0,0,0.25)"
                         }
