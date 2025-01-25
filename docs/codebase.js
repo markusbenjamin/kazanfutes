@@ -385,3 +385,16 @@ function logHoveredElementId() {
         console.log("Hovered element:", event.target.id);
     });
 }
+
+let roomNameMapping = {
+    "Oz": "Oktopusz",       
+    "Gk": "Gólyafészek",    
+    "PK": "PK",             
+    "SK": "SZGK",           
+    "Me": "Mérce",          
+    "Ln": "Lahmacun",       
+    "Ga": "Gólyairoda",     
+    "km": "kisterem",       
+    "vr": "vendégtér",      
+    "Tz": "Trafóház"        
+};

@@ -19,11 +19,25 @@
         function getUrlParams() {
             const params = new URLSearchParams(window.location.search);
 
-            now = new Date()
+            let roomNameIncoming = params.get("room_name");
+            let roomNameMapping = {
+                "Oz": "Oktopusz",
+                "Gk": "Gólyafészek",
+                "PK": "PK",
+                "SK": "SZGK",
+                "Me": "Mérce",
+                "Ln": "Lahmacun",
+                "Ga": "Gólyairoda",
+                "km": "kisterem",
+                "vr": "vendégtér",
+                "Tz": "Trafóház"
+            };
 
+            let now = new Date()
+            let roomName = roomNameMapping[roomNameIncoming[0] + roomNameIncoming[roomNameIncoming.length - 1]]
             return {
                 title: params.get("title") || "kérés címe",
-                room_name: params.get("room_name") || "szoba neve",
+                room_name: roomName || "szoba neve",
                 google_date: params.get("date") || googleTimestamp().slice(0, 10),
                 human_date: humanTimestamp().slice(0, 11),
                 hour_of_day: params.get("hour") || now.getHours(),
@@ -71,18 +85,18 @@
 
                 durationToSend = loadParams.duration
             }
-            else if(loadParams.until != null){
+            else if (loadParams.until != null) {
                 const decoratorPre = loadParams.until == 18 ? 'ma délutánig (' : (loadParams.until == 24 ? 'ma éjfélig (' : '')
                 const decoratorPost = loadParams.until == 18 ? ')' : (loadParams.until == 24 ? ')' : '')
                 const expiryTimestamp = `${decoratorPre}${loadParams.human_date} ${loadParams.until}:00${decoratorPost}`
                 expiryString = `<p ${styleStringParams}>${expiryTimestamp}</p>`
 
-                
+
                 nowTimestamp = timestamp()
-                untilTimestamp = `${timestamp().slice(0,10)}-${loadParams.until}-00-00`
+                untilTimestamp = `${timestamp().slice(0, 10)}-${loadParams.until}-00-00`
                 nowDate = dateFromTimestamp(nowTimestamp)
                 untilDate = dateFromTimestamp(untilTimestamp)
-                durationToSend = roundTo((untilDate-nowDate)/(1000*60*60),1)
+                durationToSend = roundTo((untilDate - nowDate) / (1000 * 60 * 60), 1)
             }
 
             const displayParamsArea = document.getElementById("display-params");

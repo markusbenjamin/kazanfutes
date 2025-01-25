@@ -242,6 +242,10 @@ function getDataFromFirebase() {
                 schedLastUpdateGranularity = ' órája.'
             }
 
+            if(timeSinceLastScheduleUpdate<1){
+                drawMainGraph();
+            }
+
             let timeSinceLastRequest = Math.min(
                 timePassedSince(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp)),
                 timePassedSince(dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp))
@@ -881,8 +885,10 @@ function updateCycleColor(cycle, state) {
     d3.select("#cycle" + cycle + "_radiators").selectAll("*").style("fill", state == 1 ? "rgba(255,0,0,1)" : "rgba(0,0,200,1)");
     d3.select("#cycle" + cycle + "_radiators").selectAll("*").style("fill-opacity", "1");
 
-    d3.select("#oktopusz_keramia_radiators").selectAll("*").style("fill", "rgba(0,0,200,1)");
+    d3.select("#oktopusz_keramia_radiators").selectAll("*").style("fill", "rgba(0,0,200,0.5)");
     d3.select("#oktopusz_keramia_radiators").selectAll("*").style("fill-opacity", "1");
+    d3.select("#oktopusz_keramia_radiators").selectAll("*").style("stroke", "rgba(0,0,200,1)");
+    d3.select("#oktopusz_keramia_radiators").selectAll("*").style("stroke-opacity", "1");
 }
 
 let boilerState = null;
