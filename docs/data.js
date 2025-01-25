@@ -87,10 +87,12 @@ function centerAndZoomRelativePointOfCanvas(targetX, targetY, zoomLevel, duratio
             p5jsDrawing.attr("transform", transform);
 
             // Also update tooltip
-            mousePosition = getMousePosition();
-            d3.select("#tooltip")
-                .style("left", `${mousePosition.x + 5}px`)
-                .style("top", `${mousePosition.y - 28}px`);
+            if (!isMobile) {
+                mousePosition = getMousePosition();
+                d3.select("#tooltip")
+                    .style("left", `${mousePosition.x + 5}px`)
+                    .style("top", `${mousePosition.y - 28}px`);
+            }
         });
 
     container.call(zoom);
