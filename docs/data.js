@@ -251,6 +251,12 @@ function getDataFromFirebase() {
                 > timePassedSince(dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp)) ? "QR" : "form"
             let requestTarget = requestOrigin == "QR" ? updateJSON.override_rooms_qr.room_name : updateJSON.override_rooms.room_name
 
+            if (fromRequest && !initialLockDone) {
+                mainGraphContentLocked = true;
+                mainGraphSetting = elementToMainGraphSettingMapping[requestTarget];
+                initialLockDone = true;
+            }
+
             let lastRequestHourStamp = hourStamp(requestOrigin == "QR" ? dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp) : dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp));
 
             updateGeneralInfobox(
@@ -457,7 +463,7 @@ function drawPlot(plotData, userOptions) {
         parentId: "background",
         centered: true,
         positioning: { x: 0.5, y: 0.5, w: 1, h: 1 }, // Relative positioning and size compared to parent
-        margins: { top: 0.1, right: 0.1, bottom: 0.1, left: 0.1 }, // Affecting the plot elements within the content element
+        margins: { top: 0.1, right: 0.05, bottom: 0.15, left: 0.1 }, // Affecting the plot elements within the content element
 
         background: { show: true, col: "white" },
         plotStyle: { joined: false, col: "gray", thickness: "0.25", startCap: true, endCap: true, smoothCurve: true, hoverableCurve: false },
@@ -524,11 +530,17 @@ function drawPlot(plotData, userOptions) {
             .attr("fill", "rgba(0,0,0,0)")
     }
 
-    if (ops.background.show) {
-        containerElement.append("rect")
-            .attr("width", containerDims.w)
-            .attr("height", containerDims.h)
-            .attr("fill", ops.background.col)
+    let backgroundRect = containerElement.append("rect")
+        .attr("width", containerDims.w)
+        .attr("height", containerDims.h)
+        .attr("fill", mainGraphContentLocked ? "rgba(250,250,250,1)" : ops.background.col)
+        .attr("opacity", ops.background.show ? 1 : 0);
+
+    if (ops.parentId === 'graph' && mainGraphContentLocked) {
+        backgroundRect
+            .attr("stroke", "black")         // Set border color to gray
+            .attr("stroke-width", 0.25)       // Set border thickness
+            .attr("stroke-dasharray", "0.5,1"); // Define dash pattern: 4px dash, 2px gap
     }
 
     // Create the main plotting area using margins
@@ -583,7 +595,7 @@ function drawPlot(plotData, userOptions) {
         // bottom axis label
         plotElement.append("text")
             .attr("x", plotDims.w / 2)
-            .attr("y", plotDims.h + plotDims.h * ops.margins.bottom * 1.8)
+            .attr("y", plotDims.h + plotDims.h * ops.margins.bottom * 1.05)
             .style("text-anchor", "middle")
             .style("font-size", "6px")
             .style("font-family", dashboardFont)
@@ -625,7 +637,7 @@ function drawPlot(plotData, userOptions) {
         plotElement.append("text")
             .attr("transform", `rotate(-90)`)
             .attr("x", -plotDims.h / 2)
-            .attr("y", -plotDims.w * ops.margins.left * 0.9)
+            .attr("y", -plotDims.w * ops.margins.left * 0.725)
             .style("text-anchor", "middle")
             .style("font-size", "6px")
             .style("font-family", dashboardFont)
@@ -636,7 +648,7 @@ function drawPlot(plotData, userOptions) {
         // Plot label
         plotElement.append("text")
             .attr("x", plotDims.w / 2)
-            .attr("y", -plotDims.h * ops.margins.top * 0.5)
+            .attr("y", -plotDims.h * ops.margins.top * 0.35)
             .style("text-anchor", "middle")
             .style("font-size", "7px")
             .style("font-family", dashboardFont)
@@ -734,10 +746,20 @@ function drawPlot(plotData, userOptions) {
                         .attr("fill", ops.plotStyle.col);
                 }
 
-                let endText;
+                let endTextRect, endText;
                 if (ops.curveEndText.show && segmentIndex == segments.length - 1) { // Only draw end text at the last segment
                     //if (forceEndText) { // Only draw end text at the last segment
                     const lastPoint = segment[segment.length - 1];
+
+                    // Create a group to combine text and background rect
+                    endTextRect = plotElement.append("g")
+                        .attr("transform", `translate(
+                                    ${bottomScale(lastPoint[ops.dataKeys.bottom]) + ops.curveEndText.xOffset}, 
+                                    ${leftScale(lastPoint[ops.dataKeys.left]) + ops.curveEndText.yOffset}
+                                  )`)
+                        .style("opacity", 0); // Initially hidden
+
+                    // Add the text element
                     endText = plotElement.append("text")
                         .attr("x", bottomScale(lastPoint[ops.dataKeys.bottom]) + ops.curveEndText.xOffset)
                         .attr("y", leftScale(lastPoint[ops.dataKeys.left]) + ops.curveEndText.yOffset)
@@ -771,7 +793,6 @@ function drawPlot(plotData, userOptions) {
                         if (endText) {
                             endText.style("font-weight", "bold")
                                 .style("font-size", (ops.curveEndText.fontSize * 1.25) + "px");
-                            endText.node().parentNode.appendChild(text.node());
                         }
                     } : null)
                     .on("mouseout", ops.plotStyle.hoverableCurve ? function (event) {
@@ -854,6 +875,9 @@ function updateCycleColor(cycle, state) {
 
     d3.select("#cycle" + cycle + "_radiators").selectAll("*").style("fill", state == 1 ? "rgba(255,0,0,1)" : "rgba(0,0,200,1)");
     d3.select("#cycle" + cycle + "_radiators").selectAll("*").style("fill-opacity", "1");
+
+    d3.select("#oktopusz_keramia_radiators").selectAll("*").style("fill", "rgba(0,0,200,1)");
+    d3.select("#oktopusz_keramia_radiators").selectAll("*").style("fill-opacity", "1");
 }
 
 let boilerState = null;
@@ -886,7 +910,7 @@ function writeGasUsageToDial(gasData = null) {
         d3.select("#gas_meter2").style("fill-opacity", "1");
 
         currentGasTotal = roundTo(gasData[gasData.length - 1].burnt_volume, 0.1);
-        if (currentGasTotal == NaN) { currentGasTotal = 0 };
+        if (!isValidNumber(currentGasTotal)) { currentGasTotal = 0 };
 
         //if (isValidNumber(currentGasUsageRate) == false) {
         //    currentGasUsageRate = roundTo(gasData[gasData.length - 1].burn_rate_in_m3_per_h, 0.1);
@@ -1053,8 +1077,9 @@ function updateGeneralInfobox(info) {
         if (Number.isInteger(gasTotalString)) {
             gasTotalString += ".0";
         }
+        let totalCost = currentGasTotal * 350;
         addLineToBox("Összes elégett gáz: " + gasTotalString + " m³.", 0.02, lineHeight * (10 + lineShift), lineFontSize);
-        addLineToBox("Összköltség kb. " + roundTo(currentGasTotal * 350 / 1000, 0.1) + " eFt.", 0.02, lineHeight * (11 + lineShift), lineFontSize);
+        addLineToBox("Összköltség kb. " + (currentGasTotal < 1000 ? (roundTo(totalCost, 100) + " Ft.") : (roundTo(totalCost / 1000, 0.1) + " eFt.")), 0.02, lineHeight * (11 + lineShift), lineFontSize);
     }
 }
 
@@ -1106,10 +1131,10 @@ function updateCycleInfobox(cycle, info) {
     }
 }
 
-let dataWaitTime = 30;
+let dataWaitTime = 10;
 let dayDataNotAvailable = false;
 
-const elementToGrapSettingMapping = {
+const elementToMainGraphSettingMapping = {
     "gas_dial": { title: "gas_usage", types: ["gas_usage"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime) },
     "Oktopusz": { title: "room_plot", types: ["room_1_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 1 },
     "Gólyafészek": { title: "room_plot", types: ["room_2_measurements", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 2 },
@@ -1141,14 +1166,14 @@ const elementToGrapSettingMapping = {
 
 
 let mainGraphContentLocked = false;
-const mainGraphDefaultSetting = elementToGrapSettingMapping["background"]; // Save so it can be reset
+const mainGraphDefaultSetting = elementToMainGraphSettingMapping["background"]; // Save so it can be reset
 let mainGraphSetting = mainGraphDefaultSetting;
 
 function joinMainGrapDataSourceToElements() {
-    d3.selectAll(Object.keys(elementToGrapSettingMapping).map(id => `#${id}`).join(","))
+    d3.selectAll(Object.keys(elementToMainGraphSettingMapping).map(id => `#${id}`).join(","))
         .on("mouseover.maingraph", function (event) {
             if (mainGraphContentLocked == false) {
-                mainGraphSetting = elementToGrapSettingMapping[this.id]; // Set based on mapping
+                mainGraphSetting = elementToMainGraphSettingMapping[this.id]; // Set based on mapping
                 drawMainGraph();
             }
         })
@@ -1161,6 +1186,8 @@ function joinMainGrapDataSourceToElements() {
         .on("click.maingraph", function (event) {
             event.stopPropagation();
             mainGraphContentLocked = !mainGraphContentLocked;
+            mainGraphSetting = elementToMainGraphSettingMapping[this.id];
+            drawMainGraph();
         });
     d3.select("body")
         .on("click", function (event) {
@@ -1183,7 +1210,7 @@ function setInfoboxHovers() {
     for (let cycleNum = 1; cycleNum < 5; cycleNum++) {
         d3.select("#cycle" + cycleNum + "_infobox")
             .on("mouseover", function (event) {
-                if (mainGraphSetting.title == 'all_rooms') {
+                if (mainGraphSetting.title == 'all_rooms' && !mainGraphContentLocked) {
                     mainGraphSetting.hoveredCycle = cycleNum;
                     mainGraphSetting.roomNumsToPlot = cyclesDataAndState[cycleNum].rooms
                     drawMainGraph();
@@ -1195,11 +1222,13 @@ function setInfoboxHovers() {
                     mainGraphSetting.hoveredCycle = 0;
                     drawMainGraph();
                 }
-                drawMainGraph();
             })
             .on("click.cycles_infobox", function (event) {
                 event.stopPropagation();
                 mainGraphContentLocked = !mainGraphContentLocked;
+                mainGraphSetting.hoveredCycle = cycleNum;
+                mainGraphSetting.roomNumsToPlot = cyclesDataAndState[cycleNum].rooms
+                drawMainGraph();
             });
     }
 }
@@ -1373,11 +1402,11 @@ function drawMainGraph(graphData = null) {
                     range = d3.extent(Object.values(graphData).map(value => value.map(elem => elem['temp'])).flat());
                     [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].forEach((roomNum, index) => {
                         let firstRoom = index == 0;
-                        let dim = !mainGraphSetting.roomNumsToPlot.includes(roomNum);
+                        let emphasis = mainGraphSetting.roomNumsToPlot.includes(roomNum);
                         let plotColor = d3.color(colorScale(roomNum));
                         let showEndText = true;
                         let endTextColor = "rgba(0,0,0,1)";
-                        if (dim) {
+                        if (!emphasis) {
                             plotColor.opacity = 0.25;
                             showEndText = false;
                             endTextColor = "rgba(0,0,0,0.25)"
@@ -1395,7 +1424,7 @@ function drawMainGraph(graphData = null) {
                                 domain: { bottom: [0, 24], left: [Math.floor(range[0]), Math.ceil(range[1])] },
                                 tickVals: { left: d3.range(Math.floor(range[0]), Math.ceil(range[1]) + 1, 1) },
                                 dataKeys: { bottom: "h_of_day_frac", left: "temp" },
-                                plotStyle: { joined: true, col: plotColor, thickness: "1", startCap: false, endCap: true, hoverableCurve: mainGraphSetting.hoveredCycle == 0 },
+                                plotStyle: { joined: true, col: plotColor, thickness: "1", startCap: false, endCap: true, hoverableCurve: emphasis },
                                 curveEndText: { show: showEndText, fontSize: 5, text: roomsDataAndState[roomNum].name, col: plotColor, xOffset: 2.5, yOffset: 1.5 },
                                 segment: { do: true, gap: roomNum == 10 ? 2 : 0.5, endCaps: true, startCaps: true }
                             }
@@ -1413,16 +1442,16 @@ function rescueMainGraph() {
     }
 }
 
-let isMobile, smallerDimension, initialZoom, initialPos;
+let isMobile, fromRequest, initialZoom, initialPos;
+let initialLockDone = false;
 
 function setViewParameters(centeredId) {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    smallerDimension = Math.min(width, height);
+    let smallerDimension = Math.min(width, height);
     isMobile = /Mobi|Android/i.test(navigator.userAgent);
-    params = new URLSearchParams(window.location.search);
-    fromRequest = params.get("ref_source") == "qr" || params.get("ref_source") == "form";
+
     let centeringOffsetFactor = { x: 1, y: 1.03 }
 
     //isMobile = true;
@@ -1432,23 +1461,23 @@ function setViewParameters(centeredId) {
         centeringOffsetFactor.y = 1.35;
         centeringOffsetFactor.x = 1.05;
     }
-    /*else if (fromRequest) {
-        initialZoom = smallerDimension * 0.003;
-        centeredId = "general_infobox";
-        centeringOffsetFactor.y = 1.1;
-    }*/
     else {
         initialZoom = smallerDimension * 0.0031;
     }
+
     let centeredDims = getBBoxRelativeDimensions(centeredId);
 
     initialPos = { x: centeredDims.cx * centeringOffsetFactor.x, y: centeredDims.cy * centeringOffsetFactor.y };
+
+    let params = new URLSearchParams(window.location.search);
+    fromRequest = params.get("ref_source") == "qr" || params.get("ref_source") == "form";
 }
 
 let dashboardFont = "Consolas";
 
 d3.xml("canvas.svg").then(fileData => {
     insertCanvasFromFile(fileData);
+    trackHoveredElementId();
     setViewParameters("background");
     centerAndZoomRelativePointOfCanvas(initialPos.x, initialPos.y, initialZoom);
     setupTooltip();

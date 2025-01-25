@@ -366,8 +366,22 @@ function getCurrentTansform(elementId = "canvas") {
     return {x: transform.x, y: transform.y, k: transform.k/smallerDimension};
 }
 
-function logHoveredElement() {
+let hoveredElementId = null; // Variable to store the current hovered element's ID
+
+// Function to track hovered element's ID
+function trackHoveredElementId() {
     document.addEventListener("mouseover", event => {
-        console.log("Hovered element:", event.target);
+        hoveredElementId = event.target.id || null; // Update with hovered element's ID
+    });
+}
+
+// Function to retrieve the currently hovered element's ID
+function getHoveredElementId() {
+    return hoveredElementId; // Return the current value
+}
+
+function logHoveredElementId() {
+    document.addEventListener("mouseover", event => {
+        console.log("Hovered element:", event.target.id);
     });
 }
