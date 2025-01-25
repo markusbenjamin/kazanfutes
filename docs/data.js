@@ -769,7 +769,7 @@ function drawPlot(plotData, userOptions) {
             .style("text-anchor", "right")
             .style("font-size", "6px")
             .style("font-family", dashboardFont)
-            .style("fill", "rgba(0,0,0,0.125)")
+            .style("fill", "rgba(230,230,230,1)")
             .text("rögzítve");
     }
 
@@ -1052,7 +1052,9 @@ function updateCycleColor(cycle, state) {
 let boilerState = null;
 
 function updateBoilerColor(state) {
-    d3.select("#boiler").style("stroke-opacity", "0");
+    d3.select("#boiler_body")
+        .style("stroke-opacity", "0")
+        .style("fill", "white")
 
     d3.select("#flame_nest").style("fill", "rgba(0.2,0.2,0.2,1)");
     d3.select("#flame_nest").style("fill-opacity", "1");
@@ -1131,10 +1133,11 @@ function writeGasUsageToDial(gasData = null) {
 let externalTemp;
 function initializeExternalThermometer() {
     d3.select("#external_thermometer")
-        .style("fill", "rgba(250,250,250,1)")
+        .style("fill", "rgba(253,253,253,1)")
         .style("fill-opacity", 1)
         .style("stroke", "rgba(0,0,0,1)")
-        .style("stroke-opacity", 1);
+        .style("stroke-opacity", 1)
+        .style("stroke-width", 0.75);
 }
 
 function initializeCycleMarkers() {
@@ -1436,7 +1439,7 @@ function drawMainGraph(graphData = null) {
                     range = [0, 10];
 
                     let heatingPeriodsForAllCycles = []
-                    for(let cycleNum = 1; cycleNum < 5; cycleNum++){
+                    for (let cycleNum = 1; cycleNum < 5; cycleNum++) {
                         heatingPeriodsForAllCycles.push(extractHeatingPeriodsFromHeatingState(cycleNum, graphData["heating_state"]));
                     }
 
