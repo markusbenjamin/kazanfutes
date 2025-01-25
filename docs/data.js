@@ -331,16 +331,18 @@ function getDataFromFirebase() {
 
 let lastGasUpdate, timeItTookToUpdateGasUsage, prevGasUsageRate;
 
-function extractHeatingPeriodsForCycleFromHeatingState(cycleNum, heatingState) {
+function extractHeatingPeriodsFromHeatingState(cycleNum, heatingState) {
     let heatingPeriods = [];
     let prevHeatingState = -1;
     heatingState.forEach(timepoint => {
         if (timepoint.cycle_states) {
+            let numOfCyclesOn = cycleNum == 0 ? d3.sum(Object.values(timepoint.cycle_states)) : timepoint.cycle_states[cycleNum]
+            let currentHeatingState = Math.ceil(numOfCyclesOn / 4);
+            //console.log(timepoint.timestamp + ": " + numOfCyclesOn + ", " + currentHeatingState)
             if (prevHeatingState == -1) {
-                prevHeatingState = timepoint.cycle_states[cycleNum];
+                prevHeatingState = currentHeatingState;
             }
             else {
-                let currentHeatingState = timepoint.cycle_states[cycleNum];
                 let currentHeatingSwitch = currentHeatingState - prevHeatingState;
                 if (currentHeatingState == 1 && currentHeatingSwitch == 1) { // Heating on, start of rect
                     if (!heatingPeriods) { heatingPeriods = [] };
@@ -687,7 +689,8 @@ function drawPlot(plotData, userOptions) {
 
         bottomAxis.selectAll(".tick line") // Select all tick lines
             .attr("stroke-width", "0.5px") // Set tick line thickness
-            .attr("y2", "2"); // Adjust tick length (positive increases length)
+            .attr("y1", "0.3")
+            .attr("y2", "2.3"); // Adjust tick length (positive increases length)
 
         bottomAxis.selectAll("text") // Select tick labels
             .attr("dy", "3")
@@ -727,7 +730,8 @@ function drawPlot(plotData, userOptions) {
 
         leftAxis.selectAll(".tick line")
             .attr("stroke-width", "0.5px") // Set tick line thickness
-            .attr("x2", "-2"); // Adjust tick length (negative for left-side ticks)
+            .attr("x1", "0.2")
+            .attr("x2", "-1.8"); // Adjust tick length (negative for left-side ticks)
 
         leftAxis.selectAll("text")
             .attr("dx", "0")
@@ -1312,7 +1316,7 @@ let dataWaitTime = 10;
 let dayDataNotAvailable = false;
 
 const elementToMainGraphSettingMapping = {
-    "gas_dial": { title: "gas_usage", types: ["gas_usage"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime) },
+    "gas_dial": { title: "gas_usage", types: ["gas_usage", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime) },
     "external_thermometer": { title: "external_temp", types: ["external_temp"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime) },
     "Oktopusz": { title: "room_plot", types: ["room_1_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 1 },
     "Gólyafészek": { title: "room_plot", types: ["room_2_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 2 },
@@ -1429,6 +1433,25 @@ function drawMainGraph(graphData = null) {
             let range;
             switch (mainGraphSetting.title) {
                 case "gas_usage":
+                    range = [0, 10];
+
+                    let heatingPeriodsForAllCycles = []
+                    for(let cycleNum = 1; cycleNum < 5; cycleNum++){
+                        heatingPeriodsForAllCycles.push(extractHeatingPeriodsFromHeatingState(cycleNum, graphData["heating_state"]));
+                    }
+
+                    heatingPeriodsForAllCycles = heatingPeriodsForAllCycles.flat();
+
+                    heatingPeriodsForAllCycles.forEach(period => {
+                        period.y1 = Math.floor(range[0]);
+                        period.y2 = Math.ceil(range[1]);
+                        period.fill = "rgba(255,0,0,0.05)";
+                        period.stroke = "rgba(255,0,0,0)";
+                        period.strokeWeight = 0.25;
+                        period.dashed = false;
+                        period.dashing = "0.5,1";
+                    });
+                    console.log(heatingPeriodsForAllCycles)
                     drawPlot(
                         graphData["gas_usage"],
                         {
@@ -1438,6 +1461,7 @@ function drawMainGraph(graphData = null) {
                             dataKeys: { bottom: "h_of_day_frac", left: "burn_rate_in_m3_per_h" },
                             axesLabel: { bottom: "óra", left: "ráta (m³/h)" },
                             plotLabel: "mai gázfogyasztás",
+                            rects: { when: "before", list: heatingPeriodsForAllCycles }
                         }
                     );
                     drawPlot(
@@ -1516,7 +1540,7 @@ function drawMainGraph(graphData = null) {
                         range = d3.extent(roomScheduleData.concat(roomMeasurementData).map(elem => elem['temp']));
 
                         let heatingState = graphData["heating_state"];
-                        let heatingPeriods = extractHeatingPeriodsForCycleFromHeatingState(cycleNum, heatingState);
+                        let heatingPeriods = extractHeatingPeriodsFromHeatingState(cycleNum, heatingState);
 
                         heatingPeriods.forEach(period => {
                             period.y1 = Math.floor(range[0]) - 1;
@@ -1611,7 +1635,7 @@ function drawMainGraph(graphData = null) {
                     let heatingState = graphData["heating_state"];
                     let heatingPeriods
                     if (drawForSingleCycle) {
-                        heatingPeriods = extractHeatingPeriodsForCycleFromHeatingState(mainGraphSetting.hoveredCycle, heatingState);
+                        heatingPeriods = extractHeatingPeriodsFromHeatingState(mainGraphSetting.hoveredCycle, heatingState);
                         heatingPeriods.forEach(period => {
                             period.y1 = Math.floor(range[0]);
                             period.y2 = Math.ceil(range[1]);
@@ -1705,7 +1729,7 @@ function setViewParameters(centeredId) {
     let smallerDimension = Math.min(width, height);
     isMobile = /Mobi|Android/i.test(navigator.userAgent);
 
-    let centeringOffsetFactor = { x: 1, y: 1.03 }
+    let centeringOffsetFactor = { x: 1, y: 1 }
 
     //isMobile = true;
     if (isMobile) {
