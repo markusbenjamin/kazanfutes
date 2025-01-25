@@ -93,6 +93,9 @@ function centerAndZoomRelativePointOfCanvas(targetX, targetY, zoomLevel, duratio
                     .style("left", `${mousePosition.x + 5}px`)
                     .style("top", `${mousePosition.y - 28}px`);
             }
+            else{
+                d3.select("#tooltip").transition().duration(200).style("visibility", "hidden");
+            }
         });
 
     container.call(zoom);
