@@ -14,206 +14,270 @@ function draw() {
         extractMappingParameters();
         clearp5JSDrawingWithinCanvas();
 
-        //rect(xOffset, yOffset, drawingWidth, drawingHeight);
+        drawBoiler();
 
-        let maxGasUsage = 10.5;
-        let mappedGasUsage = constrain(currentGasUsageRate, 0, maxGasUsage - 0.5) / (maxGasUsage - 0.5);
-        if (boilerState != null) {
-            const boxDims = getBBoxP5jsDimensions("flame_nest");
-            let p = { x: boxDims.cx, y: boxDims.cy }
-            let s = mapSize(0.05, 0.025 * aspectRatio);
+        drawExternalThermometer();
 
-            //mappedGasUsage = 0;
-            let flameSize = 0.3 + mappedGasUsage * 0.7;
-            if (boilerState == 1) {
-                let wiggleAmount = 0.06;
-                //drawFlame(
-                //    p.x - boxDims.w * 0.15,
-                //    p.y + boxDims.h * 0.2,
-                //    s.w * random(1 - wiggleAmount, 1 + wiggleAmount) * 1.5 * flameSize,
-                //    s.h * random(1 - wiggleAmount, 1 + wiggleAmount) * 1.5 * flameSize,
-                //    color(1, 0.5, 0, 0.875),
-                //    color(1, 1, 0, 0.9),
-                //    true
-                //);
-                //drawFlame(
-                //    p.x + boxDims.w * 0.2,
-                //    p.y + boxDims.h * 0.2,
-                //    s.w * random(1 - wiggleAmount, 1 + wiggleAmount) * 1.35 * flameSize,
-                //    s.h * random(1 - wiggleAmount, 1 + wiggleAmount) * 1.35 * flameSize,
-                //    color(1, 0.5, 0, 0.875),
-                //    color(1, 1, 0, 0.9),
-                //    true
-                //);
-                //extraFlameNum = mappedGasUsage > 0.8 ? 2 : (mappedGasUsage < 0.25 ? 0 : 1.5);
-                extraFlameNum = 2;
-                if (true) {
-                    for (let i = -(3 + extraFlameNum / 2); i < 4 + extraFlameNum / 2; i += 2) {
-                        drawFlame(
-                            p.x + boxDims.w / 2 * i / 10 * 2,
-                            p.y + boxDims.h * 0.43,
-                            s.w * random(1 - wiggleAmount, 1 + wiggleAmount) * flameSize,
-                            s.h * random(1 - wiggleAmount, 1 + wiggleAmount) * flameSize,
-                            color(1, 0.5, 0, 0.875),
-                            color(1, 1, 0, 0.9),
-                            true
-                        );
-                    }
+        flipToCanvas();
+    }
+}
+
+function drawExternalThermometer() {
+    if (externalTemp) {
+        const boxDims = getBBoxP5jsDimensions("external_thermometer");
+        let x = boxDims.cx;
+        let y = boxDims.cy;
+        let w = boxDims.w;
+        let h = boxDims.h;
+
+        let tempRange;
+        if (externalTemp < -5) {
+            tempRange = [-10, 5];
+        }
+        else if (externalTemp < 10) {
+            tempRange = [-5, 10];
+        }
+        else {
+            tempRange = [0, 15];
+        }
+        let tempStripRange = [y + h * 0.425, y - h * 0.425]
+        let tempLineX = x - w * 0.255;
+        let tempLineW = w * 0.18;
+        let extTempPos = map(externalTemp, tempRange[0], tempRange[1], tempStripRange[0], tempStripRange[1]);
+        let extTempNorm = externalTemp / (tempRange[1] - tempRange[0]);
+
+        stroke(0.25);
+        //line(x + w * 0.35, tempStripRange[0], x + w * 0.35, tempStripRange[1])
+        textAlign(RIGHT, CENTER);
+        for (let temp = tempRange[0]; temp <= tempRange[1]; temp++) {
+            let tempPos = map(temp, tempRange[0], tempRange[1], tempStripRange[0], tempStripRange[1]);
+            if (temp == 0) {
+                stroke(0.25);
+                strokeWeight(tempLineW * 0.45);
+                line(x - w * 0.5, tempPos, x + w * 0.5, tempPos);
+            }
+            else if (temp % 5 == 0) {
+                stroke(0.25);
+                fill(0.25)
+                if (temp < 0) {
+                    //stroke(0.75, 0, 0)
                 }
-            } else {
-                let wiggleAmount = 0.035;
-                for (let i = -3; i < 4; i++) {
+                strokeWeight(tempLineW * (getZoomLevel() < 5 ? 0.4 : 0.25));
+                line(x + w * 0.22, tempPos, x + w * 0.5, tempPos);
+                noStroke();
+                textFont(dashboardFont, getZoomLevel() < 5 ? 4 : 4);
+                text(temp, x + w * 0.17, tempPos)
+            }
+            else {
+                stroke(0.35);
+                fill(0.55);
+                if (temp < 0) {
+                    //stroke(0.75, 0, 0, 0.5)
+                }
+                strokeWeight(tempLineW * (getZoomLevel() < 5 ? 0.25 : 0.2));
+                line(x + w * 0.3, tempPos, x + w * 0.5, tempPos);
+                noStroke();
+                if (getZoomLevel() > 3) {
+                    textFont(dashboardFont, 2.5);
+                    text(temp, x + w * 0.2, tempPos)
+                }
+            }
+        }
+        textAlign(CENTER, CENTER);
+
+        stroke(1);
+        strokeCap(ROUND);
+        strokeWeight(tempLineW);
+        //line(tempLineX, tempStripRange[0], tempLineX, tempStripRange[1]);
+        stroke(extTempNorm, 0, 1 - extTempNorm, 1);
+        fill(extTempNorm, 0, 1 - extTempNorm, 1);
+        stroke(extTempNorm, 0, 1 - extTempNorm, 1);
+        stroke(28 / 255, 3 / 255, 252 / 255, 0.92);
+        fill(28 / 255, 3 / 255, 252 / 255, 0.92);
+        strokeWeight(tempLineW * 0.75);
+        line(tempLineX, y+h*0.49, tempLineX, extTempPos);
+        ellipse(tempLineX, extTempPos, w * 0.1, w * 0.1);
+        strokeCap(SQUARE);
+    }
+}
+
+function drawBoiler() {
+    let maxGasUsage = 10.5;
+    let mappedGasUsage = constrain(currentGasUsageRate, 0, maxGasUsage - 0.5) / (maxGasUsage - 0.5);
+    if (boilerState != null) {
+        const boxDims = getBBoxP5jsDimensions("flame_nest");
+        let p = { x: boxDims.cx, y: boxDims.cy }
+        let s = mapSize(0.05, 0.025 * aspectRatio);
+
+        //mappedGasUsage = 0;
+        let flameSize = 0.3 + mappedGasUsage * 0.7;
+        if (boilerState == 1) {
+            let wiggleAmount = 0.06;
+            extraFlameNum = 2;
+            if (true) {
+                for (let i = -(3 + extraFlameNum / 2); i < 4 + extraFlameNum / 2; i += 2) {
                     drawFlame(
-                        p.x + boxDims.w * i / 10 * 1.3,
-                        p.y + boxDims.h * 0.5,
-                        s.w * random(1 - wiggleAmount, 1 + wiggleAmount) * 0.3,
-                        s.h * random(1 - wiggleAmount, 1 + wiggleAmount) * 0.3,
-                        color(0.502, 0.918, random(0.8, 0.929), 0.875),
-                        color(random(0.3, 0.4), 0.463, 0.784, 0.9),
+                        p.x + boxDims.w / 2 * i / 10 * 2,
+                        p.y + boxDims.h * 0.43,
+                        s.w * random(1 - wiggleAmount, 1 + wiggleAmount) * flameSize,
+                        s.h * random(1 - wiggleAmount, 1 + wiggleAmount) * flameSize,
+                        color(1, 0.5, 0, 0.875),
+                        color(1, 1, 0, 0.9),
                         true
                     );
                 }
             }
-
-            if (isValidNumber(currentGasUsageRate)) {
-                //console.log(currentGasUsageRate);
-                const dialDims = getBBoxP5jsDimensions("gas_rate_gauge");
-                //console.log(dialDims)
-
-                let p = { x: dialDims.cx, y: dialDims.cy };
-                let s = dialDims.w;
-                let r = s / 2;
-
-                let gasUsageDialOffset = PI / 4;
-                let dialAngle = (PI / 2 + gasUsageDialOffset + (TWO_PI - 2 * gasUsageDialOffset) * mappedGasUsage) * random(0.997, 1.003);
-                let dialLength = s * 0.039;
-
-                let gasUsageDialTickNum = 100;
-                let primaryTickStartLength = r * 0.75;
-                let primaryTickEndLength = r * 1;
-                let primaryTickStrokeW = 0.15;
-                let primaryTickNumberPosition = r * 0.65;
-                let primaryTickColor = 0;
-                let primaryTickFontSize = 0.8;
-
-                let secondaryTickStartLength = r * 0.85;
-                let secondaryTickEndLength = r * 1;
-                let secondaryTickStrokeW = 0.05;
-                let secondaryTickNumberPosition = r * 0.75;
-                let secondaryTickColor = 0.3;
-                let secondaryTickFontSize = 0.4;
-                let tickNum = 0;
-                for (let tickAngle = PI / 2 + gasUsageDialOffset; tickAngle <= PI / 2 + (TWO_PI - gasUsageDialOffset); tickAngle += (TWO_PI - 2 * gasUsageDialOffset) / gasUsageDialTickNum) {
-                    // Determine gas usage corresponding to drawn angle
-                    let gasUsageRateCorrespondingToAngle = constrain(
-                        (tickAngle - (PI / 2 + gasUsageDialOffset)) * (maxGasUsage - 0.5) / (TWO_PI - 2 * gasUsageDialOffset),
-                        0,
-                        maxGasUsage - 0.5
-                    )
-
-                    if (getZoomLevel() > 7.5) {
-                        // Draw secondary ticks and numbers
-                        if (tickNum % 1 == 0) {
-                            strokeWeight(secondaryTickStrokeW);
-                            stroke(secondaryTickColor);
-                            line(
-                                p.x + secondaryTickStartLength * cos(tickAngle),
-                                p.y + secondaryTickStartLength * sin(tickAngle),
-                                p.x + secondaryTickEndLength * cos(tickAngle),
-                                p.y + secondaryTickEndLength * sin(tickAngle)
-                            );
-                        }
-                        if (tickNum % 10 == 5) {
-                            strokeWeight(secondaryTickStrokeW * 1.5);
-                            stroke(secondaryTickColor);
-                            line(
-                                p.x + secondaryTickStartLength * 0.95 * cos(tickAngle),
-                                p.y + secondaryTickStartLength * 0.95 * sin(tickAngle),
-                                p.x + secondaryTickEndLength * cos(tickAngle),
-                                p.y + secondaryTickEndLength * sin(tickAngle)
-                            );
-                            fill(secondaryTickColor);
-                            noStroke();
-
-                            push();
-                            translate(p.x + secondaryTickNumberPosition * cos(tickAngle), p.y + secondaryTickNumberPosition * sin(tickAngle));
-                            rotate(tickAngle + PI / 2);
-                            textFont(dashboardFont, secondaryTickFontSize);
-                            //text(roundTo(gasUsageRateCorrespondingToAngle, 0.1), 0, 0);
-                            pop();
-                        }
-                    }
-
-
-                    // Draw primary ticks and numbers
-                    if (!isFractional(roundTo(gasUsageRateCorrespondingToAngle, 0.1))) {
-                        stroke(primaryTickColor);
-                        if (getZoomLevel() > 5) {
-                            strokeWeight(primaryTickStrokeW);
-                        }
-                        else {
-                            strokeWeight(primaryTickStrokeW * 2);
-                            primaryTickStartLength = primaryTickNumberPosition;
-                        }
-                        line(
-                            p.x + primaryTickStartLength * cos(tickAngle),
-                            p.y + primaryTickStartLength * sin(tickAngle),
-                            p.x + primaryTickEndLength * cos(tickAngle),
-                            p.y + primaryTickEndLength * sin(tickAngle)
-                        );
-                    }
-                    if (getZoomLevel() > 5) {
-                        if (!isFractional(roundTo(gasUsageRateCorrespondingToAngle, 0.1))) {
-                            fill(primaryTickColor);
-                            noStroke();
-
-                            push();
-                            translate(p.x + primaryTickNumberPosition * cos(tickAngle), p.y + primaryTickNumberPosition * sin(tickAngle));
-                            rotate(tickAngle + PI / 2);
-                            textFont(dashboardFont, primaryTickFontSize);
-                            text(roundTo(gasUsageRateCorrespondingToAngle, 0.1), 0, 0);
-                            pop();
-                        }
-                    }
-
-                    tickNum++;
-                }
-
-                // Draw hand
-                strokeWeight(0.5);
-                stroke(0.1);
-                //line(p.x, p.y, p.x + s * dialLength * cos(dialAngle), p.y + s * dialLength * sin(dialAngle));
-                //strokeCap(SQUARE);
-                drawIsoscelesTriangle(
-                    p.x - r * 0.2 * cos(dialAngle), p.y - r * 0.2 * sin(dialAngle),
-                    0.201, r * 2, PI / 2 + dialAngle, 0.25);
-
-                // Draw gauge
-                stroke(0);
-                strokeWeight(0.6);
-                noFill();
-                ellipse(p.x, p.y, s, s);
-                fill(0);
-                ellipse(p.x, p.y, s * 0.1, s * 0.1);
-                noStroke();
-
-                if (getZoomLevel() > 5) {
-                    // Write labels
-                    textFont(dashboardFont, 0.8);
-                    fill(0);
-                    text("m³/h", p.x, p.y + r * 0.35);
-
-                    let rotateToVertical = PI / 2;
-                    let labelAngleOffset = PI * 0.85;
-                    let labelRadius = r * 0.84;
-                    textFont("Courier New", 0.4);
-                    fill(0, 0.1);
-                    textOnArcUprightWeighted("M/B Műszertechnika", p.x, p.y, labelRadius, (0 + labelAngleOffset) + rotateToVertical, (TWO_PI - labelAngleOffset) + rotateToVertical);
-                }
+        } else {
+            let wiggleAmount = 0.035;
+            for (let i = -3; i < 4; i++) {
+                drawFlame(
+                    p.x + boxDims.w * i / 10 * 1.3,
+                    p.y + boxDims.h * 0.5,
+                    s.w * random(1 - wiggleAmount, 1 + wiggleAmount) * 0.3,
+                    s.h * random(1 - wiggleAmount, 1 + wiggleAmount) * 0.3,
+                    color(0.502, 0.918, random(0.8, 0.929), 0.875),
+                    color(random(0.3, 0.4), 0.463, 0.784, 0.9),
+                    true
+                );
             }
         }
 
-        flipToCanvas();
+        if (isValidNumber(currentGasUsageRate)) {
+            //console.log(currentGasUsageRate);
+            const dialDims = getBBoxP5jsDimensions("gas_rate_gauge");
+            //console.log(dialDims)
+
+            let p = { x: dialDims.cx, y: dialDims.cy };
+            let s = dialDims.w;
+            let r = s / 2;
+
+            let gasUsageDialOffset = PI / 4;
+            let dialAngle = (PI / 2 + gasUsageDialOffset + (TWO_PI - 2 * gasUsageDialOffset) * mappedGasUsage) * random(0.997, 1.003);
+            let dialLength = s * 0.039;
+
+            let gasUsageDialTickNum = 100;
+            let primaryTickStartLength = r * 0.75;
+            let primaryTickEndLength = r * 1;
+            let primaryTickStrokeW = 0.15;
+            let primaryTickNumberPosition = r * 0.65;
+            let primaryTickColor = 0;
+            let primaryTickFontSize = 0.8;
+
+            let secondaryTickStartLength = r * 0.85;
+            let secondaryTickEndLength = r * 1;
+            let secondaryTickStrokeW = 0.05;
+            let secondaryTickNumberPosition = r * 0.75;
+            let secondaryTickColor = 0.3;
+            let secondaryTickFontSize = 0.4;
+            let tickNum = 0;
+            for (let tickAngle = PI / 2 + gasUsageDialOffset; tickAngle <= PI / 2 + (TWO_PI - gasUsageDialOffset); tickAngle += (TWO_PI - 2 * gasUsageDialOffset) / gasUsageDialTickNum) {
+                // Determine gas usage corresponding to drawn angle
+                let gasUsageRateCorrespondingToAngle = constrain(
+                    (tickAngle - (PI / 2 + gasUsageDialOffset)) * (maxGasUsage - 0.5) / (TWO_PI - 2 * gasUsageDialOffset),
+                    0,
+                    maxGasUsage - 0.5
+                )
+
+                if (getZoomLevel() > 7.5) {
+                    // Draw secondary ticks and numbers
+                    if (tickNum % 1 == 0) {
+                        strokeWeight(secondaryTickStrokeW);
+                        stroke(secondaryTickColor);
+                        line(
+                            p.x + secondaryTickStartLength * cos(tickAngle),
+                            p.y + secondaryTickStartLength * sin(tickAngle),
+                            p.x + secondaryTickEndLength * cos(tickAngle),
+                            p.y + secondaryTickEndLength * sin(tickAngle)
+                        );
+                    }
+                    if (tickNum % 10 == 5) {
+                        strokeWeight(secondaryTickStrokeW * 1.5);
+                        stroke(secondaryTickColor);
+                        line(
+                            p.x + secondaryTickStartLength * 0.95 * cos(tickAngle),
+                            p.y + secondaryTickStartLength * 0.95 * sin(tickAngle),
+                            p.x + secondaryTickEndLength * cos(tickAngle),
+                            p.y + secondaryTickEndLength * sin(tickAngle)
+                        );
+                        fill(secondaryTickColor);
+                        noStroke();
+
+                        push();
+                        translate(p.x + secondaryTickNumberPosition * cos(tickAngle), p.y + secondaryTickNumberPosition * sin(tickAngle));
+                        rotate(tickAngle + PI / 2);
+                        textFont(dashboardFont, secondaryTickFontSize);
+                        //text(roundTo(gasUsageRateCorrespondingToAngle, 0.1), 0, 0);
+                        pop();
+                    }
+                }
+
+
+                // Draw primary ticks and numbers
+                if (!isFractional(roundTo(gasUsageRateCorrespondingToAngle, 0.1))) {
+                    stroke(primaryTickColor);
+                    if (getZoomLevel() > 5) {
+                        strokeWeight(primaryTickStrokeW);
+                    }
+                    else {
+                        strokeWeight(primaryTickStrokeW * 2);
+                        primaryTickStartLength = primaryTickNumberPosition;
+                    }
+                    line(
+                        p.x + primaryTickStartLength * cos(tickAngle),
+                        p.y + primaryTickStartLength * sin(tickAngle),
+                        p.x + primaryTickEndLength * cos(tickAngle),
+                        p.y + primaryTickEndLength * sin(tickAngle)
+                    );
+                }
+                if (getZoomLevel() > 5) {
+                    if (!isFractional(roundTo(gasUsageRateCorrespondingToAngle, 0.1))) {
+                        fill(primaryTickColor);
+                        noStroke();
+
+                        push();
+                        translate(p.x + primaryTickNumberPosition * cos(tickAngle), p.y + primaryTickNumberPosition * sin(tickAngle));
+                        rotate(tickAngle + PI / 2);
+                        textFont(dashboardFont, primaryTickFontSize);
+                        text(roundTo(gasUsageRateCorrespondingToAngle, 0.1), 0, 0);
+                        pop();
+                    }
+                }
+
+                tickNum++;
+            }
+
+            // Draw hand
+            strokeWeight(0.5);
+            stroke(0.1);
+            //line(p.x, p.y, p.x + s * dialLength * cos(dialAngle), p.y + s * dialLength * sin(dialAngle));
+            //strokeCap(SQUARE);
+            drawIsoscelesTriangle(
+                p.x - r * 0.2 * cos(dialAngle), p.y - r * 0.2 * sin(dialAngle),
+                0.201, r * 2, PI / 2 + dialAngle, 0.25);
+
+            // Draw gauge
+            stroke(0);
+            strokeWeight(0.6);
+            noFill();
+            ellipse(p.x, p.y, s, s);
+            fill(0);
+            ellipse(p.x, p.y, s * 0.1, s * 0.1);
+            noStroke();
+
+            if (getZoomLevel() > 5) {
+                // Write labels
+                textFont(dashboardFont, 0.8);
+                fill(0);
+                text("m³/h", p.x, p.y + r * 0.35);
+
+                let rotateToVertical = PI / 2;
+                let labelAngleOffset = PI * 0.85;
+                let labelRadius = r * 0.84;
+                textFont("Courier New", 0.4);
+                fill(0, 0.1);
+                textOnArcUprightWeighted("M/B Műszertechnika", p.x, p.y, labelRadius, (0 + labelAngleOffset) + rotateToVertical, (TWO_PI - labelAngleOffset) + rotateToVertical);
+            }
+        }
     }
 }
 

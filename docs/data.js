@@ -268,10 +268,12 @@ function getDataFromFirebase() {
 
             let lastRequestHourStamp = hourStamp(requestOrigin == "QR" ? dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp) : dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp));
 
+            externalTemp = systemJSON.state.external_temp;
+
             updateGeneralInfobox(
                 {
                     cyclesOn: onCycles.length > 0 ? "Bekapcsolt körök: " + onCycles.join(", ") + "." : "Senki nem kér fűtést.",
-                    externalTemp: "Külső hőmérséklet: " + systemJSON.state.external_temp + " °C.",
+                    externalTemp: "Külső hőmérséklet: " + externalTemp + " °C.",
                     controlLastRan: "Vezérlés lefutott: " + timeSinceControlLastRan + " " + lastControlRanGranularity,
                     latestRequest: { target: requestTarget, origin: requestOrigin, timeSince: timeSinceLastRequest, granularity: timeSinceLastRequestGranularity, hourStamp: lastRequestHourStamp },
                     scheduleLastUpdated: "Beállítások frissítve: " + hourStamp(lastScheduleUpdate) + ".",
@@ -362,8 +364,6 @@ function extractHeatingPeriodsForCycleFromHeatingState(cycleNum, heatingState) {
             //console.log("timepoint: " + timepoint.timestamp + ", heating state: " + currentHeatingState)
         }
     });
-    console.log("PRE")
-    console.log(heatingPeriods)
     if (heatingPeriods.length > 0) {
         if (!heatingPeriods[0].x1) {
             heatingPeriods[0].x1 = 0;
@@ -372,8 +372,6 @@ function extractHeatingPeriodsForCycleFromHeatingState(cycleNum, heatingState) {
             heatingPeriods[heatingPeriods.length - 1].x2 = getFractionalHourOfDay();
         }
     }
-    console.log("POST: ")
-    console.log(heatingPeriods)
     return heatingPeriods;
 }
 
@@ -520,7 +518,7 @@ function drawPlot(plotData, userOptions) {
         parentId: "background",
         centered: true,
         positioning: { x: 0.5, y: 0.5, w: 1, h: 1 }, // Relative positioning and size compared to parent
-        margins: { top: 0.1, right: 0.05, bottom: 0.15, left: 0.1 }, // Affecting the plot elements within the content element
+        margins: { top: 0.1, right: 0.03, bottom: 0.15, left: 0.1 }, // Affecting the plot elements within the content element
 
         background: { show: true, col: "white" },
         plotStyle: { joined: false, col: "gray", thickness: "0.25", startCap: true, endCap: true, smoothCurve: true, hoverableCurve: false },
@@ -610,6 +608,40 @@ function drawPlot(plotData, userOptions) {
                 .attr("stroke", "black")         // Set border color to gray
                 .attr("stroke-width", 0.25)       // Set border thickness
                 .attr("stroke-dasharray", "0.5,1"); // Define dash pattern: 4px dash, 2px gap
+            let bracketStroke = "rgb(50,50,50)";
+            let bracketStrokeWidth = 2.5;
+            let bracketShift = bracketStrokeWidth / 2;
+
+            containerElement.append("line")
+                .attr("x1", containerDims.x - bracketShift)
+                .attr("y1", containerDims.y + containerDims.h)
+                .attr("x2", containerDims.x + containerDims.w * 0.05)
+                .attr("y2", containerDims.y + containerDims.h)
+                .attr("stroke", bracketStroke)
+                .attr("stroke-width", bracketStrokeWidth);
+
+            containerElement.append("line")
+                .attr("x1", containerDims.x)
+                .attr("y1", containerDims.y + containerDims.h - bracketShift)
+                .attr("x2", containerDims.x)
+                .attr("y2", containerDims.y + containerDims.h - containerDims.w * 0.05)
+                .attr("stroke", bracketStroke)
+                .attr("stroke-width", bracketStrokeWidth);
+
+            containerElement.append("line")
+                .attr("x1", containerDims.x + containerDims.w + bracketShift)
+                .attr("y1", containerDims.y)
+                .attr("x2", containerDims.x + containerDims.w - containerDims.w * 0.05)
+                .attr("y2", containerDims.y)
+                .attr("stroke", bracketStroke)
+                .attr("stroke-width", bracketStrokeWidth);
+            containerElement.append("line")
+                .attr("x1", containerDims.x + containerDims.w)
+                .attr("y1", containerDims.y)
+                .attr("x2", containerDims.x + containerDims.w)
+                .attr("y2", containerDims.y + containerDims.w * 0.05)
+                .attr("stroke", bracketStroke)
+                .attr("stroke-width", bracketStrokeWidth);
         }
     }
 
@@ -725,6 +757,18 @@ function drawPlot(plotData, userOptions) {
             .text(ops.plotLabel);
     }
 
+    if (mainGraphContentLocked) {
+        plotElement.append("text")
+            //.attr("x", plotDims.w * 0.87125)
+            .attr("x", -plotDims.w * ops.margins.left * 1.03)
+            .attr("y", -plotDims.h * ops.margins.top * 1.58)
+            .style("text-anchor", "right")
+            .style("font-size", "6px")
+            .style("font-family", dashboardFont)
+            .style("fill", "rgba(0,0,0,0.125)")
+            .text("rögzítve");
+    }
+
     if (plotData === undefined) {
         plotElement.append("text")
             .attr("x", plotDims.w / 2)
@@ -732,7 +776,7 @@ function drawPlot(plotData, userOptions) {
             .style("text-anchor", "middle")
             .style("font-size", "7px")
             .style("font-family", dashboardFont)
-            .text("Adat betöltése.");
+            .text("Adatok betöltése.");
     }
     else {
         if (ops.smoothing.bottom > 0) {
@@ -782,6 +826,17 @@ function drawPlot(plotData, userOptions) {
 
         if (ops.markers && ops.markers.when == "before") {
             drawMarkers();
+        }
+
+        if (ops.dataKeys.left == 'external_temp' && ops.domain.left[0] < 0) {
+            plotElement.append("line")
+                .attr("x1", bottomScale(ops.domain.bottom[0]))
+                .attr("y1", leftScale(0))
+                .attr("x2", bottomScale(ops.domain.bottom[1]))
+                .attr("y2", leftScale(0))
+                .attr("stroke", "rgba(150,150,150,1)")
+                .attr("stroke-width", 0.5)
+                .attr("stroke-dasharray", "4,4");
         }
 
         if (ops.plotStyle.joined) {
@@ -976,6 +1031,10 @@ function updateRoomColor(roomId, temp, lastUpdated) {
 function updateCycleColor(cycle, state) {
     d3.select("#cycle" + cycle).style("stroke", state == 1 ? "rgba(255,0,0,0.75)" : "rgba(0,0,200,0.75)");
     d3.select("#cycle" + cycle).style("stroke-opacity", "1");
+    if (cycle == 1) {
+        d3.select("#cycle" + cycle + "_2").style("stroke", state == 1 ? "rgba(255,0,0,0.75)" : "rgba(0,0,200,0.75)");
+        d3.select("#cycle" + cycle + "_2").style("stroke-opacity", "1");
+    }
 
     d3.select("#cycle" + cycle + "_radiators").selectAll("*").style("fill", state == 1 ? "rgba(255,0,0,1)" : "rgba(0,0,200,1)");
     d3.select("#cycle" + cycle + "_radiators").selectAll("*").style("fill-opacity", "1");
@@ -1065,6 +1124,15 @@ function writeGasUsageToDial(gasData = null) {
     }
 }
 
+let externalTemp;
+function initializeExternalThermometer() {
+    d3.select("#external_thermometer")
+        .style("fill", "rgba(250,250,250,1)")
+        .style("fill-opacity", 1)
+        .style("stroke", "rgba(0,0,0,1)")
+        .style("stroke-opacity", 1);
+}
+
 function initializeCycleMarkers() {
     for (let cycle = 1; cycle < 5; cycle++) {
         const markerBB = getBBoxDrawingDimensions("cycle" + cycle + "_marker");
@@ -1133,13 +1201,14 @@ function updateGeneralInfobox(info) {
 
     d3.selectAll(".general-infobox-content").remove();
 
-    function addLineToBox(message, xFactor, yFactor, fontSize) {
+    function addLineToBox(message, xFactor, yFactor, fontSize, centered = false) {
         return d3.select("#drawing")
             .append("text")
             .attr("class", "general-infobox-content")
-            .attr("x", boxDims.x + boxDims.width * xFactor)
+            .attr("x", boxDims.x + (centered ? boxDims.width * 0.5 : 0) + boxDims.width * xFactor)
             .attr("y", boxDims.y + boxDims.height * 0.025 + boxDims.height * yFactor)
             .text(message)
+            .style("text-anchor", centered ? "middle" : "left")
             .style("font-family", dashboardFont)
             .style("font-size", fontSize + "px");
     }
@@ -1153,10 +1222,11 @@ function updateGeneralInfobox(info) {
     let lineFontSize = 6.5;
     let lineHeight = 0.07;
     let lineShift = 0;
+    let lineOffset = -0.025;
 
-    addLineToBox(info.externalTemp, 0.02, lineHeight * 2, lineFontSize);
+    addLineToBox(info.externalTemp, 0.02, lineOffset + lineHeight * 2, lineFontSize);
 
-    addLineToBox(info.controlLastRan, 0.02, lineHeight * 3.5, lineFontSize);
+    addLineToBox(info.controlLastRan, 0.02, lineOffset + lineHeight * 3.5, lineFontSize);
 
     let latestRequestString = "Utolsó kérés: " + info.latestRequest.hourStamp + ", " + info.latestRequest.origin + ", " + info.latestRequest.target + "."
     if (info.latestRequest.granularity == "órája" && info.latestRequest.timeSince > getFractionalHourOfDay()) {
@@ -1166,26 +1236,26 @@ function updateGeneralInfobox(info) {
     if (latestRequestString.length > 36) {
         latestRequestString = "Utolsó kérés: " + info.latestRequest.hourStamp + ", " + info.latestRequest.origin + ", " + roomAbbreviations[info.latestRequest.target] + ".";
     }
-    addLineToBox(latestRequestString, 0.02, lineHeight * 4.5, lineFontSize);
+    addLineToBox(latestRequestString, 0.02, lineOffset + lineHeight * 4.5, lineFontSize);
 
 
-    addLineToBox(info.scheduleLastUpdated, 0.02, lineHeight * (5.5 + lineShift), lineFontSize);
+    addLineToBox(info.scheduleLastUpdated, 0.02, lineOffset + lineHeight * (5.5 + lineShift), lineFontSize);
     if (info.averageControlDiff != 0.0) {
         let reportedControlDiff = roundTo(info.averageControlDiff, 0.1);
         let averageControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
-        addLineToBox("Átlagos eltérés: " + averageControlDiffPre + reportedControlDiff + " °C.", 0.02, lineHeight * (6.5 + lineShift), lineFontSize);
+        addLineToBox("Átlagos eltérés: " + averageControlDiffPre + reportedControlDiff + " °C.", 0.02, lineOffset + lineHeight * (6.5 + lineShift), lineFontSize);
     }
 
-    addLineToBox(info.cyclesOn, 0.02, lineHeight * (8 + lineShift), lineFontSize);
-    addLineToBox("Gázfogyasztási ráta: " + (isValidNumber(currentGasUsageRate) ? currentGasUsageRate : "") + (isValidNumber(currentGasUsageRate) ? " m³/h." : ""), 0.02, lineHeight * (9 + lineShift), lineFontSize);
+    addLineToBox(info.cyclesOn, 0.02, lineOffset + lineHeight * (8 + lineShift), lineFontSize);
+    addLineToBox("Gázfogyasztási ráta: " + (isValidNumber(currentGasUsageRate) ? currentGasUsageRate : "") + (isValidNumber(currentGasUsageRate) ? " m³/h." : ""), 0.02, lineOffset + lineHeight * (9 + lineShift), lineFontSize);
     if (isValidNumber(currentGasTotal)) {
         let gasTotalString = currentGasTotal;
         if (Number.isInteger(gasTotalString)) {
             gasTotalString += ".0";
         }
         let totalCost = currentGasTotal * 350;
-        addLineToBox("Összes elégett gáz: " + gasTotalString + " m³.", 0.02, lineHeight * (10 + lineShift), lineFontSize);
-        addLineToBox("Összköltség kb. " + (currentGasTotal < 1000 ? (roundTo(totalCost, 100) + " Ft.") : (roundTo(totalCost / 1000, 0.1) + " eFt.")), 0.02, lineHeight * (11 + lineShift), lineFontSize);
+        addLineToBox("Összes elégett gáz: " + gasTotalString + " m³.", 0.02, lineOffset + lineHeight * (10 + lineShift), lineFontSize);
+        addLineToBox("Összköltség kb. " + (totalCost < 1000 ? (roundTo(totalCost, 100) + " Ft.") : (roundTo(totalCost / 1000, 0.1) + " eFt.")), 0.02, lineOffset + lineHeight * (11 + lineShift), lineFontSize);
     }
 }
 
@@ -1194,13 +1264,14 @@ function updateCycleInfobox(cycle, info) {
 
     d3.selectAll(".cycle" + cycle + "-infobox-content").remove();
 
-    function addLineToBox(message, xFactor, yFactor, fontSize) {
+    function addLineToBox(message, xFactor, yFactor, fontSize, centered = false) {
         return d3.select("#drawing")
             .append("text")
             .attr("class", "cycle" + cycle + "-infobox-content clickthrough")
-            .attr("x", boxDims.x + boxDims.width * xFactor)
+            .attr("x", boxDims.x + (centered ? boxDims.width * 0.5 : 0) + boxDims.width * xFactor)
             .attr("y", boxDims.y + boxDims.width * 0.025 + boxDims.width * yFactor)
             .text(message)
+            .style("text-anchor", centered ? "middle" : "left")
             .style("font-family", dashboardFont)
             .style("font-size", fontSize + "px");
     }
@@ -1208,11 +1279,11 @@ function updateCycleInfobox(cycle, info) {
     addLineToBox(cycle + ["-es", "-es", "-mas", "-es"][cycle - 1] + " kör: " + ["ki", "be"][info.state], 0.08, 0.13, 7)
         .style("text-decoration", "underline");
 
-    addLineToBox(cycle < 4 ? "Átlagos eltérés:" : "Eltérés:", 0.08, 0.13 * 2.1, 5.5)
+    addLineToBox(cycle < 4 ? "Átlagos eltérés:" : "Eltérés:", 0.08, 0.13 * 2.2, 5.5)
     if (isValidNumber(info.totalControlDiff)) {
         let reportedControlDiff = roundTo(info.totalControlDiff / info.rooms.length, 0.1)
         let reportedeControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
-        addLineToBox(reportedeControlDiffPre + reportedControlDiff + " °C", 0.2, 0.13 * 3.1, 5.5)
+        addLineToBox(reportedeControlDiffPre + reportedControlDiff + " °C", 0.28, 0.13 * 3.33, 5.5)
     }
     else {
         addLineToBox("?", 0.25, 0.13 * 3, 5.5)
@@ -1221,14 +1292,14 @@ function updateCycleInfobox(cycle, info) {
     if (cycle < 4) {
         if (info.wantHeating) {
             if (info.wantHeating.length > 0) {
-                addLineToBox("Fűtést kér:", 0.08, 0.13 * 4.5, 5.5);
+                addLineToBox("Fűtést kér:", 0.08, 0.13 * 4.7, 5.5);
                 let lineNum = 1;
                 info.wantHeating.forEach(roomName => {
-                    addLineToBox("- " + roomName, 0.12, 0.13 * (4.5 + lineNum), 5.5);
+                    addLineToBox("- " + roomName, 0.12, 0.13 * (4.7 + lineNum), 5.5);
                     lineNum++;
                 });
             } else {
-                addLineToBox("Nem kér fűtést.", 0.08, 0.13 * 4.5, 5.5);
+                addLineToBox("Nem kér fűtést.", 0.08, 0.13 * 4.7, 5.5);
             }
         }
     }
@@ -1242,6 +1313,7 @@ let dayDataNotAvailable = false;
 
 const elementToMainGraphSettingMapping = {
     "gas_dial": { title: "gas_usage", types: ["gas_usage"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime) },
+    "external_thermometer": { title: "external_temp", types: ["external_temp"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime) },
     "Oktopusz": { title: "room_plot", types: ["room_1_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 1 },
     "Gólyafészek": { title: "room_plot", types: ["room_2_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 2 },
     "PK": { title: "room_plot", types: ["room_3_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 3 },
@@ -1292,14 +1364,16 @@ function joinMainGrapDataSourceToElements() {
         .on("click.maingraph", function (event) {
             event.stopPropagation();
             mainGraphContentLocked = !mainGraphContentLocked;
+            resetAllRoomsPlotToAllCycles(); // Workaround so that all_rooms plot is reset to default even if a mouseout was not activated on the cycle infoboxes
             mainGraphSetting = elementToMainGraphSettingMapping[this.id];
+
             drawMainGraph();
         });
     d3.select("body")
         .on("click", function (event) {
             if (mainGraphContentLocked) {
                 mainGraphContentLocked = false;
-                mainGraphSetting = mainGraphDefaultSetting;
+                resetAllRoomsPlotToAllCycles(); // Workaround so that all_rooms plot is reset to default even if a mouseout was not activated on the cycle infoboxes
                 drawMainGraph();
             }
         });
@@ -1310,6 +1384,12 @@ let cyclesDataAndState = {
     2: { rooms: [4, 5, 6, 7] },
     3: { rooms: [8, 9] },
     4: { rooms: [10] }
+}
+
+function resetAllRoomsPlotToAllCycles() {
+    mainGraphSetting = mainGraphDefaultSetting;
+    mainGraphSetting.roomNumsToPlot = d3.range(1, 12, 1);
+    mainGraphSetting.hoveredCycle = 0;
 }
 
 function setInfoboxHovers() {
@@ -1324,8 +1404,7 @@ function setInfoboxHovers() {
             })
             .on("mouseout", function () {
                 if (mainGraphSetting.title == 'all_rooms' && !mainGraphContentLocked) {
-                    mainGraphSetting.roomNumsToPlot = d3.range(1, 12, 1);
-                    mainGraphSetting.hoveredCycle = 0;
+                    resetAllRoomsPlotToAllCycles()
                     drawMainGraph();
                 }
             })
@@ -1481,7 +1560,7 @@ function drawMainGraph(graphData = null) {
                                 dataKeys: { bottom: "h_of_day_frac", left: "set_temp" },
                                 axesLabel: { bottom: "óra", left: "°C" },
                                 tickVals: { left: d3.range(Math.floor(range[0]) - 1, Math.ceil(range[1]) + 2, 1) },
-                                plotStyle: { joined: true, col: "rgba(28, 185, 0,0.5)", thickness: "3", startCap: false, endCap: false, smoothCurve: false },
+                                plotStyle: { joined: true, col: "rgba(44, 213, 14, 0.92)", thickness: "3", startCap: false, endCap: false, smoothCurve: false },
                                 plotLabel: roomsDataAndState[mainGraphSetting.roomNumToPlot].name + " kért és mért hőmérséklet",
                                 rects: { when: "before", list: heatingPeriods },
                                 markers:
@@ -1589,6 +1668,22 @@ function drawMainGraph(graphData = null) {
                         );
                     });
                     break;
+                case "external_temp":
+                    let tempRange = d3.extent(graphData['external_temp'].map(elem => elem['external_temp']));
+                    drawPlot(
+                        graphData['external_temp'],
+                        {
+                            parentId: "graph",
+                            smoothing: { bottom: 0, left: 10 },
+                            domain: { bottom: [0, 24], left: [Math.floor(tempRange[0]) - 1, Math.ceil(tempRange[1]) + 1] },
+                            dataKeys: { bottom: "h_of_day_frac", left: "external_temp" },
+                            axesLabel: { bottom: "óra", left: "°C" },
+                            tickVals: { left: d3.range(Math.floor(tempRange[0]) - 1, Math.ceil(tempRange[1]) + 2, 1) },
+                            plotStyle: { joined: true, col: "rgba(28, 3, 252, 0.92)", thickness: "3", startCap: false, endCap: true, smoothCurve: true },
+                            plotLabel: "mai külső hőmérséklet"
+                        }
+                    );
+                    break
             }
         }
     }
@@ -1639,6 +1734,7 @@ d3.xml("canvas.svg").then(fileData => {
     setViewParameters("background");
     centerAndZoomRelativePointOfCanvas(initialPos.x, initialPos.y, initialZoom);
     setupTooltip();
+    initializeExternalThermometer();
     initializeCycleMarkers();
     initializeInfoboxes();
     initializeMainGraphArea();
