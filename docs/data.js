@@ -93,7 +93,7 @@ function centerAndZoomRelativePointOfCanvas(targetX, targetY, zoomLevel, duratio
                     .style("left", `${mousePosition.x + 5}px`)
                     .style("top", `${mousePosition.y - 28}px`);
             }
-            else{
+            else {
                 d3.select("#tooltip").transition().duration(200).style("visibility", "hidden");
             }
         });
@@ -242,7 +242,7 @@ function getDataFromFirebase() {
                 schedLastUpdateGranularity = ' órája.'
             }
 
-            if(timeSinceLastScheduleUpdate<1){
+            if (timeSinceLastScheduleUpdate < 1) {
                 drawMainGraph();
             }
 
@@ -496,9 +496,19 @@ function drawPlot(plotData, userOptions) {
         throw new Error(`No element found with id: ${ops.parentId}`);
     }
 
-    // Create wrapper (needed because only gs can show nested content)
-    let wrapperDims = getBBoxDrawingDimensions(ops.parentId); //Same dimensions as parent
-    let wrapperElement = d3.select(parentElement.node().parentNode)
+    let parentDims = getBBoxDrawingDimensions(ops.parentId);
+
+    // Get collector for graphs laid over the same parent
+    let collectorElement = d3.select("#" + ops.parentId + "-graphs-collector");
+    if (collectorElement.empty()) { //Check if exists, if not, create it
+        collectorElement = d3.select(parentElement.node().parentNode)
+            .append("g")
+            .attr("id", ops.parentId + "-graphs-collector");
+    }
+
+    // Create wrapper g (to be able to show nested content)
+    let wrapperDims = parentDims; //Same dimensions as parent
+    let wrapperElement = collectorElement
         .append("g")
         .attr("class", "main-graph-instance")
         .attr("transform", `translate(${wrapperDims.x}, ${wrapperDims.y})`); // Position within canvas coordinate system
@@ -539,17 +549,19 @@ function drawPlot(plotData, userOptions) {
             .attr("fill", "rgba(0,0,0,0)")
     }
 
-    let backgroundRect = containerElement.append("rect")
-        .attr("width", containerDims.w)
-        .attr("height", containerDims.h)
-        .attr("fill", mainGraphContentLocked ? "rgba(250,250,250,1)" : ops.background.col)
-        .attr("opacity", ops.background.show ? 1 : 0);
+    if (ops.background.show) {
+        let backgroundRect = containerElement.append("rect")
+            .attr("width", containerDims.w)
+            .attr("height", containerDims.h)
+            .attr("fill", mainGraphContentLocked ? "rgba(250,250,250,1)" : ops.background.col)
+            .attr("opacity", ops.background.show ? 1 : 0);
 
-    if (ops.parentId === 'graph' && mainGraphContentLocked) {
-        backgroundRect
-            .attr("stroke", "black")         // Set border color to gray
-            .attr("stroke-width", 0.25)       // Set border thickness
-            .attr("stroke-dasharray", "0.5,1"); // Define dash pattern: 4px dash, 2px gap
+        if (ops.parentId === 'graph' && mainGraphContentLocked) {
+            backgroundRect
+                .attr("stroke", "black")         // Set border color to gray
+                .attr("stroke-width", 0.25)       // Set border thickness
+                .attr("stroke-dasharray", "0.5,1"); // Define dash pattern: 4px dash, 2px gap
+        }
     }
 
     // Create the main plotting area using margins
@@ -757,16 +769,7 @@ function drawPlot(plotData, userOptions) {
 
                 let endTextRect, endText;
                 if (ops.curveEndText.show && segmentIndex == segments.length - 1) { // Only draw end text at the last segment
-                    //if (forceEndText) { // Only draw end text at the last segment
                     const lastPoint = segment[segment.length - 1];
-
-                    // Create a group to combine text and background rect
-                    endTextRect = plotElement.append("g")
-                        .attr("transform", `translate(
-                                    ${bottomScale(lastPoint[ops.dataKeys.bottom]) + ops.curveEndText.xOffset}, 
-                                    ${leftScale(lastPoint[ops.dataKeys.left]) + ops.curveEndText.yOffset}
-                                  )`)
-                        .style("opacity", 0); // Initially hidden
 
                     // Add the text element
                     endText = plotElement.append("text")
@@ -777,6 +780,20 @@ function drawPlot(plotData, userOptions) {
                         .style("font-family", dashboardFont)
                         .style("fill", ops.curveEndText.col ? ops.curveEndText.col : "black")
                         .text(ops.curveEndText.text);
+
+                    const bbox = endText.node().getBBox();
+
+                    // Add the background rect directly behind the text
+                    endTextRect = plotElement.append("rect")
+                        .attr("x", bbox.x - 0) // Add padding
+                        .attr("y", bbox.y - 0)
+                        .attr("width", bbox.width + 2 * 0 + textWidth(ops.curveEndText.text) * 0.115) // Add padding
+                        .attr("height", bbox.height + 2 * 0)
+                        .style("fill", "rgba(255,255,255)")
+                        .style("fill-opacity", "0"); // Set visibility
+
+                    // Ensure the rect appears behind the text
+                    endTextRect.lower();
                 }
 
                 // Draw the segment as a line
@@ -792,7 +809,8 @@ function drawPlot(plotData, userOptions) {
                     .on("mouseover", ops.plotStyle.hoverableCurve ? function (event) {
                         // Define hover behavior here
                         d3.select(this)
-                            .attr("stroke-width", ops.plotStyle.thickness * 2); // Thicker on hover
+                            .attr("stroke-width", ops.plotStyle.thickness * 2);
+                        wrapperElement.raise();
                         if (startCap) {
                             startCap.attr("r", ops.plotStyle.thickness * 1.05 * 2);
                         }
@@ -801,7 +819,10 @@ function drawPlot(plotData, userOptions) {
                         }
                         if (endText) {
                             endText.style("font-weight", "bold")
-                                .style("font-size", (ops.curveEndText.fontSize * 1.25) + "px");
+                                .style("font-size", (ops.curveEndText.fontSize * 1.25) + "px")
+                                //.style("stroke", "white") // Outer stroke color
+                                //.style("stroke-width", 0.001); // Thickness of the stroke;
+                            endTextRect.style("fill-opacity", "0.25");
                         }
                     } : null)
                     .on("mouseout", ops.plotStyle.hoverableCurve ? function (event) {
@@ -816,7 +837,10 @@ function drawPlot(plotData, userOptions) {
                         }
                         if (endText) {
                             endText.style("font-weight", "normal")
-                                .style("font-size", ops.curveEndText.fontSize + "px");
+                                .style("font-size", ops.curveEndText.fontSize + "px")
+                                //.style("stroke", "rgba(255,255,255,0)") // Outer stroke color
+                                //.style("stroke-width", 0.5); // Thickness of the stroke;
+                            endTextRect.style("fill-opacity", "0");
                         }
                     } : null);
             });
@@ -1411,8 +1435,23 @@ function drawMainGraph(graphData = null) {
                 case "all_rooms":
                     const colorScale = d3.scaleLinear().domain([1, 11]).range(["green", "orange"]);
                     range = d3.extent(Object.values(graphData).map(value => value.map(elem => elem['temp'])).flat());
+                    drawPlot(
+                        graphData["room_1_measurements"],//Placeholder, really, should be empty or something
+                        {
+                            axes: { left: true, bottom: true },
+                            axesLabel: { bottom: "óra", left: "°C" },
+                            plotLabel: "szobák mai hőmérsékleti görbéje" + (mainGraphSetting.hoveredCycle > 0 ? " a" + ["z 1-es", " 2-es", " 3-mas", " 4-es"][mainGraphSetting.hoveredCycle - 1] + " körön" : ""),
+                            parentId: "graph",
+                            background: { show: true },
+                            domain: { bottom: [0, 24], left: [Math.floor(range[0]), Math.ceil(range[1])] },
+                            tickVals: { left: d3.range(Math.floor(range[0]), Math.ceil(range[1]) + 1, 1) },
+                            dataKeys: { bottom: "h_of_day_frac", left: "temp" },
+                            plotStyle: { joined: true, col: "rgba(0,0,0,0)", thickness: "1", startCap: false, endCap: true, hoverableCurve: false },
+                            segment: { do: false, gap: 0, endCaps: true, startCaps: true }
+                        }
+                    );
                     [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].forEach((roomNum, index) => {
-                        let firstRoom = index == 0;
+                        let firstRoom = false;
                         let emphasis = mainGraphSetting.roomNumsToPlot.includes(roomNum);
                         let plotColor = d3.color(colorScale(roomNum));
                         let showEndText = true;
@@ -1426,14 +1465,13 @@ function drawMainGraph(graphData = null) {
                         drawPlot(
                             graphData["room_" + roomNum + "_measurements"],
                             {
-                                axes: { left: firstRoom, bottom: firstRoom },
-                                axesLabel: { bottom: "óra", left: "°C" },
-                                plotLabel: (firstRoom ? "szobák mai hőmérsékleti görbéje" + (mainGraphSetting.hoveredCycle > 0 ? " a" + ["z 1-es", " 2-es", " 3-mas", " 4-es"][mainGraphSetting.hoveredCycle - 1] + " körön" : "") : ""),
+                                axes: { left: false, bottom: false },
+                                axesLabel: { bottom: false, left: false },
+                                plotLabel: false,
                                 parentId: "graph",
-                                background: { show: firstRoom },
+                                background: { show: false },
                                 smoothing: { bottom: 0, left: 10 },
                                 domain: { bottom: [0, 24], left: [Math.floor(range[0]), Math.ceil(range[1])] },
-                                tickVals: { left: d3.range(Math.floor(range[0]), Math.ceil(range[1]) + 1, 1) },
                                 dataKeys: { bottom: "h_of_day_frac", left: "temp" },
                                 plotStyle: { joined: true, col: plotColor, thickness: "1", startCap: false, endCap: true, hoverableCurve: emphasis },
                                 curveEndText: { show: showEndText, fontSize: 5, text: roomsDataAndState[roomNum].name, col: plotColor, xOffset: 2.5, yOffset: 1.5 },

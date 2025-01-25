@@ -380,9 +380,9 @@ function getHoveredElementId() {
     return hoveredElementId; // Return the current value
 }
 
-function logHoveredElementId() {
+function logHoveredElementId(justTheId = true) {
     document.addEventListener("mouseover", event => {
-        console.log("Hovered element:", event.target.id);
+        console.log("Hovered element:", justTheId ? event.target.id : event.target);
     });
 }
 
