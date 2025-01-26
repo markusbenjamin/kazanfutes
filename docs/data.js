@@ -1427,8 +1427,10 @@ function setInfoboxHovers() {
             .on("click.cycles_infobox", function (event) {
                 event.stopPropagation();
                 mainGraphContentLocked = !mainGraphContentLocked;
+                redrawRoomHovers(mainGraphSetting.roomNumsToPlot, false);
                 mainGraphSetting.hoveredCycle = cycleNum;
                 mainGraphSetting.roomNumsToPlot = cyclesDataAndState[cycleNum].rooms
+                redrawRoomHovers(mainGraphSetting.roomNumsToPlot, true);
                 drawMainGraph();
             });
     }
