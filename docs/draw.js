@@ -37,8 +37,14 @@ function drawExternalThermometer() {
         else if (externalTemp < 10) {
             tempRange = [-5, 10];
         }
+        else if (externalTemp < 20) {
+            tempRange = [5, 20];
+        }
+        else if (externalTemp < 30) {
+            tempRange = [15, 30]
+        }
         else {
-            tempRange = [0, 15];
+            tempRange = [25, 40]
         }
         let tempStripRange = [y + h * 0.425, y - h * 0.425]
         let tempLineX = x - w * 0.255;
@@ -95,7 +101,7 @@ function drawExternalThermometer() {
         stroke(28 / 255, 3 / 255, 252 / 255, 0.92);
         fill(28 / 255, 3 / 255, 252 / 255, 0.92);
         strokeWeight(tempLineW * 0.75);
-        line(tempLineX, y+h*0.49, tempLineX, extTempPos);
+        line(tempLineX, y + h * 0.49, tempLineX, extTempPos);
         ellipse(tempLineX, extTempPos, w * 0.1, w * 0.1);
         strokeCap(SQUARE);
     }

@@ -911,12 +911,12 @@ function drawPlot(plotData, userOptions) {
 
                     // Add the background rect directly behind the text
                     endTextRect = plotElement.append("rect")
-                        .attr("x", bbox.x - 0) // Add padding
-                        .attr("y", bbox.y - 0)
-                        .attr("width", bbox.width + 2 * 0 + textWidth(ops.curveEndText.text) * 0.115) // Add padding
-                        .attr("height", bbox.height + 2 * 0)
+                        .attr("x", bbox.x - 1) // Add padding
+                        .attr("y", bbox.y - 1)
+                        .attr("width", bbox.width + 2 * 1 + ops.curveEndText.text.length * 0.05) // Add padding
+                        .attr("height", bbox.height + 2 * 1)
                         .style("fill", "rgba(255,255,255)")
-                        .style("fill-opacity", "0"); // Set visibility
+                        .style("fill-opacity", "0");
 
                     // Ensure the rect appears behind the text
                     endTextRect.lower();
@@ -931,12 +931,22 @@ function drawPlot(plotData, userOptions) {
                     .attr("stroke-linecap", "butt")
                     .attr("d", line)
                     .attr("has-endtext", "0")
-                    .classed("hoverable-curve", ops.plotStyle.hoverableCurve) // Add a class if hoverable
+                    .classed("hoverable-curve", ops.plotStyle.hoverableCurve)
                     .on("mouseover", ops.plotStyle.hoverableCurve ? function (event) {
-                        // Define hover behavior here
-                        d3.select(this)
+                        let curveElement = d3.select(this);
+                        let curveClone = plotElement.append(() => curveElement.node().cloneNode(true));
+
+
+                        curveElement
                             .attr("stroke-width", ops.plotStyle.thickness * 2);
                         wrapperElement.raise();
+                        curveClone
+                            .attr("stroke", "rgba(255,255,255,0.5)")
+                            .attr("stroke-width", ops.plotStyle.thickness * 3)
+                            .attr("class", "curve-clone");
+                        curveClone.raise();
+                        curveClone.lower();
+
                         if (startCap) {
                             startCap.attr("r", ops.plotStyle.thickness * 1.05 * 2);
                         }
@@ -946,15 +956,16 @@ function drawPlot(plotData, userOptions) {
                         if (endText) {
                             endText.style("font-weight", "bold")
                                 .style("font-size", (ops.curveEndText.fontSize * 1.25) + "px")
-                            //.style("stroke", "white") // Outer stroke color
-                            //.style("stroke-width", 0.001); // Thickness of the stroke;
-                            endTextRect.style("fill-opacity", "0.25");
+                            endTextRect.style("fill-opacity", "0.5");
+                            let baseWidth = endTextRect.attr("width");
+                            endTextRect.attr("width", baseWidth * 1.25);
                         }
                     } : null)
                     .on("mouseout", ops.plotStyle.hoverableCurve ? function (event) {
-                        // Define unhover behavior here
                         d3.select(this)
-                            .attr("stroke-width", ops.plotStyle.thickness); // Revert to original thickness
+                            .attr("stroke-width", ops.plotStyle.thickness);
+                        d3.selectAll(".curve-clone").remove();
+
                         if (startCap) {
                             startCap.attr("r", ops.plotStyle.thickness * 1.05);
                         }
@@ -964,9 +975,9 @@ function drawPlot(plotData, userOptions) {
                         if (endText) {
                             endText.style("font-weight", "normal")
                                 .style("font-size", ops.curveEndText.fontSize + "px")
-                            //.style("stroke", "rgba(255,255,255,0)") // Outer stroke color
-                            //.style("stroke-width", 0.5); // Thickness of the stroke;
                             endTextRect.style("fill-opacity", "0");
+                            let emphasisWidth = endTextRect.attr("width");
+                            endTextRect.attr("width", emphasisWidth / 1.25);
                         }
                     } : null);
             });
@@ -1043,10 +1054,8 @@ function updateCycleColor(cycle, state) {
     d3.select("#cycle" + cycle + "_radiators").selectAll("*").style("fill", state == 1 ? "rgba(255,0,0,1)" : "rgba(0,0,200,1)");
     d3.select("#cycle" + cycle + "_radiators").selectAll("*").style("fill-opacity", "1");
 
-    d3.select("#oktopusz_keramia_radiators").selectAll("*").style("fill", "rgba(0,0,200,0.5)");
+    d3.select("#oktopusz_keramia_radiators").selectAll("*").style("fill", "rgba(0,0,200,1)");
     d3.select("#oktopusz_keramia_radiators").selectAll("*").style("fill-opacity", "1");
-    d3.select("#oktopusz_keramia_radiators").selectAll("*").style("stroke", "rgba(0,0,200,1)");
-    d3.select("#oktopusz_keramia_radiators").selectAll("*").style("stroke-opacity", "1");
 }
 
 let boilerState = null;
@@ -1300,7 +1309,7 @@ function updateCycleInfobox(cycle, info) {
         addLineToBox(reportedeControlDiffPre + reportedControlDiff + " °C", 0.28, 0.13 * 3.33, 5.5)
     }
     else {
-        addLineToBox("?", 0.25, 0.13 * 3, 5.5)
+        addLineToBox("?", 0.28, 0.13 * 3.33, 5.5)
     }
 
     if (cycle < 4) {
@@ -1318,7 +1327,7 @@ function updateCycleInfobox(cycle, info) {
         }
     }
     else {
-        addLineToBox(["Nem kér fűtést.", "Fűtést kér."][info.set], 0.08, 0.13 * 4.5, 5.5);
+        addLineToBox(["Nem kér fűtést.", "Fűtést kér."][info.set], 0.08, 0.13 * 4.7, 5.5);
     }
 }
 
@@ -1438,6 +1447,19 @@ function setInfoboxHovers() {
 
 const roomsColorScale = d3.scaleLinear().domain([1, 11]).range(["green", "orange"]); // Ha újabb szobát kell hozzáadni, akkor kell majd egy mapping a szobaszámok és a szín között, ami nem lineáris
 
+let roomTextOffsets = {
+    "Oktopusz": { x: 0.05, y: 0 },
+    "Gólyafészek": { x: 0, y: 0 },
+    "PK": { x: 0, y: 0 },
+    "SZGK": { x: 0, y: 0 },
+    "Mérce": { x: 0, y: 0.08 },
+    "Lahmacun": { x: 0.05, y: 0.1 },
+    "Gólyairoda": { x: -0.05, y: 0 },
+    "kisterem": { x: 0, y: 0.12 },
+    "vendégtér": { x: 0.05, y: 0.07 },
+    "Trafóház": { x: -0.05, y: 0.16 },
+}
+
 function redrawRoomHovers(rooms, emphasis) {
     rooms.forEach(roomNum => {
         if (roomNum != 11) {
@@ -1459,18 +1481,6 @@ function redrawRoomHovers(rooms, emphasis) {
                 .attr("class", "room-emphasis clickthrough")
                 .raise();
             if (emphasis) {
-                let roomTextOffsets = {
-                    "Oktopusz": { x: 0.05, y: 0 },
-                    "Gólyafészek": { x: 0, y: 0 },
-                    "PK": { x: 0, y: 0 },
-                    "SZGK": { x: 0, y: 0 },
-                    "Mérce": { x: 0, y: 0 },
-                    "Lahmacun": { x: 0.05, y: 0.1 },
-                    "Gólyairoda": { x: -0.05, y: 0 },
-                    "kisterem": { x: 0, y: 0.12 },
-                    "vendégtér": { x: 0.05, y: 0.07 },
-                    "Trafóház": { x: -0.05, y: 0.16 },
-                }
                 roomElement.raise();
                 parentParentElement.append("text")
                     .attr("x", roomBox.x + roomBox.w / 2 + roomBox.w * roomTextOffsets[roomID].x) // Center horizontally
@@ -1490,6 +1500,32 @@ function redrawRoomHovers(rooms, emphasis) {
     if (!emphasis) {
         d3.selectAll(".room-emphasis").remove();
     }
+}
+
+
+function drawRoomInfo(roomNum) {//IN DEVELOPMENT
+    let roomID = roomsDataAndState[roomNum].roomID;
+    let roomName = roomsDataAndState[roomNum].roomName;
+    let roomTemp = roomsDataAndState[roomNum].temp;
+    let roomColor = d3.color(roomsColorScale(roomNum));
+    let roomElement = d3.select("#" + roomID);
+    let roomBox = getBBoxDrawingDimensions(roomID);
+    let parentElement = d3.select(roomElement.node().parentNode);
+    let parentParentElement = d3.select(roomElement.node().parentNode.parentNode);
+
+    let roomInfo = roomName;
+    console.log("BLA")
+    //roomElement.raise();
+    parentElement.append("text")
+        .attr("x", roomBox.x + roomBox.w / 2 + roomBox.w * roomTextOffsets[roomID].x) // Center horizontally
+        .attr("y", roomBox.y + roomBox.h / 2 + roomBox.h * roomTextOffsets[roomID].y) // Center vertically
+        .attr("text-anchor", "middle") // Align the text center horizontally
+        .attr("dominant-baseline", "middle") // Align the text center vertically
+        .style("fill", "white")
+        .style("font-size", roomNum == 7 ? "6" : "6")
+        .text(roomInfo)
+        .attr("class", "room-info clickthrough")
+        .raise();
 }
 
 function drawMainGraph(graphData = null) {
@@ -1790,33 +1826,36 @@ function rescueMainGraph() {
 let isMobile, fromRequest, initialZoom, initialPos;
 let initialLockDone = false;
 
+function getIsMobile() {
+    return /Mobi|Android/i.test(navigator.userAgent);
+}
+
 function setViewParameters(centeredId) {
     let params = new URLSearchParams(window.location.search);
     fromRequest = params.get("ref_source") == "qr" || params.get("ref_source") == "form";
     centeredId = !d3.select("#" + params.get("centered_id")).empty() ? params.get("centered_id") : centeredId;
-    initialZoomFactor = params.get("zoom") || 0.0031;
 
     const width = window.innerWidth;
     const height = window.innerHeight;
-
     let smallerDimension = Math.min(width, height);
-    isMobile = /Mobi|Android/i.test(navigator.userAgent);
 
+    let baseCentedDims = getBBoxRelativeDimensions("background");
+
+    let idiosyncraticFactor = 1;
     let centeringOffsetFactor = { x: 1, y: 1 }
 
-    //isMobile = true;
+    isMobile = getIsMobile();
     if (isMobile) {
-        initialZoom = smallerDimension * 0.007;
         centeredId = "general_infobox";
-        centeringOffsetFactor.y = 1.35;
-        centeringOffsetFactor.x = 1.05;
-    }
-    else {
-        initialZoom = smallerDimension * initialZoomFactor;
+        idiosyncraticFactor = 0.85;
+        centeringOffsetFactor = { x:  1.05, y: 1.6 };
     }
 
     let centeredDims = getBBoxRelativeDimensions(centeredId);
+    let baseZoomFactor = 0.0032; // Empirically determined
+    let centeringFactor = baseCentedDims.w / centeredDims.w * (centeredId == "background" ? 1 : 0.8);
 
+    initialZoom = smallerDimension * baseZoomFactor * centeringFactor * idiosyncraticFactor;
     initialPos = { x: centeredDims.cx * centeringOffsetFactor.x, y: centeredDims.cy * centeringOffsetFactor.y };
 }
 
@@ -1827,13 +1866,12 @@ d3.xml("canvas.svg").then(fileData => {
     trackHoveredElementId();
     setViewParameters("background");
     centerAndZoomRelativePointOfCanvas(initialPos.x, initialPos.y, initialZoom);
+
     setupTooltip();
     initializeExternalThermometer();
     initializeCycleMarkers();
     initializeInfoboxes();
     initializeMainGraphArea();
-
-    joinMainGrapDataSourceToElements();
     setInfoboxHovers();
 
     runOnceThenSetInterval(joinMainGrapDataSourceToElements, 10);
