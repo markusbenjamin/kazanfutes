@@ -1542,7 +1542,7 @@ function drawMainGraph(graphData = null) {
                             dataKeys: { bottom: "h_of_day_frac", left: "burn_rate_in_m3_per_h" },
                             background: { show: false },
                             plotStyle: { joined: true, col: "rgb(0, 0, 0)", thickness: "2", startCap: false, endCap: true },
-                            segment: { do: true, gap: 1, endCaps: true, startCaps: true }
+                            segment: { do: true, gap: 2, endCaps: true, startCaps: true }
                         }
                     );
                     break;
@@ -1791,6 +1791,11 @@ let isMobile, fromRequest, initialZoom, initialPos;
 let initialLockDone = false;
 
 function setViewParameters(centeredId) {
+    let params = new URLSearchParams(window.location.search);
+    fromRequest = params.get("ref_source") == "qr" || params.get("ref_source") == "form";
+    centeredId = !d3.select("#" + params.get("centered_id")).empty() ? params.get("centered_id") : centeredId;
+    initialZoomFactor = params.get("zoom") || 0.0031;
+
     const width = window.innerWidth;
     const height = window.innerHeight;
 
@@ -1807,15 +1812,12 @@ function setViewParameters(centeredId) {
         centeringOffsetFactor.x = 1.05;
     }
     else {
-        initialZoom = smallerDimension * 0.0031;
+        initialZoom = smallerDimension * initialZoomFactor;
     }
 
     let centeredDims = getBBoxRelativeDimensions(centeredId);
 
     initialPos = { x: centeredDims.cx * centeringOffsetFactor.x, y: centeredDims.cy * centeringOffsetFactor.y };
-
-    let params = new URLSearchParams(window.location.search);
-    fromRequest = params.get("ref_source") == "qr" || params.get("ref_source") == "form";
 }
 
 let dashboardFont = "Consolas";
