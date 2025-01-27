@@ -1566,7 +1566,7 @@ function drawMainGraph(graphData = null) {
                             dataKeys: { bottom: "h_of_day_frac", left: "burn_rate_in_m3_per_h" },
                             axesLabel: { bottom: "óra", left: "ráta (m³/h)" },
                             plotLabel: "mai gázfogyasztás",
-                            rects: { when: "before", list: heatingPeriodsForAllCycles }
+                            rects: false// { when: "before", list: heatingPeriodsForAllCycles }
                         }
                     );
                     drawPlot(
