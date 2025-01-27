@@ -1210,8 +1210,19 @@ function initializeInfoboxes() {
         .style("stroke", "rgba(250,250,250,1)")
         .style("stroke-opacity", "1")
         .style("stroke-width", "3");
-    for (let cycleNum = 1; cycleNum < 5; cycleNum++) {
-        d3.select("#cycle" + cycleNum + "_infobox")
+
+    if (isMobile) {
+        for (let cycleNum = 1; cycleNum < 5; cycleNum++) {
+            d3.select("#cycle" + cycleNum + "_infobox")
+                .style("fill", "rgba(250,250,250,1)")
+                .style("fill-opacity", "1")
+                .style("stroke", "rgba(250,250,250,1)")
+                .style("stroke-opacity", "1")
+                .style("stroke-width", "3");
+        }
+    }
+    else {
+        d3.select("#cycles_infobox")
             .style("fill", "rgba(250,250,250,1)")
             .style("fill-opacity", "1")
             .style("stroke", "rgba(250,250,250,1)")
@@ -2040,8 +2051,8 @@ function setViewParameters() {
     let centeringOffsetFactor = { x: 1, y: 1 }
 
     if (isMobile) {
-        idiosyncraticFactor = 0.76;
-        centeringOffsetFactor = { x: 1, y: 1.28 };
+        idiosyncraticFactor = 0.72;
+        centeringOffsetFactor = { x: 1, y: 1.25};
     }
 
     let centeredDims = getBBoxRelativeDimensions(centeredId);
