@@ -124,9 +124,10 @@ function setupTooltip() {
                 if (roomTooltipData.temp != null) {
                     tooltip.transition().duration(200).style("visibility", "visible");
                     tooltip.html(
-                        roomTooltipData.name + "<br>" +
+                        roomTooltipData.name + (roomTooltipData.vote != null ? ": " + ["nem kér", "kér"][roomTooltipData.vote] : "") + "<br>" +
                         roomTooltipData.temp + (!isNaN(roomTooltipData.temp) ? " °C" : "") +
-                        (roomTooltipData.set != null ? "<br>(" + roomTooltipData.set + (!isNaN(roomTooltipData.set) ? " °C)" : ")") : "")
+                        (roomTooltipData.set != null ? " / [" + roomTooltipData.set + (!isNaN(roomTooltipData.set) ? " °C]" : "]") : "") +
+                        (roomTooltipData.set != null ? "<br>" + roomTooltipData.reason + "" : "")
                     )
                         .style("left", (event.pageX + 5) + "px")
                         .style("top", (event.pageY - 28) + "px");
@@ -146,6 +147,22 @@ function setupTooltip() {
 }
 
 let condensedSchedule, requestLists;
+
+const reasonMapping = {
+    none: { type: 'none', original: 'None given', message: '' },
+    t_on: { type: 't_on', original: 'Timed on', message: 'Idővezérelt be.' },
+    t_off: { type: 't_off', original: 'Timed off', message: 'Idővezérelt ki.' },
+    below: { type: 'below', original: 'Below set temp', message: 'Beállított alatt.' },
+    above: { type: 'above', original: 'Above set temp', message: 'Beállított felett.' },
+    h_off: { type: 'h_off', original: 'Off hysteresis', message: 'Alsó hiszterézis.' },
+    h_on: { type: 'h_on', original: 'On hysteresis', message: 'Felső hiszterézis.' },
+    r_m_on: { type: 'r_m_on', original: 'Room master ON', message: 'Szoba be.' },
+    r_m_off: { type: 'r_m_off', original: 'Room master OFF', message: 'Szoba ki.' },
+    c_s_m_off: { type: 'c_s_m_off', original: 'Cycle scheduled master OFF', message: 'Kör időzítetten lekapcsolva.' },
+    c_m_on: { type: 'c_m_on', original: 'Cycle master ON', message: 'Kör manuálisan bekapcsolva.' },
+    c_m_off: { type: 'c_m_off', original: 'Cycle master OFF', message: 'Kör manuálisan kikapcsolva.' }
+};
+
 
 function getDataFromFirebase() {
     const url = "https://kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app/.json";
@@ -190,6 +207,11 @@ function getDataFromFirebase() {
                     totalControlDiff += controlDiffs[roomNum];
                     averagerCount++;
                 }
+
+                const roomVote = systemJSON.control.rooms[roomNum].vote;
+                roomsDataAndState[roomNum].vote = roomVote;
+                const reason = reasonMapping[systemJSON.control.rooms[roomNum].reason].message;
+                roomsDataAndState[roomNum].reason = reason;
             });
             let averageControlDiff = (totalControlDiff - (isValidNumber(controlDiffs[10]) ? controlDiffs[10] : 0)) / (averagerCount - 1);
 
@@ -212,37 +234,37 @@ function getDataFromFirebase() {
             );
             updateBoilerColor(states > 0 ? 1 : 0);
 
-            // Update infoboxes
-            let onCycles = [];
+            // Update general infobox
+            let cyclesOn = [];
             cycles.forEach(cycleNum => {
-                systemJSON.state.pump_states[cycleNum] == 1 ? onCycles.push(cycleNum) : "";
+                systemJSON.state.pump_states[cycleNum] == 1 ? cyclesOn.push(cycleNum) : "";
             });
 
-            let lastControlRan = dateFromTimestamp(systemJSON.state.last_updated);
-            let timeSinceControlLastRan = timePassedSince(lastControlRan, 'seconds');
-            let lastControlRanGranularity = ' másodperce.'
-            if (timeSinceControlLastRan > 90) {
-                timeSinceControlLastRan = roundTo(timeSinceControlLastRan / 60, 0.1);
-                lastControlRanGranularity = ' perce.'
+            let lastControlRun = dateFromTimestamp(systemJSON.state.last_updated);
+            let timeSinceLastControlRun = timePassedSince(lastControlRun, 'seconds');
+
+            let lastControlRunGranularity = ' másodperce'
+            if (timeSinceLastControlRun > 90) {
+                timeSinceLastControlRun = roundTo(timeSinceLastControlRun / 60, 0.1);
+                lastControlRunGranularity = ' perce'
             }
-            else if (timeSinceControlLastRan > 90 * 30) {
-                timeSinceControlLastRan = roundTo(timeSinceControlLastRan / 60 * 60, 0.1);
-                lastControlRanGranularity = ' órája.'
+            else if (timeSinceLastControlRun > 90 * 30) {
+                timeSinceLastControlRun = roundTo(timeSinceLastControlRun / 60 * 60, 0.1);
+                lastControlRunGranularity = ' órája'
             }
-            if (timeSinceControlLastRan < 0) {
-                timeSinceControlLastRan = 0
+            if (timeSinceLastControlRun < 0) {
+                timeSinceLastControlRun = 0
             }
 
             let lastScheduleUpdate = dateFromTimestamp(scheduleJSON.last_updated)
             let timeSinceLastScheduleUpdate = timePassedSince(lastScheduleUpdate, 'minutes');
-            let schedLastUpdateGranularity = ' perce.';
-
+            let schedLastUpdateGranularity = ' perce';
             if (timeSinceLastScheduleUpdate > 90) {
                 timeSinceLastScheduleUpdate = roundTo(timeSinceLastScheduleUpdate / 60, 0.1);
-                schedLastUpdateGranularity = ' órája.'
+                schedLastUpdateGranularity = ' órája'
             }
 
-            if (timeSinceLastScheduleUpdate < 1) {
+            if (timeSinceLastScheduleUpdate < 1) { // Urge redraw if a schedule update is recent
                 drawMainGraph();
             }
 
@@ -250,10 +272,10 @@ function getDataFromFirebase() {
                 timePassedSince(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp)),
                 timePassedSince(dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp))
             )
-            timeSinceLastRequestGranularity = 'perce'
+            lastRequestGranularity = 'perce'
             if (timeSinceLastRequest > 90) {
                 timeSinceLastRequest = roundTo(timeSinceLastRequest / 60, 0.5);
-                timeSinceLastRequestGranularity = 'órája'
+                lastRequestGranularity = 'órája'
             }
 
             let requestOrigin = timePassedSince(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp))
@@ -272,21 +294,21 @@ function getDataFromFirebase() {
 
             updateGeneralInfobox(
                 {
-                    cyclesOn: onCycles.length > 0 ? "Bekapcsolt körök: " + onCycles.join(", ") + "." : "Senki nem kér fűtést.",
-                    externalTemp: "Külső hőmérséklet: " + externalTemp + " °C.",
-                    controlLastRan: "Vezérlés lefutott: " + timeSinceControlLastRan + " " + lastControlRanGranularity,
-                    latestRequest: { target: requestTarget, origin: requestOrigin, timeSince: timeSinceLastRequest, granularity: timeSinceLastRequestGranularity, hourStamp: lastRequestHourStamp },
-                    scheduleLastUpdated: "Beállítások frissítve: " + hourStamp(lastScheduleUpdate) + ".",
+                    cyclesOn: cyclesOn,
+                    lastControlRun: { timeSince: timeSinceLastControlRun, granularity: lastControlRunGranularity },
+                    lastRequest: { target: requestTarget, origin: requestOrigin, timeSince: timeSinceLastRequest, granularity: lastRequestGranularity, hourStamp: lastRequestHourStamp },
+                    scheduleLastUpdated: lastScheduleUpdate,
                     averageControlDiff: averageControlDiff
                 }
             );
 
+            // Update cycle infoboxes
             cycles.forEach(cycleNum => {
                 let roomsOnCycle = systemJSON.setup.cycles[cycleNum].rooms;
                 let roomsThatWantHeating = [];
                 let totalControlDiffOnCycle = 0;
                 roomsOnCycle.forEach(roomNum => {
-                    systemJSON.control.rooms[roomNum].vote == 1 ? roomsThatWantHeating.push(systemJSON.setup.rooms[roomNum].name) : "";
+                    systemJSON.control.rooms[roomNum].vote == 1 ? roomsThatWantHeating.push({ type: roomsDataAndState[roomNum].type, name: roomsDataAndState[roomNum].name, reason: roomsDataAndState[roomNum].reason }) : "";
                     totalControlDiffOnCycle = controlDiffs[roomNum] == "missing" ? totalControlDiffOnCycle : totalControlDiffOnCycle + controlDiffs[roomNum];
                 });
 
@@ -540,6 +562,12 @@ function drawPlot(plotData, userOptions) {
         markers: false //Usage: markers: {when: "before", list:[{pos: 12, h: 2}], col: "#ff0000", thickness: 2, dashed: false, dashing: "4,4", endCap: true, thickness: 5}
     }
     ops = deepObjectMerger(defaultOptions, userOptions);
+    if (isMobile) {
+        ops.plotStyle.thickness *= 2;
+        ops.curveEndText.xOffset *= 2;
+        ops.curveEndText.fontSize *= 2;
+        ops.margins.left = 0.05;
+    }
 
     // Find parent element
     const parentElement = d3.select(`#${ops.parentId}`);
@@ -667,6 +695,8 @@ function drawPlot(plotData, userOptions) {
             .attr("fill", "rgba(0,0,0,0)")
     }
 
+    let mobileViewScaler = 1.8;
+
     let bottomScale, bottomAxis;
 
     bottomScale = d3.scaleLinear()
@@ -678,7 +708,7 @@ function drawPlot(plotData, userOptions) {
         bottomAxis = plotElement.append("g")
             .attr("transform", `translate(0, ${plotDims.h})`)
             .call(d3.axisBottom(bottomScale)
-                .tickSize(2) // Set tick length
+                .tickSize((isMobile ? 2 * mobileViewScaler : 2)) // Set tick length
                 .tickValues(ops.tickVals.bottom ? ops.tickVals.bottom : bottomScale.ticks(12)) // Set the number of ticks (12 for 0, 2, 4, ..., 24)
                 .tickFormat(ops.tickVals.bottom ?
                     (ops.tickVals.bottom.some(d => !Number.isInteger(d)) ? d => d : d => d.toFixed(0))
@@ -687,24 +717,24 @@ function drawPlot(plotData, userOptions) {
 
         // Style the X-axis
         bottomAxis.select(".domain") // Select the axis line
-            .style("stroke-width", "0.5px"); // Set the axis line thickness
+            .style("stroke-width", (isMobile ? 0.5 * mobileViewScaler : 0.5) + "px"); // Set the axis line thickness
 
         bottomAxis.selectAll(".tick line") // Select all tick lines
-            .attr("stroke-width", "0.5px") // Set tick line thickness
-            .attr("y1", "0.3")
-            .attr("y2", "2.3"); // Adjust tick length (positive increases length)
+            .attr("stroke-width", (isMobile ? 0.5 * mobileViewScaler : 0.5) + "px") // Set tick line thickness
+            .attr("y1", (isMobile ? 0.3 * mobileViewScaler : 0.3))
+            .attr("y2", (isMobile ? 2.3 * mobileViewScaler : 2.3)); // Adjust tick length (positive increases length)
 
         bottomAxis.selectAll("text") // Select tick labels
-            .attr("dy", "3")
+            .attr("dy", (isMobile ? 3 * mobileViewScaler : 3))
             .style("font-family", dashboardFont)
-            .style("font-size", "5px"); // Set font size for tick labels
+            .style("font-size", (isMobile ? 5 * mobileViewScaler : 5) + "px"); // Set font size for tick labels
 
         // bottom axis label
         plotElement.append("text")
             .attr("x", plotDims.w / 2)
             .attr("y", plotDims.h + plotDims.h * ops.margins.bottom * 1.05)
             .style("text-anchor", "middle")
-            .style("font-size", "6px")
+            .style("font-size", (isMobile ? 6 * mobileViewScaler : 6) + "px")
             .style("font-family", dashboardFont)
             .text(ops.axesLabel.bottom);
     }
@@ -719,7 +749,7 @@ function drawPlot(plotData, userOptions) {
     if (ops.axes.left) {
         leftAxis = plotElement.append("g")
             .call(d3.axisLeft(leftScale)
-                .tickSize(2)
+                .tickSize((isMobile ? 2 * mobileViewScaler : 2))
                 .tickValues(ops.tickVals.left ? ops.tickVals.left : leftScale.ticks(10))
                 .tickFormat(ops.tickVals.left ?
                     (ops.tickVals.left.some(d => !Number.isInteger(d)) ? d => d : d => d.toFixed(0))
@@ -728,16 +758,16 @@ function drawPlot(plotData, userOptions) {
 
         // Style the Y-axis
         leftAxis.select(".domain") // Customize the domain path to match the tick range
-            .style("stroke-width", "0.5px");
+            .style("stroke-width", (isMobile ? 0.5 * mobileViewScaler : 0.5) + "px");
 
         leftAxis.selectAll(".tick line")
-            .attr("stroke-width", "0.5px") // Set tick line thickness
-            .attr("x1", "0.2")
-            .attr("x2", "-1.8"); // Adjust tick length (negative for left-side ticks)
+            .attr("stroke-width", (isMobile ? 0.5 * mobileViewScaler : 0.5) + "px") // Set tick line thickness
+            .attr("x1", (isMobile ? 0.2 * mobileViewScaler : 0.2))
+            .attr("x2", (isMobile ? -1.8 * mobileViewScaler : -1.8)); // Adjust tick length (negative for left-side ticks)
 
         leftAxis.selectAll("text")
-            .attr("dx", "0")
-            .style("font-size", "5px")
+            .attr("dx", (isMobile ? 0 * mobileViewScaler : 0))
+            .style("font-size", (isMobile ? 5 * mobileViewScaler : 5) + "px")
             .style("font-family", dashboardFont)
             .style("text-anchor", "end"); // Set font size for tick labels
 
@@ -745,9 +775,9 @@ function drawPlot(plotData, userOptions) {
         plotElement.append("text")
             .attr("transform", `rotate(-90)`)
             .attr("x", -plotDims.h / 2)
-            .attr("y", -plotDims.w * ops.margins.left * 0.725)
+            .attr("y", -plotDims.w * ops.margins.left * (0.725 + mobileViewScaler *0.36))
             .style("text-anchor", "middle")
-            .style("font-size", "6px")
+            .style("font-size", (isMobile ? 6 * mobileViewScaler : 6) + "px")
             .style("font-family", dashboardFont)
             .text(ops.axesLabel.left);
     }
@@ -758,7 +788,7 @@ function drawPlot(plotData, userOptions) {
             .attr("x", plotDims.w / 2)
             .attr("y", -plotDims.h * ops.margins.top * 0.35)
             .style("text-anchor", "middle")
-            .style("font-size", "7px")
+            .style("font-size", (isMobile ? 7 * mobileViewScaler : 7) + "px")
             .style("font-family", dashboardFont)
             .text(ops.plotLabel);
     }
@@ -767,9 +797,9 @@ function drawPlot(plotData, userOptions) {
         plotElement.append("text")
             //.attr("x", plotDims.w * 0.87125)
             .attr("x", -plotDims.w * ops.margins.left * 1.03)
-            .attr("y", -plotDims.h * ops.margins.top * 1.58)
+            .attr("y", -plotDims.h * ops.margins.top * (isMobile ? 1.45 : 1.58))
             .style("text-anchor", "right")
-            .style("font-size", "6px")
+            .style("font-size", (isMobile ? 6 * mobileViewScaler : 6) + "px")
             .style("font-family", dashboardFont)
             .style("fill", "rgba(230,230,230,1)")
             .text("rögzítve");
@@ -780,13 +810,13 @@ function drawPlot(plotData, userOptions) {
             .attr("x", plotDims.w / 2)
             .attr("y", plotDims.h / 2)
             .style("text-anchor", "middle")
-            .style("font-size", "7px")
+            .style("font-size", (isMobile ? 7 * mobileViewScaler : 7) + "px")
             .style("font-family", dashboardFont)
             .text("Adatok betöltése.");
     }
     else {
         if (ops.smoothing.bottom > 0) {
-            plotData = calculateMovingAverage(plotData, ops.dataKeys.bottom, ops.smoothing.bottom); //move to segmentation... DEV
+            plotData = calculateMovingAverage(plotData, ops.dataKeys.bottom, ops.smoothing.bottom);
         }
         if (ops.smoothing.left > 0) {
             plotData = calculateMovingAverage(plotData, ops.dataKeys.left, ops.smoothing.left);
@@ -1020,17 +1050,17 @@ function clearMainGraphs() {
 }
 
 const roomsDataAndState = {
-    1: { roomID: "Oktopusz", name: "Oktopusz szita", cycle: 1, temp: null, set: null, lastUpdated: null },
-    2: { roomID: "Gólyafészek", name: "Gólyafészek", cycle: 1, temp: null, set: null, lastUpdated: null },
-    3: { roomID: "PK", name: "PK", cycle: 1, temp: null, set: null, lastUpdated: null },
-    4: { roomID: "SZGK", name: "SZGK", cycle: 2, temp: null, set: null, lastUpdated: null },
-    5: { roomID: "Mérce", name: "Mérce", cycle: 2, temp: null, set: null, lastUpdated: null },
-    6: { roomID: "Lahmacun", name: "Lahmacun", cycle: 2, temp: null, set: null, lastUpdated: null },
-    7: { roomID: "Gólyairoda", name: "Gólyairoda", cycle: 2, temp: null, set: null, lastUpdated: null },
-    8: { roomID: "kisterem", name: "kisterem", cycle: 3, temp: null, set: null, lastUpdated: null },
-    9: { roomID: "vendégtér", name: "vendégtér", cycle: 3, temp: null, set: null, lastUpdated: null },
-    10: { roomID: "Trafóház", name: "Trafóház", cycle: 4, temp: null, set: null, lastUpdated: null },
-    11: { roomID: "OktopuszKeramia", name: "Oktopusz kerámia", cycle: null, temp: null, set: null, lastUpdated: null }
+    1: { roomID: "Oktopusz", name: "Oktopusz szita", cycle: 1, temp: null, set: null, lastUpdated: null, vote: null },
+    2: { roomID: "Gólyafészek", name: "Gólyafészek", cycle: 1, temp: null, set: null, lastUpdated: null, vote: null },
+    3: { roomID: "PK", name: "PK", cycle: 1, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
+    4: { roomID: "SZGK", name: "SZGK", cycle: 2, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
+    5: { roomID: "Mérce", name: "Mérce", cycle: 2, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
+    6: { roomID: "Lahmacun", name: "Lahmacun", cycle: 2, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
+    7: { roomID: "Gólyairoda", name: "Gólyairoda", cycle: 2, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
+    8: { roomID: "kisterem", name: "kisterem", cycle: 3, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
+    9: { roomID: "vendégtér", name: "vendégtér", cycle: 3, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
+    10: { roomID: "Trafóház", name: "Trafóház", cycle: 4, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
+    11: { roomID: "OktopuszKeramia", name: "Oktopusz kerámia", cycle: null, temp: null, set: null, lastUpdated: null, vote: null, reason: null }
 };
 
 function updateRoomColor(roomId, temp, lastUpdated) {
@@ -1057,7 +1087,9 @@ function updateCycleColor(cycle, state) {
     d3.select("#cycle" + cycle + "_radiators").selectAll("*").style("fill-opacity", "1");
 
     d3.select("#oktopusz_keramia_radiators").selectAll("*").style("fill", "rgba(0,0,200,1)");
-    d3.select("#oktopusz_keramia_radiators").selectAll("*").style("fill-opacity", "1");
+    d3.select("#oktopusz_keramia_radiators").selectAll("*").style("fill-opacity", "0.5");
+    d3.select("#oktopusz_keramia_radiators").selectAll("*").style("stroke", "rgba(0,0,200,1)");
+    d3.select("#oktopusz_keramia_radiators").selectAll("*").style("stroke-opacity", "1");
 }
 
 let boilerState = null;
@@ -1214,122 +1246,271 @@ let roomAbbreviations = {
     "Trafóház": "Traf."
 }
 
+function addLineToBox(boxId, message, xPosFactor, yPosFactor, fontSize, centered = false) {
+    let boxDims = getBBoxDrawingDimensions(boxId);
+    let x = boxDims.x;
+    let y = boxDims.y;
+    let w = boxDims.w;
+    let h = boxDims.h;
+    return d3.select("#drawing")
+        .append("text")
+        .attr("class", boxId + "-content clickthrough")
+        .attr("x", x + (centered ? w * 0.5 : 0) + w * xPosFactor)
+        .attr("y", y + h * yPosFactor)
+        .text(message)
+        .style("text-anchor", centered ? "middle" : "left")
+        .style("font-family", dashboardFont)
+        .style("font-size", fontSize + "px");
+}
+
 function updateGeneralInfobox(info) {
-    let boxDims = getBBoxDrawingDimensions("general_infobox");
+    d3.selectAll(".general_infobox-content").remove();
 
-    d3.selectAll(".general-infobox-content").remove();
-
-    function addLineToBox(message, xFactor, yFactor, fontSize, centered = false) {
-        return d3.select("#drawing")
-            .append("text")
-            .attr("class", "general-infobox-content")
-            .attr("x", boxDims.x + (centered ? boxDims.width * 0.5 : 0) + boxDims.width * xFactor)
-            .attr("y", boxDims.y + boxDims.height * 0.025 + boxDims.height * yFactor)
-            .text(message)
-            .style("text-anchor", centered ? "middle" : "left")
-            .style("font-family", dashboardFont)
-            .style("font-size", fontSize + "px");
-    }
+    let allCentered = false;
+    let lineFontSize = isMobile ? 13 : 6.5;
+    let lineHeight = isMobile ? 0.138 : 0.07;
+    let lineXOffset = isMobile ? 0.05 : 0;
+    let lineYOffset = isMobile ? 0.035 : 0;
 
     // Draw title
-    addLineToBox("Rendszerállapot", 0.02, 0.045, 9)
-        .style("text-decoration", "underline");
-
-    // Draw content
-
-    let lineFontSize = 6.5;
-    let lineHeight = 0.07;
-    let lineShift = 0;
-    let lineOffset = -0.025;
-
-    //addLineToBox(info.externalTemp, 0.02, lineOffset + lineHeight * 2, lineFontSize);
-    addLineToBox(info.externalTemp, 0.02, lineOffset + lineHeight * 8, lineFontSize);
-
-    addLineToBox(info.controlLastRan, 0.02, lineOffset + lineHeight * 6.5, lineFontSize);
-
-    let latestRequestString = "Utolsó kérés: " + info.latestRequest.hourStamp + ", " + info.latestRequest.origin + ", " + info.latestRequest.target + "."
-    if (info.latestRequest.granularity == "órája" && info.latestRequest.timeSince > getFractionalHourOfDay()) {
-        latestRequestString = "Ma még nem érkezett kérés."
-    }
-
-    if (latestRequestString.length > 36) {
-        latestRequestString = "Utolsó kérés: " + info.latestRequest.hourStamp + ", " + info.latestRequest.origin + ", " + roomAbbreviations[info.latestRequest.target] + ".";
-    }
-    addLineToBox(latestRequestString, 0.02, lineOffset + lineHeight * 4.5, lineFontSize);
+    let titleXPos = isMobile ? 0.015 : 0.025;
+    let titleYPos = isMobile ? 0.1 : 0.065;
+    addLineToBox("general_infobox", "Rendszerállapot", titleXPos, titleYPos, lineFontSize * 1.1, allCentered).style("text-decoration", "underline");
 
 
-    addLineToBox(info.scheduleLastUpdated, 0.02, lineOffset + lineHeight * (5.5 + lineShift), lineFontSize);
-    if (info.averageControlDiff != 0.0) {
-        let reportedControlDiff = roundTo(info.averageControlDiff, 0.1);
-        let averageControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
-        addLineToBox("Átlagos eltérés: " + averageControlDiffPre + reportedControlDiff + " °C.", 0.02, lineOffset + lineHeight * (2 + lineShift), lineFontSize);
-    }
-
-    addLineToBox(info.cyclesOn, 0.02, lineOffset + lineHeight * (3 + lineShift), lineFontSize);
-    addLineToBox("Gázfogyasztási ráta: " + (isValidNumber(currentGasUsageRate) ? currentGasUsageRate : "") + (isValidNumber(currentGasUsageRate) ? " m³/h." : ""), 0.02, lineOffset + lineHeight * (9 + lineShift), lineFontSize);
-    if (isValidNumber(currentGasTotal)) {
-        let gasTotalString = currentGasTotal;
-        if (Number.isInteger(gasTotalString)) {
-            gasTotalString += ".0";
+    // Generate lines from incoming info
+    let lines = [];
+    if (!isMobile) {
+        if (info.averageControlDiff != 0.0) {
+            let reportedControlDiff = roundTo(info.averageControlDiff, 0.1);
+            let averageControlDiffPre = reportedControlDiff == 0.0 ? " " : (reportedControlDiff < 0 ? "" : "+");
+            let averageControlDiffLine = "Átlagos eltérés: " + averageControlDiffPre + reportedControlDiff + " °C.";
+            lines.push(
+                {
+                    lineXOffset: 0,
+                    text: averageControlDiffLine
+                }
+            );
         }
-        let totalCost = currentGasTotal * 350;
-        addLineToBox("Összes elégett gáz: " + gasTotalString + " m³.", 0.02, lineOffset + lineHeight * (10 + lineShift), lineFontSize);
-        addLineToBox("Összköltség kb. " + (totalCost < 1000 ? (roundTo(totalCost, 100) + " Ft.") : (roundTo(totalCost / 1000, 0.1) + " eFt.")), 0.02, lineOffset + lineHeight * (11 + lineShift), lineFontSize);
+        let cyclesOnLine = info.cyclesOn.length > 0 ? "Bekapcsolt körök: " + info.cyclesOn.join(", ") + "." : "Senki nem kér fűtést.";
+        lines.push(
+            {
+                lineXOffset: 0,
+                text: cyclesOnLine
+            }
+        );
+        lines.push(
+            {
+                lineXOffset: 0,
+                text: ""
+            }
+        );
+    }
+
+    if (isMobile) {
+        if (info.lastRequest.granularity == "órája" && info.lastRequest.timeSince > getFractionalHourOfDay()) {
+            lines.push(
+                {
+                    lineXOffset: 0,
+                    text: "Ma még nem érkezett kérés."
+                }
+            );
+        } else {
+            let lastRequestLine1 = "Utolsó kérés:";
+            let lastRequestLine2 = "> " + info.lastRequest.hourStamp + ", " + info.lastRequest.origin + ", " + info.lastRequest.target + ".";
+            lines.push(
+                {
+                    lineXOffset: 0,
+                    text: lastRequestLine1
+                }
+            );
+            lines.push(
+                {
+                    lineXOffset: lineXOffset,
+                    text: lastRequestLine2
+                }
+            );
+        }
+    } else {
+        let lastRequestLine = "Utolsó kérés: " + info.lastRequest.hourStamp + ", " + info.lastRequest.origin + ", " + info.lastRequest.target + ".";
+        if (info.lastRequest.granularity == "órája" && info.lastRequest.timeSince > getFractionalHourOfDay()) {
+            lastRequestLine = "Ma még nem érkezett kérés.";
+        }
+        if (lastRequestLine.length > 36) {
+            lastRequestLine = "Utolsó kérés: " + info.lastRequest.hourStamp + ", " + info.lastRequest.origin + ", " + roomAbbreviations[info.lastRequest.target] + ".";
+        }
+        lines.push(
+            {
+                lineXOffset: 0,
+                text: lastRequestLine
+            }
+        );
+    }
+
+    if (isMobile) {
+        let scheduleLastUpdatedLine1 = "Beállítások frissítve: ";
+        let scheduleLastUpdatedLine2 = "> " + hourStamp(info.lastScheduleUpdate) + ".";
+        lines.push(
+            {
+                lineXOffset: 0,
+                text: scheduleLastUpdatedLine1
+            }
+        );
+        lines.push(
+            {
+                lineXOffset: lineXOffset,
+                text: scheduleLastUpdatedLine2
+            }
+        );
+    } else {
+        let scheduleLastUpdatedLine = "Beállítások frissítve: " + hourStamp(info.lastScheduleUpdate) + ".";
+        lines.push(
+            {
+                lineXOffset: 0,
+                text: scheduleLastUpdatedLine
+            }
+        );
+    }
+
+    if (isMobile) {
+        let controlLastRunLine1 = "Vezérlés lefutott:";
+        let controlLastRunLine2 = "> " + info.lastControlRun.timeSince + " " + info.lastControlRun.granularity + ".";
+        lines.push(
+            {
+                lineXOffset: 0,
+                text: controlLastRunLine1
+            }
+        );
+        lines.push(
+            {
+                lineXOffset: lineXOffset,
+                text: controlLastRunLine2
+            }
+        );
+    } else {
+        let controlLastRunLine = "Vezérlés lefutott: " + info.lastControlRun.timeSince + " " + info.lastControlRun.granularity + ".";
+        lines.push(
+            {
+                lineXOffset: 0,
+                text: controlLastRunLine
+            }
+        );
+    }
+
+    if (!isMobile) {
+        lines.push(
+            {
+                lineXOffset: 0,
+                text: ""
+            }
+        );
+
+        let externalTempLine = "Külső hőmérséklet: " + externalTemp + " °C.";
+        lines.push(
+            {
+                lineXOffset: 0,
+                text: externalTempLine
+            }
+        );
+
+        let gasUsageLine = "Gázfogyasztási ráta: " + (isValidNumber(currentGasUsageRate) ? currentGasUsageRate : "") + (isValidNumber(currentGasUsageRate) ? " m³/h." : "");
+        lines.push(
+            {
+                lineXOffset: 0,
+                text: gasUsageLine
+            }
+        );
+
+        if (isValidNumber(currentGasTotal)) {
+            let gasTotalString = currentGasTotal;
+            if (Number.isInteger(gasTotalString)) {
+                gasTotalString += ".0";
+            }
+            lines.push(
+                {
+                    lineXOffset: 0,
+                    text: "Összes elégett gáz: " + gasTotalString + " m³."
+                }
+            );
+
+            let totalCost = currentGasTotal * 350;
+            lines.push(
+                {
+                    lineXOffset: 0,
+                    text: "Összköltség kb. " + (totalCost < 1000 ? (roundTo(totalCost, 100) + " Ft.") : (roundTo(totalCost / 1000, 0.1) + " eFt.")
+                    )
+                }
+            );
+        }
+    }
+
+
+    // Draw lines
+    for (let line = 1; line <= lines.length; line++) {
+        addLineToBox(
+            "general_infobox",
+            lines[line - 1].text,
+            titleXPos + lines[line - 1].lineXOffset,
+            titleYPos + lineYOffset + lineHeight * line,
+            lineFontSize, allCentered
+        );
     }
 }
 
 function updateCycleInfobox(cycle, info) {
     let boxDims = getBBoxDrawingDimensions("cycle" + cycle + "_infobox");
+    d3.selectAll(".cycle" + cycle + "_infobox-content").remove();
 
-    d3.selectAll(".cycle" + cycle + "-infobox-content").remove();
+    let xOffset = isMobile ? [10, 15, 10, 15][cycle - 1] / boxDims.w : 2 / boxDims.w;
+    let yOffset = isMobile ? 0 / boxDims.h : -2 / boxDims.h;
+    let lineHeight = isMobile ? 20 / boxDims.h : 8 / boxDims.h;
+    let lineFontSize = isMobile ? 13 : 6;
+    let lineNum = 1;
+    let lineNumShift = 0;
+    let allCentered = isMobile ? false : false;
 
-    function addLineToBox(message, xFactor, yFactor, fontSize, centered = false) {
-        return d3.select("#drawing")
-            .append("text")
-            .attr("class", "cycle" + cycle + "-infobox-content clickthrough")
-            .attr("x", boxDims.x + (centered ? boxDims.width * 0.5 : 0) + boxDims.width * xFactor)
-            .attr("y", boxDims.y + boxDims.width * 0.025 + boxDims.width * yFactor)
-            .text(message)
-            .style("text-anchor", centered ? "middle" : "left")
-            .style("font-family", dashboardFont)
-            .style("font-size", fontSize + "px");
-    }
-
-    //addLineToBox(cycle + ["-es", "-es", "-mas", "-es"][cycle - 1] + " kör: " + ["ki", "be"][info.state], 0.08, 0.13, 7)
-    //    .style("text-decoration", "underline");
-
-    //addLineToBox(["Kazán 1", "Kazán 2", "Presszó", "Trafóház"][cycle - 1] + [": ki", ": be"][info.state], 0.08, 0.13, 7)
-    //    .style("text-decoration", "underline");
-    addLineToBox(["Kazán 1", "Kazán 2", "Presszó", "Trafóház"][cycle - 1] + ":", 0.08, 0.13, 6.5)
+    // Draw title
+    let cycleName = ["Kazán 1", "Kazán 2", "Presszó", "Trafóház"][cycle - 1];
+    addLineToBox("cycle" + cycle + "_infobox", cycleName + ":", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize * 1.1, false)
         .style("text-decoration", "underline");
-    addLineToBox(["ki", "be"][info.state], 0.76, 0.13, 5.5);
+    addLineToBox("cycle" + cycle + "_infobox", ["ki", "be"][info.state], xOffset + (isMobile ? cycleName.length * 0.065 : 0.7), yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize * 1.1, false);
+    lineNum++;
 
-    addLineToBox(cycle < 4 ? "Átlagos eltérés:" : "Eltérés:", 0.08, 0.13 * 2.2, 5.5)
-    if (isValidNumber(info.totalControlDiff)) {
-        let reportedControlDiff = roundTo(info.totalControlDiff / info.rooms.length, 0.1)
-        let reportedeControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
-        addLineToBox(reportedeControlDiffPre + reportedControlDiff + " °C", 0.28, 0.13 * 3.33, 5.5)
-    }
-    else {
-        addLineToBox("?", 0.28, 0.13 * 3.33, 5.5)
+    //Draw lines
+    lineNumShift += 0.2;
+    if (!isMobile) {
+        addLineToBox("cycle" + cycle + "_infobox", cycle < 4 ? "Átlagos eltérés:" : "Eltérés:", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
+        lineNum++;
+        lineNumShift += 0.05;
+        if (isValidNumber(info.totalControlDiff)) {
+            let reportedControlDiff = roundTo(info.totalControlDiff / info.rooms.length, 0.1)
+            let reportedeControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
+            addLineToBox("cycle" + cycle + "_infobox", reportedeControlDiffPre + reportedControlDiff + " °C", xOffset + 0.2, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered)
+        }
+        else {
+            addLineToBox("cycle" + cycle + "_infobox", "?", xOffset + 0.2, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered)
+        }
     }
 
+    lineNumShift = isMobile ? 0.2 : 1.85;
+    let xOffsetShift = isMobile ? 0.04 : 0;
     if (cycle < 4) {
         if (info.wantHeating) {
             if (info.wantHeating.length > 0) {
-                addLineToBox("Fűtést kér:", 0.08, 0.13 * 4.7, 5.5);
-                let lineNum = 1;
-                info.wantHeating.forEach(roomName => {
-                    addLineToBox("- " + roomName, 0.12, 0.13 * (4.7 + lineNum), 5.5);
+                addLineToBox("cycle" + cycle + "_infobox", "Fűtést kér:", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
+                lineNum++;
+                info.wantHeating.forEach(roomInfo => {
+                    addLineToBox("cycle" + cycle + "_infobox", "- " + roomInfo.name, xOffset + xOffsetShift, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
                     lineNum++;
+                    lineNumShift += 0.05;
                 });
             } else {
-                addLineToBox("Nem kér fűtést.", 0.08, 0.13 * 4.7, 5.5);
+                addLineToBox("cycle" + cycle + "_infobox", "Nem kér fűtést.", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
             }
         }
     }
     else {
-        addLineToBox(["Nem kér fűtést.", "Fűtést kér."][info.set], 0.08, 0.13 * 4.7, 5.5);
+        addLineToBox("cycle" + cycle + "_infobox", ["Nem kér fűtést.", "Fűtést kér."][info.set], xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
     }
 }
 
@@ -1567,7 +1748,7 @@ function drawMainGraph(graphData = null) {
                             dataKeys: { bottom: "h_of_day_frac", left: "burn_rate_in_m3_per_h" },
                             axesLabel: { bottom: "óra", left: "ráta (m³/h)" },
                             plotLabel: "mai gázfogyasztás",
-                            rects: false// { when: "before", list: heatingPeriodsForAllCycles }
+                            rects: { when: "before", list: heatingPeriodsForAllCycles }
                         }
                     );
                     drawPlot(
@@ -1651,8 +1832,8 @@ function drawMainGraph(graphData = null) {
                         heatingPeriods.forEach(period => {
                             period.y1 = Math.floor(range[0]) - 1;
                             period.y2 = Math.ceil(range[1]) + 1;
-                            period.fill = "rgba(255,0,0,0.05)";
-                            period.stroke = "rgba(255,0,0,0.5)";
+                            period.fill = "rgba(255,0,0,0.025)";
+                            period.stroke = "rgba(255,0,0,0.75)";
                             period.strokeWeight = 0.25;
                             period.dashed = true;
                             period.dashing = "0.5,1";
@@ -1824,48 +2005,56 @@ function rescueMainGraph() {
     }
 }
 
-let isMobile, fromRequest, initialZoom, initialPos;
-let initialLockDone = false;
+let fromRequest, centeredId, isMobile, forcedZoom;
+
+function extractURLParams() {
+    let params = new URLSearchParams(window.location.search);
+    fromRequest = params.get("ref_source") == "qr" || params.get("ref_source") == "form";
+    centeredId = params.get("centered_id") || "background";
+    console.log(params.get("centered_id"));
+    isMobile = params.get("mobile") == "true" || getIsMobile();
+    forcedZoom = params.get("zoom") || 1;
+}
 
 function getIsMobile() {
     return /Mobi|Android/i.test(navigator.userAgent);
 }
 
-function setViewParameters(centeredId) {
-    let params = new URLSearchParams(window.location.search);
-    fromRequest = params.get("ref_source") == "qr" || params.get("ref_source") == "form";
-    centeredId = !d3.select("#" + params.get("centered_id")).empty() ? params.get("centered_id") : centeredId;
+let initialZoom, initialPos;
+let initialLockDone = false; // Used at initial locking of main graph
+
+function setViewParameters() {
+    centeredId = d3.select("#" + centeredId).empty() ? "background" : centeredId; // Check if what's asked for in params is actually there, if not, set background
 
     const width = window.innerWidth;
     const height = window.innerHeight;
     let smallerDimension = Math.min(width, height);
 
-    let baseCentedDims = getBBoxRelativeDimensions("background");
+    let baseCenteredDims = getBBoxRelativeDimensions("background");
 
     let idiosyncraticFactor = 1;
     let centeringOffsetFactor = { x: 1, y: 1 }
 
-    isMobile = getIsMobile();
     if (isMobile) {
-        centeredId = "general_infobox";
-        idiosyncraticFactor = 0.85;
-        centeringOffsetFactor = { x: 1.05, y: 1.6 };
+        idiosyncraticFactor = 0.76;
+        centeringOffsetFactor = { x: 1, y: 1.28 };
     }
 
     let centeredDims = getBBoxRelativeDimensions(centeredId);
     let baseZoomFactor = 0.0032; // Empirically determined
-    let centeringFactor = baseCentedDims.w / centeredDims.w * (centeredId == "background" ? 1 : 0.8);
+    let centeringFactor = baseCenteredDims.w / centeredDims.w * (centeredId == "background" ? 1 : 0.8);
 
-    initialZoom = smallerDimension * baseZoomFactor * centeringFactor * idiosyncraticFactor;
+    initialZoom = smallerDimension * baseZoomFactor * centeringFactor * idiosyncraticFactor * forcedZoom;
     initialPos = { x: centeredDims.cx * centeringOffsetFactor.x, y: centeredDims.cy * centeringOffsetFactor.y };
 }
 
 let dashboardFont = "Consolas";
 
-d3.xml("canvas.svg").then(fileData => {
+extractURLParams();
+trackHoveredElementId();
+d3.xml(isMobile ? "canvas_mobile.svg" : "canvas.svg").then(fileData => {
     insertCanvasFromFile(fileData);
-    trackHoveredElementId();
-    setViewParameters("background");
+    setViewParameters();
     centerAndZoomRelativePointOfCanvas(initialPos.x, initialPos.y, initialZoom);
 
     setupTooltip();
