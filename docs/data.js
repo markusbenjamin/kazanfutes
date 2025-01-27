@@ -1541,7 +1541,7 @@ function drawMainGraph(graphData = null) {
                     range = [0, 10];
 
                     let heatingPeriodsForAllCycles = []
-                    for (let cycleNum = 1; cycleNum < 5; cycleNum++) {
+                    /*for (let cycleNum = 1; cycleNum < 5; cycleNum++) {
                         heatingPeriodsForAllCycles.push(extractHeatingPeriodsFromHeatingState(cycleNum, graphData["heating_state"]));
                     }
 
@@ -1556,7 +1556,7 @@ function drawMainGraph(graphData = null) {
                         period.dashed = false;
                         period.dashing = "0.5,1";
                     });
-                    console.log(heatingPeriodsForAllCycles)
+                    console.log(heatingPeriodsForAllCycles)"*/
                     drawPlot(
                         graphData["gas_usage"],
                         {
