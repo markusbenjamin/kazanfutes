@@ -332,6 +332,7 @@ function getDataFromFirebase() {
 let lastGasUpdate, timeItTookToUpdateGasUsage, prevGasUsageRate;
 
 function extractHeatingPeriodsFromHeatingState(cycleNum, heatingState) {
+
     let heatingPeriods = [];
     let prevHeatingState = -1;
     heatingState.forEach(timepoint => {
@@ -351,7 +352,7 @@ function extractHeatingPeriodsFromHeatingState(cycleNum, heatingState) {
                     })
                 }
                 if (currentHeatingState == 0 && currentHeatingSwitch == -1) {
-                    if (!heatingPeriods) {
+                    if (!heatingPeriods || heatingPeriods.length == 0) {
                         heatingPeriods = [];
                         heatingPeriods.push({
                             "x2": timepoint.h_of_day_frac
@@ -366,6 +367,7 @@ function extractHeatingPeriodsFromHeatingState(cycleNum, heatingState) {
             //console.log("timepoint: " + timepoint.timestamp + ", heating state: " + currentHeatingState)
         }
     });
+
     if (heatingPeriods.length > 0) {
         if (!heatingPeriods[0].x1) {
             heatingPeriods[0].x1 = 0;
@@ -1514,7 +1516,6 @@ function drawRoomInfo(roomNum) {//IN DEVELOPMENT
     let parentParentElement = d3.select(roomElement.node().parentNode.parentNode);
 
     let roomInfo = roomName;
-    console.log("BLA")
     //roomElement.raise();
     parentElement.append("text")
         .attr("x", roomBox.x + roomBox.w / 2 + roomBox.w * roomTextOffsets[roomID].x) // Center horizontally
@@ -1541,7 +1542,7 @@ function drawMainGraph(graphData = null) {
                     range = [0, 10];
 
                     let heatingPeriodsForAllCycles = []
-                    /*for (let cycleNum = 1; cycleNum < 5; cycleNum++) {
+                    for (let cycleNum = 1; cycleNum < 5; cycleNum++) {
                         heatingPeriodsForAllCycles.push(extractHeatingPeriodsFromHeatingState(cycleNum, graphData["heating_state"]));
                     }
 
@@ -1556,7 +1557,7 @@ function drawMainGraph(graphData = null) {
                         period.dashed = false;
                         period.dashing = "0.5,1";
                     });
-                    console.log(heatingPeriodsForAllCycles)"*/
+                    //console.log(heatingPeriodsForAllCycles)
                     drawPlot(
                         graphData["gas_usage"],
                         {
@@ -1848,7 +1849,7 @@ function setViewParameters(centeredId) {
     if (isMobile) {
         centeredId = "general_infobox";
         idiosyncraticFactor = 0.85;
-        centeringOffsetFactor = { x:  1.05, y: 1.6 };
+        centeringOffsetFactor = { x: 1.05, y: 1.6 };
     }
 
     let centeredDims = getBBoxRelativeDimensions(centeredId);
