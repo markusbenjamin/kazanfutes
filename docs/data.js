@@ -566,7 +566,7 @@ function drawPlot(plotData, userOptions) {
         ops.plotStyle.thickness *= 2;
         ops.curveEndText.xOffset *= 2;
         ops.curveEndText.fontSize *= 2;
-        ops.margins.left = 0.05;
+        ops.margins.left = 0.09;
     }
 
     // Find parent element
@@ -775,7 +775,7 @@ function drawPlot(plotData, userOptions) {
         plotElement.append("text")
             .attr("transform", `rotate(-90)`)
             .attr("x", -plotDims.h / 2)
-            .attr("y", -plotDims.w * ops.margins.left * (0.725 + mobileViewScaler *0.36))
+            .attr("y", -plotDims.w * ops.margins.left * 0.8)//(0.725 + mobileViewScaler *0.36))
             .style("text-anchor", "middle")
             .style("font-size", (isMobile ? 6 * mobileViewScaler : 6) + "px")
             .style("font-family", dashboardFont)
@@ -797,7 +797,7 @@ function drawPlot(plotData, userOptions) {
         plotElement.append("text")
             //.attr("x", plotDims.w * 0.87125)
             .attr("x", -plotDims.w * ops.margins.left * 1.03)
-            .attr("y", -plotDims.h * ops.margins.top * (isMobile ? 1.45 : 1.58))
+            .attr("y", -plotDims.h * ops.margins.top * (isMobile ? 1.5 : 1.58))
             .style("text-anchor", "right")
             .style("font-size", (isMobile ? 6 * mobileViewScaler : 6) + "px")
             .style("font-family", dashboardFont)
@@ -1210,12 +1210,14 @@ function initializeInfoboxes() {
         .style("stroke", "rgba(250,250,250,1)")
         .style("stroke-opacity", "1")
         .style("stroke-width", "3");
-    d3.select("#cycles_infobox")
-        .style("fill", "rgba(250,250,250,1)")
-        .style("fill-opacity", "1")
-        .style("stroke", "rgba(250,250,250,1)")
-        .style("stroke-opacity", "1")
-        .style("stroke-width", "3");
+    for (let cycleNum = 1; cycleNum < 5; cycleNum++) {
+        d3.select("#cycle" + cycleNum + "_infobox")
+            .style("fill", "rgba(250,250,250,1)")
+            .style("fill-opacity", "1")
+            .style("stroke", "rgba(250,250,250,1)")
+            .style("stroke-opacity", "1")
+            .style("stroke-width", "3");
+    }
 }
 
 function initializeMainGraphArea() {
@@ -1265,17 +1267,19 @@ function addLineToBox(boxId, message, xPosFactor, yPosFactor, fontSize, centered
 
 function updateGeneralInfobox(info) {
     d3.selectAll(".general_infobox-content").remove();
+    let boxDims = getBBoxDrawingDimensions("general_infobox");
 
     let allCentered = false;
     let lineFontSize = isMobile ? 13 : 6.5;
-    let lineHeight = isMobile ? 0.138 : 0.07;
-    let lineXOffset = isMobile ? 0.05 : 0;
-    let lineYOffset = isMobile ? 0.035 : 0;
+    let lineHeight = isMobile ? 0.125 : 0.07;
+    let lineXOffset = isMobile ? 10 / boxDims.w : 2 / boxDims.w;
+    let indentLineXOffset = isMobile ? 0.05 : 0;
+    let lineYOffset = isMobile ? 0.06 : 0;
 
     // Draw title
     let titleXPos = isMobile ? 0.015 : 0.025;
     let titleYPos = isMobile ? 0.1 : 0.065;
-    addLineToBox("general_infobox", "Rendszerállapot", titleXPos, titleYPos, lineFontSize * 1.1, allCentered).style("text-decoration", "underline");
+    addLineToBox("general_infobox", "Rendszerállapot", lineXOffset + titleXPos, lineYOffset + titleYPos, lineFontSize * 1.1, allCentered).style("text-decoration", "underline");
 
 
     // Generate lines from incoming info
@@ -1317,7 +1321,7 @@ function updateGeneralInfobox(info) {
             );
         } else {
             let lastRequestLine1 = "Utolsó kérés:";
-            let lastRequestLine2 = "> " + info.lastRequest.hourStamp + ", " + info.lastRequest.origin + ", " + info.lastRequest.target + ".";
+            let lastRequestLine2 = "- " + info.lastRequest.hourStamp + ", " + info.lastRequest.origin + ", " + info.lastRequest.target + ".";
             lines.push(
                 {
                     lineXOffset: 0,
@@ -1326,7 +1330,7 @@ function updateGeneralInfobox(info) {
             );
             lines.push(
                 {
-                    lineXOffset: lineXOffset,
+                    lineXOffset: indentLineXOffset,
                     text: lastRequestLine2
                 }
             );
@@ -1349,7 +1353,7 @@ function updateGeneralInfobox(info) {
 
     if (isMobile) {
         let scheduleLastUpdatedLine1 = "Beállítások frissítve: ";
-        let scheduleLastUpdatedLine2 = "> " + hourStamp(info.lastScheduleUpdate) + ".";
+        let scheduleLastUpdatedLine2 = "- " + hourStamp(info.lastScheduleUpdate) + ".";
         lines.push(
             {
                 lineXOffset: 0,
@@ -1358,7 +1362,7 @@ function updateGeneralInfobox(info) {
         );
         lines.push(
             {
-                lineXOffset: lineXOffset,
+                lineXOffset: indentLineXOffset,
                 text: scheduleLastUpdatedLine2
             }
         );
@@ -1374,7 +1378,7 @@ function updateGeneralInfobox(info) {
 
     if (isMobile) {
         let controlLastRunLine1 = "Vezérlés lefutott:";
-        let controlLastRunLine2 = "> " + info.lastControlRun.timeSince + " " + info.lastControlRun.granularity + ".";
+        let controlLastRunLine2 = "- " + info.lastControlRun.timeSince + " " + info.lastControlRun.granularity + ".";
         lines.push(
             {
                 lineXOffset: 0,
@@ -1383,7 +1387,7 @@ function updateGeneralInfobox(info) {
         );
         lines.push(
             {
-                lineXOffset: lineXOffset,
+                lineXOffset: indentLineXOffset,
                 text: controlLastRunLine2
             }
         );
@@ -1450,7 +1454,7 @@ function updateGeneralInfobox(info) {
         addLineToBox(
             "general_infobox",
             lines[line - 1].text,
-            titleXPos + lines[line - 1].lineXOffset,
+            titleXPos + lineXOffset + lines[line - 1].lineXOffset,
             titleYPos + lineYOffset + lineHeight * line,
             lineFontSize, allCentered
         );
@@ -1461,8 +1465,8 @@ function updateCycleInfobox(cycle, info) {
     let boxDims = getBBoxDrawingDimensions("cycle" + cycle + "_infobox");
     d3.selectAll(".cycle" + cycle + "_infobox-content").remove();
 
-    let xOffset = isMobile ? [10, 15, 10, 15][cycle - 1] / boxDims.w : 2 / boxDims.w;
-    let yOffset = isMobile ? 0 / boxDims.h : -2 / boxDims.h;
+    let xOffset = isMobile ? 5 / boxDims.w : 2 / boxDims.w;
+    let yOffset = isMobile ? -5 / boxDims.h : -2 / boxDims.h;
     let lineHeight = isMobile ? 20 / boxDims.h : 8 / boxDims.h;
     let lineFontSize = isMobile ? 13 : 6;
     let lineNum = 1;
