@@ -292,6 +292,7 @@ function getDataFromFirebase() {
 
             externalTemp = systemJSON.state.external_temp;
 
+            
             updateGeneralInfobox(
                 {
                     cyclesOn: cyclesOn,
@@ -1282,15 +1283,21 @@ function updateGeneralInfobox(info) {
 
     let allCentered = false;
     let lineFontSize = isMobile ? 13 : 6.5;
-    let lineHeight = isMobile ? 0.125 : 0.07;
+    let lineHeight = isMobile ? 0.135 : 0.07;
     let lineXOffset = isMobile ? 10 / boxDims.w : 2 / boxDims.w;
     let indentLineXOffset = isMobile ? 0.05 : 0;
-    let lineYOffset = isMobile ? 0.06 : 0;
+    let lineYOffset = isMobile ? 0.03 : 0;
 
     // Draw title
     let titleXPos = isMobile ? 0.015 : 0.025;
     let titleYPos = isMobile ? 0.1 : 0.065;
-    addLineToBox("general_infobox", "Rendszerállapot", lineXOffset + titleXPos, lineYOffset + titleYPos, lineFontSize * 1.1, allCentered).style("text-decoration", "underline");
+    let titleLine = addLineToBox("general_infobox", "Rendszerállapot", lineXOffset + titleXPos, lineYOffset + titleYPos, lineFontSize * 1.1, allCentered);
+    if(isMobile){
+        titleLine.style("font-weight", "bold");
+    }
+    else{
+        titleLine.style("text-decoration", "underline");
+    }
 
 
     // Generate lines from incoming info
@@ -1330,6 +1337,12 @@ function updateGeneralInfobox(info) {
                     text: "Ma még nem érkezett kérés."
                 }
             );
+            lines.push(
+                {
+                    lineXOffset: 0,
+                    text: ""
+                }
+            );
         } else {
             let lastRequestLine1 = "Utolsó kérés:";
             let lastRequestLine2 = "- " + info.lastRequest.hourStamp + ", " + info.lastRequest.origin + ", " + info.lastRequest.target + ".";
@@ -1361,10 +1374,10 @@ function updateGeneralInfobox(info) {
             }
         );
     }
-
+    
     if (isMobile) {
         let scheduleLastUpdatedLine1 = "Beállítások frissítve: ";
-        let scheduleLastUpdatedLine2 = "- " + hourStamp(info.lastScheduleUpdate) + ".";
+        let scheduleLastUpdatedLine2 = "- " + hourStamp(info.scheduleLastUpdated) + ".";
         lines.push(
             {
                 lineXOffset: 0,
@@ -1378,7 +1391,7 @@ function updateGeneralInfobox(info) {
             }
         );
     } else {
-        let scheduleLastUpdatedLine = "Beállítások frissítve: " + hourStamp(info.lastScheduleUpdate) + ".";
+        let scheduleLastUpdatedLine = "Beállítások frissítve: " + hourStamp(info.scheduleLastUpdated) + ".";
         lines.push(
             {
                 lineXOffset: 0,
@@ -1486,8 +1499,13 @@ function updateCycleInfobox(cycle, info) {
 
     // Draw title
     let cycleName = ["Kazán 1", "Kazán 2", "Presszó", "Trafóház"][cycle - 1];
-    addLineToBox("cycle" + cycle + "_infobox", cycleName + ":", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize * 1.1, false)
-        .style("text-decoration", "underline");
+    let titleLine = addLineToBox("cycle" + cycle + "_infobox", cycleName + ":", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize * 1.1, false)
+    if (isMobile) {
+        titleLine.style("font-weight", "bold");
+    }
+    else {
+        titleLine.style("text-decoration", "underline");
+    }
     addLineToBox("cycle" + cycle + "_infobox", ["ki", "be"][info.state], xOffset + (isMobile ? cycleName.length * 0.065 : 0.7), yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize * 1.1, false);
     lineNum++;
 
@@ -1507,7 +1525,7 @@ function updateCycleInfobox(cycle, info) {
         }
     }
 
-    lineNumShift = isMobile ? 0.2 : 1.85;
+    lineNumShift = isMobile ? 0.25 : 1.85;
     let xOffsetShift = isMobile ? 0.04 : 0;
     if (cycle < 4) {
         if (info.wantHeating) {
@@ -2052,7 +2070,7 @@ function setViewParameters() {
 
     if (isMobile) {
         idiosyncraticFactor = 0.72;
-        centeringOffsetFactor = { x: 1, y: 1.25};
+        centeringOffsetFactor = { x: 1, y: 1.25 };
     }
 
     let centeredDims = getBBoxRelativeDimensions(centeredId);
