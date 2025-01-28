@@ -154,8 +154,8 @@ const reasonMapping = {
     t_off: { type: 't_off', original: 'Timed off', message: 'Idővezérelt ki.' },
     below: { type: 'below', original: 'Below set temp', message: 'Beállított alatt.' },
     above: { type: 'above', original: 'Above set temp', message: 'Beállított felett.' },
-    h_off: { type: 'h_off', original: 'Off hysteresis', message: 'Alsó hiszterézis.' },
-    h_on: { type: 'h_on', original: 'On hysteresis', message: 'Felső hiszterézis.' },
+    h_off: { type: 'h_off', original: 'Off hysteresis', message: 'Felső hiszterézis.' },
+    h_on: { type: 'h_on', original: 'On hysteresis', message: 'Alsó hiszterézis.' },
     r_m_on: { type: 'r_m_on', original: 'Room master ON', message: 'Szoba be.' },
     r_m_off: { type: 'r_m_off', original: 'Room master OFF', message: 'Szoba ki.' },
     c_s_m_off: { type: 'c_s_m_off', original: 'Cycle scheduled master OFF', message: 'Kör időzítetten lekapcsolva.' },
@@ -292,7 +292,7 @@ function getDataFromFirebase() {
 
             externalTemp = systemJSON.state.external_temp;
 
-            
+
             updateGeneralInfobox(
                 {
                     cyclesOn: cyclesOn,
@@ -1292,10 +1292,10 @@ function updateGeneralInfobox(info) {
     let titleXPos = isMobile ? 0.015 : 0.025;
     let titleYPos = isMobile ? 0.1 : 0.065;
     let titleLine = addLineToBox("general_infobox", "Rendszerállapot", lineXOffset + titleXPos, lineYOffset + titleYPos, lineFontSize * 1.1, allCentered);
-    if(isMobile){
+    if (isMobile) {
         titleLine.style("font-weight", "bold");
     }
-    else{
+    else {
         titleLine.style("text-decoration", "underline");
     }
 
