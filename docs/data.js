@@ -1283,7 +1283,7 @@ function updateGeneralInfobox(info) {
 
     let allCentered = false;
     let lineFontSize = isMobile ? 13 : 6.5;
-    let lineHeight = isMobile ? 0.135 : 0.07;
+    let lineHeight = isMobile ? 0.135 : 0.067;
     let lineXOffset = isMobile ? 10 / boxDims.w : 2 / boxDims.w;
     let indentLineXOffset = isMobile ? 0.05 : 0;
     let lineYOffset = isMobile ? 0.03 : 0;
