@@ -1374,7 +1374,7 @@ function updateGeneralInfobox(info) {
             }
         );
     }
-    
+
     if (isMobile) {
         let scheduleLastUpdatedLine1 = "Beállítások frissítve: ";
         let scheduleLastUpdatedLine2 = "- " + hourStamp(info.scheduleLastUpdated) + ".";
@@ -1490,7 +1490,7 @@ function updateCycleInfobox(cycle, info) {
     d3.selectAll(".cycle" + cycle + "_infobox-content").remove();
 
     let xOffset = isMobile ? 5 / boxDims.w : 2 / boxDims.w;
-    let yOffset = isMobile ? -5 / boxDims.h : -2 / boxDims.h;
+    let yOffset = isMobile ? -5 / boxDims.h : 1.5 / boxDims.h;
     let lineHeight = isMobile ? 20 / boxDims.h : 8 / boxDims.h;
     let lineFontSize = isMobile ? 13 : 6;
     let lineNum = 1;
@@ -1525,7 +1525,7 @@ function updateCycleInfobox(cycle, info) {
         }
     }
 
-    lineNumShift = isMobile ? 0.25 : 1.85;
+    lineNumShift = isMobile ? 0.25 : 1.5;
     let xOffsetShift = isMobile ? 0.04 : 0;
     if (cycle < 4) {
         if (info.wantHeating) {
