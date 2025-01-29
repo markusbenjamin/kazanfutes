@@ -841,6 +841,7 @@ function drawPlot(plotData, userOptions) {
             drawRects();
         }
 
+        console.log(ops.markers.list)
         function drawMarkers() {
             ops.markers.list.forEach(marker => {
                 let markerElement = plotElement.append("line")
@@ -1589,7 +1590,7 @@ let mainGraphSetting = mainGraphDefaultSetting;
 function joinMainGrapDataSourceToElements() {
     d3.selectAll(Object.keys(elementToMainGraphSettingMapping).map(id => `#${id}`).join(","))
         .on("mouseover", function (event) {
-            
+
             if (mainGraphContentLocked == false) {
                 mainGraphSetting = elementToMainGraphSettingMapping[this.id]; // Set based on mapping
                 drawMainGraph();
@@ -1915,6 +1916,7 @@ function drawMainGraph(graphData = null) {
                                 });
                             }
                         }
+                        console.log(heatingPeriods.length)
                         drawPlot(
                             roomScheduleData,
                             {
@@ -1927,10 +1929,7 @@ function drawMainGraph(graphData = null) {
                                 plotStyle: { joined: true, col: "rgba(44, 213, 14, 0.92)", thickness: "3", startCap: false, endCap: false, smoothCurve: false },
                                 plotLabel: roomsDataAndState[mainGraphSetting.roomNumToPlot].name + " kért és mért hőmérséklet",
                                 rects: { when: "before", list: heatingPeriods },
-                                markers:
-                                    heatingPeriods.length > 0 ?
-                                        { when: "after", list: requestMarkers, col: "rgba(245,245,0,1)", thickness: 1.5, dashed: true, dashing: "6,3", endCap: true, endCapSize: 2 } :
-                                        false
+                                markers: { when: "after", list: requestMarkers, col: "rgba(245,245,0,1)", thickness: 1.5, dashed: true, dashing: "6,3", endCap: true, endCapSize: 2 }
                             }
                         );
                         drawPlot(
@@ -2076,7 +2075,7 @@ function getIsMobile() {
 let initialZoom, initialPos;
 let initialLockDone = false; // Used at initial locking of main graph
 
-function setViewParameters() { 
+function setViewParameters() {
     centeredId = d3.select("#" + centeredId).empty() ? "background" : centeredId; // Check if what's asked for in params is actually there, if not, set background
 
     const width = window.innerWidth;
