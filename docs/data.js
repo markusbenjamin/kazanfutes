@@ -2219,7 +2219,9 @@ d3.xml(isMobile ? "canvas_mobile.svg" : "canvas.svg").then(fileData => {
     initializeInfoboxes();
     initializeMainGraphArea();
     setInfoboxHovers();
-    addSpringyEasterEgg("OktopuszKeramia", "kövek", "drawing", "tooltip")
+    if (!isMobile) {
+        addSpringyEasterEgg("OktopuszKeramia", "kövek", "drawing", "tooltip");
+    }
 
     runOnceThenSetInterval(joinMainGrapDataSourceToElements, 10);
     runOnceThenSetInterval(writeGasUsageToDial, 60 * 1000);
