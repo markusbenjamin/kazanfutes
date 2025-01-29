@@ -2102,6 +2102,96 @@ function setViewParameters() {
 
 let dashboardFont = "Consolas";
 
+
+function addSpringyEasterEgg(elementId, textId, topLayerId) {
+    // Select the elements
+    const hidingElement = d3.select(`#${elementId}`);
+    const easterEggText = d3.select(`#${textId}`);
+    const topLayer = d3.select(`#${topLayerId}`);
+
+    // Hide the text by default
+    easterEggText.style("opacity", 0);
+
+    // We'll store:
+    // (1) The element's original transform (x,y)
+    // (2) The pointer's starting position (startX, startY)
+    // (3) The original parent and next sibling to restore DOM position
+    let anchorX = 0,
+        anchorY = 0,
+        startX = 0,
+        startY = 0,
+        originalParent = null,
+        nextSibling = null;
+
+    // Helper to parse any existing transform on the element
+    function getTransformValues(selection) {
+        const transform = selection.attr("transform");
+        if (transform) {
+            const match = transform.match(/translate\(([-\d.]+),\s*([-\d.]+)\)/);
+            if (match) {
+                return [parseFloat(match[1]), parseFloat(match[2])];
+            }
+        }
+        return [0, 0];
+    }
+
+    const dragBehavior = d3.drag()
+        .on("start", function (event) {
+            // 1. Get the element's current location
+            [anchorX, anchorY] = getTransformValues(hidingElement);
+
+            // 2. Record where the pointer started
+            startX = event.x;
+            startY = event.y;
+
+            // 3. Bring the element to the top by moving it under `#topLayer`
+            const node = hidingElement.node();
+            originalParent = node.parentNode;
+            nextSibling = node.nextSibling; // so we can restore
+
+            // Re-append to topLayer, so it visually appears on top
+            topLayer.node().appendChild(node);
+
+            // 4. Show the hidden text
+            easterEggText.transition().duration(200).style("opacity", 1);
+        })
+        .on("drag", function (event) {
+            // Move smoothly with the pointer
+            const dx = event.x - startX;
+            const dy = event.y - startY;
+            hidingElement.attr("transform", `translate(${anchorX + dx}, ${anchorY + dy})`);
+        })
+        .on("end", function () {
+            // Spring back to the original location using an elastic ease
+            hidingElement
+                .transition()
+                .duration(600)
+                .ease(d3.easeElastic)
+                .attr("transform", `translate(${anchorX}, ${anchorY})`)
+                .on("end", function () {
+                    // Once snapping is done, move it back in the DOM
+                    const node = hidingElement.node();
+                    if (nextSibling) {
+                        originalParent.insertBefore(node, nextSibling);
+                    } else {
+                        // If there was no nextSibling, just append it
+                        originalParent.appendChild(node);
+                    }
+                });
+
+            // Hide the hidden text
+            easterEggText.transition().duration(200).style("opacity", 0);
+        });
+
+    // Attach the drag behavior
+    hidingElement.call(dragBehavior);
+
+    // Prevent your global pan/zoom from taking over on mousedown
+    hidingElement.on("mousedown", function (event) {
+        event.stopPropagation();
+    });
+}
+
 extractURLParams();
 trackHoveredElementId();
 d3.xml(isMobile ? "canvas_mobile.svg" : "canvas.svg").then(fileData => {
@@ -2115,6 +2205,7 @@ d3.xml(isMobile ? "canvas_mobile.svg" : "canvas.svg").then(fileData => {
     initializeInfoboxes();
     initializeMainGraphArea();
     setInfoboxHovers();
+    addSpringyEasterEgg("OktopuszKeramia", "kövek", "drawing")
 
     runOnceThenSetInterval(joinMainGrapDataSourceToElements, 10);
     runOnceThenSetInterval(writeGasUsageToDial, 60 * 1000);

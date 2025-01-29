@@ -281,7 +281,7 @@ function drawBoiler() {
                 let labelRadius = r * 0.84;
                 textFont("Courier New", 0.4);
                 fill(0, 0.1);
-                textOnArcUprightWeighted("M/B Műszertechnika", p.x, p.y, labelRadius, (0 + labelAngleOffset) + rotateToVertical, (TWO_PI - labelAngleOffset) + rotateToVertical);
+                textOnArcUprightWeighted("M/B Méréstechnika", p.x, p.y, labelRadius, (0 + labelAngleOffset) + rotateToVertical, (TWO_PI - labelAngleOffset) + rotateToVertical);
             }
         }
     }
