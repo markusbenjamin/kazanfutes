@@ -1625,11 +1625,11 @@ let cyclesDataAndState = {
     4: { rooms: [10] }
 }
 
-function resetAllRoomsPlotToAllCycles() {
+function resetAllRoomsPlotToAllCycles(showAllRoomHovers = false) {
     mainGraphSetting = mainGraphDefaultSetting;
     mainGraphSetting.roomNumsToPlot = d3.range(1, 12, 1);
     mainGraphSetting.hoveredCycle = 0;
-    redrawRoomHovers(mainGraphSetting.roomNumsToPlot, false);
+    redrawRoomHovers(mainGraphSetting.roomNumsToPlot, showAllRoomHovers);
 }
 
 function setInfoboxHovers() {
@@ -1649,7 +1649,7 @@ function setInfoboxHovers() {
                     drawMainGraph();
                 }
             })
-            .on("click.cycles_infobox", function (event) {
+            .on("click", function (event) {
                 event.stopPropagation();
                 mainGraphContentLocked = !mainGraphContentLocked;
                 redrawRoomHovers(mainGraphSetting.roomNumsToPlot, false);
@@ -1659,6 +1659,25 @@ function setInfoboxHovers() {
                 drawMainGraph();
             });
     }
+    d3.select("#general_infobox")
+        .on("mouseover", function (event) {
+            if (mainGraphSetting.title == 'all_rooms' && !mainGraphContentLocked) {
+                resetAllRoomsPlotToAllCycles(true)
+                drawMainGraph();
+            }
+        })
+        .on("mouseout", function () {
+            if (mainGraphSetting.title == 'all_rooms' && !mainGraphContentLocked) {
+                resetAllRoomsPlotToAllCycles(false)
+                drawMainGraph();
+            }
+        })
+        .on("click.general_infobox", function (event) {
+            event.stopPropagation();
+            mainGraphContentLocked = !mainGraphContentLocked;
+            resetAllRoomsPlotToAllCycles(true)
+            drawMainGraph();
+        });
 }
 
 const roomsColorScale = d3.scaleLinear().domain([1, 11]).range(["green", "orange"]); // Ha újabb szobát kell hozzáadni, akkor kell majd egy mapping a szobaszámok és a szín között, ami nem lineáris
