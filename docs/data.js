@@ -2219,7 +2219,7 @@ d3.xml(isMobile ? "canvas_mobile.svg" : "canvas.svg").then(fileData => {
     initializeInfoboxes();
     initializeMainGraphArea();
     setInfoboxHovers();
-    if (!isMobile) {
+    if (!isMobile) { //For now only in desktop view
         addSpringyEasterEgg("OktopuszKeramia", "kövek", "drawing", "tooltip");
     }
 
