@@ -1569,7 +1569,7 @@ const elementToMainGraphSettingMapping = {
         types: ["heating_state"],
         day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime)
     },
-    "background": { // Default
+    "canvas": { // Default
         title: "all_rooms",
         types: Array.from({ length: 11 }, (_, i) => {
             const number = i + 1;
@@ -1583,7 +1583,7 @@ const elementToMainGraphSettingMapping = {
 
 
 let mainGraphContentLocked = false;
-const mainGraphDefaultSetting = elementToMainGraphSettingMapping["background"]; // Save so it can be reset
+const mainGraphDefaultSetting = elementToMainGraphSettingMapping["canvas"]; // Save so it can be reset
 let mainGraphSetting = mainGraphDefaultSetting;
 
 function joinMainGrapDataSourceToElements() {
