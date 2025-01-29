@@ -2102,8 +2102,7 @@ function setViewParameters() {
 
 let dashboardFont = "Consolas";
 
-
-function addSpringyEasterEgg(elementId, textId, topLayerId) {
+function addSpringyEasterEgg(elementId, textId, topLayerId, tooltipId) {
     // Select the elements
     const hidingElement = d3.select(`#${elementId}`);
     const easterEggText = d3.select(`#${textId}`);
@@ -2113,15 +2112,18 @@ function addSpringyEasterEgg(elementId, textId, topLayerId) {
     easterEggText.style("opacity", 0);
 
     // We'll store:
-    // (1) The element's original transform (x,y)
-    // (2) The pointer's starting position (startX, startY)
-    // (3) The original parent and next sibling to restore DOM position
+    //   - anchorX, anchorY: element's original transform
+    //   - startX, startY:   pointer's starting position of the drag
+    //   - originalParent, nextSibling for DOM re-insertion after drag
     let anchorX = 0,
         anchorY = 0,
         startX = 0,
         startY = 0,
         originalParent = null,
         nextSibling = null;
+
+    // Flag to prevent new drag starts while snapping back
+    let isSnapping = false;
 
     // Helper to parse any existing transform on the element
     function getTransformValues(selection) {
@@ -2137,56 +2139,68 @@ function addSpringyEasterEgg(elementId, textId, topLayerId) {
 
     const dragBehavior = d3.drag()
         .on("start", function (event) {
-            // 1. Get the element's current location
+            // If the element is still snapping back from a previous drag, ignore a new drag
+            if (isSnapping) {
+                // Prevent the global drag from picking it up
+                event.sourceEvent.stopPropagation();
+                return;
+            }
+
+            // Hide the tooltip so it won't linger or follow
+            d3.select(`#${tooltipId}`).style("opacity", 0);
+
+            // 1) Get the element's current location
             [anchorX, anchorY] = getTransformValues(hidingElement);
 
-            // 2. Record where the pointer started
+            // 2) Record where the pointer started
             startX = event.x;
             startY = event.y;
 
-            // 3. Bring the element to the top by moving it under `#topLayer`
+            // 3) Move this element into a "top layer" so it renders above others
             const node = hidingElement.node();
             originalParent = node.parentNode;
-            nextSibling = node.nextSibling; // so we can restore
-
-            // Re-append to topLayer, so it visually appears on top
+            nextSibling = node.nextSibling;
             topLayer.node().appendChild(node);
 
-            // 4. Show the hidden text
+            // 4) Show the hidden text
             easterEggText.transition().duration(200).style("opacity", 1);
         })
         .on("drag", function (event) {
-            // Move smoothly with the pointer
+            // Move the element smoothly with the pointer
             const dx = event.x - startX;
             const dy = event.y - startY;
             hidingElement.attr("transform", `translate(${anchorX + dx}, ${anchorY + dy})`);
         })
         .on("end", function () {
-            // Spring back to the original location using an elastic ease
+            // Now we snap back with an elastic easing
+            isSnapping = true;
             hidingElement
                 .transition()
                 .duration(600)
                 .ease(d3.easeElastic)
                 .attr("transform", `translate(${anchorX}, ${anchorY})`)
                 .on("end", function () {
-                    // Once snapping is done, move it back in the DOM
+                    // Once snapping completes, restore the element to its original parent in the DOM
                     const node = hidingElement.node();
                     if (nextSibling) {
                         originalParent.insertBefore(node, nextSibling);
                     } else {
-                        // If there was no nextSibling, just append it
                         originalParent.appendChild(node);
                     }
+                    isSnapping = false;
                 });
 
-            // Hide the hidden text
+            // Hide the hidden text again
             easterEggText.transition().duration(200).style("opacity", 0);
+
+            //Show tooltip again
+            d3.select(`#${tooltipId}`).style("opacity", 1);
         });
 
     // Attach the drag behavior
     hidingElement.call(dragBehavior);
 
-    // Prevent your global pan/zoom from taking over on mousedown
+    // Prevent global pan/zoom from taking over on mousedown
     hidingElement.on("mousedown", function (event) {
         event.stopPropagation();
     });
@@ -2205,7 +2219,7 @@ d3.xml(isMobile ? "canvas_mobile.svg" : "canvas.svg").then(fileData => {
     initializeInfoboxes();
     initializeMainGraphArea();
     setInfoboxHovers();
-    addSpringyEasterEgg("OktopuszKeramia", "kövek", "drawing")
+    addSpringyEasterEgg("OktopuszKeramia", "kövek", "drawing", "tooltip")
 
     runOnceThenSetInterval(joinMainGrapDataSourceToElements, 10);
     runOnceThenSetInterval(writeGasUsageToDial, 60 * 1000);
