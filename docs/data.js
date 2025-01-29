@@ -2075,7 +2075,7 @@ function getIsMobile() {
 let initialZoom, initialPos;
 let initialLockDone = false; // Used at initial locking of main graph
 
-function setViewParameters() {
+function setViewParameters() { 
     centeredId = d3.select("#" + centeredId).empty() ? "background" : centeredId; // Check if what's asked for in params is actually there, if not, set background
 
     const width = window.innerWidth;
