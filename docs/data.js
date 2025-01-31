@@ -1070,7 +1070,7 @@ const roomsDataAndState = {
     8: { roomID: "kisterem", name: "kisterem", cycle: 3, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
     9: { roomID: "vendégtér", name: "vendégtér", cycle: 3, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
     10: { roomID: "Trafóház", name: "Trafóház", cycle: 4, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
-    11: { roomID: "OktopuszKeramia", name: "Oktopusz kerámia", cycle: null, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
+    11: { roomID: "OktopuszKeramia", name: "Oktopusz kerámia 1", cycle: null, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
     13: { roomID: "GEP", name: "GÉP műhely", cycle: null, temp: null, set: null, lastUpdated: null, vote: null, reason: null }
 };
 
@@ -1560,6 +1560,8 @@ function updateCycleInfobox(cycle, info) {
 let dataWaitTime = 10;
 let dayDataNotAvailable = false;
 
+let allMeasuredRooms = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13];
+
 const elementToMainGraphSettingMapping = {
     "gas_dial": { title: "gas_usage", types: ["gas_usage", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime) },
     "external_thermometer": { title: "external_temp", types: ["external_temp"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime) },
@@ -1582,12 +1584,9 @@ const elementToMainGraphSettingMapping = {
     },
     "background": { // Default
         title: "all_rooms",
-        types: Array.from({ length: 11 }, (_, i) => {
-            const number = i + 1;
-            return `room_${number}_measurements`;
-        }).concat(["heating_state"]),
+        types: allMeasuredRooms.map(room => `room_${room}_measurements`).concat(["heating_state"]),
         day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime),
-        roomNumsToPlot: d3.range(1, 12, 1),
+        roomNumsToPlot: allMeasuredRooms,
         hoveredCycle: 0
     }
 };
@@ -1639,7 +1638,7 @@ let cyclesDataAndState = {
 
 function resetAllRoomsPlotToAllCycles(showAllRoomHovers = false) {
     mainGraphSetting = mainGraphDefaultSetting;
-    mainGraphSetting.roomNumsToPlot = d3.range(1, 12, 1);
+    mainGraphSetting.roomNumsToPlot = allMeasuredRooms;
     mainGraphSetting.hoveredCycle = 0;
     redrawRoomHovers(mainGraphSetting.roomNumsToPlot, showAllRoomHovers);
 }
@@ -1882,7 +1881,7 @@ function drawMainGraph(graphData = null) {
                     }
                     break;
                 case "room_plot":
-                    if (mainGraphSetting.roomNumToPlot != 11) {
+                    if (mainGraphSetting.roomNumToPlot < 11) {
                         let roomNum = mainGraphSetting.roomNumToPlot;
                         let cycleNum = roomsDataAndState[roomNum].cycle;
 
@@ -1975,14 +1974,15 @@ function drawMainGraph(graphData = null) {
                         );
                     }
                     else if (mainGraphSetting.roomNumToPlot == 13) { // GÉP műhely
-                        let roomMeasurementData = graphData["room_13_measurements"].sort((a, b) => a.h_of_day_frac - b.h_of_day_frac);;
+                        let roomMeasurementData = graphData["room_13_measurements"].sort((a, b) => a.h_of_day_frac - b.h_of_day_frac);
+                        console.log(roomMeasurementData)
                         range = d3.extent(roomMeasurementData.map(elem => elem['temp']));
                         drawPlot(
                             roomMeasurementData,
                             {
                                 parentId: "graph",
                                 background: { show: true },
-                                smoothing: { bottom: 0, left: 100 },
+                                smoothing: { bottom: 0, left: 10 },
                                 domain: { bottom: [0, 24], left: [Math.floor(range[0]) - 1, Math.ceil(range[1]) + 1] },
                                 dataKeys: { bottom: "h_of_day_frac", left: "temp" },
                                 tickVals: { left: d3.range(Math.floor(range[0]) - 1, Math.ceil(range[1]) + 2, 1) },
@@ -2029,7 +2029,7 @@ function drawMainGraph(graphData = null) {
                             rects: drawForSingleCycle ? { when: "before", list: heatingPeriods } : false
                         }
                     );
-                    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].forEach(roomNum => {
+                    allMeasuredRooms.forEach(roomNum => {
                         let emphasis = mainGraphSetting.roomNumsToPlot.includes(roomNum);
                         let plotColor = d3.color(roomsColorScale(roomNum));
                         let showEndText = true;
