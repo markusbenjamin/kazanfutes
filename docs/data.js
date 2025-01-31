@@ -1082,7 +1082,7 @@ function updateRoomColor(roomId, temp, lastUpdated) {
         // Create a color scale
         const colorScale = d3.scaleSequential(d3.interpolateRgb("blue", "red"))
             .domain([15, 25]); // Set the input domain (10°C to 30°C)
-        d3.select("#" + roomId).style("fill", colorScale(temp)).style("fill-opacity","1");
+        d3.select("#" + roomId).style("fill", colorScale(temp)).style("fill-opacity", "1");
     }
 }
 
@@ -1955,8 +1955,27 @@ function drawMainGraph(graphData = null) {
                             }
                         );
                     }
-                    else { // Oktopusz kerámia
+                    else if (mainGraphSetting.roomNumToPlot == 11) { // Oktopusz kerámia
                         let roomMeasurementData = graphData["room_11_measurements"].concat(graphData["room_12_measurements"]).sort((a, b) => a.h_of_day_frac - b.h_of_day_frac);;
+                        range = d3.extent(roomMeasurementData.map(elem => elem['temp']));
+                        drawPlot(
+                            roomMeasurementData,
+                            {
+                                parentId: "graph",
+                                background: { show: true },
+                                smoothing: { bottom: 0, left: 100 },
+                                domain: { bottom: [0, 24], left: [Math.floor(range[0]) - 1, Math.ceil(range[1]) + 1] },
+                                dataKeys: { bottom: "h_of_day_frac", left: "temp" },
+                                tickVals: { left: d3.range(Math.floor(range[0]) - 1, Math.ceil(range[1]) + 2, 1) },
+                                axesLabel: { bottom: "óra", left: "°C" },
+                                plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2", startCap: false, endCap: true },
+                                plotLabel: roomsDataAndState[mainGraphSetting.roomNumToPlot].name + " mért hőmérséklet",
+                                segment: { do: true, gap: mainGraphSetting.roomNumToPlot == 10 ? 2 : 0.5, endCaps: true, startCaps: true }
+                            }
+                        );
+                    }
+                    else if (mainGraphSetting.roomNumToPlot == 13) { // GÉP műhely
+                        let roomMeasurementData = graphData["room_13_measurements"].sort((a, b) => a.h_of_day_frac - b.h_of_day_frac);;
                         range = d3.extent(roomMeasurementData.map(elem => elem['temp']));
                         drawPlot(
                             roomMeasurementData,
