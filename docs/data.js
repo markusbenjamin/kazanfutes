@@ -223,6 +223,15 @@ function getDataFromFirebase() {
             );
             roomsDataAndState[11].temp = oktopuszKeramiaTemp;
 
+            const GEPMuhelyTemp = roundTo(systemJSON.state['measured_temps'][13], 0.1);
+            updateRoomColor(
+                "GEP",
+                GEPMuhelyTemp,
+                timestamp()
+            );
+            roomsDataAndState[13].temp = GEPMuhelyTemp;
+
+
             // Update piping
             const cycles = [1, 2, 3, 4];
             let states = 0;
@@ -841,7 +850,6 @@ function drawPlot(plotData, userOptions) {
             drawRects();
         }
 
-        console.log(ops.markers.list)
         function drawMarkers() {
             ops.markers.list.forEach(marker => {
                 let markerElement = plotElement.append("line")
@@ -1062,18 +1070,19 @@ const roomsDataAndState = {
     8: { roomID: "kisterem", name: "kisterem", cycle: 3, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
     9: { roomID: "vendégtér", name: "vendégtér", cycle: 3, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
     10: { roomID: "Trafóház", name: "Trafóház", cycle: 4, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
-    11: { roomID: "OktopuszKeramia", name: "Oktopusz kerámia", cycle: null, temp: null, set: null, lastUpdated: null, vote: null, reason: null }
+    11: { roomID: "OktopuszKeramia", name: "Oktopusz kerámia", cycle: null, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
+    13: { roomID: "GEP", name: "GÉP műhely", cycle: null, temp: null, set: null, lastUpdated: null, vote: null, reason: null }
 };
 
 function updateRoomColor(roomId, temp, lastUpdated) {
     if (timePassedSince(dateFromTimestamp(lastUpdated)) > 2 * 60) {
-        d3.select("#" + roomId).style("fill", "rgb(31, 31, 32,0.8)");
+        d3.select("#" + roomId).style("fill", "rgb(31, 31, 32, 0.8)");
     }
     else {
         // Create a color scale
         const colorScale = d3.scaleSequential(d3.interpolateRgb("blue", "red"))
             .domain([15, 25]); // Set the input domain (10°C to 30°C)
-        d3.select("#" + roomId).style("fill", colorScale(temp));
+        d3.select("#" + roomId).style("fill", colorScale(temp)).style("fill-opacity","1");
     }
 }
 
@@ -1565,6 +1574,7 @@ const elementToMainGraphSettingMapping = {
     "vendégtér": { title: "room_plot", types: ["room_9_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 9 },
     "Trafóház": { title: "room_plot", types: ["room_10_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 10 },
     "OktopuszKeramia": { title: "room_plot", types: ["room_11_measurements", "room_12_measurements"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 11 },
+    "GEP": { title: "room_plot", types: ["room_13_measurements"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 13 },
     "boiler_body": {
         title: "heating_state",
         types: ["heating_state"],
@@ -1916,7 +1926,6 @@ function drawMainGraph(graphData = null) {
                                 });
                             }
                         }
-                        console.log(heatingPeriods.length)
                         drawPlot(
                             roomScheduleData,
                             {
@@ -2219,7 +2228,7 @@ d3.xml(isMobile ? "canvas_mobile.svg" : "canvas.svg").then(fileData => {
     initializeInfoboxes();
     initializeMainGraphArea();
     setInfoboxHovers();
-    if (!isMobile) { //For now only in desktop view
+    if (!isMobile) { // For now only in desktop view
         addSpringyEasterEgg("OktopuszKeramia", "kövek", "drawing", "tooltip");
     }
 
