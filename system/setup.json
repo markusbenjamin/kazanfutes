@@ -1,17 +1,17 @@
 {
-    "boiler":{
-        "GPIO":4
+    "boiler": {
+        "GPIO": 4
     },
-    "gasmeter":{
-        "GPIO":17
+    "gasmeter": {
+        "GPIO": 17
     },
     "cycles": {
         "1": {
             "name": "Teakonyhán túl",
-            "pump":{
-                "id":"bfda700f216ded0696ns02",
-                "ip":"192.168.29.77",
-                "key":"kW@O(aG7Q4[^+0zm"
+            "pump": {
+                "id": "bfda700f216ded0696ns02",
+                "ip": "192.168.29.77",
+                "key": "kW@O(aG7Q4[^+0zm"
             },
             "rooms": [
                 "1",
@@ -21,10 +21,10 @@
         },
         "2": {
             "name": "Teakonyhán innen",
-            "pump":{
-                "id":"bfc349ab71c1876252nmss",
-                "ip":"192.168.29.74",
-                "key":"[X*(AZd#$QMtH@zm"
+            "pump": {
+                "id": "bfc349ab71c1876252nmss",
+                "ip": "192.168.29.74",
+                "key": "[X*(AZd#$QMtH@zm"
             },
             "rooms": [
                 "4",
@@ -35,10 +35,10 @@
         },
         "3": {
             "name": "Gólya emelet",
-            "pump":{
-                "id":"bf0e377e0f305dbe9bv5yl",
-                "ip":"192.168.29.90",
-                "key":"A2h-kJv*|Uqy#Ju*"
+            "pump": {
+                "id": "bf0e377e0f305dbe9bv5yl",
+                "ip": "192.168.29.90",
+                "key": "A2h-kJv*|Uqy#Ju*"
             },
             "rooms": [
                 "8",
@@ -47,10 +47,10 @@
         },
         "4": {
             "name": "Gólya földszint",
-            "pump":{
-                "id":"1720430170039f6886e5",
-                "ip":"192.168.29.53",
-                "key":"om;kaE;)~~ZtPeF."
+            "pump": {
+                "id": "1720430170039f6886e5",
+                "ip": "192.168.29.53",
+                "key": "om;kaE;)~~ZtPeF."
             },
             "rooms": [
                 "10"
@@ -62,73 +62,79 @@
             "name": "Oktopusz",
             "sensor": "Sonoff10",
             "cycle": "1",
-            "controlled":true
+            "controlled": true
         },
         "2": {
             "name": "Gólyafészek",
             "sensor": "Sonoff4",
             "cycle": "1",
-            "controlled":true
+            "controlled": true
         },
         "3": {
             "name": "PK",
             "sensor": "Sonoff11",
             "cycle": "1",
-            "controlled":true
+            "controlled": true
         },
         "4": {
             "name": "SZGK",
             "sensor": "Sonoff12",
             "cycle": "2",
-            "controlled":true
+            "controlled": true
         },
         "5": {
             "name": "Mérce",
             "sensor": "Sonoff13",
             "cycle": "2",
-            "controlled":true
+            "controlled": true
         },
         "6": {
             "name": "Lahmacun",
             "sensor": "Sonoff5",
             "cycle": "2",
-            "controlled":true
+            "controlled": true
         },
         "7": {
             "name": "Gólyairoda",
             "sensor": "Sonoff14",
             "cycle": "2",
-            "controlled":true
+            "controlled": true
         },
         "8": {
             "name": "kisterem",
             "sensor": "Sonoff6",
             "cycle": "3",
-            "controlled":true
+            "controlled": true
         },
         "9": {
             "name": "vendégtér",
             "sensor": "Sonoff7",
             "cycle": "3",
-            "controlled":true
+            "controlled": true
         },
         "10": {
             "name": "Trafóház",
             "sensor": "Sonoff2",
             "cycle": "4",
-            "controlled":true
+            "controlled": true
         },
         "11": {
             "name": "Oktopusz kerámia 1",
             "sensor": "Sonoff3",
             "cycle": "2",
-            "controlled":false
+            "controlled": false
         },
         "12": {
             "name": "Oktopusz kerámia 2",
             "sensor": "Sonoff1",
             "cycle": "2",
-            "controlled":false
+            "controlled": false
+        },
+        "13": {
+            "name": "GÉP műhely",
+            "sensor": "Sonoff8",
+            "cycle": "1",
+            "controlled": false
         }
     }
 }
