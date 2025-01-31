@@ -67,7 +67,7 @@ for digestion_day in digestion_days:
                 formatted_data = []
                 
                 for log_entry in loaded_log:
-                    if log_entry[room]['temp'] and log_entry[room]['hum']:
+                    if room in log_entry and log_entry[room]['temp'] and log_entry[room]['hum']:
                         formatted_entry = {
                             'timestamp':log_entry[room]['last_updated'],
                             'temp':log_entry[room]['temp']/100,
