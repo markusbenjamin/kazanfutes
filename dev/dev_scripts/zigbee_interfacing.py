@@ -9,7 +9,7 @@ lights_info = lights_response.json()
 
 for id, info in lights_info.items():
     #print(id)
-    if True or info['name'] == 'teakonyha':
+    if info['name'] != 'pult':
         try:
             put_response = requests.put(
                 f"{lights_url}/{id}/state",
