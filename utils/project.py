@@ -5,6 +5,7 @@ Import with: from utils.project import *
 
 #region Imports
 import asyncio
+import bisect
 import csv
 import json
 import logging
@@ -1272,6 +1273,13 @@ def sign(num):
     """
     return (num > 0) - (num < 0)
 
+def mean_without_none(values):
+    """
+    Returns the mean of a list removing None entries
+    """
+    filtered_values = [v for v in values if v is not None]
+    return sum(filtered_values) / len(filtered_values) if filtered_values else None
+
 #region Time
 def timestamp(datetime_object:datetime = None):
     """
@@ -1281,6 +1289,12 @@ def timestamp(datetime_object:datetime = None):
         return datetime_object.strftime(settings['timestamp_format'])
     else:
         return datetime.now().strftime(settings['timestamp_format'])
+    
+def daystamp(datetime_object:datetime = None):
+    """
+    Returns a daystamp string with the format specified in settings.
+    """
+    return timestamp(datetime_object)[0:10]
     
 def datetime_object_from_google_timestamp(google_timestamp:str):
     """
@@ -1322,6 +1336,13 @@ def timestamp_to_datetime(timestamp:str):
     Turns a timestamp string into a datetime object for internal Python manipulation.
     """
     return datetime.strptime(timestamp,settings['timestamp_format'])
+
+def minute_of_day():
+    """
+    Returns the current minute of day.
+    """
+    return datetime.datetime.now().hour * 60 + datetime.datetime.now().minute
+
 #endregion
 
 #region JSON and dicts

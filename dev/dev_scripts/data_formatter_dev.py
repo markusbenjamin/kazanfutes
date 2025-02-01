@@ -15,7 +15,7 @@ Data types:
 from utils.project import *
 
 parse_old_logs = False
-settings['dev'] = False
+settings['dev'] = True
 
 export_path_prefix = ""
 
@@ -42,7 +42,8 @@ if parse_old_logs:
 else:
     digestion_days = [datetime.now()]
 
-data_types_to_digest = ['room_measurements','room_set_temps','room_overrides','external_temp','gas_consumption','heating_state']
+#data_types_to_digest = ['room_measurements','room_set_temps','room_overrides','external_temp','gas_consumption','heating_state']
+data_types_to_digest = ['room_measurements']
 
 #endregion
 
@@ -59,7 +60,7 @@ for digestion_day in digestion_days:
         log_file_path = "data/logs/temperature_and_humidity/temperature_and_humidity.json"
         action_string = f'formatting daily room measurements for {digestion_daystamp}'
 
-        rooms_info = get_rooms_info()
+        rooms_info = get_rooms_info(just_controlled=False)
 
         try:
             loaded_log = load_ndjson_to_json_list(f"{log_file_path}{log_file_suffix}")
@@ -67,7 +68,7 @@ for digestion_day in digestion_days:
                 formatted_data = []
                 
                 for log_entry in loaded_log:
-                    if log_entry[room]['temp'] and log_entry[room]['hum']:
+                    if room in log_entry and log_entry[room]['temp'] and log_entry[room]['hum']:
                         formatted_entry = {
                             'timestamp':log_entry[room]['last_updated'],
                             'temp':log_entry[room]['temp']/100,
@@ -146,8 +147,9 @@ for digestion_day in digestion_days:
                     if info['name'] in raw_entry:
                         request_datetime = datetime.strptime(raw_entry[0], "%d/%m/%Y %H:%M:%S")
                         request_timestamp = request_datetime.strftime(settings['timestamp_format'])
-                        if request_datetime.date() == digestion_day.date():
-                            time_timestamp = datetime.strptime(f"{raw_entry[2]}-{raw_entry[3]}", "%d/%m/%Y-%H").strftime(settings['timestamp_format'])
+                        time_datetime = datetime.strptime(f"{raw_entry[2]}-{raw_entry[3]}", "%d/%m/%Y-%H")
+                        time_timestamp = time_datetime.strftime(settings['timestamp_format'])
+                        if time_datetime.date() == digestion_day.date():
                             formatted_entry = {
                                 'timestamp': request_timestamp,
                                 'time': time_timestamp,
