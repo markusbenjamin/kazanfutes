@@ -1070,7 +1070,7 @@ const roomsDataAndState = {
     8: { roomID: "kisterem", name: "kisterem", cycle: 3, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
     9: { roomID: "vendégtér", name: "vendégtér", cycle: 3, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
     10: { roomID: "Trafóház", name: "Trafóház", cycle: 4, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
-    11: { roomID: "OktopuszKeramia", name: "Oktopusz kerámia 1", cycle: null, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
+    11: { roomID: "OktopuszKeramia", name: "Oktopusz kerámia", cycle: null, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
     13: { roomID: "GEP", name: "GÉP műhely", cycle: null, temp: null, set: null, lastUpdated: null, vote: null, reason: null }
 };
 
