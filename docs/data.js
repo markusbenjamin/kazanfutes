@@ -1561,6 +1561,7 @@ let dataWaitTime = 10;
 let dayDataNotAvailable = false;
 
 let allMeasuredRooms = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13];
+let allEmphasisRooms = [1,2,3,4,5,6,7,8,9,10];
 
 const elementToMainGraphSettingMapping = {
     "gas_dial": { title: "gas_usage", types: ["gas_usage", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime) },
@@ -1640,7 +1641,7 @@ function resetAllRoomsPlotToAllCycles(showAllRoomHovers = false) {
     mainGraphSetting = mainGraphDefaultSetting;
     mainGraphSetting.roomNumsToPlot = allMeasuredRooms;
     mainGraphSetting.hoveredCycle = 0;
-    redrawRoomHovers(mainGraphSetting.roomNumsToPlot, showAllRoomHovers);
+    redrawRoomHovers(allEmphasisRooms, showAllRoomHovers);
 }
 
 function setInfoboxHovers() {
