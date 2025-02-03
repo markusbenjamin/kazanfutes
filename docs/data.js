@@ -133,12 +133,12 @@ function setupTooltip() {
                         ) +
                         (
                             roomTooltipData.above ?
-                                "<br>Túlfűtés: " + roundTo(roomTooltipData.above.today, 0.1) + " °Ch (átl.: " + roundTo(roomTooltipData.above.avg, 0.1) + " °Ch)"
+                                "<br>Túlfűtés: " + roundTo(roomTooltipData.above.today, 0.1) + " Kh (átl.: " + roundTo(roomTooltipData.above.avg, 0.1) + " Kh)"
                                 : ""
                         ) +
                         (
                             roomTooltipData.below ?
-                                "<br>Alulfűtés: " + roundTo(roomTooltipData.below.today, 0.1) + " °Ch (átl.: " + roundTo(roomTooltipData.below.avg, 0.1) + " °Ch)"
+                                "<br>Alulfűtés: " + roundTo(roomTooltipData.below.today, 0.1) + " Kh (átl.: " + roundTo(roomTooltipData.below.avg, 0.1) + " Kh)"
                                 : ""
                         ) +
                         (
@@ -1195,12 +1195,11 @@ function addKPIsToTooltip(kpiData = null) {
             }
 
             // Validity
-            let validity = roomKPIData.map(dayData => dayData.validity_ratio);
-            console.log(normalize(validity.slice(0, -1)))
+            let validity = normalize(roomKPIData.map(dayData => dayData.validity_ratio).slice(0, -1));
 
             // Below
             let below = roomKPIData.map(dayData => dayData.below);
-            let belowAvg = dot(normalize(validity.slice(0, -1)), below.slice(0, -1));
+            let belowAvg = dot(validity, below.slice(0, -1));
             let belowToday = below[below.length - 1];
             roomsDataAndState[room].below = {
                 avg: belowAvg,
@@ -1209,7 +1208,7 @@ function addKPIsToTooltip(kpiData = null) {
 
             // Above
             let above = roomKPIData.map(dayData => dayData.above);
-            let aboveAvg = dot(normalize(validity.slice(0, -1)), above.slice(0, -1));
+            let aboveAvg = dot(validity, above.slice(0, -1));
             let aboveToday = above[above.length - 1];
             roomsDataAndState[room].above = {
                 avg: aboveAvg,
@@ -1218,7 +1217,7 @@ function addKPIsToTooltip(kpiData = null) {
 
             // Turnon
             let turnon = roomKPIData.map(dayData => dayData.turn_on_ratio);
-            let turnonAvg = dot(normalize(validity.slice(0, -1)), turnon.slice(0, -1));
+            let turnonAvg = dot(validity, turnon.slice(0, -1));
             let turnonToday = turnon[turnon.length - 1];
             roomsDataAndState[room].turnon = {
                 avg: turnonAvg,
@@ -1433,7 +1432,7 @@ function updateGeneralInfobox(info) {
         if (info.averageControlDiff != 0.0) {
             let reportedControlDiff = roundTo(info.averageControlDiff, 0.1);
             let averageControlDiffPre = reportedControlDiff == 0.0 ? " " : (reportedControlDiff < 0 ? "" : "+");
-            let averageControlDiffLine = "Átlagos eltérés: " + averageControlDiffPre + reportedControlDiff + " °C.";
+            let averageControlDiffLine = "Átlagos eltérés: " + averageControlDiffPre + reportedControlDiff + " K.";
             lines.push(
                 {
                     lineXOffset: 0,
@@ -1645,7 +1644,7 @@ function updateCycleInfobox(cycle, info) {
         if (isValidNumber(info.totalControlDiff)) {
             let reportedControlDiff = roundTo(info.totalControlDiff / info.rooms.length, 0.1)
             let reportedeControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
-            addLineToBox("cycle" + cycle + "_infobox", reportedeControlDiffPre + reportedControlDiff + " °C", xOffset + 0.2, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered)
+            addLineToBox("cycle" + cycle + "_infobox", reportedeControlDiffPre + reportedControlDiff + " K", xOffset + 0.2, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered)
         }
         else {
             addLineToBox("cycle" + cycle + "_infobox", "?", xOffset + 0.2, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered)
@@ -1695,7 +1694,7 @@ const elementToMainGraphSettingMapping = {
     "vendégtér": { title: "room_plot", types: ["room_9_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 9 },
     "Trafóház": { title: "room_plot", types: ["room_10_measurements", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 10 },
     "OktopuszKeramia": { title: "room_plot", types: ["room_11_measurements", "room_12_measurements"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 11 },
-    "GEP": { title: "room_plot", types: ["room_13_measurements"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 13 },
+    "GEP": { title: "room_plot", types: ["room_13_measurements", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 13 },
     "boiler_body": {
         title: "heating_state",
         types: ["heating_state"],
@@ -2101,6 +2100,20 @@ function drawMainGraph(graphData = null) {
                     else if (mainGraphSetting.roomNumToPlot == 13) { // GÉP műhely
                         let roomMeasurementData = graphData["room_13_measurements"].sort((a, b) => a.h_of_day_frac - b.h_of_day_frac);
                         range = d3.extent(roomMeasurementData.map(elem => elem['temp']));
+
+                        let heatingState = graphData["heating_state"];
+                        let heatingPeriods = extractHeatingPeriodsFromHeatingState(1, heatingState);
+
+                        heatingPeriods.forEach(period => {
+                            period.y1 = Math.floor(range[0]) - 1;
+                            period.y2 = Math.ceil(range[1]) + 1;
+                            period.fill = "rgba(255,0,0,0.025)";
+                            period.stroke = "rgba(255,0,0,0.75)";
+                            period.strokeWeight = 0.25;
+                            period.dashed = true;
+                            period.dashing = "0.5,1";
+                        });
+
                         drawPlot(
                             roomMeasurementData,
                             {
@@ -2113,7 +2126,8 @@ function drawMainGraph(graphData = null) {
                                 axesLabel: { bottom: "óra", left: "°C" },
                                 plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2", startCap: false, endCap: true },
                                 plotLabel: roomsDataAndState[mainGraphSetting.roomNumToPlot].name + " mért hőmérséklet",
-                                segment: { do: true, gap: mainGraphSetting.roomNumToPlot == 10 ? 2 : 0.5, endCaps: true, startCaps: true }
+                                segment: { do: true, gap: mainGraphSetting.roomNumToPlot == 10 ? 2 : 0.5, endCaps: true, startCaps: true },
+                                rects: { when: "before", list: heatingPeriods },
                             }
                         );
                     }
