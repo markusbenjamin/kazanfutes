@@ -398,3 +398,10 @@ let roomNameMapping = {
     "vr": "vendégtér",      
     "Tz": "Trafóház"        
 };
+
+const normalize = numbers => {
+    const sum = numbers.reduce((acc, num) => acc + num, 0);
+    return sum === 0 ? numbers.map(() => 0) : numbers.map(num => num / sum);
+};
+
+const dot = (a, b) => a.reduce((sum, val, i) => sum + val * b[i], 0);

@@ -121,13 +121,31 @@ function setupTooltip() {
 
         d3.select("#" + roomTooltipData.roomID)
             .on("mouseover.tooltip", function (event) {
-                if (roomTooltipData.temp != null) {
+                if (roomTooltipData.temp) {
                     tooltip.transition().duration(200).style("visibility", "visible");
                     tooltip.html(
-                        roomTooltipData.name + (roomTooltipData.vote != null ? ": " + ["nem kér", "kér"][roomTooltipData.vote] : "") + "<br>" +
+                        roomTooltipData.name + (roomTooltipData.vote ? ": " + ["nem kér", "kér"][roomTooltipData.vote] : "") + "<br>" +
                         roomTooltipData.temp + (!isNaN(roomTooltipData.temp) ? " °C" : "") +
-                        (roomTooltipData.set != null ? " / [" + roomTooltipData.set + (!isNaN(roomTooltipData.set) ? " °C]" : "]") : "") +
-                        (roomTooltipData.set != null ? "<br>" + roomTooltipData.reason + "" : "")
+                        (roomTooltipData.set ? " / [" + roomTooltipData.set + (!isNaN(roomTooltipData.set) ? " °C]" : "]") : "") +
+                        (roomTooltipData.reason ? "<br>" + roomTooltipData.reason + "" : "") +
+                        (
+                            roomTooltipData.above ? "<br>" : ""
+                        ) +
+                        (
+                            roomTooltipData.above ?
+                                "<br>Túlfűtés: " + roundTo(roomTooltipData.above.today, 0.1) + " °Ch (átl.: " + roundTo(roomTooltipData.above.avg, 0.1) + " °Ch)"
+                                : ""
+                        ) +
+                        (
+                            roomTooltipData.below ?
+                                "<br>Alulfűtés: " + roundTo(roomTooltipData.below.today, 0.1) + " °Ch (átl.: " + roundTo(roomTooltipData.below.avg, 0.1) + " °Ch)"
+                                : ""
+                        ) +
+                        (
+                            roomTooltipData.turnon ?
+                                "<br>Körindítás: " + roundTo(100 * roomTooltipData.turnon.today, 1) + "% (átl.: " + roundTo(100 * roomTooltipData.turnon.avg, 1) + "%)"
+                                : ""
+                        )
                     )
                         .style("left", (event.pageX + 5) + "px")
                         .style("top", (event.pageY - 28) + "px");
@@ -473,33 +491,37 @@ function convertTimestamps(dataJSON, day) {
 let loadedData = {};
 let dataExpiry = 5; //Minutes
 
-function collectDataFromGitHub(day, dataTypes, drawFunction) {
-    // We'll store our results here:
+function collectDataFromGitHub(dataToCollect, drawFunction) {
+    // We'll collect final results here in the same shape as loadedData => dataCollected[day][type]
     const dataCollected = {};
 
-    // Recursive function to handle each type one by one
-    function fetchNextType(index) {
-        if (index >= dataTypes.length) {
-            // Once all data is collected, call the draw function
+    // Recursive function to handle each item in dataToCollect
+    function fetchNext(index) {
+        if (index >= dataToCollect.length) {
+            // Once all data is fetched/collected, call the draw function
             drawFunction(dataCollected);
             return;
         }
 
-        const currentType = dataTypes[index];
+        const { day, type } = dataToCollect[index];
 
-        // Make sure we have a structure for this `day` in loadedData
+        // Ensure we have a day object in loadedData
         if (!loadedData[day]) {
             loadedData[day] = {};
         }
+        // Also ensure dataCollected structure for returning results
+        if (!dataCollected[day]) {
+            dataCollected[day] = {};
+        }
 
-        // Check if the data already exists and is still fresh
-        const existingDataEntry = loadedData[day][currentType];
+        const existingDataEntry = loadedData[day][type];
         const now = new Date();
 
+        // Determine if existing data is "fresh"
         let isFresh = false;
         if (existingDataEntry && existingDataEntry.timestamp) {
             const lastLoadedTime = new Date(existingDataEntry.timestamp);
-            const ageInMinutes = (now - lastLoadedTime) / 1000 / 60; // difference in minutes
+            const ageInMinutes = (now - lastLoadedTime) / (1000 * 60);
 
             if (ageInMinutes < dataExpiry) {
                 isFresh = true;
@@ -507,43 +529,78 @@ function collectDataFromGitHub(day, dataTypes, drawFunction) {
         }
 
         if (isFresh) {
-            // Data is still fresh; use the existing loaded data
-            dataCollected[currentType] = existingDataEntry.data;
-            // Move on to the next type
-            fetchNextType(index + 1);
+            // Use cached data
+            dataCollected[day][type] = existingDataEntry.data;
+            fetchNext(index + 1);
         } else {
-            // Data doesn't exist or is older than n minutes, so fetch from GitHub
+            // Not fresh (or doesn't exist) -> fetch from GitHub
             const url = "https://raw.githubusercontent.com/markusbenjamin/kazanfutes/refs/heads/main/data/formatted/"
-                + day + "/" + currentType + ".json";
+                + day + "/" + type + ".json";
 
             fetchJSONEndpoint(url)
                 .then(dataJSON => {
-                    // Convert timestamps if needed
+                    let finalData;
+
+                    // If you need to convert timestamps in arrays, do so
                     if (Array.isArray(dataJSON)) {
-                        dataCollected[currentType] = convertTimestamps(dataJSON, day);
+                        finalData = convertTimestamps(dataJSON, day);
                     } else {
-                        dataCollected[currentType] = dataJSON;
+                        finalData = dataJSON;
                     }
 
-                    // Update loadedData with fresh data & current timestamp
-                    loadedData[day][currentType] = {
-                        data: dataCollected[currentType],
+                    // Put data into dataCollected
+                    dataCollected[day][type] = finalData;
+
+                    // Update loadedData with fresh data + timestamp
+                    loadedData[day][type] = {
+                        data: finalData,
                         timestamp: now.toISOString()
                     };
 
-                    // Move on to the next type
-                    fetchNextType(index + 1);
+                    // Move on
+                    fetchNext(index + 1);
                 })
                 .catch(err => {
                     console.error("Error fetching or processing data:", err);
-                    // Even if error, proceed to next to avoid total block
-                    fetchNextType(index + 1);
+                    // Even if error, we proceed to the next item
+                    fetchNext(index + 1);
                 });
         }
     }
 
-    // Start fetching from the first type
-    fetchNextType(0);
+    // Start with the first item
+    fetchNext(0);
+}
+
+function dataToCollectGenerator(startDate, endDate, dataTypes) {
+    // Convert input date strings to Date objects
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const result = [];
+
+    // A helper to format a Date -> "YYYY-MM-DD"
+    function formatDate(dateObj) {
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // Iterate from start to end date, inclusive
+    let current = new Date(start);
+    while (current <= end) {
+        const dayString = formatDate(current);
+        // For each day, add each data type
+        dataTypes.forEach(type => {
+            result.push({ day: dayString, type });
+        });
+
+        // Move current date by +1 day
+        current.setDate(current.getDate() + 1);
+    }
+
+    return result;
 }
 
 function drawPlot(plotData, userOptions) {
@@ -1060,18 +1117,18 @@ function clearMainGraphs() {
 }
 
 const roomsDataAndState = {
-    1: { roomID: "Oktopusz", name: "Oktopusz szita", cycle: 1, temp: null, set: null, lastUpdated: null, vote: null },
-    2: { roomID: "Gólyafészek", name: "Gólyafészek", cycle: 1, temp: null, set: null, lastUpdated: null, vote: null },
-    3: { roomID: "PK", name: "PK", cycle: 1, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
-    4: { roomID: "SZGK", name: "SZGK", cycle: 2, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
-    5: { roomID: "Mérce", name: "Mérce", cycle: 2, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
-    6: { roomID: "Lahmacun", name: "Lahmacun", cycle: 2, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
-    7: { roomID: "Gólyairoda", name: "Gólyairoda", cycle: 2, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
-    8: { roomID: "kisterem", name: "kisterem", cycle: 3, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
-    9: { roomID: "vendégtér", name: "vendégtér", cycle: 3, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
-    10: { roomID: "Trafóház", name: "Trafóház", cycle: 4, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
-    11: { roomID: "OktopuszKeramia", name: "Oktopusz kerámia", cycle: null, temp: null, set: null, lastUpdated: null, vote: null, reason: null },
-    13: { roomID: "GEP", name: "GÉP műhely", cycle: null, temp: null, set: null, lastUpdated: null, vote: null, reason: null }
+    1: { roomID: "Oktopusz", name: "Oktopusz szita", cycle: 1 },
+    2: { roomID: "Gólyafészek", name: "Gólyafészek", cycle: 1 },
+    3: { roomID: "PK", name: "PK", cycle: 1 },
+    4: { roomID: "SZGK", name: "SZGK", cycle: 2 },
+    5: { roomID: "Mérce", name: "Mérce", cycle: 2 },
+    6: { roomID: "Lahmacun", name: "Lahmacun", cycle: 2 },
+    7: { roomID: "Gólyairoda", name: "Gólyairoda", cycle: 2 },
+    8: { roomID: "kisterem", name: "kisterem", cycle: 3 },
+    9: { roomID: "vendégtér", name: "vendégtér", cycle: 3 },
+    10: { roomID: "Trafóház", name: "Trafóház", cycle: 4 },
+    11: { roomID: "OktopuszKeramia", name: "Oktopusz kerámia" },
+    13: { roomID: "GEP", name: "GÉP műhely" }
 };
 
 function updateRoomColor(roomId, temp, lastUpdated) {
@@ -1118,15 +1175,75 @@ function updateBoilerColor(state) {
     boilerState = state;
 }
 
+function addKPIsToTooltip(kpiData = null) {
+    if (kpiData == null) {
+        collectDataFromGitHub(
+            dataToCollectGenerator(
+                dayStamp(addTimeToDate(new Date(), -7, "days"), false, 0),
+                dayStamp(),
+                ["room_KPIs"]
+            ),
+            addKPIsToTooltip,
+        );
+    }
+    else {
+        let daysWithKPIData = Object.keys(kpiData)
+        for (room of allControlledRooms) {
+            let roomKPIData = [];
+            for (day of daysWithKPIData) {
+                roomKPIData.push(kpiData[day].room_KPIs[room])
+            }
+
+            // Validity
+            let validity = roomKPIData.map(dayData => dayData.validity_ratio);
+            console.log(normalize(validity.slice(0, -1)))
+
+            // Below
+            let below = roomKPIData.map(dayData => dayData.below);
+            let belowAvg = dot(normalize(validity.slice(0, -1)), below.slice(0, -1));
+            let belowToday = below[below.length - 1];
+            roomsDataAndState[room].below = {
+                avg: belowAvg,
+                today: belowToday
+            }
+
+            // Above
+            let above = roomKPIData.map(dayData => dayData.above);
+            let aboveAvg = dot(normalize(validity.slice(0, -1)), above.slice(0, -1));
+            let aboveToday = above[above.length - 1];
+            roomsDataAndState[room].above = {
+                avg: aboveAvg,
+                today: aboveToday
+            }
+
+            // Turnon
+            let turnon = roomKPIData.map(dayData => dayData.turn_on_ratio);
+            let turnonAvg = dot(normalize(validity.slice(0, -1)), turnon.slice(0, -1));
+            let turnonToday = turnon[turnon.length - 1];
+            roomsDataAndState[room].turnon = {
+                avg: turnonAvg,
+                today: turnonToday
+            }
+        }
+    }
+}
 
 let currentGasUsageRate, currentGasTotal;
 
 function writeGasUsageToDial(gasData = null) {
     if (gasData == null) {
-        collectDataFromGitHub(dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), ["gas_usage"], writeGasUsageToDial);
+        collectDataFromGitHub(
+            [
+                {
+                    day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime),
+                    type: "gas_usage"
+                }
+            ],
+            writeGasUsageToDial
+        );
     }
     else {
-        gasData = gasData["gas_usage"];
+        gasData = gasData[dayStamp(new Date(), dayDataNotAvailable, dataWaitTime)]["gas_usage"];
         d3.select("#gas_piping").style("stroke", "rgba(0.2,0.2,0.2,1)");
         d3.select("#gas_piping").style("stroke-opacity", "1");
         d3.select("#gas_meter").style("fill", "rgba(0.2,0.2,0.2,1)");
@@ -1561,7 +1678,8 @@ let dataWaitTime = 10;
 let dayDataNotAvailable = false;
 
 let allMeasuredRooms = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13];
-let allEmphasisRooms = [1,2,3,4,5,6,7,8,9,10];
+let allControlledRooms = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+let allEmphasisRooms = allControlledRooms;
 
 const elementToMainGraphSettingMapping = {
     "gas_dial": { title: "gas_usage", types: ["gas_usage", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime) },
@@ -1591,7 +1709,6 @@ const elementToMainGraphSettingMapping = {
         hoveredCycle: 0
     }
 };
-
 
 let mainGraphContentLocked = false;
 const mainGraphDefaultSetting = elementToMainGraphSettingMapping["background"]; // Save so it can be reset
@@ -1750,7 +1867,6 @@ function redrawRoomHovers(rooms, emphasis) {
     }
 }
 
-
 function drawRoomInfo(roomNum) {//IN DEVELOPMENT
     let roomID = roomsDataAndState[roomNum].roomID;
     let roomName = roomsDataAndState[roomNum].roomName;
@@ -1777,9 +1893,16 @@ function drawRoomInfo(roomNum) {//IN DEVELOPMENT
 
 function drawMainGraph(graphData = null) {
     if (graphData == null) {
-        collectDataFromGitHub(mainGraphSetting.day, mainGraphSetting.types, drawMainGraph);
+        collectDataFromGitHub(
+            mainGraphSetting.types.map(type => ({
+                day: mainGraphSetting.day,
+                type: type
+            })),
+            drawMainGraph,
+        );
     }
     else {
+        graphData = graphData[mainGraphSetting.day];
         if (mainGraphSetting.types.length == Object.keys(graphData).length) {
             clearMainGraphs();
             let range;
@@ -1977,7 +2100,6 @@ function drawMainGraph(graphData = null) {
                     }
                     else if (mainGraphSetting.roomNumToPlot == 13) { // GÉP műhely
                         let roomMeasurementData = graphData["room_13_measurements"].sort((a, b) => a.h_of_day_frac - b.h_of_day_frac);
-                        console.log(roomMeasurementData)
                         range = d3.extent(roomMeasurementData.map(elem => elem['temp']));
                         drawPlot(
                             roomMeasurementData,
@@ -2254,6 +2376,9 @@ d3.xml(isMobile ? "canvas_mobile.svg" : "canvas.svg").then(fileData => {
     }
 
     runOnceThenSetInterval(joinMainGrapDataSourceToElements, 10);
+    if (!isMobile) {
+        runOnceThenSetInterval(addKPIsToTooltip, 10 * 60 * 1000);
+    }
     runOnceThenSetInterval(writeGasUsageToDial, 60 * 1000);
     runOnceThenSetInterval(getDataFromFirebase, 5 * 1000);
     runOnceThenSetInterval(drawMainGraph, 60 * 1000);
