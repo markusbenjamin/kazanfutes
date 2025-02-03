@@ -1708,6 +1708,7 @@ let roomTextOffsets = {
 }
 
 function redrawRoomHovers(rooms, emphasis) {
+    d3.selectAll(".room-emphasis").remove();
     rooms.forEach(roomNum => {
         if (roomNum != 11) {
             let roomID = roomsDataAndState[roomNum].roomID;
