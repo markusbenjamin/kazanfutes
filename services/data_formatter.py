@@ -4,6 +4,8 @@ Formats various raw data logs into D3 digestible JSON arrays.
 Data types:
 - daily measurements for each room (temperature, humidity)
 - daily set temps for each room
+- daily list of overrides for given day (not by issuance)
+- daily KPIs for rooms
 - daily external temp
 - daily gas consumption
 - daily heating state (boiler, pumps, rooms)
@@ -14,15 +16,15 @@ Data types:
 
 from utils.project import *
 
-parse_old_logs = False
-settings['dev'] = False
+parse_old_logs = True
+settings['dev'] = True
 
 export_path_prefix = ""
 
 if settings['dev']:
     settings['verbosity'] = False
     settings['log'] = False
-    export_path_prefix = 'dev/'
+    #export_path_prefix = 'dev/'
 
 #endregion
 
@@ -42,7 +44,8 @@ if parse_old_logs:
 else:
     digestion_days = [datetime.now()]
 
-data_types_to_digest = ['room_measurements','room_set_temps','room_overrides','external_temp','gas_consumption','heating_state','room_kpis']
+#data_types_to_digest = ['room_measurements','room_set_temps','room_overrides','external_temp','gas_consumption','heating_state','room_kpis']
+data_types_to_digest = ['room_kpis']
 
 #endregion
 
@@ -423,7 +426,7 @@ for digestion_day in digestion_days:
                         mean_comfort_diff = mean_temp - mean_set_temp
                         
                         mean_control_diff = mean_state * mean_comfort_diff
-                        if mean_control_diff < 0.5:
+                        if mean_control_diff < -0.5:
                             daily_degree_hours_below += mean_control_diff*bin_minutes/60
                         elif mean_control_diff > 0.5:
                             daily_degree_hours_above += mean_control_diff*bin_minutes/60
