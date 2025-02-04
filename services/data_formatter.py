@@ -16,15 +16,15 @@ Data types:
 
 from utils.project import *
 
-parse_old_logs = True
-settings['dev'] = True
+parse_old_logs = False
+settings['dev'] = False
 
 export_path_prefix = ""
 
 if settings['dev']:
     settings['verbosity'] = False
     settings['log'] = False
-    #export_path_prefix = 'dev/'
+    export_path_prefix = 'dev/'
 
 #endregion
 
@@ -44,8 +44,7 @@ if parse_old_logs:
 else:
     digestion_days = [datetime.now()]
 
-#data_types_to_digest = ['room_measurements','room_set_temps','room_overrides','external_temp','gas_consumption','heating_state','room_kpis']
-data_types_to_digest = ['room_kpis']
+data_types_to_digest = ['room_measurements','room_set_temps','room_overrides','external_temp','gas_consumption','heating_state','room_kpis']
 
 #endregion
 
