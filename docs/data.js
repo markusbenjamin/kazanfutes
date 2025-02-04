@@ -562,7 +562,7 @@ function collectDataFromGitHub(dataToCollect, drawFunction) {
                     fetchNext(index + 1);
                 })
                 .catch(err => {
-                    console.error("Error fetching or processing data:", err);
+                    console.error("Error fetching or processing data: "+day+"/"+type, err);
                     // Even if error, we proceed to the next item
                     fetchNext(index + 1);
                 });
