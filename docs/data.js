@@ -140,12 +140,13 @@ function setupTooltip() {
                             roomTooltipData.below ?
                                 "<br>Alulfűtés: " + roundTo(roomTooltipData.below.today, 0.1) + " Kh (átl.: " + roundTo(roomTooltipData.below.avg, 0.1) + " Kh)"
                                 : ""
-                        ) +
-                        (
-                            roomTooltipData.turnon ?
-                                "<br>Körindítás: " + roundTo(100 * roomTooltipData.turnon.today, 1) + "% (átl.: " + roundTo(100 * roomTooltipData.turnon.avg, 1) + "%)"
-                                : ""
                         )
+                        // +
+                        //(
+                        //    roomTooltipData.turnon ?
+                        //        "<br>Körindítás: " + roundTo(100 * roomTooltipData.turnon.today, 1) + " (átl.: " + roundTo(100 * roomTooltipData.turnon.avg, 1) + ")"
+                        //        : ""
+                        //)
                     )
                         .style("left", (event.pageX + 5) + "px")
                         .style("top", (event.pageY - 28) + "px");
