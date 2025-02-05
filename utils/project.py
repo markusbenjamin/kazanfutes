@@ -339,14 +339,10 @@ class JSONNodeAtURL:
 #endregion
 
 #region GitHub
-
 def sync_dir_with_repo(project_dir_path, commit_message):
     """
     Pushes a project directory to the GitHub repository.
     """
-
-    import subprocess
-
     try: 
         os.chdir(os.path.join(get_project_root(), project_dir_path))
     except (FileNotFoundError, PermissionError, OSError):
@@ -376,6 +372,31 @@ def sync_dir_with_repo(project_dir_path, commit_message):
         raise ModuleException(f"git command failed",severity=2)
     except Exception:
         raise ModuleException(f"unexpected error while pushing {project_dir_path} to repo",severity=2)
+    
+def check_index_lock(stale_threshold=300):
+    """
+    Checks the .git/index.lock file in the given project directory.
+    
+    If the lock file exists:
+      - If its age is greater than stale_threshold seconds, remove it.
+      - Otherwise, raise a ModuleException to abort the sync process.
+      
+    Raises:
+      ModuleException: If the lock file exists and is still fresh.
+    """
+    lock_file = os.path.join(get_project_root(), '.git', 'index.lock')
+    
+    if os.path.isfile(lock_file):
+        file_age = time.time() - os.path.getmtime(lock_file)
+        if file_age > stale_threshold:
+            os.remove(lock_file)
+            report(f"Removed stale lock file: {lock_file}",verbose=True)
+        else:
+            raise ModuleException(
+                f"Lock file exists and is fresh. Aborting sync to avoid conflicts. ({lock_file})", 
+                severity=1
+            )
+
 #endregion
 
 #endregion

@@ -6,6 +6,7 @@ from utils.project import *
 
 success = False
 try:
+    check_index_lock()
     sync_dir_with_repo('services/', 'Sync services.')
     sync_dir_with_repo('utils/', 'Sync utils.')
     success = True

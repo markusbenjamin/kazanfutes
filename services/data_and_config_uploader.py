@@ -6,6 +6,7 @@ from utils.project import *
 
 success = False
 try:
+    check_index_lock()
     sync_dir_with_repo('data/', 'Automatic data push.')
     sync_dir_with_repo('config/', 'Automatic config push.')
     success = True
