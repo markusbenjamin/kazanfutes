@@ -823,9 +823,31 @@ def get_room_temps_and_humidity(just_controlled:bool = True):
         
         return room_temps_and_hums
     except ModuleException:
-        raise ModuleException("couldn't read sensor state due to", severity = 2)
+        raise ModuleException("couldn't read temp and humidity due to", severity = 2)
     except Exception:
-        raise ModuleException("unexpected error while reading sensor state", severity = 2)
+        raise ModuleException("unexpected error while reading temp and humidity", severity = 2)
+
+def get_oktopusz_presence():
+    """
+    Returns the state of the Oktopusz presence sensor.
+    """
+
+    try:
+        sensors_state = read_sensors()
+
+        last_updated = None
+        presence = -1
+
+        for sensor_id, sensor in sensors_state:
+            if sensor.name == 'Oktopusz_jelenlet':
+                last_updated = datetime.strptime(sensor.raw['state']['lastupdated'], "%Y-%m-%dT%H:%M:%S.%f").replace(tzinfo=pytz.UTC).astimezone(tzlocal.get_localzone()).strftime(settings['timestamp_format'])
+                presence = sensor.presence
+        
+        return {'last_updated':last_updated, 'presence':presence}
+    except ModuleException:
+        raise ModuleException("couldn't read presence sensor due to", severity = 2)
+    except Exception:
+        raise ModuleException("unexpected error while reading presence sensor", severity = 2)
 
 #endregion
 
