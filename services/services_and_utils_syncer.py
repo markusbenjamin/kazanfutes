@@ -4,6 +4,9 @@ Syncs the contents of the services and utils folders with the online repo.
 
 from utils.project import *
 
+settings['dev'] = True
+settings['verbosity'] = True
+
 success = False
 try:
     check_index_lock()
