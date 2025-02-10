@@ -234,19 +234,38 @@ function getDataFromFirebase() {
             });
             let averageControlDiff = (totalControlDiff - (isValidNumber(controlDiffs[10]) ? controlDiffs[10] : 0)) / (averagerCount - 1);
 
-            const oktopuszKeramiaTemp = roundTo((systemJSON.state['measured_temps'][11] + systemJSON.state['measured_temps'][12]) / 2, 0.1);
+            const oktopuszKeramia1LastUpdated = systemJSON.state['sensor_last_updated'][11];
+            const oktopuszKeramia2LastUpdated = systemJSON.state['sensor_last_updated'][12];
+            const oktopuszKeramiaTimeSinceSensor1Update = timePassedSince(dateFromTimestamp(oktopuszKeramia1LastUpdated));
+            const oktopuszKeramiaTimeSinceSensor2Update = timePassedSince(dateFromTimestamp(oktopuszKeramia2LastUpdated));
+
+            let oktopuszKeramiaTemp = 0;
+            let oktopuszKeramiaLastUpdated = '2024-10-15-00-00-00'
+            if (oktopuszKeramiaTimeSinceSensor1Update < 120 && oktopuszKeramiaTimeSinceSensor2Update < 120) {
+                oktopuszKeramiaTemp = roundTo((systemJSON.state['measured_temps'][11] + systemJSON.state['measured_temps'][12]) / 2, 0.1);
+                oktopuszKeramiaLastUpdated = oktopuszKeramia1LastUpdated
+            }
+            else if (oktopuszKeramiaTimeSinceSensor1Update < 120) {
+                oktopuszKeramiaTemp = roundTo(systemJSON.state['measured_temps'][11], 0.1);
+                oktopuszKeramiaLastUpdated = oktopuszKeramia1LastUpdated
+            }
+            else {
+                oktopuszKeramiaTemp = roundTo(systemJSON.state['measured_temps'][12], 0.1);
+                oktopuszKeramiaLastUpdated = oktopuszKeramia2LastUpdated
+            }
+
             updateRoomColor(
                 "OktopuszKeramia",
                 oktopuszKeramiaTemp,
-                timestamp()
+                oktopuszKeramiaLastUpdated
             );
-            roomsDataAndState[11].temp = oktopuszKeramiaTemp;
+            roomsDataAndState[11].temp = oktopuszKeramiaTemp == 0 ? "szenzor hiba" : oktopuszKeramiaTemp;
 
             const GEPMuhelyTemp = roundTo(systemJSON.state['measured_temps'][13], 0.1);
             updateRoomColor(
                 "GEP",
                 GEPMuhelyTemp,
-                timestamp()
+                systemJSON.state['sensor_last_updated'][13]
             );
             roomsDataAndState[13].temp = GEPMuhelyTemp;
 
@@ -562,7 +581,7 @@ function collectDataFromGitHub(dataToCollect, drawFunction) {
                     fetchNext(index + 1);
                 })
                 .catch(err => {
-                    console.error("Error fetching or processing data: "+day+"/"+type, err);
+                    console.error("Error fetching or processing data: " + day + "/" + type, err);
                     // Even if error, we proceed to the next item
                     fetchNext(index + 1);
                 });
@@ -1134,6 +1153,9 @@ const roomsDataAndState = {
 
 function updateRoomColor(roomId, temp, lastUpdated) {
     if (timePassedSince(dateFromTimestamp(lastUpdated)) > 2 * 60) {
+        if(roomId == "OktopuszKeramia"){
+            console.log(timePassedSince(dateFromTimestamp(lastUpdated)))
+        }
         d3.select("#" + roomId).style("fill", "rgb(31, 31, 32, 0.8)");
     }
     else {
