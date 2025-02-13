@@ -827,7 +827,7 @@ def get_room_temps_and_humidity(just_controlled:bool = True):
     except Exception:
         raise ModuleException("unexpected error while reading temp and humidity", severity = 2)
 
-def get_oktopusz_presence():
+def get_presence():
     """
     Returns the state of the Oktopusz presence sensor.
     """
@@ -839,7 +839,7 @@ def get_oktopusz_presence():
         presence = -1
 
         for sensor_id, sensor in sensors_state:
-            if sensor.name == 'Oktopusz_jelenlet':
+            if sensor.name == 'presence':
                 last_updated = datetime.strptime(sensor.raw['state']['lastupdated'], "%Y-%m-%dT%H:%M:%S.%f").replace(tzinfo=pytz.UTC).astimezone(tzlocal.get_localzone()).strftime(settings['timestamp_format'])
                 presence = sensor.presence
         
@@ -848,6 +848,7 @@ def get_oktopusz_presence():
         raise ModuleException("couldn't read presence sensor due to", severity = 2)
     except Exception:
         raise ModuleException("unexpected error while reading presence sensor", severity = 2)
+
 
 #endregion
 
@@ -1044,6 +1045,12 @@ def read_sensors():
     Extracts sensor states from overall ZigBee mesh state.
     """
     return read_deconz_state().sensors.items()
+
+def read_lights():
+    """
+    Extracts lights' states from overall ZigBee mesh state.
+    """
+    return read_deconz_state().lights.items()
 #endregion
 
 #region Tuya
