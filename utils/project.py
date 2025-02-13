@@ -829,7 +829,7 @@ def get_room_temps_and_humidity(just_controlled:bool = True):
 
 def get_presence():
     """
-    Returns the state of the Oktopusz presence sensor.
+    Returns the state of the presence sensor.
     """
 
     try:
@@ -1051,6 +1051,62 @@ def read_lights():
     Extracts lights' states from overall ZigBee mesh state.
     """
     return read_deconz_state().lights.items()
+
+def check_light_reachability(name):
+    """
+    Get the id associated with a light by name.
+    """
+    for id,info in read_lights():
+        if info.raw['state'] == name:
+            return info.raw['state']['reachable']
+
+def get_light_id_from_name(name):
+    """
+    Get the id associated with a light by name.
+    """
+    for id,info in read_lights():
+        if info.raw['name'] == name:
+            return id
+
+def set_light_state_by_name(name, state):
+    """
+    Set the state of a light in the ZigBee mesh just by name.
+    """
+    set_light_state(get_light_id_from_name(name), name, state)
+
+import requests
+
+def set_light_state(id, name, state):
+    """
+    Set the state of a light in the ZigBee mesh.
+    Returns True if successful, False otherwise.
+    """
+    deconz_access_params = get_deconz_access_params()
+    base_url = f"{deconz_access_params['api_url']}/api/{deconz_access_params['api_key']}"
+    lights_url = f"{base_url}/lights"
+
+    if not check_light_reachability(name):
+        raise ModuleException(f"light {name} unreachable, cannot set state")
+
+    try:
+        put_response = requests.put(
+            f"{lights_url}/{id}/state",
+            json=state,
+            timeout=5  # Prevent hanging indefinitely
+        )
+        put_response.raise_for_status()
+
+        response_json = put_response.json()
+        if isinstance(response_json, list) and response_json:
+            success = any("success" in entry for entry in response_json)
+        else:
+            success = False
+
+        report(f"{put_response.status_code} {put_response.reason}: {response_json}", verbose=True)
+        return success
+
+    except requests.RequestException as e:
+        raise ModuleException(f"cannot set state of light {name}: {e}")
 #endregion
 
 #region Tuya
