@@ -1,0 +1,70 @@
+Menetrend:
+    megvan:
+        //- GPIO interfaceinget befejezni
+        //- hőmérőkiosztást kitalálni és új hőmérőket hozzáadni
+        //- elmenni lámpáért és dobozért műhelybe
+        //- rendben eltenni mindent
+    
+    okt. 14.:
+        //- gázfogyasztás mérését elindítani
+            //- fizikai setup
+            //- GPIO interfacelt rögzítés logikus helyre
+            //- service
+        //- hőmennyiségmérők adatrögzítését elindítani
+            //- fizikai setup + webcam test
+            //- utána crop szinten
+            //- service + timer
+        //- heating control dev
+            //- commands archive felülíródik
+            //- rendszer, kör és szoba szintű ON/OFF
+            //- firebasere küldje fel a system on/offot és a cycle allow és onoffokat
+            //- firebasere küldje fel, hogy melyik szobának mi az állapota
+            //- kör szintű időzíthetőséget beépíteni
+            //- heating_control service-t és timert megírni
+
+    héten:
+        //- vmi 0.1-es dashboard firebase alapján
+        - QR kódos kapcsolhatóság:
+            //- sémát kitalálni
+            //- QR kód --> fix GitHub pages link
+            //- linkek: AppsScriptet indítanak el az override SpreadSheetben, ami egy másik sheetre teszi be a parancsot
+            //- a schedule updaterben be kell állítani, hogy azt is letöltse, és simítsa egybe
+            //- QR kódokat legenerálni és tesztelni
+            //- QR kódokat kitenni
+            //- RasPin frissíteni a schedule updatert, hogy kezelje az új adatforrást
+        - schedule megjelenítés
+        //- szobák heti ciklusát csekkolni, elkezdeni leegyeztetni felhasználókkal
+    
+    később:
+        - heating control dev tovább
+            //- kezdjen valamit azzal, ha régi a hőmérséklet adat egy szobából
+            - jelenlét szenzor Lahmacunba
+            - lehessen hozzáadni kapcsolható hősugárzót
+            - ez a sor problémás, ha törlődik egy hőmérő a rendszerből: measured_temps[room] = 0.5 # For non-temp controlled rooms
+        - system integrity checker
+        - eszközlistát megírni
+        //- kinézni új helyeket az égőknek
+        //- meglévő égőket barátságos színűre állítani / lekapcsolni
+        - munkaállomást kiépíteni
+        - dashboardot felállítani
+        - helyi GUI-t felállítani
+
+
+Dashboard dev:
+- random ötletek:
+    - Oktopusz is szerepeljen, mint lekapcsolt, nem kontrollált szoba
+
+
+Hibák:
+- nem frissit a schedule updater -- egyáltalán mi az oka? olyan, mintha "tartósan" elromlana egy sessionben, ha egyszer nem ment át neki a frissités, akkor többet meg sem próbálja? vagy vmi ilyesmi -- lehet, h ennek se folyamatosan kéne futnia?
+    - ?!
+- leesik egy hőmérő
+    - modellezze a hőmérséklet esést kimértek alapján és csak aszerint kapcsolja
+- nem veszem észre, hogy nem megy valamelyik service
+    - napi csekk, hogy lefutott-e mindegyik
+- tovább megy egy service script úgy, hogy nem tudott lefutni valamelyik alapozó rész:
+    - legyen continuation parameter a service scripteknél ha építenek az előző részekre
+- kiesik egy égő:
+    // - legyen idővezérelt fallback program
+    // - ne legyen weak link a hálózatban
+    - legyen script ami végigteszteli az összes égőt

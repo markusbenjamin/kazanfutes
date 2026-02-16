@@ -1,0 +1,22 @@
+# /etc/systemd/system/%SERVICE_NAME%.service
+[Unit]
+Description=Run %SERVICE_NAME%
+After=network.target
+Wants=media-pi-program_stick.mount
+BindsTo=media-pi-program_stick.mount
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/media/pi/program_stick/kazanfutes/services/
+Environment="HOME=/home/pi"
+Environment="PYTHONPATH=/media/pi/program_stick/kazanfutes"
+# optional key unlock
+ExecStartPre=-/usr/bin/ssh-agent /bin/bash -c 'ssh-add /home/pi/.ssh/id_rsa; sleep 1'
+# wait for mount
+ExecStartPre=/bin/sh -c 'while ! mountpoint -q /media/pi/program_stick; do sleep 1; done'
+# main command
+ExecStart=%EXECUTABLE_PATH%
+
+[Install]
+WantedBy=multi-user.target

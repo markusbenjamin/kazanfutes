@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Kazán-Gólya Fűtés: kérés</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <script src="codebase.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/two.js/0.7.0/two.min.js"></script>
+</head>
+
+<body>
+    <h1>leadott kérés</h1>
+    <div class="container">
+        <div id="trackerDrawing"></div>
+        <ul>
+            <li><a href="index.html">> kezdőoldal</a></li>
+            <li><a href="dashboard.html">> rendszerállapot</a></li>
+        </ul>
+    </div>
+    <script>
+        function fetchSubmissionState() {
+            let loadParams;
+            params = new URLSearchParams(window.location.search);
+            loadParams = {
+                ref_source: params.get("ref_source") || 'qr'
+            }
+            fetchJSONEndpoint('https://raw.githubusercontent.com/markusbenjamin/kazanfutes/refs/heads/main/utils/settings.json').then(data => {
+                let heatingControlConfig = data;
+                fetchJSONEndpoint(heatingControlConfig["firebase_url"] + "/update.json").then(data => {
+                    let postFix = loadParams['ref_source'] == 'form' ? '' : '_qr'
+                    let secondsSinceLastFormEntry = timePassedSince(dateFromTimestamp(data['override_rooms' + postFix]['last_update_timestamp']), granularity = 'seconds')
+                    console.log("secondsSinceLastFormEntry: " + secondsSinceLastFormEntry)
+                    if (secondsSinceLastFormEntry < 60) {
+                        fetchJSONEndpoint(heatingControlConfig["firebase_url"] + "/schedule.json").then(data => {
+                            let secondsSinceLastScheduleUpdate = timePassedSince(dateFromTimestamp(data['last_updated']), granularity = 'seconds')
+                            console.log("secondsSinceLastScheduleUpdate: " + secondsSinceLastScheduleUpdate)
+                            if (secondsSinceLastScheduleUpdate < 60) {
+                                fetchJSONEndpoint(heatingControlConfig["firebase_url"] + "/system.json").then(data => {
+                                    let secondsSinceLastControlRun = timePassedSince(dateFromTimestamp(data['control']['last_updated']), granularity = 'seconds')
+                                    console.log("secondsSinceLastControlRun: " + secondsSinceLastControlRun)
+                                    if (secondsSinceLastControlRun < 10) {
+                                        drawStages(3, true)
+                                        setTimeout(() => {
+                                            window.location.href = "./dashboard.html";
+                                        }, 3000);
+                                    }
+                                    {
+                                        drawStages(3, false)
+                                    }
+                                });
+                            }
+                            else {
+                                drawStages(2, false)
+                            }
+                        });
+                    }
+                    else {
+                        drawStages(1, false)
+                    }
+                });
+            });
+        }
+
+        function drawStages(stage, stageFinished) {
+            let baseHeight = 150
+            let canvasWidth = 0
+            let canvasHeight = 0
+            let two = null
+            function setUpScene(numOfStages) {
+                canvasWidth = 600;
+                canvasHeight = baseHeight * numOfStages;
+                const trackerDrawingElement = document.getElementById('trackerDrawing');
+                trackerDrawingElement.innerHTML = ''
+                two = new Two({ width: canvasWidth, height: canvasHeight, background: '#ffffff' }).appendTo(trackerDrawingElement);
+            }
+
+            function stageDrawing(two, x, y, w, h, text) {
+                const roundedRect = two.makeRoundedRectangle(x, y, w, h, 25);
+                roundedRect.fill = '#ffffff';
+                roundedRect.stroke = '#000000ab';
+                roundedRect.linewidth = 3;
+
+                const stageText = two.makeText(text, x, y);
+                stageText.family = "Consolas";
+                stageText.fill = '#000000ab';
+                stageText.size = 24; // Font size
+            }
+
+            let stageTexts = ["kérés elküldve", "kérés regisztrálva", "fűtésrendszer látta"]
+
+            setUpScene(stage)
+            for (let i = 0; i < stage; i++) {
+                //let flicker = +(Math.floor(Date.now() / 100) % 2 === 0)
+                if (i + 1 < stage) {
+                    const line = two.makeLine(canvasWidth / 2, (2 * i + 1) * baseHeight / 2, canvasWidth / 2, (2 * (i + 1) + 1) * baseHeight / 2)
+                    line.stroke = '#000000ab'; // Black line color
+                    line.linewidth = 4; // Line thickness
+                }
+                let decorator = i + 1 == stage ? (stageFinished ? ' ✓' : '?') : ' ✓'
+                stageDrawing(two, canvasWidth / 2, (2 * i + 1) * baseHeight / 2, canvasWidth * 0.5, baseHeight * 0.8, stageTexts[i] + decorator)
+            }
+
+            two.update();
+        }
+
+        fetchSubmissionState();
+        setInterval(fetchSubmissionState, 1000);
+    </script>
+</body>
+
+</html>

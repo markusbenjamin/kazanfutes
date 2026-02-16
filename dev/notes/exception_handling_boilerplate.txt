@@ -1,0 +1,22 @@
+In module functions:
+
+	try:
+		do_stuff()
+	except tuple_of_anticipable_exceptions_related_to_error_type_I:
+		raise ModuleException("type I error occured",severity = severity_determined_by_context)
+	except tuple_of_anticipable_exceptions_related_to_error_type_II:
+		raise ModuleException("type II error occured",severity = severity_determined_by_context)
+	except Exception:
+		raise ModuleException("unexpected error")
+	finally:
+		do_cleanup()
+
+In service scripts:
+	try:
+		do_stuff()
+	except ModuleException as e: # If a module function raises an error in do_stuff()
+		ServiceException("Module error", original_exception=e, severity = severity_determined_by_context)
+	except Exception: # If something else goes wrong either in a module function or somewhere else.
+		ServiceException("Service error", severity = severity_determined_by_context)
+	finally:
+		do_cleanup()

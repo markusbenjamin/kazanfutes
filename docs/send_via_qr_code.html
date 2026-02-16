@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="codebase.js"></script>
+    <title>Kazán-Gólya Fűtés: azonnali fűtés kérés QR kódon keresztül</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+
+<body>
+    <h1>azonnali kérés QR kódon keresztül</h1>
+    <div id="display-title"></div> <!-- Placeholder to show parameters -->
+    <div id="display-params"></div> <!-- Placeholder to show parameters -->
+    <div id="redirect"></div> <!-- Placeholder to show countdown -->
+
+    <script>
+        // Function to get URL parameters
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+
+            let roomNameIncoming = params.get("room_name");
+            let roomNameMapping = {
+                "Oz": "Oktopusz",
+                "Gk": "Gólyafészek",
+                "PK": "PK",
+                "SK": "SZGK",
+                "Me": "Mérce",
+                "Ln": "Lahmacun",
+                "Ga": "Gólyairoda",
+                "km": "kisterem",
+                "vr": "vendégtér",
+                "Tz": "Trafóház"
+            };
+
+            let now = new Date()
+            let roomName = roomNameMapping[roomNameIncoming[0] + roomNameIncoming[roomNameIncoming.length - 1]]
+            return {
+                title: params.get("title") || "kérés címe",
+                room_name: roomName || "szoba neve",
+                google_date: params.get("date") || googleTimestamp().slice(0, 10),
+                human_date: humanTimestamp().slice(0, 11),
+                hour_of_day: params.get("hour") || now.getHours(),
+                duration: Number(params.get("duration")) || null,
+                until: Number(params.get("until")) || null,
+                temp: Number(params.get("temp")) || "hány fok",
+                redirect: params.get("redirect") == 0 ? false : true || false
+            };
+        }
+
+        // Function to send data to Google Sheets
+        function sendDataToGoogleSheet(data) {
+            fetch("https://script.google.com/macros/s/AKfycbxBNYFOLjZ2-Cmjt6mJqcsVGBo_XCtO1MDlwcYf8Hctefu0S9VxLryH3OVDATUhYwsiqw/exec", {
+                method: "POST",
+                mode: "no-cors",  // Prevent CORS issues
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => {
+                    console.log("Data sent successfully:");
+                    console.log(JSON.stringify(data));
+                })
+                .catch(error => console.error("Error:", error));
+        }
+
+        window.onload = function () {
+            const loadParams = getUrlParams();
+
+            const displayTitleArea = document.getElementById("display-title");
+            const styleStringTitle = 'style="font-size:30px; text-align: center; font-weight:bold"'
+            const requestTitle = loadParams.title.replace(/_/g, ' ');
+            displayTitleArea.innerHTML = `<p ${styleStringTitle}>${loadParams.room_name}: ${requestTitle}</p>`;
+
+            const styleStringParams = 'style="font-size:28px; text-align: center;"'
+
+            let expiryString = ``
+            let durationToSend = null
+            if (loadParams.duration != null) {
+                const expiryTimestamp = humanTimestamp(addTimeToDate(dateFromTimestamp(
+                    `${timestamp().slice(0, 10)}-${loadParams.hour_of_day}-00-00`
+                ), loadParams.duration, 'hours'))
+                expiryString = `<p ${styleStringParams}>lejár: ${loadParams.duration} óra múlva (${expiryTimestamp})</p>`
+
+                durationToSend = loadParams.duration
+            }
+            else if (loadParams.until != null) {
+                const decoratorPre = loadParams.until == 18 ? 'ma délutánig (' : (loadParams.until == 24 ? 'ma éjfélig (' : '')
+                const decoratorPost = loadParams.until == 18 ? ')' : (loadParams.until == 24 ? ')' : '')
+                const expiryTimestamp = `${decoratorPre}${loadParams.human_date} ${loadParams.until}:00${decoratorPost}`
+                expiryString = `<p ${styleStringParams}>${expiryTimestamp}</p>`
+
+
+                nowTimestamp = timestamp()
+                untilTimestamp = `${timestamp().slice(0, 10)}-${loadParams.until}-00-00`
+                nowDate = dateFromTimestamp(nowTimestamp)
+                untilDate = dateFromTimestamp(untilTimestamp)
+                durationToSend = roundTo((untilDate - nowDate) / (1000 * 60 * 60), 1)
+            }
+
+            const displayParamsArea = document.getElementById("display-params");
+            displayParamsArea.innerHTML = `
+            <p ${styleStringParams}>${loadParams.temp} °C</p>
+            <p ${styleStringParams}>mostantól (${humanTimestamp()})</p>
+            ${expiryString}
+            `;
+
+            const override_data = {
+                google_timestamp: googleTimestamp(),
+                room_name: loadParams.room_name,
+                date: loadParams.google_date,
+                hour_of_day: loadParams.hour_of_day,
+                duration: durationToSend,
+                temp: loadParams.temp
+            }
+
+            if (hasNoNullValues(override_data)) {
+                sendDataToGoogleSheet(override_data);
+            }
+
+            if (hasNoNullValues(override_data) && loadParams.redirect) {
+                let countdownTime = 5;
+                const redirectElement = document.getElementById("redirect");
+
+                const countdownInterval = setInterval(function () {
+                    countdownTime--;
+
+                    const styleStringCountdown = 'style="font-size:20px; text-align: center;"'
+                    //redirectElement.innerHTML = `<p ${styleStringCountdown}>ugrás rendszerállapotra ${countdownTime} másodpercen belül...</p>`
+
+                    if (countdownTime <= 0) {
+                        clearInterval(countdownInterval);
+                        window.location.href = "./dashboard.html?ref_source=qr";
+                    }
+                }, 1000);
+            }
+        };
+    </script>
+</body>
+
+</html>

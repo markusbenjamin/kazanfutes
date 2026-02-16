@@ -1,0 +1,72 @@
+@font-face {
+    font-family: 'Consolas';
+    src: url('Consolas.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    background-color: rgba(245, 245, 0, 0);
+    font-family: Consolas, monospace;
+    /* Set the font */
+    /*color: #e8cc15;*/
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    text-align: center;
+    margin: 0 auto;
+    padding-top: 30px;
+    padding-bottom: 0px;
+    width: 80%;
+}
+
+h1 {
+    font-size: 36px;
+    color: #000000ab;
+    padding-top: 25px;
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+li {
+    margin: 20px 0;
+}
+
+a {
+    text-decoration: none;
+    font-size: 36px;
+    color: #000000ab;
+}
+
+a:hover {
+    text-decoration: none;
+    color: #000000;
+}
+
+table {
+    margin: 0 auto;
+    border-collapse: collapse;
+    width: 70%;
+}
+
+@media (max-width: 600px) {
+    table {
+        width: 95%;
+    }
+}
+
+th,
+td {
+    padding: 10px;
+    text-align: center;
+    border: 2px dotted #000000ab;
+    color: #000000;
+    font-size: 20px;
+}

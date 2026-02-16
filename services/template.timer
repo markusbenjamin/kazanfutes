@@ -1,0 +1,18 @@
+# /etc/systemd/system/%TIMER_NAME%.timer
+[Unit]
+Description=Run %TIMER_NAME% every 5 minutes
+
+[Timer]
+# run every 5 minutes past the hour
+OnCalendar=*:0/5
+# alternative: run at minute 0,15,30,45
+# OnCalendar=*:0,15,30,45
+# alternative: run every 5 minutes starting at 02 past the hour
+# OnCalendar=*:2/5
+# alternative: run at exact times (hh:mm)
+# OnCalendar=00:00,06:30,18:45
+Persistent=true
+WakeSystem=false     ; if on laptop with suspend
+
+[Install]
+WantedBy=timers.target

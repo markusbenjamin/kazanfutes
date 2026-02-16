@@ -1,0 +1,169 @@
+{
+    "boiler": {
+        "GPIO": 6
+    },
+    "gasmeter": {
+        "GPIO": 17
+    },
+    "cycles": {
+        "1": {
+            "name": "Kazán 1",
+            "pump": {
+                "id": "bfda700f216ded0696ns02",
+                "ip": "192.168.29.77",
+                "key": "kW@O(aG7Q4[^+0zm"
+            },
+            "rooms": [
+                "1",
+                "2",
+                "6",
+                "7",
+                "13"
+            ]
+        },
+        "2": {
+            "name": "Kazán 2",
+            "pump": {
+                "id": "bfc349ab71c1876252nmss",
+                "ip": "192.168.29.74",
+                "key": "[X*(AZd#$QMtH@zm"
+            },
+            "rooms": [
+                "3",
+                "4",
+                "5",
+                "11",
+                "12"
+            ]
+        },
+        "3": {
+            "name": "Gólya emelet",
+            "pump": {
+                "id": "bf0e377e0f305dbe9bv5yl",
+                "ip": "192.168.29.90",
+                "key": "A2h-kJv*|Uqy#Ju*"
+            },
+            "rooms": [
+                "8",
+                "9"
+            ]
+        },
+        "4": {
+            "name": "Gólya földszint",
+            "pump": {
+                "id": "1720430170039f6886e5",
+                "ip": "192.168.29.53",
+                "key": "om;kaE;)~~ZtPeF."
+            },
+            "rooms": [
+                "10"
+            ]
+        }
+    },
+    "rooms": {
+        "1": {
+            "name": "Oktopusz",
+            "sensor": "Sonoff10",
+            "pres": "Pres5",
+            "thermostats": "77;79",
+            "cycle": "1",
+            "controlled": true
+        },
+        "2": {
+            "name": "Gólyafészek",
+            "sensor": "Sonoff4",
+            "pres": "Pres3",
+            "thermostats": "71;75",
+            "cycle": "1",
+            "controlled": true
+        },
+        "3": {
+            "name": "PK",
+            "sensor": "Sonoff11",
+            "pres": "Pres8",
+            "thermostats": "42",
+            "cycle": "2",
+            "controlled": true
+        },
+        "4": {
+            "name": "SZGK",
+            "sensor": "Sonoff12",
+            "pres": "Pres1",
+            "thermostats": "59",
+            "cycle": "2",
+            "controlled": true
+        },
+        "5": {
+            "name": "Mérce",
+            "sensor": "Sonoff13",
+            "pres": "Pres11",
+            "thermostats": "63",
+            "cycle": "2",
+            "controlled": true
+        },
+        "6": {
+            "name": "Lahmacun",
+            "sensor": "Sonoff5",
+            "pres": "Pres7",
+            "thermostats": "69",
+            "cycle": "1",
+            "controlled": true
+        },
+        "7": {
+            "name": "Gólyairoda",
+            "sensor": "Sonoff14",
+            "pres":"Pres2",
+            "thermostats":"65",
+            "cycle": "1",
+            "controlled": true
+        },
+        "8": {
+            "name": "kisterem",
+            "sensor": "Sonoff6",
+            "pres": false,
+            "thermostats": true,
+            "cycle": "3",
+            "controlled": true
+        },
+        "9": {
+            "name": "vendégtér",
+            "sensor": "Sonoff7",
+            "cycle": "3",
+            "pres": false,
+            "thermostats": true,
+            "controlled": true
+        },
+        "10": {
+            "name": "Trafóház",
+            "sensor": "Sonoff2",
+            "cycle": "4",
+            "pres": false,
+            "thermostats": true,
+            "controlled": true
+        },
+        "11": {
+            "name": "Oktopusz kerámia",
+            "sensor": "Sonoff3",
+            "cycle": "2",
+            "pres": false,
+            "thermostats": false,
+            "controlled": false
+        },
+        "12": {
+            "name": "DiósEdit",
+            "sensor": "Sonoff1",
+            "cycle": "2",
+            "pres": "Pres10",
+            "thermostats": "53",
+            "controlled": true
+        },
+        "13": {
+            "name": "GÉPműhely",
+            "sensor": "Sonoff8",
+            "pres": "Pres4",
+            "thermostats": "57",
+            "cycle": "1",
+            "controlled": true
+        }
+    }
+}
