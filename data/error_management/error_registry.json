@@ -4629,5 +4629,16 @@
         "reported_timestamp": "2026-02-20-00-05-16",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to update local copy of override_rooms_qr: failed to set up Google Sheets API: The read operation timed out (TimeoutError).",
+        "severity": 3,
+        "origin": "schedule_and_config_updater.py/update_local_scheduling_files:181 --> project.py/download_google_sheet_to_2D_array:2696",
+        "origin_timestamp": "2026-02-20-03-19-58",
+        "registration_timestamp": "2026-02-20-03-19-58",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
