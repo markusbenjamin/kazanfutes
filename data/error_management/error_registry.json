@@ -4684,5 +4684,16 @@
         "reported_timestamp": "2026-03-01-12-10-13",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to update local heating control config: failed to interact with node 'update' via patch: HTTPSConnectionPool(host='kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app', port=443): Max retries exceeded with url: /update/heating_control_config.json (Caused by SSLError(SSLZeroReturnError(6, 'TLS/SSL connection has been closed (EOF) (_ssl.c:992)'))) (SSLError).",
+        "severity": 2,
+        "origin": "schedule_and_config_updater.py/update_local_heating_control_config:102 --> project.py/write:291 --> project.py/interact:271",
+        "origin_timestamp": "2026-03-15-06-51-55",
+        "registration_timestamp": "2026-03-15-06-51-55",
+        "reported": true,
+        "reported_timestamp": "2026-03-15-06-55-11",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
