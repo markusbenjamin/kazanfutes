@@ -1160,7 +1160,7 @@ def delete_image(relative_path):
     except Exception:
         raise ModuleException(f"couldn't delete image at {relative_path}")
 
-def capture_image_to_disk(relative_path:str):
+def capture_image_to_disk(relative_path:str,name:str = None):
     """
     Uses fswebcam to capture an image using the first accessible webcam,
     then saves it to the relative project path given as a timestamped jpg.
@@ -1169,7 +1169,10 @@ def capture_image_to_disk(relative_path:str):
     if not os.path.exists(full_path):
         os.makedirs(full_path)
     
-    image_filename = f'{timestamp()}.jpg'
+    if name:
+        image_filename = f'{name}.jpg'
+    else:
+        image_filename = f'{timestamp()}.jpg'
     full_save_path = os.path.join(full_path,image_filename)
     relative_save_path = os.path.join(relative_path,image_filename)
     
