@@ -4794,5 +4794,16 @@
         "reported_timestamp": "2026-04-09-20-30-16",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to read and log radiator temperatures: failed to interact with node 'system' via patch: HTTPSConnectionPool(host='kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app', port=443): Max retries exceeded with url: /system/state.json (Caused by SSLError(SSLZeroReturnError(6, 'TLS/SSL connection has been closed (EOF) (_ssl.c:992)'))) (SSLError).",
+        "severity": 2,
+        "origin": "radiator_temps_logger.py:31 --> project.py/write:291 --> project.py/interact:271",
+        "origin_timestamp": "2026-04-09-21-07-11",
+        "registration_timestamp": "2026-04-09-21-07-11",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
