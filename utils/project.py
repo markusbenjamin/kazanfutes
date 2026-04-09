@@ -1681,43 +1681,57 @@ OBJ_MAP = {
 def _norm_mac(mac):
     return str(mac).strip().lower().replace("-", ":")
 
-def _shelly_rpc(method, params=None, timeout=5):
-    payload = {"id": 1, "method": method}
-    if params is not None:
-        payload["params"] = params
+def _fallback_name(obj_id, idx):
+    return f"obj_{obj_id}_idx_{idx}"
 
+def shelly_rpc(ip:str, method:str, params:dict = None, timeout:float = 5.0):
+    """
+    Generic Shelly RPC call wrapper.
+    Returns the actual payload body regardless of whether the device replies
+    with bare JSON, {"result": ...}, or {"params": ...}.
+    """
     try:
+        payload = {"id": 1, "method": method}
+        if params is not None:
+            payload["params"] = params
+
         response = requests.post(
-            f"http://{SHELLY_IP}/rpc",
+            f"http://{ip}/rpc",
             json=payload,
             timeout=timeout
         )
         response.raise_for_status()
         data = response.json()
-    except Exception:
-        raise ModuleException(f"Shelly RPC failed for {method} at {SHELLY_IP}")
 
-    if isinstance(data, dict) and "error" in data:
-        raise ModuleException(f"Shelly RPC error for {method}: {data['error']}")
+        if isinstance(data, dict):
+            if "error" in data:
+                raise ModuleException(f"Shelly RPC {method} failed on {ip}: {data['error']}")
+            if "result" in data:
+                return data["result"]
+            if "params" in data:
+                return data["params"]
 
-    return data.get("result", data)
+        return data
 
-def _get_dynamic_components():
-    result = _shelly_rpc(
+    except ModuleException:
+        raise
+    except Exception as e:
+        raise ModuleException(f"couldn't call Shelly RPC {method} on {ip}: {e}")
+
+def _get_dynamic_components(ip:str, timeout:float = 5.0):
+    result = shelly_rpc(
+        ip,
         "Shelly.GetComponents",
         {
             "dynamic_only": True,
             "include": ["config", "status"],
         },
-        timeout=5
+        timeout=timeout
     )
     return result.get("components", [])
 
-def _fallback_name(obj_id, idx):
-    return f"obj_{obj_id}_idx_{idx}"
-
-def get_weather_station_state(verbose=False):
-    comps = _get_dynamic_components()
+def get_weather_station_state(verbose:bool = False):
+    comps = _get_dynamic_components(SHELLY_IP)
     ws90_addr = _norm_mac(WS90_BT_ADDR)
 
     parent = None
@@ -1764,6 +1778,94 @@ def get_weather_station_state(verbose=False):
         report(json.dumps(out, indent=2, ensure_ascii=False))
 
     return out
+
+def get_radiator_temps(shelly_ips:dict, timeout:float = 5.0, verbose:bool = False, detailed:bool = False):
+    """
+    Read all configured DS18B20 peripheral temperatures from multiple Shelly devices.
+
+    If detailed = True, return the full structured output.
+    If detailed = False, return just the temperatures.
+    """
+    try:
+        out = {"timestamp": timestamp(), "devices": {}} if detailed else {}
+
+        for device_name, ip in shelly_ips.items():
+            report(f"reading Shelly peripherals from {device_name} at {ip}", verbose=verbose)
+
+            try:
+                peripherals = shelly_rpc(ip, "SensorAddon.GetPeripherals", timeout=timeout)
+                ds18b20 = peripherals.get("ds18b20", {}) if isinstance(peripherals, dict) else {}
+
+                device_out = {"ip": ip, "peripherals": {}} if detailed else {}
+
+                for component_key, attrs in ds18b20.items():
+                    try:
+                        component_type, component_id = component_key.split(":")
+                        component_id = int(component_id)
+
+                        if component_type != "temperature":
+                            continue
+
+                        status = shelly_rpc(
+                            ip,
+                            "Temperature.GetStatus",
+                            {"id": component_id},
+                            timeout=timeout
+                        )
+
+                        config = shelly_rpc(
+                            ip,
+                            "Temperature.GetConfig",
+                            {"id": component_id},
+                            timeout=timeout
+                        )
+
+                        peripheral_name = config.get("name") or component_key
+                        temp = status.get("tC")
+
+                        if detailed:
+                            device_out["peripherals"][peripheral_name] = {
+                                "temp": temp,
+                                "component": component_key,
+                                "addr": attrs.get("addr"),
+                                "errors": status.get("errors", [])
+                            }
+                        else:
+                            device_out[peripheral_name] = temp
+
+                    except Exception as e:
+                        if detailed:
+                            device_out["peripherals"][component_key] = {
+                                "temp": None,
+                                "component": component_key,
+                                "addr": attrs.get("addr") if isinstance(attrs, dict) else None,
+                                "errors": [str(e)]
+                            }
+                        else:
+                            device_out[component_key] = None
+
+                if detailed:
+                    out["devices"][device_name] = device_out
+                else:
+                    out[device_name] = device_out
+
+            except Exception as e:
+                if detailed:
+                    out["devices"][device_name] = {
+                        "ip": ip,
+                        "peripherals": {},
+                        "error": str(e)
+                    }
+                else:
+                    out[device_name] = {}
+
+        return out
+
+    except ModuleException:
+        raise ModuleException("couldn't read radiator temperatures", severity=2)
+    except Exception as e:
+        raise ModuleException(f"unexpected error while reading radiator temperatures: {e}", severity=2)
+
 #endregion
 
 #region ModBus
