@@ -4816,5 +4816,16 @@
         "reported_timestamp": "2026-04-09-23-45-13",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to acquire heatmeter states: failed to interact with node 'system' via patch: HTTPSConnectionPool(host='kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app', port=443): Max retries exceeded with url: /system/state.json (Caused by SSLError(SSLZeroReturnError(6, 'TLS/SSL connection has been closed (EOF) (_ssl.c:992)'))) (SSLError).",
+        "severity": 2,
+        "origin": "heatmeters_logger.py:43 --> project.py/write:291 --> project.py/interact:271",
+        "origin_timestamp": "2026-04-12-06-12-07",
+        "registration_timestamp": "2026-04-12-06-12-07",
+        "reported": true,
+        "reported_timestamp": "2026-04-12-06-15-15",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
