@@ -26,6 +26,7 @@ from google.oauth2.service_account import Credentials
 import itertools
 import struct
 from typing import Dict, Any, Optional
+import websockets
 
 on_raspi = False
 if os.name == 'posix':
@@ -1659,9 +1660,6 @@ def transfer_vals_from_devices_and_snapshot_jsons_to_system_json():
 #endregion
 
 #region Shelly
-WS90_BT_ADDR = "fc:4d:6a:24:64:c7"
-SHELLY_IP = "192.168.101.26"
-
 OBJ_MAP = {
     (5, 0):   "illuminance_lux",
     (32, 0):  "rain_status",
@@ -1730,9 +1728,13 @@ def _get_dynamic_components(ip:str, timeout:float = 5.0):
     )
     return result.get("components", [])
 
-def get_weather_station_state(verbose:bool = False):
-    comps = _get_dynamic_components(SHELLY_IP)
-    ws90_addr = _norm_mac(WS90_BT_ADDR)
+def get_weather_station_state(
+    shelly_ip: str,
+    ws90_bt_addr: str,
+    verbose: bool = False
+):
+    comps = _get_dynamic_components(shelly_ip)
+    ws90_addr = _norm_mac(ws90_bt_addr)
 
     parent = None
     readings = {}
@@ -1760,7 +1762,7 @@ def get_weather_station_state(verbose:bool = False):
         readings[name] = st.get("value")
 
     if parent is None:
-        raise ModuleException(f"couldn't find WS90 parent device for {WS90_BT_ADDR}")
+        raise ModuleException(f"couldn't find WS90 parent device for {ws90_bt_addr} on Shelly {shelly_ip}")
 
     pst = parent.get("status", {})
     device_last_update_ts = pst.get("last_updated_ts")
@@ -1779,7 +1781,7 @@ def get_weather_station_state(verbose:bool = False):
 
     return out
 
-def get_radiator_temps(shelly_ips:dict, timeout:float = 5.0, verbose:bool = False, detailed:bool = False):
+def get_radiator_temps(WS90_BRIDGE_SHELLY_IPs:dict, timeout:float = 5.0, verbose:bool = False, detailed:bool = False):
     """
     Read all configured DS18B20 peripheral temperatures from multiple Shelly devices.
 
@@ -1789,7 +1791,7 @@ def get_radiator_temps(shelly_ips:dict, timeout:float = 5.0, verbose:bool = Fals
     try:
         out = {"timestamp": timestamp(), "devices": {}} if detailed else {}
 
-        for device_name, ip in shelly_ips.items():
+        for device_name, ip in WS90_BRIDGE_SHELLY_IPs.items():
             report(f"reading Shelly peripherals from {device_name} at {ip}", verbose=verbose)
 
             try:
@@ -1865,6 +1867,157 @@ def get_radiator_temps(shelly_ips:dict, timeout:float = 5.0, verbose:bool = Fals
         raise ModuleException("couldn't read radiator temperatures", severity=2)
     except Exception as e:
         raise ModuleException(f"unexpected error while reading radiator temperatures: {e}", severity=2)
+
+def _format_shelly_event_timestamp(event: dict, params: dict):
+    """
+    Prefer Shelly's own event timestamp if present, else fall back to now().
+    """
+    try:
+        raw_ts = event.get("ts", params.get("ts"))
+        if raw_ts is None:
+            return timestamp()
+
+        return datetime.fromtimestamp(
+            float(raw_ts),
+            tz=timezone.utc
+        ).astimezone(tzlocal.get_localzone()).strftime(settings["timestamp_format"])
+    except Exception:
+        return timestamp()
+
+
+def decode_shelly_single_push_message(message: dict):
+    """
+    Parse one Shelly websocket message.
+    Return a minimal event dict only for single_push events.
+    Return None for everything else.
+    """
+    if not isinstance(message, dict):
+        return None
+
+    if message.get("method") != "NotifyEvent":
+        return None
+
+    params = message.get("params", {})
+    events = params.get("events", [])
+
+    for event in events:
+        if event.get("event") != "single_push":
+            continue
+
+        input_id = event.get("id")
+
+        if input_id is None:
+            component = event.get("component")
+            if isinstance(component, str) and component.startswith("input:"):
+                try:
+                    input_id = int(component.split(":")[1])
+                except Exception:
+                    input_id = None
+
+        if input_id is None:
+            continue
+
+        return {
+            "timestamp": _format_shelly_event_timestamp(event, params),
+            "input_id": int(input_id),
+        }
+
+    return None
+
+
+async def _shelly_ws_listen_async(
+    ip: str,
+    on_message,
+    ws_src: str = "pi_listener",
+    init_method: str = "Shelly.GetDeviceInfo",
+    init_params: dict | None = None,
+):
+    """
+    Generic Shelly websocket listener.
+    Sends one initial RPC frame so notification delivery starts,
+    then passes every decoded JSON message to on_message(message).
+    """
+    uri = f"ws://{ip}/rpc"
+
+    try:
+        async with websockets.connect(uri) as ws:
+            init_frame = {
+                "id": 1,
+                "src": ws_src,
+                "method": init_method,
+            }
+            if init_params is not None:
+                init_frame["params"] = init_params
+
+            await ws.send(json.dumps(init_frame))
+
+            while True:
+                raw_message = await ws.recv()
+
+                try:
+                    message = json.loads(raw_message)
+                except Exception:
+                    continue
+
+                on_message(message)
+
+    except ModuleException:
+        raise
+    except Exception as e:
+        raise ModuleException(f"couldn't listen to Shelly websocket on {ip}: {e}")
+
+
+def shelly_ws_listen(
+    ip: str,
+    on_message,
+    ws_src: str = "pi_listener",
+    init_method: str = "Shelly.GetDeviceInfo",
+    init_params: dict | None = None,
+):
+    """
+    Synchronous wrapper for the generic Shelly websocket listener.
+    """
+    try:
+        asyncio.run(
+            _shelly_ws_listen_async(
+                ip=ip,
+                on_message=on_message,
+                ws_src=ws_src,
+                init_method=init_method,
+                init_params=init_params,
+            )
+        )
+    except ModuleException:
+        raise
+    except Exception as e:
+        raise ModuleException(f"unexpected Shelly websocket listener error on {ip}: {e}")
+
+
+def listen_shelly_single_pushes(
+    ip: str,
+    event_handler,
+    ws_src: str = "pi_listener",
+):
+    """
+    Listen indefinitely for single_push events from a Shelly input device.
+    For each event, call:
+        event_handler({"timestamp": "...", "input_id": <int>})
+    """
+    def _on_message(message):
+        decoded = decode_shelly_single_push_message(message)
+        if decoded is not None:
+            event_handler(decoded)
+
+    try:
+        shelly_ws_listen(
+            ip=ip,
+            on_message=_on_message,
+            ws_src=ws_src,
+        )
+    except ModuleException:
+        raise
+    except Exception as e:
+        raise ModuleException(f"unexpected error while listening for single_push events on {ip}: {e}")
 
 #endregion
 
