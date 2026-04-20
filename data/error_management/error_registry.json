@@ -4981,5 +4981,16 @@
         "reported_timestamp": "2026-04-20-22-20-22",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to acquire occupancy states: couldn't get rooms occupancy: unexpected error while loading data/logs/presence/presence_all.json.2026-04-20 to array of JSONs: [Errno 2] No such file or directory: '/media/pi/program_stick/kazanfutes/data/logs/presence/presence_all.json.2026-04-20' (FileNotFoundError) (ModuleException).",
+        "severity": 2,
+        "origin": "occupancy_logger.py:10 --> project.py/get_rooms_occupancy:1097",
+        "origin_timestamp": "2026-04-21-00-00-02",
+        "registration_timestamp": "2026-04-21-00-00-02",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
