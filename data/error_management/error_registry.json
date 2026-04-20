@@ -4922,6 +4922,17 @@
         "origin": "heating_control.py/compare_and_command:372",
         "origin_timestamp": "2026-04-20-18-49-52",
         "registration_timestamp": "2026-04-20-18-49-52",
+        "reported": true,
+        "reported_timestamp": "2026-04-20-18-50-23",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to update condensed schedule to Firebase: failed to interact with node 'schedule' via patch: HTTPSConnectionPool(host='kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app', port=443): Max retries exceeded with url: /schedule/condensed_schedule.json (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xf3e55690>: Failed to establish a new connection: [Errno 101] Network is unreachable')) (ConnectionError).",
+        "severity": 2,
+        "origin": "schedule_and_config_updater.py/update_condensed_schedule_on_firebase:524 --> project.py/write:292 --> project.py/interact:272",
+        "origin_timestamp": "2026-04-20-18-53-51",
+        "registration_timestamp": "2026-04-20-18-53-51",
         "reported": false,
         "reported_timestamp": null,
         "checked": false,
