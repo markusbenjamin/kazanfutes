@@ -40,7 +40,7 @@ def make_event_handler(ip: str):
         }
 
         with write_lock:
-            system_node.write({"last_press": out}, "state/electric_submeters")
+            #system_node.write({"last_press": out}, "state/electric_submeters")
             log_data(out, "electric_submeters/electric_submeters.json")
             report(json.dumps(out, ensure_ascii=False))
 

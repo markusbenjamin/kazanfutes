@@ -27,8 +27,8 @@ try:
         for peripheral_name, peripheral_data in device_data.get("peripherals", {}).items():
             radiator_temps[device_name][peripheral_name] = peripheral_data.get("temp")
 
-    system_node = JSONNodeAtURL(node_relative_path='system')
-    system_node.write({"radiator_temps": radiator_temps}, "state")
+    #system_node = JSONNodeAtURL(node_relative_path='system')
+    #system_node.write({"radiator_temps": radiator_temps}, "state")
 
     log_data(radiator_temps, "radiator_temps/radiator_temps.json")
 

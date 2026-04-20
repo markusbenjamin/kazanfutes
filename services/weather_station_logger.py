@@ -13,8 +13,8 @@ success = False
 try:
     weather_station_state = get_weather_station_state(**WEATHER_STATION)
 
-    system_node = JSONNodeAtURL(node_relative_path='system')
-    system_node.write({"weather_station": weather_station_state}, "state")
+    #system_node = JSONNodeAtURL(node_relative_path='system')
+    #system_node.write({"weather_station": weather_station_state}, "state")
 
     log_data(weather_station_state, "weather_station/weather_station.json")
 
