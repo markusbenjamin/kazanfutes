@@ -4959,5 +4959,16 @@
         "reported_timestamp": "2026-04-20-20-00-20",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to update local copy of override_rooms_qr: failed to download sheet '<googleapiclient.discovery.Resource object at 0xf361bab0>' from spreadsheet 'f\u0171t\u00e9s id\u0151z\u00edtett k\u00e9r\u00e9s 24/25 QR': <HttpError 503 when requesting https://sheets.googleapis.com/v4/spreadsheets/1PWOhecSIb6HLB5ESmDAh32aPDpvbAeTLo2ej8dqS880/values/QR_sent%21A1%3AZ10000?alt=json returned \"The service is currently unavailable.\". Details: \"The service is currently unavailable.\"> (HttpError).",
+        "severity": 3,
+        "origin": "schedule_and_config_updater.py/update_local_scheduling_files:181 --> project.py/download_google_sheet_to_2D_array:3081",
+        "origin_timestamp": "2026-04-20-20-58-48",
+        "registration_timestamp": "2026-04-20-20-58-48",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
