@@ -5080,5 +5080,16 @@
         "reported_timestamp": "2026-04-23-21-55-19",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while acquiring pump states: couldn't read pump states: couldn't read state of pump 1: '1' (KeyError) (ModuleException).",
+        "severity": 3,
+        "origin": "heating_control.py/get_system_state:241 --> project.py/get_pump_states:741",
+        "origin_timestamp": "2026-04-25-19-09-55",
+        "registration_timestamp": "2026-04-25-19-09-55",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
