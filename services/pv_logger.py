@@ -21,9 +21,7 @@ TREND_URL = (
     "#/view/station/NE=146835908/station-trend-analysis/"
 )
 
-ACCESS_PATH = Path(
-    r"C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\config\secrets_and_env\fusionsolar_access.json"
-)
+ACCESS_PATH = os.path.join(get_project_root(), 'config', 'secrets_and_env', 'fusionsolar_access.json')
 
 STATION_DN = "NE=146835908"
 DEVICE_DN = "NE=146835906"
