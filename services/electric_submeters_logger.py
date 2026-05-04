@@ -23,7 +23,7 @@ LOCK_PATH = os.path.join(
     get_project_root(),
     "data",
     "locks",
-    "electric_submeters_service.lock",
+    "submeters_service.lock",
 )
 
 system_node = JSONNodeAtURL(node_relative_path='system')
@@ -40,8 +40,8 @@ def make_event_handler(ip: str):
         }
 
         with write_lock:
-            #system_node.write({"last_press": out}, "state/electric_submeters")
-            log_data(out, "electric_submeters/electric_submeters.json")
+            #system_node.write({"last_press": out}, "state/submeters")
+            log_data(out, "electricity/submeters.json")
             report(json.dumps(out, ensure_ascii=False))
 
     return handle_event
@@ -66,7 +66,7 @@ try:
                 target=run_listener,
                 args=(ip,),
                 daemon=False,
-                name=f"electric_submeter_listener_{ip}",
+                name=f"submeter_listener_{ip}",
             )
             thread.start()
             threads.append(thread)
