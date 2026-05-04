@@ -1,5 +1,5 @@
 """
-Continuously runs and records open/close events from open / close sensors.
+Continuously runs and records open/close events from deCONZ sensors.
 """
 
 from utils.project import *
@@ -9,6 +9,17 @@ from utils.project import *
 if __name__ == "__main__":
     try:
         state = get_open_close_states()
+
+        for name, sensor_state in state.items():
+            event = {
+                "sensor_name": name,
+                "event": "startup",
+                "state": "open" if sensor_state["open"] else "closed",
+            }
+
+            log_data(event, "open_close/open_close_events.json")
+            report(f"Startup open/close state for {name}: {event['event']}")
+
         report(f"Open/close logger initialized with {len(state)} sensors.")
 
         while True:
@@ -16,8 +27,16 @@ if __name__ == "__main__":
 
             for name, sensor_state in new_state.items():
                 if name not in state:
+                    event = {
+                        "sensor_name": name,
+                        "event": "new_sensor",
+                        "state": "open" if sensor_state["open"] else "closed",
+                    }
+
+                    log_data(event, "open_close/open_close_events.json")
+                    report(f"New open/close sensor detected: {name}: {event['event']}")
+
                     state[name] = sensor_state
-                    report(f"New open/close sensor detected: {name}")
                     continue
 
                 prev_state = state[name]
