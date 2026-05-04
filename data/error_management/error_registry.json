@@ -5269,11 +5269,11 @@
         "checked_timestamp": null
     },
     {
-        "message": "Error while trying to read and log electric main meter data: HTTPConnectionPool(host='192.168.29.27', port=80): Max retries exceeded with url: /api/v1/data (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0xf44c4650>: Failed to establish a new connection: [Errno 113] No route to host')).",
+        "message": "Error while trying to read and log electric main meter data: HTTPConnectionPool(host='192.168.29.27', port=80): Max retries exceeded with url: /api/v1/data (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0xf44c1f10>: Failed to establish a new connection: [Errno 113] No route to host')).",
         "severity": 1,
         "origin": "electric_meter_logger.py:75 --> electric_meter_logger.py/read_meter:22 --> api.py/get:73 --> api.py/request:59 --> sessions.py/request:589 --> sessions.py/send:703 --> adapters.py/send:700",
-        "origin_timestamp": "2026-05-04-11-25-20",
-        "registration_timestamp": "2026-05-04-11-25-20",
+        "origin_timestamp": "2026-05-04-11-35-17",
+        "registration_timestamp": "2026-05-04-11-35-17",
         "reported": false,
         "reported_timestamp": null,
         "checked": false,
