@@ -1630,6 +1630,43 @@ def set_thermostat_state_by_id(sensor_id: str | None = None,timeout_s: float = 1
     except Exception as e:
         raise ModuleException(f"unexpected error when trying to set state for {name} thermostat: {e}", severity=2)
 
+def get_open_close_states(names=None):
+    """
+    Return current deCONZ open/close sensor states, keyed by sensor name.
+    """
+    try:
+        if isinstance(names, str):
+            names = [names]
+
+        deconz = get_deconz_access_params()
+        base_url = f"{deconz['api_url'].strip().rstrip('/')}/{deconz['api_key'].strip()}"
+
+        response = requests.get(f"{base_url}/sensors", timeout=5)
+        response.raise_for_status()
+
+        states = {}
+
+        for sensor_id, sensor in response.json().items():
+            name = sensor.get("name")
+            sensor_state = sensor.get("state", {})
+
+            if "open" not in sensor_state:
+                continue
+
+            if names is not None and name not in names:
+                continue
+
+            states[name] = {
+                "open": bool(sensor_state.get("open"))
+            }
+
+        return states
+
+    except ModuleException:
+        raise
+    except Exception as e:
+        raise ModuleException(f"couldn't read open/close states: {e}", severity=2)
+
 #endregion
 
 #region Tuya
