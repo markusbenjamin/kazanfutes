@@ -8,7 +8,6 @@ P1_METER_URL = "http://192.168.29.88/api/v1/data"
 
 system_node = JSONNodeAtURL(node_relative_path='system')
 
-
 def read_meter():
     response = requests.get(P1_METER_URL, timeout=5)
     response.raise_for_status()
@@ -51,7 +50,7 @@ def make_log_record(data):
         "active_tariff": data.get("active_tariff"),
     }
 
-
+success = False
 try:
     data = read_meter()
     out = make_log_record(data)
@@ -59,7 +58,7 @@ try:
     #system_node.write({"last_reading": out}, "state/electricity/...")
     log_data(out, "electricity/main_meter.json")
     report(json.dumps(out, ensure_ascii=False))
-
+    success = True
 except ModuleException as e:
     ServiceException(
         "Module error while trying to read and log electric main meter data",
@@ -72,3 +71,6 @@ except Exception:
         "Unexpected error while trying to read and log electric main meter data",
         severity=2
     )
+
+#Log execution
+log({"success":success})
