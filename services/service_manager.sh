@@ -8,6 +8,8 @@
 #   sudo service_manager stop           # graceful stop
 #   sudo service_manager stop now       # fast stop + SIGKILL fallback
 #   sudo service_manager report         # one-line status for each unit
+#   sudo service_manager report live    # live-updating status, every 5 seconds
+#   sudo service_manager report live 2  # live-updating status, every 2 seconds
 #   sudo service_manager validate       # check whether listed units exist
 #   sudo service_manager -help
 #   sudo service_manager --help
@@ -34,13 +36,15 @@ RESET=$'\e[0m'
 usage() {
 cat <<EOF
 usage:
-  $0 rebuild        rebuild target wants from list
-  $0 sync           alias for rebuild
-  $0 start          start target, then report how it went
-  $0 stop           graceful stop of listed units
-  $0 stop now       fast stop + SIGKILL fallback
-  $0 report         one-line status for each listed unit
-  $0 validate       show whether listed units exist
+  $0 rebuild          rebuild target wants from list
+  $0 sync             alias for rebuild
+  $0 start            start target, then report how it went
+  $0 stop             graceful stop of listed units
+  $0 stop now         fast stop + SIGKILL fallback
+  $0 report           one-line status for each listed unit
+  $0 report live      live-updating status, refresh every 5 seconds
+  $0 report live N    live-updating status, refresh every N seconds
+  $0 validate         show whether listed units exist
   $0 -help|--help|-usage|--usage
 EOF
 }
@@ -128,6 +132,7 @@ kill_units() {
 
 report_stop() {
     local ok=true
+
     while IFS= read -r unit; do
         [ -z "$unit" ] && continue
 
@@ -153,6 +158,8 @@ report_stop() {
 }
 
 report_units() {
+    local unit state load color last next start exit_ts
+
     while IFS= read -r unit; do
         [ -z "$unit" ] && continue
 
@@ -164,26 +171,69 @@ report_units() {
         state=$(systemctl is-active "$unit" 2>/dev/null)
         load=$(systemctl show -p LoadState --value "$unit" 2>/dev/null)
         color=$RED
+
         [[ "$state" == "active" || "$state" == "waiting" ]] && color=$GREEN
 
         if [[ $unit == *.timer ]]; then
-            last=$(systemctl show -p LastTriggerUSec --value "$unit")
-            next=$(systemctl show -p NextElapseUSec --value "$unit")
+            last=$(systemctl show -p LastTriggerUSec --value "$unit" 2>/dev/null)
+            next=$(systemctl show -p NextElapseUSec --value "$unit" 2>/dev/null)
+
             printf '%s%-35s | %-8s | load: %-6s | last: %s | next: %s%s\n' \
                 "$color" "$unit" "$state" "$load" "${last:--}" "${next:--}" "$RESET"
         else
-            start=$(systemctl show -p ExecMainStartTimestamp --value "$unit")
-            exit_ts=$(systemctl show -p ExecMainExitTimestamp --value "$unit")
+            start=$(systemctl show -p ExecMainStartTimestamp --value "$unit" 2>/dev/null)
+            exit_ts=$(systemctl show -p ExecMainExitTimestamp --value "$unit" 2>/dev/null)
+
             printf '%s%-35s | %-8s | load: %-6s | started: %s | exit: %s%s\n' \
                 "$color" "$unit" "$state" "$load" "${start:--}" "${exit_ts:--}" "$RESET"
         fi
     done < <(unit_lines)
 }
 
+report_live_cleanup() {
+    tput cnorm 2>/dev/null || true
+    tput rmcup 2>/dev/null || true
+    printf '\n'
+}
+
+report_live() {
+    local interval="${1:-5}"
+    local screen body now
+
+    if ! [[ "$interval" =~ ^[0-9]+$ ]] || [ "$interval" -lt 1 ]; then
+        die "refresh interval must be a positive integer number of seconds"
+    fi
+
+    trap 'report_live_cleanup; exit 130' INT TERM
+    trap 'report_live_cleanup' EXIT
+
+    # alternate screen + hidden cursor
+    tput smcup 2>/dev/null || true
+    tput civis 2>/dev/null || true
+
+    # initial wipe only once
+    printf '\e[2J'
+
+    while true; do
+        now=$(date '+%Y-%m-%d %H:%M:%S')
+        body=$(report_units)
+
+        screen=$(printf 'kazanfutes live report | %s | refresh: %ss | Ctrl-C to quit\n\n%s\n' \
+            "$now" "$interval" "$body")
+
+        # move cursor home, draw full buffered screen, clear leftover old lines
+        printf '\e[H%s\e[J' "$screen"
+
+        sleep "$interval"
+    done
+}
+
 validate_units() {
     local missing=0
+
     while IFS= read -r unit; do
         [ -z "$unit" ] && continue
+
         if unit_exists "$unit"; then
             printf '%sok%s %s\n' "$GREEN" "$RESET" "$unit"
         else
@@ -191,10 +241,13 @@ validate_units() {
             missing=1
         fi
     done < <(unit_lines)
+
     return $missing
 }
 
 start_target() {
+    local target_state
+
     printf 'starting %s ...\n' "$TARGET_NAME"
 
     if systemctl start "$TARGET_NAME"; then
@@ -224,7 +277,11 @@ case "${1:-}" in
         report_stop
         ;;
   report)
-        report_units
+        if [ "${2:-}" = "live" ]; then
+            report_live "${3:-5}"
+        else
+            report_units
+        fi
         ;;
   validate)
         validate_units

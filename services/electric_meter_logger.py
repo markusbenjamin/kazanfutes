@@ -1,6 +1,5 @@
 """
 Reads and logs one HomeWizard P1 smart meter sample.
-Intended to be run periodically by a systemd .timer.
 """
 
 from utils.project import *
