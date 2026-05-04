@@ -5,10 +5,10 @@ from utils.project import *
 #exit()
 
 for id in ["77", "79", "71", "75", "42", "59", "63", "69", "65", "53", "57"]:
-    #calibrate_thermostat_by_id(int(id))
-    set_thermostat_state_by_id(int(id),heatsetpoint = 5)
+    calibrate_thermostat_by_id(int(id))
+    #set_thermostat_state_by_id(int(id),heatsetpoint = 5)
     time.sleep(5)
-    print(get_thermostat_state_by_id(int(id),fields=["name","valve","temperature","heatsetpoint"]))
+    #print(get_thermostat_state_by_id(int(id),fields=["name","valve","temperature","heatsetpoint"]))
 exit()
 
 for _ in range(50):
