@@ -3,7 +3,6 @@ Logs one FusionSolar live inverter sample.
 """
 
 from utils.project import *
-from pathlib import Path
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 import json
@@ -17,6 +16,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import ElementNotInteractableException
 
 LOGIN_URL = "https://eu5.fusionsolar.huawei.com/unisso/login.action?"
 TREND_URL = (
@@ -27,7 +27,12 @@ TREND_URL = (
     "#/view/station/NE=146835908/station-trend-analysis/"
 )
 
-ACCESS_PATH = os.path.join(get_project_root(), 'config', 'secrets_and_env', 'fusionsolar_access.json')
+ACCESS_PATH = os.path.join(
+    get_project_root(),
+    "config",
+    "secrets_and_env",
+    "fusionsolar_access.json",
+)
 
 STATION_DN = "NE=146835908"
 DEVICE_DN = "NE=146835906"
@@ -49,7 +54,7 @@ def load_credentials():
 def batched(seq, n):
     seq = list(seq)
     for i in range(0, len(seq), n):
-        yield seq[i:i+n]
+        yield seq[i:i + n]
 
 
 def clean_counter_value(v):
@@ -92,6 +97,23 @@ def make_driver():
 
     service = Service(executable_path=CHROMEDRIVER_BIN)
     return webdriver.Chrome(service=service, options=opts)
+
+
+def set_input_value(driver, element, value):
+    driver.execute_script(
+        """
+        const el = arguments[0];
+        const value = arguments[1];
+        el.focus();
+        el.value = "";
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.value = value;
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+        """,
+        element,
+        value,
+    )
 
 
 def extract_roarand_from_performance_logs(driver):
@@ -213,13 +235,37 @@ def read_live_row():
     try:
         driver.get(LOGIN_URL)
 
-        wait.until(EC.presence_of_element_located((By.ID, "username")))
-        wait.until(EC.presence_of_element_located((By.ID, "value")))
-        wait.until(EC.presence_of_element_located((By.ID, "btn_outerverify")))
+        wait.until(EC.visibility_of_element_located((By.ID, "username")))
+        wait.until(EC.visibility_of_element_located((By.ID, "value")))
+        wait.until(EC.element_to_be_clickable((By.ID, "btn_outerverify")))
 
-        driver.find_element(By.ID, "username").send_keys(username)
-        driver.find_element(By.ID, "value").send_keys(password)
-        driver.find_element(By.ID, "btn_outerverify").click()
+        username_el = driver.find_element(By.ID, "username")
+        password_el = driver.find_element(By.ID, "value")
+        login_btn = driver.find_element(By.ID, "btn_outerverify")
+
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", username_el)
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", password_el)
+        time.sleep(0.5)
+
+        try:
+            username_el.click()
+            username_el.clear()
+            username_el.send_keys(username)
+
+            password_el.click()
+            password_el.clear()
+            password_el.send_keys(password)
+        except ElementNotInteractableException:
+            set_input_value(driver, username_el, username)
+            set_input_value(driver, password_el, password)
+
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", login_btn)
+        time.sleep(0.3)
+
+        try:
+            login_btn.click()
+        except Exception:
+            driver.execute_script("arguments[0].click();", login_btn)
 
         time.sleep(5)
 
@@ -350,10 +396,14 @@ def read_live_row():
 
 success = False
 
+if False:
+    settings["log"] = False
+    settings["dev"] = True
+
 try:
     out = read_live_row()
-    log_data(out, "electricity/pv_inverter.json")
     print(out)
+    log_data(out, "electricity/pv_inverter.json")
     report(json.dumps(out, ensure_ascii=False))
     success = True
 
@@ -370,5 +420,4 @@ except Exception:
         severity=2
     )
 
-# Log execution
 log({"success": success})
