@@ -5278,5 +5278,27 @@
         "reported_timestamp": "2026-05-04-15-20-36",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while trying to read and log FusionSolar inverter data: [Errno 2] No such file or directory: '/media/pi/program_stick/kazanfutes/config/secrets_and_env/fusionsolar_access.json'.",
+        "severity": 2,
+        "origin": "pv_logger.py:354 --> pv_logger.py/read_live_row:209 --> pv_logger.py/load_credentials:44",
+        "origin_timestamp": "2026-05-04-15-46-16",
+        "registration_timestamp": "2026-05-04-15-46-16",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while trying to read and log FusionSolar inverter data: Message: element not interactable\n  (Session info: chrome=147.0.7727.101); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementnotinteractableexception\n.",
+        "severity": 2,
+        "origin": "pv_logger.py:354 --> pv_logger.py/read_live_row:220 --> webelement.py/send_keys:276 --> webelement.py/_execute:508 --> webdriver.py/execute:450 --> errorhandler.py/check_response:232",
+        "origin_timestamp": "2026-05-04-15-47-04",
+        "registration_timestamp": "2026-05-04-15-47-04",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
