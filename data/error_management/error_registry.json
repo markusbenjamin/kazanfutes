@@ -5344,5 +5344,16 @@
         "reported_timestamp": "2026-05-05-07-50-23",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to update local copy of override_cycles: failed to download sheet '<googleapiclient.discovery.Resource object at 0xf3a3ecf0>' from spreadsheet 'f\u0171t\u00e9sk\u00f6r id\u0151z\u00edtett lekapcsol\u00e1sa 24/25 (Responses)': <HttpError 503 when requesting https://sheets.googleapis.com/v4/spreadsheets/1U0QnnC-E0hrbp0pf5foDVTwHQTmSteIG8vXHI6MXkh8/values/Form%20responses%201%21A1%3AZ10000?alt=json returned \"The service is currently unavailable.\". Details: \"The service is currently unavailable.\"> (HttpError).",
+        "severity": 3,
+        "origin": "schedule_and_config_updater.py/update_local_scheduling_files:181 --> project.py/download_google_sheet_to_2D_array:3118",
+        "origin_timestamp": "2026-05-05-14-58-03",
+        "registration_timestamp": "2026-05-05-14-58-03",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
