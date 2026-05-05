@@ -5355,5 +5355,16 @@
         "reported_timestamp": "2026-05-05-15-00-27",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to update local heating control config: failed to download sheet '<googleapiclient.discovery.Resource object at 0xf3af2b70>' from spreadsheet 'Kaz\u00e1nf\u0171t\u00e9s heating control config': The read operation timed out (TimeoutError).",
+        "severity": 2,
+        "origin": "schedule_and_config_updater.py/update_local_heating_control_config:92 --> project.py/download_google_sheet_to_2D_array:3118",
+        "origin_timestamp": "2026-05-05-18-02-41",
+        "registration_timestamp": "2026-05-05-18-02-41",
+        "reported": true,
+        "reported_timestamp": "2026-05-05-18-05-26",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
