@@ -5333,5 +5333,16 @@
         "reported_timestamp": "2026-05-05-00-45-19",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to update local copy of weekly_cycle/4: failed to set up Google Sheets API: timed out (TimeoutError).",
+        "severity": 3,
+        "origin": "schedule_and_config_updater.py/update_local_scheduling_files:181 --> project.py/download_google_sheet_to_2D_array:3096",
+        "origin_timestamp": "2026-05-05-07-49-34",
+        "registration_timestamp": "2026-05-05-07-49-34",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
