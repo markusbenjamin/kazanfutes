@@ -5399,5 +5399,16 @@
         "reported_timestamp": "2026-05-09-13-00-24",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while trying to read and log electric main meter data: HTTPConnectionPool(host='192.168.29.88', port=80): Read timed out. (read timeout=5).",
+        "severity": 2,
+        "origin": "electric_meter_logger.py:55 --> electric_meter_logger.py/read_meter:12 --> api.py/get:73 --> api.py/request:59 --> sessions.py/request:589 --> sessions.py/send:703 --> adapters.py/send:713",
+        "origin_timestamp": "2026-05-11-01-35-08",
+        "registration_timestamp": "2026-05-11-01-35-08",
+        "reported": true,
+        "reported_timestamp": "2026-05-11-01-35-17",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
