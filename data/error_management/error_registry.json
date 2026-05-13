@@ -5443,5 +5443,38 @@
         "reported_timestamp": "2026-05-13-18-30-23",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to update condensed schedule to Firebase: failed to interact with node 'schedule' via patch: HTTPSConnectionPool(host='kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app', port=443): Max retries exceeded with url: /schedule/condensed_schedule.json (Caused by NewConnectionError(\"HTTPSConnection(host='kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable\")) (ConnectionError).",
+        "severity": 2,
+        "origin": "schedule_and_config_updater.py/update_condensed_schedule_on_firebase:524 --> project.py/write:316 --> project.py/interact:296",
+        "origin_timestamp": "2026-05-13-19-02-30",
+        "registration_timestamp": "2026-05-13-19-02-30",
+        "reported": true,
+        "reported_timestamp": "2026-05-13-19-05-15",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while updating daily room overrides on Firebase.: failed to interact with node 'schedule' via patch: HTTPSConnectionPool(host='kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app', port=443): Max retries exceeded with url: /schedule/request_lists.json (Caused by NewConnectionError(\"HTTPSConnection(host='kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable\")) (ConnectionError).",
+        "severity": 2,
+        "origin": "schedule_and_config_updater.py/update_valid_requests_on_firebase:588 --> project.py/write:316 --> project.py/interact:296",
+        "origin_timestamp": "2026-05-13-19-02-33",
+        "registration_timestamp": "2026-05-13-19-02-33",
+        "reported": true,
+        "reported_timestamp": "2026-05-13-19-05-15",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to acquire heatmeter states: failed to interact with node 'system' via get: HTTPSConnectionPool(host='kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app', port=443): Max retries exceeded with url: /system/.json (Caused by NewConnectionError(\"HTTPSConnection(host='kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable\")) (ConnectionError).",
+        "severity": 2,
+        "origin": "heatmeters_logger.py:42 --> project.py/__init__:276 --> project.py/read:302 --> project.py/interact:296",
+        "origin_timestamp": "2026-05-13-19-02-39",
+        "registration_timestamp": "2026-05-13-19-02-39",
+        "reported": true,
+        "reported_timestamp": "2026-05-13-19-05-15",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
