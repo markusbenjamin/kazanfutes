@@ -5553,5 +5553,16 @@
         "reported_timestamp": "2026-05-14-15-30-21",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to sync data and config with repo: git command failed: Command '['git', 'add', '.']' returned non-zero exit status 128. (CalledProcessError).",
+        "severity": 2,
+        "origin": "data_and_config_uploader.py:10 --> project.py/sync_dir_with_repo:408",
+        "origin_timestamp": "2026-05-14-18-00-06",
+        "registration_timestamp": "2026-05-14-18-00-06",
+        "reported": true,
+        "reported_timestamp": "2026-05-14-18-00-16",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
