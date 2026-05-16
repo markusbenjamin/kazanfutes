@@ -5593,8 +5593,19 @@
         "origin": "heating_control.py/get_system_state:107 --> project.py/get_rooms_occupancy:1121",
         "origin_timestamp": "2026-05-17-00-00-02",
         "registration_timestamp": "2026-05-17-00-00-02",
-        "reported": false,
-        "reported_timestamp": null,
+        "reported": true,
+        "reported_timestamp": "2026-05-17-00-00-27",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to generate schedule: error during external temperature scraping: 502 Server Error: Bad Gateway for url: https://api.open-meteo.com/v1/forecast?latitude=47.4984&longitude=19.0405&current_weather=true (HTTPError).",
+        "severity": 3,
+        "origin": "schedule_and_config_updater.py/generate_schedule:404 --> project.py/scrape_external_temperature:701",
+        "origin_timestamp": "2026-05-17-00-00-09",
+        "registration_timestamp": "2026-05-17-00-00-10",
+        "reported": true,
+        "reported_timestamp": "2026-05-17-00-00-29",
         "checked": false,
         "checked_timestamp": null
     }
