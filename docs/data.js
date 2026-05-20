@@ -1224,7 +1224,7 @@ const roomsDataAndState = {
 
 function updateRoomColor(roomId, temp, lastUpdated, roomValveInfo, roomOccupancy) {
     if (timePassedSince(dateFromTimestamp(lastUpdated)) > 2 * 60) {
-        console.log(d3.select("#" + roomId).style("fill", "rgb(31, 31, 32, 0.8)"));
+        //console.log(d3.select("#" + roomId).style("fill", "rgb(31, 31, 32, 0.8)"));
     }
     else {
         // Create a color scale
@@ -1658,8 +1658,6 @@ function updateGeneralInfobox(info) {
         titleLine.style("text-decoration", "underline");
     }
 
-    console.log(info.cyclesOn)
-
     let lines = [];
     if (info.heatingOn == 1) {
         // Generate lines from incoming info
@@ -1777,7 +1775,6 @@ function updateGeneralInfobox(info) {
                 }
             );
         } else {
-            console.log(info)
             let controlLastRunLine = "Vezérlés lefutott: " + info.lastControlRun.timeSince + " " + info.lastControlRun.granularity + ".";
             //error: { error: controlError, timeSince: secondsSinceControlError, granularity: lastErrorGranularity, source: controlErrorSource }
             if (info.error.error || (info.lastControlRun.granularity == " perce" && info.lastControlRun.timeSince > 5)) {
@@ -2357,6 +2354,7 @@ function drawMainGraph(graphData = null) {
                         }
                         let roomMeasurementPastNDaysAverageData = pastNDaysAverageRoomTemps[mainGraphSetting.roomNumToPlot];
                         let roomMeasurementData = graphData["room_" + mainGraphSetting.roomNumToPlot + "_measurements"];
+                        console.log(roomMeasurementData.length)
                         let roomCurrentTemp = systemNode['state']['measured_temps'][roomNum];
                         //roomMeasurementData.push({ 'temp': roomCurrentTemp, 'h_of_day_frac': getFractionalHourOfDay() })
 
@@ -2367,8 +2365,6 @@ function drawMainGraph(graphData = null) {
                             roomValveCurrentState = arrayMean(systemNode['state']['valve_states'][roomNum]) / 100; //DEV
                             roomValveStateData.push({ 'valve': roomValveCurrentState, 'h_of_day_frac': getFractionalHourOfDay(dateFromTimestamp(systemNode['state']['last_updated'])) })
                         }
-
-                        //console.log(roomScheduleData)
 
                         if (cycleOn) {
                             //range = d3.extent(roomScheduleData.concat(roomMeasurementData).map(elem => elem['temp']));
@@ -2535,6 +2531,7 @@ function drawMainGraph(graphData = null) {
                     }
                     break;
                 case "all_rooms":
+                    Object.keys(graphData).forEach(k => Array.isArray(graphData[k]) && (graphData[k] = graphData[k].filter(elem => elem.timestamp?.slice(0, 10) === new Date().toLocaleDateString("sv-SE"))));
                     range = d3.extent(Object.values(graphData).map(value => value.map(elem => elem['temp'])).flat());
 
                     let drawForSingleCycle = mainGraphSetting.hoveredCycle > 0;
