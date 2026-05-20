@@ -1792,7 +1792,7 @@ def shutdown_thermostat_by_id(sensor_id, calibrate=False):
         )
 
         if state_before["heatsetpoint"] == 500:
-            report(f"thermostat {name} already shut down")
+            report(f"Thermostat {name} already shut down.")
             print(state_before)
 
             return {
@@ -1804,7 +1804,7 @@ def shutdown_thermostat_by_id(sensor_id, calibrate=False):
                 "state": state_before
             }
 
-        report(f"shutting down thermostat {name}")
+        report(f"Shutting down thermostat {name}.")
 
         calibration_success = None
         if calibrate:
