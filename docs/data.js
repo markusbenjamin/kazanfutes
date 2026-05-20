@@ -368,6 +368,7 @@ function getDataFromFirebase() {
 
             updateGeneralInfobox(
                 {
+                    heatingOn: systemJSON.switch.system,
                     cyclesOn: cyclesOn,
                     lastControlRun: { timeSince: timeSinceLastControlRun, granularity: lastControlRunGranularity },
                     lastRequest: { target: requestTarget, origin: requestOrigin, timeSince: timeSinceLastRequest, granularity: lastRequestGranularity, hourStamp: lastRequestHourStamp },
@@ -1657,42 +1658,28 @@ function updateGeneralInfobox(info) {
         titleLine.style("text-decoration", "underline");
     }
 
+    console.log(info.cyclesOn)
 
-    // Generate lines from incoming info
     let lines = [];
-    if (!isMobile) {
-        if (info.averageControlDiff != 0.0) {
-            let reportedControlDiff = roundTo(info.averageControlDiff, 0.1);
-            let averageControlDiffPre = reportedControlDiff == 0.0 ? " " : (reportedControlDiff < 0 ? "" : "+");
-            let averageControlDiffLine = "Átlagos eltérés: " + averageControlDiffPre + reportedControlDiff + " K.";
+    if (info.heatingOn == 1) {
+        // Generate lines from incoming info
+        if (!isMobile) {
+            if (info.averageControlDiff != 0.0) {
+                let reportedControlDiff = roundTo(info.averageControlDiff, 0.1);
+                let averageControlDiffPre = reportedControlDiff == 0.0 ? " " : (reportedControlDiff < 0 ? "" : "+");
+                let averageControlDiffLine = "Átlagos eltérés: " + averageControlDiffPre + reportedControlDiff + " K.";
+                lines.push(
+                    {
+                        lineXOffset: 0,
+                        text: averageControlDiffLine
+                    }
+                );
+            }
+            let cyclesOnLine = info.cyclesOn.length > 0 ? "Bekapcsolt körök: " + info.cyclesOn.join(", ") + "." : "Senki nem kér fűtést.";
             lines.push(
                 {
                     lineXOffset: 0,
-                    text: averageControlDiffLine
-                }
-            );
-        }
-        let cyclesOnLine = info.cyclesOn.length > 0 ? "Bekapcsolt körök: " + info.cyclesOn.join(", ") + "." : "Senki nem kér fűtést.";
-        lines.push(
-            {
-                lineXOffset: 0,
-                text: cyclesOnLine
-            }
-        );
-        lines.push(
-            {
-                lineXOffset: 0,
-                text: ""
-            }
-        );
-    }
-
-    if (isMobile) {
-        if (info.lastRequest.granularity == "órája" && info.lastRequest.timeSince > getFractionalHourOfDay()) {
-            lines.push(
-                {
-                    lineXOffset: 0,
-                    text: "Ma még nem érkezett kérés."
+                    text: cyclesOnLine
                 }
             );
             lines.push(
@@ -1701,171 +1688,197 @@ function updateGeneralInfobox(info) {
                     text: ""
                 }
             );
+        }
+
+        if (isMobile) {
+            if (info.lastRequest.granularity == "órája" && info.lastRequest.timeSince > getFractionalHourOfDay()) {
+                lines.push(
+                    {
+                        lineXOffset: 0,
+                        text: "Ma még nem érkezett kérés."
+                    }
+                );
+                lines.push(
+                    {
+                        lineXOffset: 0,
+                        text: ""
+                    }
+                );
+            } else {
+                let lastRequestLine1 = "Utolsó kérés:";
+                let lastRequestLine2 = "- " + info.lastRequest.hourStamp + ", " + info.lastRequest.origin + ", " + info.lastRequest.target + ".";
+                lines.push(
+                    {
+                        lineXOffset: 0,
+                        text: lastRequestLine1
+                    }
+                );
+                lines.push(
+                    {
+                        lineXOffset: indentLineXOffset,
+                        text: lastRequestLine2
+                    }
+                );
+            }
         } else {
-            let lastRequestLine1 = "Utolsó kérés:";
-            let lastRequestLine2 = "- " + info.lastRequest.hourStamp + ", " + info.lastRequest.origin + ", " + info.lastRequest.target + ".";
+            let lastRequestLine = "Utolsó kérés: " + info.lastRequest.hourStamp + ", " + info.lastRequest.origin + ", " + info.lastRequest.target + ".";
+            if (info.lastRequest.granularity == "órája" && info.lastRequest.timeSince > getFractionalHourOfDay()) {
+                lastRequestLine = "Ma még nem érkezett kérés.";
+            }
+            if (lastRequestLine.length > 36) {
+                lastRequestLine = "Utolsó kérés: " + info.lastRequest.hourStamp + ", " + info.lastRequest.origin + ", " + roomAbbreviations[info.lastRequest.target] + ".";
+            }
             lines.push(
                 {
                     lineXOffset: 0,
-                    text: lastRequestLine1
+                    text: lastRequestLine
+                }
+            );
+        }
+
+        if (isMobile) {
+            let scheduleLastUpdatedLine1 = "Beállítások frissítve: ";
+            let scheduleLastUpdatedLine2 = "- " + hourStamp(info.scheduleLastUpdated) + ".";
+            lines.push(
+                {
+                    lineXOffset: 0,
+                    text: scheduleLastUpdatedLine1
                 }
             );
             lines.push(
                 {
                     lineXOffset: indentLineXOffset,
-                    text: lastRequestLine2
+                    text: scheduleLastUpdatedLine2
+                }
+            );
+        } else {
+            let scheduleLastUpdatedLine = "Beállítások frissítve: " + hourStamp(info.scheduleLastUpdated) + ".";
+            lines.push(
+                {
+                    lineXOffset: 0,
+                    text: scheduleLastUpdatedLine
                 }
             );
         }
-    } else {
-        let lastRequestLine = "Utolsó kérés: " + info.lastRequest.hourStamp + ", " + info.lastRequest.origin + ", " + info.lastRequest.target + ".";
-        if (info.lastRequest.granularity == "órája" && info.lastRequest.timeSince > getFractionalHourOfDay()) {
-            lastRequestLine = "Ma még nem érkezett kérés.";
-        }
-        if (lastRequestLine.length > 36) {
-            lastRequestLine = "Utolsó kérés: " + info.lastRequest.hourStamp + ", " + info.lastRequest.origin + ", " + roomAbbreviations[info.lastRequest.target] + ".";
-        }
-        lines.push(
-            {
-                lineXOffset: 0,
-                text: lastRequestLine
-            }
-        );
-    }
 
-    if (isMobile) {
-        let scheduleLastUpdatedLine1 = "Beállítások frissítve: ";
-        let scheduleLastUpdatedLine2 = "- " + hourStamp(info.scheduleLastUpdated) + ".";
-        lines.push(
-            {
-                lineXOffset: 0,
-                text: scheduleLastUpdatedLine1
-            }
-        );
-        lines.push(
-            {
-                lineXOffset: indentLineXOffset,
-                text: scheduleLastUpdatedLine2
-            }
-        );
-    } else {
-        let scheduleLastUpdatedLine = "Beállítások frissítve: " + hourStamp(info.scheduleLastUpdated) + ".";
-        lines.push(
-            {
-                lineXOffset: 0,
-                text: scheduleLastUpdatedLine
-            }
-        );
-    }
-
-    if (isMobile) {
-        let controlLastRunLine1 = "Vezérlés lefutott:";
-        let controlLastRunLine2 = "- " + info.lastControlRun.timeSince + " " + info.lastControlRun.granularity + ".";
-        lines.push(
-            {
-                lineXOffset: 0,
-                text: controlLastRunLine1
-            }
-        );
-        lines.push(
-            {
-                lineXOffset: indentLineXOffset,
-                text: controlLastRunLine2
-            }
-        );
-    } else {
-        let controlLastRunLine = "Vezérlés lefutott: " + info.lastControlRun.timeSince + " " + info.lastControlRun.granularity + ".";
-        //error: { error: controlError, timeSince: secondsSinceControlError, granularity: lastErrorGranularity, source: controlErrorSource }
-        if (info.error.error || (info.lastControlRun.granularity == " perce" && info.lastControlRun.timeSince > 5)) {
-            let errorFill, errorStroke;
-            if (info.error.error) {
-                errorFill = "rgba(248, 212, 0, 0.05)";
-                errorStroke = "rgba(248, 212, 8, 1)";
-                controlLastRunLine = "Vezérlés: <" + info.error.source + "> hiba!";
+        if (isMobile) {
+            let controlLastRunLine1 = "Vezérlés lefutott:";
+            let controlLastRunLine2 = "- " + info.lastControlRun.timeSince + " " + info.lastControlRun.granularity + ".";
+            lines.push(
+                {
+                    lineXOffset: 0,
+                    text: controlLastRunLine1
+                }
+            );
+            lines.push(
+                {
+                    lineXOffset: indentLineXOffset,
+                    text: controlLastRunLine2
+                }
+            );
+        } else {
+            console.log(info)
+            let controlLastRunLine = "Vezérlés lefutott: " + info.lastControlRun.timeSince + " " + info.lastControlRun.granularity + ".";
+            //error: { error: controlError, timeSince: secondsSinceControlError, granularity: lastErrorGranularity, source: controlErrorSource }
+            if (info.error.error || (info.lastControlRun.granularity == " perce" && info.lastControlRun.timeSince > 5)) {
+                let errorFill, errorStroke;
+                if (info.error.error) {
+                    errorFill = "rgba(248, 212, 0, 0.05)";
+                    errorStroke = "rgba(248, 212, 8, 1)";
+                    controlLastRunLine = "Vezérlés: <" + info.error.source + "> hiba!";
+                }
+                else {
+                    errorFill = "rgba(255,0,0,0.05)";
+                    errorStroke = "rgba(250,0,0,1)";
+                    controlLastRunLine = "Vezérlés: " + info.lastControlRun.timeSince + " " + info.lastControlRun.granularity + " áll!";
+                }
+                d3.select("#general_infobox")
+                    .style("fill", errorFill)
+                    .style("fill-opacity", "1")
+                    .style("stroke", errorStroke)
+                    .style("stroke-opacity", "0.5")
+                    .style("stroke-width", "0.5");
             }
             else {
-                errorFill = "rgba(255,0,0,0.05)";
-                errorStroke = "rgba(250,0,0,1)";
-                controlLastRunLine = "Vezérlés: " + info.lastControlRun.timeSince + " " + info.lastControlRun.granularity + " áll!";
-            }
-            d3.select("#general_infobox")
-                .style("fill", errorFill)
-                .style("fill-opacity", "1")
-                .style("stroke", errorStroke)
-                .style("stroke-opacity", "0.5")
-                .style("stroke-width", "0.5");
-        }
-        else {
-            d3.select("#general_infobox")
-                .style("fill", "rgba(250,250,250,1)")
-                .style("fill-opacity", "1")
-                .style("stroke", "rgba(250,250,250,1)")
-                .style("stroke-opacity", "1")
-                .style("stroke-width", "3");
-        }
-        lines.push(
-            {
-                lineXOffset: 0,
-                text: controlLastRunLine
-            }
-        );
-    }
-
-    if (!isMobile) {
-        lines.push(
-            {
-                lineXOffset: 0,
-                text: ""
-            }
-        );
-
-        let externalTempLine = "Külső hőmérséklet: " + externalTemp + " °C.";
-        lines.push(
-            {
-                lineXOffset: 0,
-                text: externalTempLine
-            }
-        );
-
-        let gasUsageLine = "Gázfogyasztási ráta: " + (isValidNumber(currentGasUsageRate) ? currentGasUsageRate : "") + (isValidNumber(currentGasUsageRate) ? " m³/h." : "");
-        lines.push(
-            {
-                lineXOffset: 0,
-                text: gasUsageLine
-            }
-        );
-
-        if (isValidNumber(currentGasTotal)) {
-            let gasTotalString = currentGasTotal;
-            if (Number.isInteger(gasTotalString)) {
-                gasTotalString += ".0";
+                d3.select("#general_infobox")
+                    .style("fill", "rgba(250,250,250,1)")
+                    .style("fill-opacity", "1")
+                    .style("stroke", "rgba(250,250,250,1)")
+                    .style("stroke-opacity", "1")
+                    .style("stroke-width", "3");
             }
             lines.push(
                 {
                     lineXOffset: 0,
-                    text: "Összes elégett gáz: " + gasTotalString + " m³."
-                }
-            );
-
-            let totalCost = currentGasTotal * 350;
-            lines.push(
-                {
-                    lineXOffset: 0,
-                    text: "Összköltség kb. " + (totalCost < 1000 ? (roundTo(totalCost, 100) + " Ft.") : (roundTo(totalCost / 1000, 0.1) + " eFt.")
-                    )
+                    text: controlLastRunLine
                 }
             );
         }
+
+        if (!isMobile) {
+            lines.push(
+                {
+                    lineXOffset: 0,
+                    text: ""
+                }
+            );
+
+            let externalTempLine = "Külső hőmérséklet: " + externalTemp + " °C.";
+            lines.push(
+                {
+                    lineXOffset: 0,
+                    text: externalTempLine
+                }
+            );
+
+            let gasUsageLine = "Gázfogyasztási ráta: " + (isValidNumber(currentGasUsageRate) ? currentGasUsageRate : "") + (isValidNumber(currentGasUsageRate) ? " m³/h." : "");
+            lines.push(
+                {
+                    lineXOffset: 0,
+                    text: gasUsageLine
+                }
+            );
+
+            if (isValidNumber(currentGasTotal)) {
+                let gasTotalString = currentGasTotal;
+                if (Number.isInteger(gasTotalString)) {
+                    gasTotalString += ".0";
+                }
+                lines.push(
+                    {
+                        lineXOffset: 0,
+                        text: "Összes elégett gáz: " + gasTotalString + " m³."
+                    }
+                );
+
+                let totalCost = currentGasTotal * 350;
+                lines.push(
+                    {
+                        lineXOffset: 0,
+                        text: "Összköltség kb. " + (totalCost < 1000 ? (roundTo(totalCost, 100) + " Ft.") : (roundTo(totalCost / 1000, 0.1) + " eFt.")
+                        )
+                    }
+                );
+            }
+        }
+
+        // Draw lines
+        for (let line = 1; line <= lines.length; line++) {
+            addLineToBox(
+                "general_infobox",
+                lines[line - 1].text,
+                titleXPos + lineXOffset + lines[line - 1].lineXOffset,
+                titleYPos + lineYOffset + lineHeight * line,
+                lineFontSize, allCentered
+            );
+        }
     }
-
-
-    // Draw lines
-    for (let line = 1; line <= lines.length; line++) {
+    else {
         addLineToBox(
             "general_infobox",
-            lines[line - 1].text,
-            titleXPos + lineXOffset + lines[line - 1].lineXOffset,
-            titleYPos + lineYOffset + lineHeight * line,
+            "Fűtés kikapcsolva.",
+            titleXPos + lineXOffset,
+            titleYPos + lineYOffset + lineHeight * 1.5,
             lineFontSize, allCentered
         );
     }
@@ -1895,41 +1908,43 @@ function updateCycleInfobox(cycle, info) {
     addLineToBox("cycle" + cycle + "_infobox", ["ki", "be"][info.state], xOffset + (isMobile ? cycleName.length * 0.065 : 0.7), yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize * 1.1, false);
     lineNum++;
 
-    //Draw lines
-    lineNumShift += 0.2;
-    if (!isMobile) {
-        addLineToBox("cycle" + cycle + "_infobox", cycle < 4 ? "Átlagos eltérés:" : "Eltérés:", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
-        lineNum++;
-        lineNumShift += 0.05;
-        if (isValidNumber(info.totalControlDiff)) {
-            let reportedControlDiff = roundTo(info.totalControlDiff / info.rooms.length, 0.1)
-            let reportedeControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
-            addLineToBox("cycle" + cycle + "_infobox", reportedeControlDiffPre + reportedControlDiff + " K", xOffset + 0.2, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered)
-        }
-        else {
-            addLineToBox("cycle" + cycle + "_infobox", "?", xOffset + 0.2, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered)
-        }
-    }
-
-    lineNumShift = isMobile ? 0.25 : 1.5;
-    let xOffsetShift = isMobile ? 0.04 : 0;
-    if (cycle < 4) {
-        if (info.wantHeating) {
-            if (info.wantHeating.length > 0) {
-                addLineToBox("cycle" + cycle + "_infobox", "Fűtést kér:", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
-                lineNum++;
-                info.wantHeating.forEach(roomInfo => {
-                    addLineToBox("cycle" + cycle + "_infobox", "- " + roomInfo.name, xOffset + xOffsetShift, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
-                    lineNum++;
-                    lineNumShift += 0.05;
-                });
-            } else {
-                addLineToBox("cycle" + cycle + "_infobox", "Nem kér fűtést.", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
+    if (false) {
+        //Draw lines
+        lineNumShift += 0.2;
+        if (!isMobile) {
+            addLineToBox("cycle" + cycle + "_infobox", cycle < 4 ? "Átlagos eltérés:" : "Eltérés:", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
+            lineNum++;
+            lineNumShift += 0.05;
+            if (isValidNumber(info.totalControlDiff)) {
+                let reportedControlDiff = roundTo(info.totalControlDiff / info.rooms.length, 0.1)
+                let reportedeControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
+                addLineToBox("cycle" + cycle + "_infobox", reportedeControlDiffPre + reportedControlDiff + " K", xOffset + 0.2, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered)
+            }
+            else {
+                addLineToBox("cycle" + cycle + "_infobox", "?", xOffset + 0.2, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered)
             }
         }
-    }
-    else {
-        addLineToBox("cycle" + cycle + "_infobox", ["Nem kér fűtést.", "Fűtést kér."][info.set], xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
+
+        lineNumShift = isMobile ? 0.25 : 1.5;
+        let xOffsetShift = isMobile ? 0.04 : 0;
+        if (cycle < 4) {
+            if (info.wantHeating) {
+                if (info.wantHeating.length > 0) {
+                    addLineToBox("cycle" + cycle + "_infobox", "Fűtést kér:", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
+                    lineNum++;
+                    info.wantHeating.forEach(roomInfo => {
+                        addLineToBox("cycle" + cycle + "_infobox", "- " + roomInfo.name, xOffset + xOffsetShift, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
+                        lineNum++;
+                        lineNumShift += 0.05;
+                    });
+                } else {
+                    addLineToBox("cycle" + cycle + "_infobox", "Nem kér fűtést.", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
+                }
+            }
+        }
+        else {
+            addLineToBox("cycle" + cycle + "_infobox", ["Nem kér fűtést.", "Fűtést kér."][info.set], xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
+        }
     }
 }
 
