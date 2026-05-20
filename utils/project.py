@@ -11,6 +11,30 @@ from collections import defaultdict
 import csv
 import json
 import logging
+
+class _KnownPydeconzUnsupportedDeviceTypeFilter(logging.Filter):
+    ignored_device_types = {
+        "",
+        "ZHAFormaldehyde",
+        "ZHACarbonDioxide",
+    }
+
+    def filter(self, record):
+        if record.msg == "Unsupported device type %s":
+            if not record.args:
+                return True
+
+            device_type = record.args[0] if isinstance(record.args, tuple) else record.args
+            return device_type not in self.ignored_device_types
+
+        return True
+
+
+for logger_name in ["pydeconz", "pydeconz.models"]:
+    logging.getLogger(logger_name).addFilter(
+        _KnownPydeconzUnsupportedDeviceTypeFilter()
+    )
+
 import math
 import os
 import random
@@ -799,19 +823,28 @@ def set_all_pumps(state:int):
         raise ModuleException(f"couldn't turn all pumps {['OFF','ON'][state]}")
     return success
 
-def shutdown_heating():
+def shutdown_heating(calibrate_thermostats = False):
     """
-    Turns off all pumps & boiler. Returns success.
+    Turns off all pumps & boiler, then shuts down all TRVs.
+    Returns success.
     """
     success = False
+
     try:
-        set_boiler_state(0)
-        set_all_pumps(0)
-        success = True
+        boiler_success = set_boiler_state(0)
+        pump_successes = set_all_pumps(0)
+        valve_results = shutdown_all_thermostats(calibrate_thermostats)
+
+        success = (
+            boiler_success
+            and all(pump_successes.values())
+            and all(result["success"] for result in valve_results.values())
+        )
+
     except Exception:
         raise ModuleException(f"couldn't shut down heating")
-    return success
 
+    return success
 def get_room_temps_and_humidity_dev():
     """
     Returns a faux dict for development purposes.
@@ -1297,6 +1330,77 @@ def read_sensors():
     """
     return read_deconz_state().sensors.items()
 
+def get_unreachable_zigbee_devices() -> list[dict]:
+    """
+    Return all unreachable ZigBee devices known to deCONZ.
+
+    Output
+    ------
+    [
+        {
+            "sensor_name": <deCONZ name>,
+            "not_seen_since": <fractional-days-or-None>
+        },
+        ...
+    ]
+    """
+    try:
+        session = read_deconz_state()
+        now_utc = datetime.now(timezone.utc)
+
+        def _not_seen_since_days(ts):
+            if not ts or ts == "none":
+                return None
+
+            try:
+                dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+
+                local_ts = timestamp(dt.astimezone())
+                return round(minutes_since(local_ts) / 1440, 1)
+
+            except Exception:
+                return None
+
+        unreachable = []
+        seen = set()
+
+        for _, device in itertools.chain(session.sensors.items(), session.lights.items()):
+            raw = device.raw
+            state = raw.get("state", {})
+            config = raw.get("config", {})
+
+            reachable = config.get("reachable", state.get("reachable", True))
+
+            if reachable is not False:
+                continue
+
+            uniqueid = raw.get("uniqueid") or raw.get("name")
+            device_key = uniqueid.split("-")[0] if isinstance(uniqueid, str) else uniqueid
+
+            if device_key in seen:
+                continue
+
+            seen.add(device_key)
+
+            unreachable.append({
+                "sensor_name": raw.get("name"),
+                "not_seen_since": _not_seen_since_days(raw.get("lastseen"))
+            })
+
+        return sorted(
+            unreachable,
+            key=lambda item: (
+                item["not_seen_since"] is None,
+                (item["not_seen_since"] or 0)
+            )
+        )
+
+    except ModuleException:
+        raise ModuleException("couldn't list unreachable ZigBee devices", severity=3)
+    except Exception as e:
+        raise ModuleException(f"unexpected error while listing unreachable ZigBee devices: {e}", severity=3)
 def read_lights():
     """
     Extracts lights' states from overall ZigBee mesh state.
@@ -1550,6 +1654,40 @@ def calibrate_thermostat_by_id(sensor_id: str | None = None, timeout_s: float = 
     except Exception as e:
         raise ModuleException(f"unexpected error during valve calibration: {e}", severity=2)
 
+def calibrate_all_thermostats(timeout_s: float = 120.0):
+    """
+    Runs calibration on all TRVs.
+    Returns a dict keyed by thermostat name.
+    """
+    results = {}
+
+    try:
+        thermostats = list(read_thermostats())
+
+        for sensor_id, sensor in thermostats:
+            name = sensor.raw["name"]
+
+            try:
+                report(f"calibrating thermostat {name}")
+                success = calibrate_thermostat_by_id(sensor_id, timeout_s=timeout_s)
+
+                results[name] = {
+                    "success": success,
+                    "id": sensor_id
+                }
+
+            except Exception as e:
+                results[name] = {
+                    "success": False,
+                    "id": sensor_id,
+                    "error": str(e)
+                }
+
+        return results
+
+    except Exception:
+        raise ModuleException("couldn't calibrate all thermostats")
+
 def set_thermostat_state_by_name(name: str | None = None,timeout_s: float = 10.0,**cfg):
     return set_thermostat_state_by_id(get_thermostat_id_from_name(name),timeout_s,**cfg)
 
@@ -1629,6 +1767,109 @@ def set_thermostat_state_by_id(sensor_id: str | None = None,timeout_s: float = 1
         raise
     except Exception as e:
         raise ModuleException(f"unexpected error when trying to set state for {name} thermostat: {e}", severity=2)
+
+def shutdown_thermostat_by_id(sensor_id, calibrate=False):
+    """
+    Sets one TRV to shutdown state.
+
+    Default behavior:
+    - check current heatsetpoint
+    - if already 5C, do nothing
+    - if not, set heatsetpoint to 5C
+
+    If calibrate=True:
+    - calibrate first, but only if shutdown action is needed
+
+    Returns a result dict.
+    """
+    try:
+        sensor_id = str(sensor_id)
+        name = get_thermostat_name_from_id(sensor_id)
+
+        state_before = get_thermostat_state_by_id(
+            sensor_id=sensor_id,
+            fields=["name", "valve", "temperature", "heatsetpoint"]
+        )
+
+        if state_before["heatsetpoint"] == 500:
+            report(f"Thermostat {name} already shut down.")
+            print(state_before)
+
+            return {
+                "success": True,
+                "skipped": True,
+                "reason": "already_at_shutdown_setpoint",
+                "calibration_success": None,
+                "set_success": None,
+                "state": state_before
+            }
+
+        report(f"Shutting down thermostat {name}.")
+
+        calibration_success = None
+        if calibrate:
+            calibration_success = calibrate_thermostat_by_id(sensor_id)
+
+        set_success = set_thermostat_state_by_id(
+            sensor_id=sensor_id,
+            heatsetpoint=5,
+            loadbalancing=False,
+            windowopendetectionenabled=False,
+            externalwindowopen=False
+        )
+
+        time.sleep(5)
+
+        state_after = get_thermostat_state_by_id(
+            sensor_id=sensor_id,
+            fields=["name", "valve", "temperature", "heatsetpoint"]
+        )
+
+        print(state_after)
+
+        return {
+            "success": set_success and (calibration_success is not False),
+            "skipped": False,
+            "calibration_success": calibration_success,
+            "set_success": set_success,
+            "state": state_after
+        }
+
+    except Exception:
+        raise ModuleException(f"couldn't shut down thermostat {sensor_id}")
+
+def shutdown_thermostat_by_name(name, calibrate=False):
+    """
+    Calibrates one named TRV and sets it to shutdown state.
+    Returns a result dict.
+    """
+    try:
+        return shutdown_thermostat_by_id(get_thermostat_id_from_name(name))
+    except Exception:
+        raise ModuleException(f"couldn't shut down thermostat {name}")
+
+
+def shutdown_all_thermostats(calibrate=False):
+    """
+    Calibrates all TRVs and sets them to shutdown state.
+    Returns a dict keyed by valve name.
+    """
+    results = {}
+
+    try:
+        thermostats = list(read_thermostats())
+
+        for sensor_id, sensor in thermostats:
+            name = sensor.raw["name"]
+            results[name] = shutdown_thermostat_by_id(sensor_id,calibrate)
+
+        return results
+
+    except Exception:
+        raise ModuleException("couldn't shut down all thermostats")
+#endregion
+
+#region Parasoll
 
 def get_open_close_states(names=None):
     """
