@@ -37,16 +37,13 @@ log({f"success_initialize":success})
 report('\nCHECK HEATING SWITCH')
 def acquire_heating_switch():
     """
-    Either exits if the system is turned off or returns the heating system switch state.
+    Returns the heating system switch state.
+    Does not exit; main decides what to run.
     """
     try:
         heating_switch = load_json_to_dict('config/heating_switch.json')
-
-        if heating_switch['system'] == 0:
-            report('Heating is switched off in config file.')
-            if settings['on_raspi']: shutdown_heating()
-            exit()
         return heating_switch
+
     except Exception:
         system_node.write({'last_updated':timestamp(),'error':True,'where':'switch'},'control/error')
         ServiceException("Couldn't load system switch")
@@ -71,35 +68,51 @@ def get_system_state():
 
     success = False
     try:
-        report("Acquiring measured temps.",verbose=True)
+        report("Acquiring measured temps and humidity.",verbose=True)
         room_temps_and_humidity = get_room_temps_and_humidity(just_controlled=False)
+
         measured_temps = {}
+        measured_humidity = {}
         sensor_last_updated = {}
+        humidity_last_updated = {}
+
         for room, vals in room_temps_and_humidity.items():
-            print(f"{room}, {vals['temp']}, {vals['last_updated']}, {vals['thermostat_temp']}, {vals['thermostat_last_updated']}")
-            if vals['temp']:
-                measured_temps[room] = vals['temp']/100
+            #print(f"{room}, {vals['temp']}, {vals['hum']}, {vals['last_updated']}, {vals['thermostat_temp']}, {vals['thermostat_last_updated']}")
+
+            if vals['temp'] is not None:
+                measured_temps[room] = vals['temp'] / 100
                 sensor_last_updated[room] = vals['last_updated']
-            elif vals['thermostat_temp']:
+            elif vals['thermostat_temp'] is not None:
                 measured_temps[room] = vals['thermostat_temp']
                 sensor_last_updated[room] = vals['thermostat_last_updated']
             else:
                 measured_temps[room] = None
                 sensor_last_updated[room] = None
 
-        system_state['measured_temps'] = measured_temps
-        system_state['sensor_last_updated'] = sensor_last_updated
+            if vals['hum'] is not None:
+                measured_humidity[room] = vals['hum'] / 100
+                humidity_last_updated[room] = vals['last_updated']
+            else:
+                measured_humidity[room] = None
+                humidity_last_updated[room] = None
 
-        report("Successfully acquired measured temps.")
+        system_state['measured_temps'] = measured_temps
+        system_state['measured_humidity'] = measured_humidity
+        system_state['sensor_last_updated'] = sensor_last_updated
+        system_state['humidity_last_updated'] = humidity_last_updated
+
+        report("Successfully acquired measured temps and humidity.")
         success = True
+
     except ModuleException as e:
         system_node.write({'last_updated':timestamp(),'error':True,'where':'temps'},'control/error')
-        ServiceException(f"Module error while acquiring measured temps", original_exception=e, severity = 3)
+        ServiceException(f"Module error while acquiring measured temps and humidity", original_exception=e, severity = 3)
+
     except Exception:
         system_node.write({'last_updated':timestamp(),'error':True,'where':'temps'},'control/error')
-        ServiceException(f"Unexpected error while acquiring measured temps", severity = 3)
+        ServiceException(f"Unexpected error while acquiring measured temps and humidity", severity = 3)
 
-    log({f"success_acquire_measured_temps":success})
+    log({f"success_acquire_measured_temps_and_humidity":success})
     
     success = False
     try:
@@ -834,8 +847,28 @@ if __name__ == '__main__':
         settings['log'] = False
     
     settings['verbosity'] = True
+
     heating_switch = acquire_heating_switch()
     system_state = get_system_state()
+
+    if heating_switch['system'] == 0:
+        report('Heating is switched off in config file.')
+
+        system_state['mode'] = 'heating_off'
+
+        if settings['on_raspi']:
+            try:
+                shutdown_heating()
+            except ModuleException as e:
+                system_node.write({'last_updated':timestamp(),'error':True,'where':'shutdown_heating'},'control/error')
+                ServiceException(f"Module error while shutting down heating", original_exception=e, severity = 3)
+            except Exception:
+                system_node.write({'last_updated':timestamp(),'error':True,'where':'shutdown_heating'},'control/error')
+                ServiceException(f"Unexpected error while shutting down heating", severity = 3)
+
+        export_system_state()
+        exit()
+
     compare_and_command(heating_switch, system_state)
     execute_commands()
     export_system_state()
