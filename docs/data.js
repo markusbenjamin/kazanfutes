@@ -1658,7 +1658,7 @@ function updateGeneralInfobox(info) {
         titleLine.style("text-decoration", "underline");
     }
 
-    let lines = [];
+    let lines = []; 
     if (info.heatingOn == 1) {
         // Generate lines from incoming info
         if (!isMobile) {
