@@ -5850,5 +5850,16 @@
         "reported_timestamp": "2026-05-22-00-00-31",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while shutting down heating: couldn't shut down heating: couldn't turn boiler OFF: couldn't set pin 6 mode to OUT: unexpected error while loading system/GPIO_state.json to dict: Expecting value: line 1 column 1 (char 0) (JSONDecodeError) (ModuleException) (ModuleException) (ModuleException).",
+        "severity": 3,
+        "origin": "heating_control.py:861 --> project.py/shutdown_heating:845",
+        "origin_timestamp": "2026-05-22-02-31-13",
+        "registration_timestamp": "2026-05-22-02-31-13",
+        "reported": true,
+        "reported_timestamp": "2026-05-22-02-35-27",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
