@@ -1324,6 +1324,36 @@ def read_deconz_state():
     except Exception:
         raise ModuleException("failed to connect to Deconz API due to unexpected error",severity=3)
 
+def deconz_timestamp_to_project_timestamp(deconz_timestamp):
+    """
+    Converts a deCONZ UTC timestamp string to settings['timestamp_format'] in local time.
+    Handles:
+        2026-05-20T16:52Z
+        2026-05-20T16:52:13Z
+        2026-05-20T16:52:13.123Z
+    """
+    if not deconz_timestamp or deconz_timestamp == "none":
+        return None
+
+    try:
+        ts = str(deconz_timestamp).replace("Z", "")
+
+        for fmt in [
+            "%Y-%m-%dT%H:%M:%S.%f",
+            "%Y-%m-%dT%H:%M:%S",
+            "%Y-%m-%dT%H:%M",
+        ]:
+            try:
+                dt = datetime.strptime(ts, fmt)
+                return dt.replace(tzinfo=timezone.utc).astimezone().strftime(settings["timestamp_format"])
+            except ValueError:
+                pass
+
+        raise ValueError(f"unsupported deCONZ timestamp format: {deconz_timestamp}")
+
+    except Exception:
+        raise ModuleException(f"couldn't convert deCONZ timestamp {deconz_timestamp}")
+    
 def read_sensors():
     """
     Extracts sensor states from overall ZigBee mesh state.
