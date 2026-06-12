@@ -6015,5 +6015,16 @@
         "reported_timestamp": "2026-06-09-15-40-18",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while trying to read and log FusionSolar inverter data: Message: script timeout\n  (Session info: chrome=147.0.7727.101)\n.",
+        "severity": 2,
+        "origin": "pv_logger.py:404 --> pv_logger.py/read_live_row:292 --> pv_logger.py/fetch_json:151 --> webdriver.py/execute_async_script:555 --> webdriver.py/execute:450 --> errorhandler.py/check_response:232",
+        "origin_timestamp": "2026-06-12-17-21-02",
+        "registration_timestamp": "2026-06-12-17-21-02",
+        "reported": true,
+        "reported_timestamp": "2026-06-12-17-25-15",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
