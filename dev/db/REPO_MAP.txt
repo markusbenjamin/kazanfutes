@@ -1,0 +1,99 @@
+kazanfutes/
+|-- .gitignore
+|-- PROJECT_ORIENTATION.md
+|-- REPO_MAP.txt
+|-- analysis/ [large/ignored: notebooks, plots, PDFs, historical analysis]
+|   |-- meteostat_data_unifier.py
+|   |-- notes.txt
+|   `-- setup_2425.json
+|-- config/
+|   |-- description.txt
+|   |-- heating_control_config.json
+|   |-- heating_switch.json
+|   |-- warming_params.csv
+|   |-- scheduling/
+|   |   `-- [config files; inspect only when needed]
+|   `-- secrets_and_env/ [ignored: secrets/env]
+|-- data/ [large/ignored: live data, logs, generated outputs]
+|   `-- logs/ [large/ignored: sample specific files only]
+|-- dev/
+|   |-- db/
+|   |   |-- API_local_test.py
+|   |   |-- db_api.py
+|   |   |-- db_gui.py
+|   |   |-- db_manager.py
+|   |   |-- log_parser.py
+|   |   |-- PLAN.md
+|   |   |-- STATUS.md
+|   |   |-- metadata/
+|   |   |   |-- generate_stream_metadata.py
+|   |   |   |-- scope_list.csv
+|   |   |   |-- scope_metadata.csv
+|   |   |   |-- stream_metadata.csv
+|   |   |   `-- variable_list.csv
+|   |   |-- store/ [ignored: DuckDB binary files and backups]
+|   |   `-- __pycache__/ [ignored]
+|   |-- config/
+|   |-- data/ [ignored: development data outputs]
+|   |-- ddf/
+|   |-- dev_scripts/
+|   |-- dut/ [large/ignored: historical dumps/snapshots]
+|   |-- heatmeter_reading/ [large/ignored: image/OCR experiments]
+|   |-- notes/
+|   |-- qr/
+|   |-- sonoff_router_reflash/
+|   |-- sources/
+|   |-- deconz_snapshot.json [large]
+|   `-- Modbus registers.csv
+|-- docs/
+|   |-- dashboard.html
+|   |-- dashboard_dev.html
+|   |-- dashboard_old.html
+|   |-- dashboard_styling.css
+|   |-- index.html
+|   |-- override_rooms.html
+|   |-- request_tracker.html
+|   |-- send_via_qr_code.html
+|   |-- styles.css
+|   |-- codebase.js
+|   |-- data.js
+|   |-- draw.js
+|   `-- [static images/fonts/icons omitted]
+|-- services/
+|   |-- aqara_and_nous_logger.py
+|   |-- data_and_config_uploader.py
+|   |-- data_formatter.py
+|   |-- electric_meter_logger.py
+|   |-- electric_submeters_logger.py
+|   |-- error_manager.py
+|   |-- external_temp_scraper_and_logger.py
+|   |-- gasmeter_logger.py
+|   |-- heating_control.py
+|   |-- heating_control_old.py
+|   |-- heatmeters_logger.py
+|   |-- light_state_manager.py
+|   |-- occupancy_logger.py
+|   |-- open_close_logger.py
+|   |-- presence_logger.py
+|   |-- presence_pattern_calculator.py
+|   |-- pump_power_logger.py
+|   |-- pv_logger.py
+|   |-- radiator_temps_logger.py
+|   |-- schedule_and_config_updater.py
+|   |-- service_manager.sh
+|   |-- services_and_timers.list
+|   |-- services_system_and_utils_syncer.py
+|   |-- temperature_and_humidity_logger.py
+|   |-- template.service
+|   |-- template.timer
+|   |-- thermostats_manager.py
+|   |-- turn_heating_off.py
+|   `-- weather_station_logger.py
+|-- system/
+|   `-- [system state/config files; inspect selectively]
+`-- utils/
+    |-- __init__.py
+    |-- project.py
+    |-- requirements.txt
+    |-- settings.json
+    `-- venv_start.txt
