@@ -2,7 +2,8 @@ kazanfutes/
 |-- .gitignore
 |-- PROJECT_ORIENTATION.md
 |-- REPO_MAP.txt
-|-- analysis/ [large/ignored: notebooks, plots, PDFs, historical analysis]
+|-- [note] bracket labels are agent-navigation notes; "git-ignored" is used only when the path is actually ignored by .gitignore
+|-- analysis/ [large / non-db material; avoid broad scans]
 |   |-- meteostat_data_unifier.py
 |   |-- notes.txt
 |   `-- setup_2425.json
@@ -13,19 +14,21 @@ kazanfutes/
 |   |-- warming_params.csv
 |   |-- scheduling/
 |   |   `-- [config files; inspect only when needed]
-|   `-- secrets_and_env/ [ignored: secrets/env]
-|-- data/ [large/ignored: live data, logs, generated outputs]
-|   `-- logs/ [large/ignored: sample specific files only]
+|   `-- secrets_and_env/ [git-ignored secrets/env]
+|-- data/ [large live data/logs/generated outputs; avoid broad scans]
+|   `-- logs/ [large live logs; sample specific files only]
 |-- dev/
 |   |-- db/
 |   |   |-- API_local_test.py
 |   |   |-- API_remote_test.py
+|   |   |-- AGENTS.md
 |   |   |-- db_client.py
 |   |   |-- db_manager.py
 |   |   |-- db_queries.py
 |   |   |-- db_server.py
 |   |   |-- log_parser.py
 |   |   |-- PLAN.md
+|   |   |-- REPO_MAP.txt
 |   |   |-- STATUS.md
 |   |   |-- metadata/
 |   |   |   |-- generate_stream_metadata.py
@@ -33,19 +36,19 @@ kazanfutes/
 |   |   |   |-- scope_metadata.csv
 |   |   |   |-- stream_metadata.csv
 |   |   |   `-- variable_list.csv
-|   |   |-- store/ [ignored: DuckDB binary files and backups]
-|   |   `-- __pycache__/ [ignored]
+|   |   |-- store/ [DuckDB binary files/backups; avoid broad inspection; may contain tracked DB files]
+|   |   `-- __pycache__/ [generated Python cache; ignore for agent work]
 |   |-- config/
-|   |-- data/ [ignored: development data outputs]
+|   |-- data/ [development data outputs; inspect selectively]
 |   |-- ddf/
 |   |-- dev_scripts/
-|   |-- dut/ [large/ignored: historical dumps/snapshots]
-|   |-- heatmeter_reading/ [large/ignored: image/OCR experiments]
+|   |-- dut/ [large historical dumps/snapshots; avoid broad scans]
+|   |-- heatmeter_reading/ [git-ignored contents; large image/OCR experiments]
 |   |-- notes/
 |   |-- qr/
 |   |-- sonoff_router_reflash/
 |   |-- sources/
-|   |-- deconz_snapshot.json [large]
+|   |-- deconz_snapshot.json [large file; inspect only when needed]
 |   `-- Modbus registers.csv
 |-- docs/
 |   |-- dashboard.html
