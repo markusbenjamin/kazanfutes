@@ -185,12 +185,18 @@ THERMOSTAT_RADIATOR_SCOPE_MAP = {
 }
 
 HEATING_CONTROL_VALVE_STREAM_MAP = {
-    "1": ["radiator.1.1.valve_state", "radiator.1.2.valve_state"],
+    # Oktopusz: two radiators, each with its own TRV
+    "1": [
+        "radiator.1.1.valve_state",
+        "radiator.1.2.valve_state",
+    ],
+
+    # Gólyafészek: four radiators, two TRV chains
+    # TRV 1 controls radiators 2.1-2.2, stored on master radiator 2.1
+    # TRV 2 controls radiators 2.3-2.4, stored on master radiator 2.3
     "2": [
         "radiator.2.1.valve_state",
-        "radiator.2.2.valve_state",
         "radiator.2.3.valve_state",
-        "radiator.2.4.valve_state",
     ],
     "3": ["radiator.3.1.valve_state"],
     "4": ["radiator.4.1.valve_state"],
