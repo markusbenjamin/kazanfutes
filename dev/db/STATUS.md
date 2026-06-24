@@ -152,6 +152,27 @@ Parser coverage notes:
 - Some catalog streams are intentionally broader than current sensors, for example room CO2 exists only for rooms with Nous devices.
 - Some source mappings are intentionally explicit because raw logs use device names, sensor names, or ordered list positions rather than canonical stream IDs.
 
+### `log_parser_test_modes.py`
+
+Developer-facing parse-only smoke-test runner for all current `log_parser.py` import modes.
+
+Current behavior:
+
+- tests one archived log date, controlled by environment variable `TEST_DATE` with default `2026-03-01`
+- does not write to `observations`
+- imports `log_parser.py` and calls the same parser functions used by the real import modes
+- checks whether the dated source file exists for each mode
+- catches parser exceptions and writes full tracebacks to a report
+- validates candidate stream IDs against the loaded `streams` catalog using a read-only DuckDB connection
+- reports candidate row counts, first/last parsed timestamps, out-of-date row counts, unknown stream IDs, malformed row examples, and scope/variable counts
+- writes reports to `dev/db/test_reports/log_parser_test_<TEST_DATE>.txt`
+
+Run example:
+
+```bash
+TEST_DATE=2026-03-01 python3 log_parser_test_modes.py
+```
+
 ### `db_queries.py`
 
 Current read-only API functions:
@@ -200,7 +221,7 @@ It exposes `DbApi`, with methods matching the local `db_queries.py` query layer,
 
 ## Current Next Step
 
-The next implementation step should be chosen from `PLAN.md` based on the latest design decision. If validation/import broadening remains deferred, the next feature-oriented step is likely lightweight API examples/manual notes, then deciding whether to improve availability gap reporting or start deployment packaging.
+Sync the updated `dev/db` directory to the Raspberry Pi and run `TEST_DATE=<date> python3 log_parser_test_modes.py`. Inspect the generated `dev/db/test_reports/log_parser_test_<date>.txt` report before any whole-span overnight imports.
 
 ## Known Limitations
 
