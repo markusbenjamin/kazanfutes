@@ -101,6 +101,27 @@ Do not duplicate query logic into a server layer when `db_queries.py` can be reu
 
 Do not run broad historical imports by default.
 
+Before preparing or recommending a broad import, require an explicit source-route
+review:
+
+1. Read `stream_ingestion_routes.csv`.
+2. Confirm every source log pattern maps to the intended stream target family.
+3. Treat non-empty comment/issue columns or unresolved markers as blockers.
+4. Demand user confirmation where the route depends on domain semantics.
+5. Do not infer source semantics from variable names alone.
+
+Known semantic traps:
+
+- `occupancy/occupancy.json` is derived and should not be used as a raw ingestion source unless the user explicitly re-approves it.
+- `presence/presence_all.json` feeds `room.*.presence_detected`, not `room.*.occupancy_state`.
+- `thermostats/thermostats_state.json` feeds radiator valve state, not radiator temperature.
+- Thermostat log names are historical valve labels, not reliable room labels. Resolve log key/name to thermostat ID first, then use `system/setup.json` as the authoritative thermostat-ID-to-room source.
+- For rooms with multiple radiators and fewer TRVs, store each TRV valve state on the first radiator in its controlled group; derive this from thermostat order in `system/setup.json` plus radiator order in `metadata/scope_list.csv`.
+- `service_execution/heating_control/heating_control.json` does not feed radiator valve state; use thermostat logs for that physical state.
+- `aqara_and_nous.json` currently routes all Aqara fields, with Aqara `presence` mapped to `room.*.occupancy_state`, and only Nous CO2.
+- Multiple Aqara devices in one room must remain independent observations for temperature, humidity, and illuminance; only Aqara occupancy is OR-combined per room/timestamp.
+- `replace_existing` rewrites all rows at matching timestamp/stream keys for the selected import, so require narrow target/date review before using it for repairs.
+
 For parser work:
 
 1. inspect the source format narrowly

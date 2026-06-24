@@ -52,24 +52,18 @@ Current stream count:
 
 Current loaded observation summary:
 
-- loaded stream count: `31`
-- total observation count: `6063150`
+- loaded stream count: `0`
+- total observation count: `0`
 
 Loaded observations by scope/variable:
 
-- `gas_meter.impulse`: 1 stream, 625 observations, `2025-02-10 00:13:38` to `2025-02-10 23:57:42`
-- `heating.state`: 1 stream, 211101 observations, `2025-11-01 00:00:06` to `2026-04-01 23:59:49`
-- `heating_cycle.state`: 4 streams, 844688 observations, `2025-11-01 00:00:06` to `2026-04-01 23:59:49`
-- `radiator.valve_state`: 11 streams, 2323805 observations, `2025-11-01 00:00:06` to `2026-04-01 23:59:49`
-- `room.humidity`: 1 stream, 60833 observations, `2024-10-10 15:45:31` to `2025-12-19 23:45:19`
-- `room.set_temperature`: 12 streams, 2534976 observations, `2025-11-01 00:00:06` to `2026-04-01 23:59:49`
-- `room.temperature`: 1 stream, 87122 observations, `2024-10-10 15:45:31` to `2026-06-23 13:13:30`
+- none currently loaded
 
 Notes:
 
-- `room.humidity` is partial; its long import was intentionally stopped.
-- `gas_meter.main.impulse` is still only a one-day test import from local date `2025-02-10`.
-- Heating-control streams have been loaded for `2025-11-01` through `2026-04-01`.
+- `observations` was cleared after user-confirmed backup so the database can be rebuilt from the current parser specs.
+- the clean reinitialized database has been reloaded with `303` stream metadata rows from `metadata/stream_metadata.csv`.
+- `stream_availability.html` and `stream_availability.csv` were regenerated after clearing observations.
 
 ## Current Scripts
 
@@ -111,6 +105,7 @@ Current modes:
 - `import_oktopusz_presence`
 - `import_open_close`
 - `import_outdoor_weather_com`
+- `import_room_presence`
 - `import_pump_power`
 - `import_pv_inverter`
 - `import_radiator_temperatures`
@@ -130,14 +125,19 @@ Current parser smoke-check result:
 - progress output now includes wall-clock timestamps and batch-write stage messages
 - `log_parser.py` now catches Ctrl+C during imports, closes the database connection, and prints the last committed file plus a restart `START_DATE` hint; this was checked with a simulated batch interrupt, not a real import
 - batch temp-table loading was changed from Python `executemany()` to a temporary CSV plus DuckDB `read_csv()` bulk load after a 10-file heating-control batch spent several minutes loading 396,103 rows through `executemany()`; the CSV loader passed an in-memory smoke check
-- imports now use `IMPORT_EXISTING_POLICY`; default `skip_existing` inserts only new `(timestamp, stream_id)` rows, while `replace_existing` is available for directed rewrites and `fail_on_existing` rejects collisions; all three policies passed in-memory smoke checks
+- imports now use `IMPORT_EXISTING_POLICY`; default `skip_existing` inserts exact observation rows whose multiplicity is not already present, while `replace_existing` is available for directed rewrites and `fail_on_existing` rejects key collisions; all three policies passed earlier in-memory smoke checks
+- duplicate-aware `skip_existing` was checked in memory: with one existing `(timestamp, stream_id, value)` row and two duplicate imported rows for that same triple, only the missing duplicate was inserted
+- timestamp parsing accepts both second-resolution (`YYYY-MM-DD-HH-MM-SS`) and legacy minute-resolution (`YYYY-MM-DD-HH-MM`) timestamps; this was checked against `temperature_and_humidity.json.2024-07-27`
+- thermostat valve-state parsing now resolves raw thermostat log keys/names to thermostat IDs, then uses `system/setup.json` as the authoritative thermostat-ID-to-room source; radiator target scopes are derived from radiator order in `metadata/scope_list.csv`
+- narrow thermostat parse checks passed for `thermostats_state.json.2026-06-23` and `thermostats_state.json.2025-10-06`; the current setup-derived map is `42->3.1`, `53->12.1`, `57->13.1`, `59->4.1`, `63->5.1`, `65->7.1`, `69->6.1`, `71->2.1`, `75->2.3`, `77->1.1`, `79->1.2`
+- historical key `Thermostat 67` appears in `thermostats_state.json.2025-10-06` but has no ID in `system/setup.json`; the parser reports and skips it rather than guessing
 
 Current parser coverage by scope:
 
-- `room`: temperature, humidity, set_temperature, occupancy_state, presence_detected, co2, illuminance. Coverage depends on source instrumentation: room temperature/humidity and occupancy are keyed by room ID; Aqara/Nous fields depend on explicit device-to-room mappings; CO2 is only available where a Nous device exists.
+- `room`: temperature, humidity, set_temperature, occupancy_state, presence_detected, co2, illuminance. Coverage depends on source instrumentation: temperature/humidity can come from room-keyed legacy logs and Aqara; Aqara presence maps to `occupancy_state`; raw `presence_all` maps to `presence_detected`; CO2 is only available where a Nous device exists. Multiple Aqara temperature/humidity/illuminance readings mapped to the same room are kept as independent observations; only Aqara occupancy is OR-combined per room/timestamp.
 - `heating`: main boiler/heating state from heating-control logs.
 - `heating_cycle`: state, pump_power, flow_temperature, return_temperature, volume_flow, power, energy, volume.
-- `radiator`: temperature and valve_state. Coverage depends on explicit radiator sensor mappings and, for heating-control valve states, room/list-position mappings.
+- `radiator`: temperature and valve_state. Temperature comes from radiator Shelly logs; valve state comes from thermostat state logs.
 - `door` and `window`: state from explicitly mapped open/close sensors.
 - `gas_meter`: main impulse events.
 - `electric_submeter`: mapped submeter impulse events.
@@ -151,6 +151,13 @@ Parser coverage notes:
 - Scope-level parser setup does not imply every catalog stream has physical instrumentation.
 - Some catalog streams are intentionally broader than current sensors, for example room CO2 exists only for rooms with Nous devices.
 - Some source mappings are intentionally explicit because raw logs use device names, sensor names, or ordered list positions rather than canonical stream IDs.
+- `occupancy/occupancy.json` is derived and is intentionally excluded from broad ingestion.
+- `thermostats/thermostats_state.json` no longer feeds `radiator.*.temperature`; it can feed radiator valve state only.
+- `thermostats/thermostats_state.json` must not map log names directly to rooms; names first resolve to thermostat IDs, then `system/setup.json` maps IDs to rooms.
+- `service_execution/heating_control/heating_control.json` no longer feeds `radiator.*.valve_state`; thermostat state logs are the valve-state source.
+- `aqara_and_nous.json` keeps Aqara temperature/humidity/illuminance as independent observations when multiple devices map to the same room; Aqara occupancy is the only combined Aqara field.
+- `open_close/open_close_events.json` feeds sparse door/window state-transition observations: each event records the resulting state at the event timestamp, not a dense continuous state series.
+- `replace_existing` is a key-level repair mode: it deletes existing rows at matching timestamp/stream keys before inserting the selected importer's rows, so use it only with reviewed target/date bounds.
 
 ### `log_parser_test_modes.py`
 
@@ -158,20 +165,75 @@ Developer-facing parse-only smoke-test runner for all current `log_parser.py` im
 
 Current behavior:
 
-- tests one archived log date, controlled by environment variable `TEST_DATE` with default `2026-03-01`
+- tests importer/stream-variable combinations without writing to `observations`
+- default target selection builds one target per `scope_type.variable` group from the loaded stream metadata
+- tests every relevant importer for a target instead of stopping after the first importer succeeds
+- scans up to `MAX_DAYS_TO_TRY_PER_IMPORTER` recent archived log days per importer; default is `30`
+- also checks the oldest archived source day by default, so legacy source formats are sampled before broad imports
 - does not write to `observations`
 - imports `log_parser.py` and calls the same parser functions used by the real import modes
-- checks whether the dated source file exists for each mode
+- validates that its importer registry matches `log_parser.py` import modes, excluding `list_modes`
+- checks whether archived source files exist for each importer source
 - catches parser exceptions and writes full tracebacks to a report
 - validates candidate stream IDs against the loaded `streams` catalog using a read-only DuckDB connection
 - reports candidate row counts, first/last parsed timestamps, out-of-date row counts, unknown stream IDs, malformed row examples, and scope/variable counts
-- writes reports to `dev/db/test_reports/log_parser_test_<TEST_DATE>.txt`
+- writes timestamped reports to `dev/db/test_reports/`
 
 Run example:
 
 ```bash
-TEST_DATE=2026-03-01 python3 log_parser_test_modes.py
+python3 log_parser_test_modes.py
 ```
+
+Latest report reviewed:
+
+- `dev/db/test_reports/log_parser_stream_variable_test_20260624_224608.txt`
+- `87` importer-target checks: `74` pass, `11` pass with warnings, `2` empty result.
+- No parser exceptions, no unknown stream IDs, no config errors, no missing source-log days.
+- Empty results were from `import_radiator_thermostats` on recent thermostat logs; this is not a blocker for other importers.
+- Warnings were stale timestamps in legacy room temperature/humidity and one weather-station row just before midnight; these are not ingestion blockers with `skip_existing`.
+- This report predates the latest source-route corrections for Aqara independent observations, thermostat valve state, and heating-control non-valve state. Rerun `log_parser_test_modes.py` before the next broad write.
+
+### `log_parser_overnight_import.py`
+
+Fail-safe runner for long local ingestion runs.
+
+Current behavior:
+
+- hardcoded top-level config, no CLI arguments required
+- has a route-review breadcrumb: broad import refuses to run until `ROUTE_REVIEW_ACK` is replaced after manually checking `stream_ingestion_routes.csv`
+- default `INGEST_TARGETS = "ALL_STREAMS_WITH_IMPORTERS"`
+- can target exact streams, scope/variable groups, or scope/scope_id/variable tuples
+- plans all relevant importers for each target and sets `STREAM_ID_FILTER` per importer, so a stream-targeted run ingests all available data sources for that stream without inserting unrelated streams
+- defaults to `START_DATE = None`, `END_DATE = None`, and `INCLUDE_CURRENT_LOG = False`, so it scans all archived logs and avoids mutable current logs
+- defaults to `IMPORT_EXISTING_POLICY = "skip_existing"`, which skips exact observation rows already present while preserving independent duplicate readings
+- writes a full transcript to `dev/db/test_reports/overnight_import_<timestamp>.log`
+- writes a terse error-only artifact to `dev/db/test_reports/overnight_import_errors_<timestamp>.txt`; clean runs still write the file with `no errors recorded`
+- renders a compact live terminal dashboard when running in an interactive terminal: overall importer progress, current mode/file progress bars, row counts, current target stream families, recent events, and error count
+- ensures database schema and stream metadata before building the import plan; this calls `db_manager.init_db()` and `db_manager.load_stream_metadata()` so a clean DB can still plan imports from metadata
+- creates a timestamped DuckDB backup in `dev/db/store/import_backups/` before importing
+- can optionally clear all existing `observations` before importing via `CLEAR_OBSERVATIONS_BEFORE_IMPORT`; this is guarded by a separate backup/clear acknowledgement breadcrumb
+- stops remaining modes on Ctrl+C after the active batch is rolled back by `log_parser.py`
+- refreshes `stream_availability.html` and `stream_availability.csv` at the end
+- excludes `import_room_occupancy` by default because `occupancy/occupancy.json` is derived
+
+Run example:
+
+```bash
+python3 log_parser_overnight_import.py
+```
+
+### `stream_ingestion_routes.csv`
+
+Simple human route table from source log patterns to stream target families.
+
+Current behavior:
+
+- two columns only: `source_log_file_name_pattern` and `stream_target`
+- rows are scope/variable-oriented rather than one row per stream ID
+- `presence/presence_all.json` points at `room.*.presence_detected`
+- `aqara_and_nous.json` points at Aqara room temperature, humidity, occupancy_state, illuminance, and Nous CO2
+- the old derived `occupancy/occupancy.json` route is intentionally excluded
 
 ### `db_queries.py`
 
@@ -221,13 +283,14 @@ It exposes `DbApi`, with methods matching the local `db_queries.py` query layer,
 
 ## Current Next Step
 
-Sync the updated `dev/db` directory to the Raspberry Pi and run `TEST_DATE=<date> python3 log_parser_test_modes.py`. Inspect the generated `dev/db/test_reports/log_parser_test_<date>.txt` report before any whole-span overnight imports.
+Rerun `python3 log_parser_test_modes.py`, inspect the new report, manually review `stream_ingestion_routes.csv`, and only then unlock and run `python3 log_parser_overnight_import.py` on the Windows development machine. Keep `INCLUDE_CURRENT_LOG = False` for this run, and stop any local DB API server before importing so DuckDB can open the database for writing.
 
 ## Known Limitations
 
-- Many catalog streams are still empty; currently `31` of `303` streams have observations.
-- `room.humidity` is partial and `gas_meter.main.impulse` is still a one-day test import.
+- All catalog streams are currently empty after the observation-table reset; rebuild imports have not been rerun yet.
 - `stream_availability` is only first/last/count and does not show gaps.
+- Sparse transition-state streams such as door/window open-close state need state-aware API summary logic for duration/open-fraction style metrics; ordinary observation means over event rows are not semantically meaningful.
+- Derived streams that depend on sparse state transitions should reconstruct intervals or use as-of/last-observation-carried-forward logic rather than treating transition rows as dense samples.
 - The HTTP server is local/dev only so far; deployment/service packaging is not done.
 - There is no final README/manual yet.
 - Some raw log names intentionally differ from canonical stream IDs; importers must handle that mapping.

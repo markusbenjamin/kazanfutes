@@ -138,6 +138,15 @@ def load_stream_metadata():
     """)
 
     con.execute("""
+    DELETE FROM streams
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM loaded_streams
+        WHERE loaded_streams.stream_id = streams.stream_id
+    );
+    """)
+
+    con.execute("""
     INSERT INTO streams (
         stream_id,
         variable,

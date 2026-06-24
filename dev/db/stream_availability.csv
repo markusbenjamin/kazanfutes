@@ -1,18 +1,18 @@
 stream_id,variable,scope_type,scope_id,unit,first_observation,last_observation,observation_count
-door.1.1.state,state,door,1.1,boolean,,,0
-door.11.1.state,state,door,11.1,boolean,,,0
-door.12.1.state,state,door,12.1,boolean,,,0
-door.13.1.state,state,door,13.1,boolean,,,0
-door.17.1.state,state,door,17.1,boolean,,,0
-door.2.1.state,state,door,2.1,boolean,,,0
-door.2.2.state,state,door,2.2,boolean,,,0
-door.24.1.state,state,door,24.1,boolean,,,0
-door.25.2.state,state,door,25.2,boolean,,,0
-door.3.1.state,state,door,3.1,boolean,,,0
-door.4.1.state,state,door,4.1,boolean,,,0
-door.5.1.state,state,door,5.1,boolean,,,0
-door.6.1.state,state,door,6.1,boolean,,,0
-door.7.1.state,state,door,7.1,boolean,,,0
+door.1.1.state,state,door,1.1,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,129
+door.11.1.state,state,door,11.1,boolean,2026-05-05 00:52:11,2026-05-06 21:42:34,21
+door.12.1.state,state,door,12.1,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,367
+door.13.1.state,state,door,13.1,boolean,2026-05-05 00:52:11,2026-05-20 18:33:01,74
+door.17.1.state,state,door,17.1,boolean,2026-05-05 00:52:11,2026-05-20 18:33:01,280
+door.2.1.state,state,door,2.1,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,326
+door.2.2.state,state,door,2.2,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,227
+door.24.1.state,state,door,24.1,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,684
+door.25.2.state,state,door,25.2,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,776
+door.3.1.state,state,door,3.1,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,895
+door.4.1.state,state,door,4.1,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,358
+door.5.1.state,state,door,5.1,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,495
+door.6.1.state,state,door,6.1,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,199
+door.7.1.state,state,door,7.1,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,298
 electric_main_meter.main.active_current_l1,active_current_l1,electric_main_meter,main,A,,,0
 electric_main_meter.main.active_current_l2,active_current_l2,electric_main_meter,main,A,,,0
 electric_main_meter.main.active_current_l3,active_current_l3,electric_main_meter,main,A,,,0
@@ -39,7 +39,7 @@ electric_submeter.oktopusz_szita.impulse,impulse,electric_submeter,oktopusz_szit
 electric_submeter.pk.impulse,impulse,electric_submeter,pk,count,,,0
 electric_submeter.studio.impulse,impulse,electric_submeter,studio,count,,,0
 electric_submeter.szgk.impulse,impulse,electric_submeter,szgk,count,,,0
-gas_meter.main.impulse,impulse,gas_meter,main,count,2025-02-10 00:13:38,2025-02-10 23:57:42,625
+gas_meter.main.impulse,impulse,gas_meter,main,count,,,0
 heating.main.state,state,heating,main,boolean,,,0
 heating_cycle.1.energy,energy,heating_cycle,1,kWh,,,0
 heating_cycle.1.flow_temperature,flow_temperature,heating_cycle,1,C,,,0
@@ -74,231 +74,231 @@ heating_cycle.4.state,state,heating_cycle,4,boolean,,,0
 heating_cycle.4.volume,volume,heating_cycle,4,m3,,,0
 heating_cycle.4.volume_flow,volume_flow,heating_cycle,4,m3/h,,,0
 outdoor.weather_com.temperature,temperature,outdoor,weather_com,C,,,0
-pv.inverter.daily_energy,daily_energy,pv,inverter,kWh,,,0
-pv.inverter.grid_frequency,grid_frequency,pv,inverter,Hz,,,0
-pv.inverter.grid_phase_a_current,grid_phase_a_current,pv,inverter,A,,,0
-pv.inverter.mppt_1_dc_cumulative_energy,mppt_1_dc_cumulative_energy,pv,inverter,kWh,,,0
-pv.inverter.mppt_2_dc_cumulative_energy,mppt_2_dc_cumulative_energy,pv,inverter,kWh,,,0
-pv.inverter.mppt_3_dc_cumulative_energy,mppt_3_dc_cumulative_energy,pv,inverter,kWh,,,0
-pv.inverter.mppt_4_dc_cumulative_energy,mppt_4_dc_cumulative_energy,pv,inverter,kWh,,,0
-pv.inverter.output_reactive_power,output_reactive_power,pv,inverter,kvar,,,0
-pv.inverter.phase_a_voltage,phase_a_voltage,pv,inverter,V,,,0
-pv.inverter.phase_b_current,phase_b_current,pv,inverter,A,,,0
-pv.inverter.phase_b_voltage,phase_b_voltage,pv,inverter,V,,,0
-pv.inverter.phase_c_current,phase_c_current,pv,inverter,A,,,0
-pv.inverter.phase_c_voltage,phase_c_voltage,pv,inverter,V,,,0
-pv.inverter.power_factor,power_factor,pv,inverter,ratio,,,0
-pv.inverter.production,production,pv,inverter,kW,,,0
-pv.inverter.pv1_input_current,pv1_input_current,pv,inverter,A,,,0
-pv.inverter.pv1_input_voltage,pv1_input_voltage,pv,inverter,V,,,0
-pv.inverter.pv2_input_current,pv2_input_current,pv,inverter,A,,,0
-pv.inverter.pv2_input_voltage,pv2_input_voltage,pv,inverter,V,,,0
-pv.inverter.pv3_input_current,pv3_input_current,pv,inverter,A,,,0
-pv.inverter.pv3_input_voltage,pv3_input_voltage,pv,inverter,V,,,0
-pv.inverter.pv4_input_current,pv4_input_current,pv,inverter,A,,,0
-pv.inverter.pv4_input_voltage,pv4_input_voltage,pv,inverter,V,,,0
-pv.inverter.pv5_input_current,pv5_input_current,pv,inverter,A,,,0
-pv.inverter.pv5_input_voltage,pv5_input_voltage,pv,inverter,V,,,0
-pv.inverter.pv6_input_current,pv6_input_current,pv,inverter,A,,,0
-pv.inverter.pv6_input_voltage,pv6_input_voltage,pv,inverter,V,,,0
-pv.inverter.pv7_input_current,pv7_input_current,pv,inverter,A,,,0
-pv.inverter.pv7_input_voltage,pv7_input_voltage,pv,inverter,V,,,0
-pv.inverter.pv8_input_current,pv8_input_current,pv,inverter,A,,,0
-pv.inverter.pv8_input_voltage,pv8_input_voltage,pv,inverter,V,,,0
-pv.inverter.total_input_power,total_input_power,pv,inverter,kW,,,0
-radiator.1.1.temperature,temperature,radiator,1.1,C,,,0
-radiator.1.1.valve_state,valve_state,radiator,1.1,%,,,0
+pv.inverter.daily_energy,daily_energy,pv,inverter,kWh,2026-05-04 18:37:22,2026-06-23 23:55:28,9054
+pv.inverter.grid_frequency,grid_frequency,pv,inverter,Hz,2026-05-04 18:37:22,2026-06-23 23:55:28,8726
+pv.inverter.grid_phase_a_current,grid_phase_a_current,pv,inverter,A,2026-05-04 18:37:22,2026-06-23 23:55:28,8717
+pv.inverter.mppt_1_dc_cumulative_energy,mppt_1_dc_cumulative_energy,pv,inverter,kWh,2026-05-04 18:37:22,2026-06-23 23:55:28,9583
+pv.inverter.mppt_2_dc_cumulative_energy,mppt_2_dc_cumulative_energy,pv,inverter,kWh,2026-05-04 18:37:22,2026-06-23 23:55:28,9595
+pv.inverter.mppt_3_dc_cumulative_energy,mppt_3_dc_cumulative_energy,pv,inverter,kWh,2026-05-04 18:37:22,2026-06-23 23:55:28,9595
+pv.inverter.mppt_4_dc_cumulative_energy,mppt_4_dc_cumulative_energy,pv,inverter,kWh,2026-05-04 18:37:22,2026-06-23 23:55:28,9595
+pv.inverter.output_reactive_power,output_reactive_power,pv,inverter,kvar,2026-05-04 18:37:22,2026-06-23 23:55:28,9054
+pv.inverter.phase_a_voltage,phase_a_voltage,pv,inverter,V,2026-05-04 18:37:22,2026-06-23 23:55:28,8717
+pv.inverter.phase_b_current,phase_b_current,pv,inverter,A,2026-05-04 18:37:22,2026-06-23 23:55:28,8717
+pv.inverter.phase_b_voltage,phase_b_voltage,pv,inverter,V,2026-05-04 18:37:22,2026-06-23 23:55:28,8717
+pv.inverter.phase_c_current,phase_c_current,pv,inverter,A,2026-05-04 18:37:22,2026-06-23 23:55:28,8726
+pv.inverter.phase_c_voltage,phase_c_voltage,pv,inverter,V,2026-05-04 18:37:22,2026-06-23 23:55:28,8717
+pv.inverter.power_factor,power_factor,pv,inverter,ratio,2026-05-04 18:37:22,2026-06-23 23:55:28,8726
+pv.inverter.production,production,pv,inverter,kW,2026-05-04 18:37:22,2026-06-23 23:55:28,9054
+pv.inverter.pv1_input_current,pv1_input_current,pv,inverter,A,2026-05-04 18:37:22,2026-06-23 23:55:28,9069
+pv.inverter.pv1_input_voltage,pv1_input_voltage,pv,inverter,V,2026-05-04 18:37:22,2026-06-23 23:55:28,9054
+pv.inverter.pv2_input_current,pv2_input_current,pv,inverter,A,2026-05-04 18:37:22,2026-06-23 23:55:28,9069
+pv.inverter.pv2_input_voltage,pv2_input_voltage,pv,inverter,V,2026-05-04 18:37:22,2026-06-23 23:55:28,9069
+pv.inverter.pv3_input_current,pv3_input_current,pv,inverter,A,2026-05-04 18:37:22,2026-06-23 23:55:28,9390
+pv.inverter.pv3_input_voltage,pv3_input_voltage,pv,inverter,V,2026-05-04 18:37:22,2026-06-23 23:55:28,9390
+pv.inverter.pv4_input_current,pv4_input_current,pv,inverter,A,2026-05-04 18:37:22,2026-06-23 23:55:28,9390
+pv.inverter.pv4_input_voltage,pv4_input_voltage,pv,inverter,V,2026-05-04 18:37:22,2026-06-23 23:55:28,9390
+pv.inverter.pv5_input_current,pv5_input_current,pv,inverter,A,2026-05-04 18:37:22,2026-06-23 23:55:28,9402
+pv.inverter.pv5_input_voltage,pv5_input_voltage,pv,inverter,V,2026-05-04 18:37:22,2026-06-23 23:55:28,9390
+pv.inverter.pv6_input_current,pv6_input_current,pv,inverter,A,2026-05-04 18:37:22,2026-06-23 23:55:28,9402
+pv.inverter.pv6_input_voltage,pv6_input_voltage,pv,inverter,V,2026-05-04 18:37:22,2026-06-23 23:55:28,9402
+pv.inverter.pv7_input_current,pv7_input_current,pv,inverter,A,2026-05-04 18:37:22,2026-06-23 23:55:28,9583
+pv.inverter.pv7_input_voltage,pv7_input_voltage,pv,inverter,V,2026-05-04 18:37:22,2026-06-23 23:55:28,9583
+pv.inverter.pv8_input_current,pv8_input_current,pv,inverter,A,2026-05-04 18:37:22,2026-06-23 23:55:28,9583
+pv.inverter.pv8_input_voltage,pv8_input_voltage,pv,inverter,V,2026-05-04 18:37:22,2026-06-23 23:55:28,9583
+pv.inverter.total_input_power,total_input_power,pv,inverter,kW,2026-05-04 18:37:22,2026-06-23 23:55:28,9054
+radiator.1.1.temperature,temperature,radiator,1.1,C,2026-04-09 12:24:27,2026-06-23 23:59:06,103465
+radiator.1.1.valve_state,valve_state,radiator,1.1,%,2025-10-06 22:52:55,2026-06-23 23:59:13,361957
 radiator.1.2.temperature,temperature,radiator,1.2,C,,,0
-radiator.1.2.valve_state,valve_state,radiator,1.2,%,,,0
-radiator.12.1.temperature,temperature,radiator,12.1,C,,,0
-radiator.12.1.valve_state,valve_state,radiator,12.1,%,,,0
-radiator.12.2.temperature,temperature,radiator,12.2,C,,,0
+radiator.1.2.valve_state,valve_state,radiator,1.2,%,2025-10-06 22:52:55,2026-06-23 23:59:13,361957
+radiator.12.1.temperature,temperature,radiator,12.1,C,2026-04-09 12:24:27,2026-06-23 23:59:06,74824
+radiator.12.1.valve_state,valve_state,radiator,12.1,%,2025-10-06 22:52:55,2026-06-23 23:59:13,361957
+radiator.12.2.temperature,temperature,radiator,12.2,C,2026-04-09 12:24:27,2026-06-23 23:59:06,74788
 radiator.12.2.valve_state,valve_state,radiator,12.2,%,,,0
-radiator.12.3.temperature,temperature,radiator,12.3,C,,,0
+radiator.12.3.temperature,temperature,radiator,12.3,C,2026-04-09 12:24:27,2026-06-23 23:59:06,74756
 radiator.12.3.valve_state,valve_state,radiator,12.3,%,,,0
-radiator.13.1.temperature,temperature,radiator,13.1,C,,,0
-radiator.13.1.valve_state,valve_state,radiator,13.1,%,,,0
-radiator.2.1.temperature,temperature,radiator,2.1,C,,,0
-radiator.2.1.valve_state,valve_state,radiator,2.1,%,,,0
-radiator.2.2.temperature,temperature,radiator,2.2,C,,,0
+radiator.13.1.temperature,temperature,radiator,13.1,C,2026-04-09 12:24:27,2026-06-23 23:59:06,104301
+radiator.13.1.valve_state,valve_state,radiator,13.1,%,2025-10-06 22:52:55,2026-06-23 23:59:13,361957
+radiator.2.1.temperature,temperature,radiator,2.1,C,2026-04-09 12:24:27,2026-06-23 23:59:06,104273
+radiator.2.1.valve_state,valve_state,radiator,2.1,%,2025-10-06 22:52:55,2026-06-23 23:59:13,361957
+radiator.2.2.temperature,temperature,radiator,2.2,C,2026-04-09 12:24:27,2026-06-23 23:59:06,104264
 radiator.2.2.valve_state,valve_state,radiator,2.2,%,,,0
-radiator.2.3.temperature,temperature,radiator,2.3,C,,,0
-radiator.2.3.valve_state,valve_state,radiator,2.3,%,,,0
-radiator.2.4.temperature,temperature,radiator,2.4,C,,,0
+radiator.2.3.temperature,temperature,radiator,2.3,C,2026-04-09 12:24:27,2026-06-23 23:59:06,104267
+radiator.2.3.valve_state,valve_state,radiator,2.3,%,2025-10-06 22:52:55,2026-06-23 23:59:13,361957
+radiator.2.4.temperature,temperature,radiator,2.4,C,2026-04-09 12:24:27,2026-06-23 23:59:06,104272
 radiator.2.4.valve_state,valve_state,radiator,2.4,%,,,0
-radiator.3.1.temperature,temperature,radiator,3.1,C,,,0
-radiator.3.1.valve_state,valve_state,radiator,3.1,%,,,0
-radiator.3.2.temperature,temperature,radiator,3.2,C,,,0
+radiator.3.1.temperature,temperature,radiator,3.1,C,2026-04-09 12:24:27,2026-06-23 23:59:06,104311
+radiator.3.1.valve_state,valve_state,radiator,3.1,%,2025-10-06 22:52:55,2026-06-23 23:59:13,361957
+radiator.3.2.temperature,temperature,radiator,3.2,C,2026-04-09 12:24:27,2026-06-23 23:59:06,104310
 radiator.3.2.valve_state,valve_state,radiator,3.2,%,,,0
-radiator.4.1.temperature,temperature,radiator,4.1,C,,,0
-radiator.4.1.valve_state,valve_state,radiator,4.1,%,,,0
-radiator.5.1.temperature,temperature,radiator,5.1,C,,,0
-radiator.5.1.valve_state,valve_state,radiator,5.1,%,,,0
-radiator.6.1.temperature,temperature,radiator,6.1,C,,,0
-radiator.6.1.valve_state,valve_state,radiator,6.1,%,,,0
-radiator.7.1.temperature,temperature,radiator,7.1,C,,,0
-radiator.7.1.valve_state,valve_state,radiator,7.1,%,,,0
-radiator.7.2.temperature,temperature,radiator,7.2,C,,,0
+radiator.4.1.temperature,temperature,radiator,4.1,C,2026-04-09 12:24:27,2026-06-23 23:59:06,104281
+radiator.4.1.valve_state,valve_state,radiator,4.1,%,2025-10-06 22:52:55,2026-06-23 23:59:13,361957
+radiator.5.1.temperature,temperature,radiator,5.1,C,2026-04-09 12:24:27,2026-06-23 23:59:06,104196
+radiator.5.1.valve_state,valve_state,radiator,5.1,%,2025-10-06 22:52:55,2026-06-23 23:59:13,361957
+radiator.6.1.temperature,temperature,radiator,6.1,C,2026-04-09 12:24:27,2026-06-23 23:59:06,104284
+radiator.6.1.valve_state,valve_state,radiator,6.1,%,2025-10-06 22:52:55,2026-06-23 23:59:13,361957
+radiator.7.1.temperature,temperature,radiator,7.1,C,2026-04-09 12:24:27,2026-06-23 23:59:06,104347
+radiator.7.1.valve_state,valve_state,radiator,7.1,%,2025-10-06 22:52:55,2026-06-23 23:59:13,361957
+radiator.7.2.temperature,temperature,radiator,7.2,C,2026-04-09 12:24:27,2026-06-23 23:59:06,104346
 radiator.7.2.valve_state,valve_state,radiator,7.2,%,,,0
-room.1.co2,co2,room,1,ppm,,,0
-room.1.humidity,humidity,room,1,%,2024-10-10 15:45:31,2025-12-19 23:45:19,60833
-room.1.illuminance,illuminance,room,1,lux,,,0
-room.1.occupancy_state,occupancy_state,room,1,boolean,,,0
-room.1.presence_detected,presence_detected,room,1,count,,,0
+room.1.co2,co2,room,1,ppm,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.1.humidity,humidity,room,1,%,2024-10-10 15:45:31,2026-06-23 23:59:02,122189
+room.1.illuminance,illuminance,room,1,lux,2026-05-06 22:47:05,2026-06-23 23:59:02,34744
+room.1.occupancy_state,occupancy_state,room,1,boolean,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.1.presence_detected,presence_detected,room,1,count,2025-02-05 17:23:01,2026-06-23 23:59:00,364269
 room.1.set_temperature,set_temperature,room,1,C,,,0
-room.1.temperature,temperature,room,1,C,2024-10-10 15:45:31,2026-06-23 13:13:30,87122
+room.1.temperature,temperature,room,1,C,2024-10-10 15:45:31,2026-06-23 23:59:02,122183
 room.10.co2,co2,room,10,ppm,,,0
-room.10.humidity,humidity,room,10,%,,,0
+room.10.humidity,humidity,room,10,%,2025-01-15 10:30:16,2026-06-23 23:46:29,57529
 room.10.illuminance,illuminance,room,10,lux,,,0
 room.10.occupancy_state,occupancy_state,room,10,boolean,,,0
 room.10.presence_detected,presence_detected,room,10,count,,,0
 room.10.set_temperature,set_temperature,room,10,C,,,0
-room.10.temperature,temperature,room,10,C,,,0
+room.10.temperature,temperature,room,10,C,2025-01-15 10:30:16,2026-06-23 23:46:29,57511
 room.11.co2,co2,room,11,ppm,,,0
-room.11.humidity,humidity,room,11,%,,,0
-room.11.illuminance,illuminance,room,11,lux,,,0
-room.11.occupancy_state,occupancy_state,room,11,boolean,,,0
+room.11.humidity,humidity,room,11,%,2024-10-30 14:38:17,2026-06-23 23:59:02,118203
+room.11.illuminance,illuminance,room,11,lux,2026-05-06 22:47:05,2026-06-23 23:59:02,34744
+room.11.occupancy_state,occupancy_state,room,11,boolean,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
 room.11.presence_detected,presence_detected,room,11,count,,,0
 room.11.set_temperature,set_temperature,room,11,C,,,0
-room.11.temperature,temperature,room,11,C,,,0
-room.12.co2,co2,room,12,ppm,,,0
-room.12.humidity,humidity,room,12,%,,,0
-room.12.illuminance,illuminance,room,12,lux,,,0
-room.12.occupancy_state,occupancy_state,room,12,boolean,,,0
-room.12.presence_detected,presence_detected,room,12,count,,,0
+room.11.temperature,temperature,room,11,C,2024-10-30 14:38:17,2026-06-23 23:59:02,118171
+room.12.co2,co2,room,12,ppm,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.12.humidity,humidity,room,12,%,2024-10-30 14:38:51,2026-06-23 23:59:02,58323
+room.12.illuminance,illuminance,room,12,lux,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.12.occupancy_state,occupancy_state,room,12,boolean,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.12.presence_detected,presence_detected,room,12,count,2025-09-30 17:01:53,2026-06-23 23:59:00,362175
 room.12.set_temperature,set_temperature,room,12,C,,,0
-room.12.temperature,temperature,room,12,C,,,0
-room.13.co2,co2,room,13,ppm,,,0
-room.13.humidity,humidity,room,13,%,,,0
-room.13.illuminance,illuminance,room,13,lux,,,0
-room.13.occupancy_state,occupancy_state,room,13,boolean,,,0
-room.13.presence_detected,presence_detected,room,13,count,,,0
+room.12.temperature,temperature,room,12,C,2024-10-30 14:38:51,2026-06-23 23:59:02,58305
+room.13.co2,co2,room,13,ppm,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.13.humidity,humidity,room,13,%,2025-01-31 15:47:54,2026-06-23 23:59:02,52796
+room.13.illuminance,illuminance,room,13,lux,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.13.occupancy_state,occupancy_state,room,13,boolean,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.13.presence_detected,presence_detected,room,13,count,2025-09-30 17:01:53,2026-06-23 23:59:00,362001
 room.13.set_temperature,set_temperature,room,13,C,,,0
-room.13.temperature,temperature,room,13,C,,,0
+room.13.temperature,temperature,room,13,C,2025-01-31 15:47:54,2026-06-23 23:59:02,52776
 room.16.co2,co2,room,16,ppm,,,0
-room.16.humidity,humidity,room,16,%,,,0
-room.16.illuminance,illuminance,room,16,lux,,,0
-room.16.occupancy_state,occupancy_state,room,16,boolean,,,0
+room.16.humidity,humidity,room,16,%,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.16.illuminance,illuminance,room,16,lux,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.16.occupancy_state,occupancy_state,room,16,boolean,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
 room.16.presence_detected,presence_detected,room,16,count,,,0
 room.16.set_temperature,set_temperature,room,16,C,,,0
-room.16.temperature,temperature,room,16,C,,,0
-room.17.co2,co2,room,17,ppm,,,0
-room.17.humidity,humidity,room,17,%,,,0
-room.17.illuminance,illuminance,room,17,lux,,,0
-room.17.occupancy_state,occupancy_state,room,17,boolean,,,0
+room.16.temperature,temperature,room,16,C,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.17.co2,co2,room,17,ppm,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.17.humidity,humidity,room,17,%,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.17.illuminance,illuminance,room,17,lux,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.17.occupancy_state,occupancy_state,room,17,boolean,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
 room.17.presence_detected,presence_detected,room,17,count,,,0
 room.17.set_temperature,set_temperature,room,17,C,,,0
-room.17.temperature,temperature,room,17,C,,,0
+room.17.temperature,temperature,room,17,C,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
 room.18.co2,co2,room,18,ppm,,,0
-room.18.humidity,humidity,room,18,%,,,0
-room.18.illuminance,illuminance,room,18,lux,,,0
-room.18.occupancy_state,occupancy_state,room,18,boolean,,,0
+room.18.humidity,humidity,room,18,%,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.18.illuminance,illuminance,room,18,lux,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.18.occupancy_state,occupancy_state,room,18,boolean,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
 room.18.presence_detected,presence_detected,room,18,count,,,0
 room.18.set_temperature,set_temperature,room,18,C,,,0
-room.18.temperature,temperature,room,18,C,,,0
-room.2.co2,co2,room,2,ppm,,,0
-room.2.humidity,humidity,room,2,%,,,0
-room.2.illuminance,illuminance,room,2,lux,,,0
-room.2.occupancy_state,occupancy_state,room,2,boolean,,,0
-room.2.presence_detected,presence_detected,room,2,count,,,0
+room.18.temperature,temperature,room,18,C,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.2.co2,co2,room,2,ppm,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.2.humidity,humidity,room,2,%,2024-07-26 23:12:00,2026-06-23 23:59:02,109916
+room.2.illuminance,illuminance,room,2,lux,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.2.occupancy_state,occupancy_state,room,2,boolean,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.2.presence_detected,presence_detected,room,2,count,2025-09-30 17:01:53,2026-06-23 23:59:00,362172
 room.2.set_temperature,set_temperature,room,2,C,,,0
-room.2.temperature,temperature,room,2,C,,,0
+room.2.temperature,temperature,room,2,C,2024-07-26 23:12:00,2026-06-23 23:59:02,109887
 room.24.co2,co2,room,24,ppm,,,0
-room.24.humidity,humidity,room,24,%,,,0
-room.24.illuminance,illuminance,room,24,lux,,,0
-room.24.occupancy_state,occupancy_state,room,24,boolean,,,0
+room.24.humidity,humidity,room,24,%,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.24.illuminance,illuminance,room,24,lux,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.24.occupancy_state,occupancy_state,room,24,boolean,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
 room.24.presence_detected,presence_detected,room,24,count,,,0
 room.24.set_temperature,set_temperature,room,24,C,,,0
-room.24.temperature,temperature,room,24,C,,,0
+room.24.temperature,temperature,room,24,C,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
 room.25.co2,co2,room,25,ppm,,,0
-room.25.humidity,humidity,room,25,%,,,0
-room.25.illuminance,illuminance,room,25,lux,,,0
-room.25.occupancy_state,occupancy_state,room,25,boolean,,,0
+room.25.humidity,humidity,room,25,%,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.25.illuminance,illuminance,room,25,lux,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.25.occupancy_state,occupancy_state,room,25,boolean,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
 room.25.presence_detected,presence_detected,room,25,count,,,0
 room.25.set_temperature,set_temperature,room,25,C,,,0
-room.25.temperature,temperature,room,25,C,,,0
-room.3.co2,co2,room,3,ppm,,,0
-room.3.humidity,humidity,room,3,%,,,0
-room.3.illuminance,illuminance,room,3,lux,,,0
-room.3.occupancy_state,occupancy_state,room,3,boolean,,,0
-room.3.presence_detected,presence_detected,room,3,count,,,0
+room.25.temperature,temperature,room,25,C,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.3.co2,co2,room,3,ppm,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.3.humidity,humidity,room,3,%,2024-07-24 18:42:00,2026-06-23 23:59:02,113429
+room.3.illuminance,illuminance,room,3,lux,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.3.occupancy_state,occupancy_state,room,3,boolean,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.3.presence_detected,presence_detected,room,3,count,2025-09-30 17:01:53,2026-06-23 23:59:00,362163
 room.3.set_temperature,set_temperature,room,3,C,,,0
-room.3.temperature,temperature,room,3,C,,,0
-room.4.co2,co2,room,4,ppm,,,0
-room.4.humidity,humidity,room,4,%,,,0
-room.4.illuminance,illuminance,room,4,lux,,,0
-room.4.occupancy_state,occupancy_state,room,4,boolean,,,0
-room.4.presence_detected,presence_detected,room,4,count,,,0
+room.3.temperature,temperature,room,3,C,2024-07-24 18:42:00,2026-06-23 23:59:02,113419
+room.4.co2,co2,room,4,ppm,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.4.humidity,humidity,room,4,%,2024-07-24 18:41:00,2026-06-23 23:59:02,112293
+room.4.illuminance,illuminance,room,4,lux,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.4.occupancy_state,occupancy_state,room,4,boolean,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.4.presence_detected,presence_detected,room,4,count,2025-09-30 17:01:53,2026-06-23 23:59:00,359469
 room.4.set_temperature,set_temperature,room,4,C,,,0
-room.4.temperature,temperature,room,4,C,,,0
-room.5.co2,co2,room,5,ppm,,,0
-room.5.humidity,humidity,room,5,%,,,0
-room.5.illuminance,illuminance,room,5,lux,,,0
-room.5.occupancy_state,occupancy_state,room,5,boolean,,,0
-room.5.presence_detected,presence_detected,room,5,count,,,0
+room.4.temperature,temperature,room,4,C,2024-07-24 18:41:00,2026-06-23 23:59:02,112287
+room.5.co2,co2,room,5,ppm,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.5.humidity,humidity,room,5,%,2024-07-26 23:13:00,2026-06-23 23:59:02,127171
+room.5.illuminance,illuminance,room,5,lux,2026-05-06 22:47:05,2026-06-23 23:59:02,34744
+room.5.occupancy_state,occupancy_state,room,5,boolean,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.5.presence_detected,presence_detected,room,5,count,2025-09-30 17:01:53,2026-06-23 23:59:00,362166
 room.5.set_temperature,set_temperature,room,5,C,,,0
-room.5.temperature,temperature,room,5,C,,,0
-room.6.co2,co2,room,6,ppm,,,0
-room.6.humidity,humidity,room,6,%,,,0
-room.6.illuminance,illuminance,room,6,lux,,,0
-room.6.occupancy_state,occupancy_state,room,6,boolean,,,0
-room.6.presence_detected,presence_detected,room,6,count,,,0
+room.5.temperature,temperature,room,5,C,2024-07-26 23:13:00,2026-06-23 23:59:02,127166
+room.6.co2,co2,room,6,ppm,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.6.humidity,humidity,room,6,%,2024-10-10 15:47:00,2026-06-23 23:59:02,97428
+room.6.illuminance,illuminance,room,6,lux,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.6.occupancy_state,occupancy_state,room,6,boolean,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.6.presence_detected,presence_detected,room,6,count,2025-09-30 17:01:53,2026-04-03 16:42:02,242017
 room.6.set_temperature,set_temperature,room,6,C,,,0
-room.6.temperature,temperature,room,6,C,,,0
-room.7.co2,co2,room,7,ppm,,,0
-room.7.humidity,humidity,room,7,%,,,0
-room.7.illuminance,illuminance,room,7,lux,,,0
-room.7.occupancy_state,occupancy_state,room,7,boolean,,,0
-room.7.presence_detected,presence_detected,room,7,count,,,0
+room.6.temperature,temperature,room,6,C,2024-10-10 15:47:00,2026-06-23 23:59:02,97407
+room.7.co2,co2,room,7,ppm,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.7.humidity,humidity,room,7,%,2024-07-26 23:16:00,2026-06-23 23:59:02,113319
+room.7.illuminance,illuminance,room,7,lux,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.7.occupancy_state,occupancy_state,room,7,boolean,2026-05-06 22:47:05,2026-06-23 23:59:02,17372
+room.7.presence_detected,presence_detected,room,7,count,2025-09-30 17:01:53,2026-06-23 23:59:00,362174
 room.7.set_temperature,set_temperature,room,7,C,,,0
-room.7.temperature,temperature,room,7,C,,,0
+room.7.temperature,temperature,room,7,C,2024-07-26 23:16:00,2026-06-23 23:59:02,113306
 room.8.co2,co2,room,8,ppm,,,0
-room.8.humidity,humidity,room,8,%,,,0
+room.8.humidity,humidity,room,8,%,2024-07-24 18:48:07,2026-06-23 23:52:12,98824
 room.8.illuminance,illuminance,room,8,lux,,,0
 room.8.occupancy_state,occupancy_state,room,8,boolean,,,0
 room.8.presence_detected,presence_detected,room,8,count,,,0
 room.8.set_temperature,set_temperature,room,8,C,,,0
-room.8.temperature,temperature,room,8,C,,,0
+room.8.temperature,temperature,room,8,C,2024-07-24 18:48:07,2026-06-23 23:52:12,98780
 room.9.co2,co2,room,9,ppm,,,0
-room.9.humidity,humidity,room,9,%,,,0
+room.9.humidity,humidity,room,9,%,2024-07-26 23:14:00,2026-06-23 23:54:02,90289
 room.9.illuminance,illuminance,room,9,lux,,,0
 room.9.occupancy_state,occupancy_state,room,9,boolean,,,0
 room.9.presence_detected,presence_detected,room,9,count,,,0
 room.9.set_temperature,set_temperature,room,9,C,,,0
-room.9.temperature,temperature,room,9,C,,,0
-weather_station.ws90.dewpoint,dewpoint,weather_station,ws90,C,,,0
-weather_station.ws90.gust_speed,gust_speed,weather_station,ws90,m/s,,,0
-weather_station.ws90.humidity,humidity,weather_station,ws90,%,,,0
-weather_station.ws90.illuminance,illuminance,weather_station,ws90,lux,,,0
-weather_station.ws90.rain_status,rain_status,weather_station,ws90,boolean,,,0
-weather_station.ws90.temperature,temperature,weather_station,ws90,C,,,0
-weather_station.ws90.uv_index,uv_index,weather_station,ws90,index,,,0
-weather_station.ws90.wind_direction,wind_direction,weather_station,ws90,deg,,,0
-weather_station.ws90.wind_speed,wind_speed,weather_station,ws90,m/s,,,0
-window.1.1.state,state,window,1.1,boolean,,,0
-window.13.1.state,state,window,13.1,boolean,,,0
-window.2.1.state,state,window,2.1,boolean,,,0
-window.2.2.state,state,window,2.2,boolean,,,0
-window.2.3.state,state,window,2.3,boolean,,,0
-window.2.4.state,state,window,2.4,boolean,,,0
-window.2.5.state,state,window,2.5,boolean,,,0
-window.2.6.state,state,window,2.6,boolean,,,0
-window.2.7.state,state,window,2.7,boolean,,,0
-window.2.8.state,state,window,2.8,boolean,,,0
-window.3.1.state,state,window,3.1,boolean,,,0
-window.3.2.state,state,window,3.2,boolean,,,0
-window.3.3.state,state,window,3.3,boolean,,,0
-window.3.4.state,state,window,3.4,boolean,,,0
-window.4.1.state,state,window,4.1,boolean,,,0
-window.4.2.state,state,window,4.2,boolean,,,0
-window.4.3.state,state,window,4.3,boolean,,,0
-window.4.4.state,state,window,4.4,boolean,,,0
-window.5.1.state,state,window,5.1,boolean,,,0
-window.5.2.state,state,window,5.2,boolean,,,0
-window.5.3.state,state,window,5.3,boolean,,,0
-window.5.4.state,state,window,5.4,boolean,,,0
-window.5.5.state,state,window,5.5,boolean,,,0
-window.5.6.state,state,window,5.6,boolean,,,0
-window.5.7.state,state,window,5.7,boolean,,,0
-window.5.8.state,state,window,5.8,boolean,,,0
-window.7.1.state,state,window,7.1,boolean,,,0
+room.9.temperature,temperature,room,9,C,2024-07-26 23:14:00,2026-06-23 23:54:02,90250
+weather_station.ws90.dewpoint,dewpoint,weather_station,ws90,C,2026-04-08 17:41:03,2026-06-23 23:58:54,105456
+weather_station.ws90.gust_speed,gust_speed,weather_station,ws90,m/s,2026-04-08 17:41:03,2026-06-23 23:58:54,105456
+weather_station.ws90.humidity,humidity,weather_station,ws90,%,2026-04-08 17:41:03,2026-06-23 23:58:54,105456
+weather_station.ws90.illuminance,illuminance,weather_station,ws90,lux,2026-04-08 17:41:03,2026-06-23 23:58:54,105456
+weather_station.ws90.rain_status,rain_status,weather_station,ws90,boolean,2026-04-08 17:41:03,2026-06-23 23:58:54,105456
+weather_station.ws90.temperature,temperature,weather_station,ws90,C,2026-04-08 17:41:03,2026-06-23 23:58:54,105456
+weather_station.ws90.uv_index,uv_index,weather_station,ws90,index,2026-04-08 17:41:03,2026-06-23 23:58:54,105456
+weather_station.ws90.wind_direction,wind_direction,weather_station,ws90,deg,2026-04-08 17:41:03,2026-06-23 23:58:54,105456
+weather_station.ws90.wind_speed,wind_speed,weather_station,ws90,m/s,2026-04-08 17:41:03,2026-06-23 23:58:54,105456
+window.1.1.state,state,window,1.1,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,149
+window.13.1.state,state,window,13.1,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,7
+window.2.1.state,state,window,2.1,boolean,2026-05-05 00:52:11,2026-06-22 16:13:48,66
+window.2.2.state,state,window,2.2,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,15
+window.2.3.state,state,window,2.3,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,25
+window.2.4.state,state,window,2.4,boolean,2026-05-05 00:52:11,2026-06-23 20:41:21,47
+window.2.5.state,state,window,2.5,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,25
+window.2.6.state,state,window,2.6,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,25
+window.2.7.state,state,window,2.7,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,33
+window.2.8.state,state,window,2.8,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,52
+window.3.1.state,state,window,3.1,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,75
+window.3.2.state,state,window,3.2,boolean,2026-05-05 00:52:11,2026-05-20 18:33:01,9
+window.3.3.state,state,window,3.3,boolean,2026-05-05 00:52:11,2026-06-23 10:54:53,63
+window.3.4.state,state,window,3.4,boolean,2026-05-05 00:52:11,2026-05-20 18:33:01,66
+window.4.1.state,state,window,4.1,boolean,2026-05-06 21:35:55,2026-06-17 22:12:17,56
+window.4.2.state,state,window,4.2,boolean,2026-05-06 21:42:46,2026-06-17 22:12:17,38
+window.4.3.state,state,window,4.3,boolean,2026-05-05 00:52:11,2026-05-20 18:33:01,6
+window.4.4.state,state,window,4.4,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,43
+window.5.1.state,state,window,5.1,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,29
+window.5.2.state,state,window,5.2,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,23
+window.5.3.state,state,window,5.3,boolean,2026-05-05 00:52:11,2026-06-22 09:59:16,79
+window.5.4.state,state,window,5.4,boolean,2026-05-05 00:52:11,2026-06-23 15:32:09,57
+window.5.5.state,state,window,5.5,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,11
+window.5.6.state,state,window,5.6,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,48
+window.5.7.state,state,window,5.7,boolean,2026-05-05 00:52:11,2026-06-23 19:29:52,61
+window.5.8.state,state,window,5.8,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,49
+window.7.1.state,state,window,7.1,boolean,2026-05-05 00:52:11,2026-06-17 22:12:17,235

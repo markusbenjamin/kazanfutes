@@ -1,0 +1,27 @@
+overnight import error report
+generated_at: 2026-06-25 00:27:37
+transcript: C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\dev\db\test_reports\overnight_import_20260625_001815.log
+
+error_count: 1
+
+[1] RUNNER_FAILURE
+time: 2026-06-25 00:27:37
+message: overnight runner failed before completing summary
+details:
+Traceback (most recent call last):
+  File "C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\dev\db\log_parser_overnight_import.py", line 1040, in main
+    errors = run_imports()
+  File "C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\dev\db\log_parser_overnight_import.py", line 980, in run_imports
+    refresh_availability_outputs()
+  File "C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\dev\db\log_parser_overnight_import.py", line 821, in refresh_availability_outputs
+    db_manager.write_stream_timeline()
+  File "C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\dev\db\db_manager.py", line 231, in write_stream_timeline
+    rows = fetch_stream_availability()
+  File "C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\dev\db\db_manager.py", line 204, in fetch_stream_availability
+    con = connect()
+  File "C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\dev\db\db_manager.py", line 16, in connect
+    return duckdb.connect(DB_PATH)
+_duckdb.IOException: IO Error: Cannot open file "C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\dev\db\store\observations.duckdb": The process cannot access the file because it is being used by another process.
+
+File is already open in 
+C:\Program Files\Git\mingw64\bin\git.exe (PID 22284)

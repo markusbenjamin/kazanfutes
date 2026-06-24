@@ -178,6 +178,8 @@ Numeric summary values are rounded to the requested measurement precision.
 
 The API should not forbid summary metrics that are unhelpful for a given stream. For example, `mean_value` is usually meaningful for temperature, while `observation_count` or `sum_value` is usually meaningful for impulse/event streams. The caller chooses the metric; examples and documentation explain the recommended choices.
 
+Sparse transition-state streams need specialized summary semantics. For example, door/window open-close event logs produce state observations only at transition timestamps; a plain `mean_value` over those rows is not a time-weighted open fraction. API support for state-duration summaries should reconstruct intervals with as-of/last-observation-carried-forward logic.
+
 ### Wide/Pivoted Binned Results
 
 Returns one row per time bin, with selected streams or metrics as columns.
@@ -223,8 +225,11 @@ Examples:
 
 - `gas_impulse_count`: count gas-meter impulse events per bin
 - `heat_delivery`: derive delivered heat from heatmeter or heating-cycle streams
+- `door_open_fraction` or `window_open_duration`: derive state durations from sparse transition-state observations
 
 This should be added only after base stream imports and summary semantics are stable.
+
+Derived metrics based on sparse state-transition streams must use interval reconstruction rather than treating transition rows as dense samples.
 
 ## User Responsibilities
 

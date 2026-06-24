@@ -1,0 +1,17 @@
+source_log_file_name_pattern,stream_target
+data/logs/temperature_and_humidity/temperature_and_humidity.json(.YYYY-MM-DD),room.*.temperature; room.*.humidity
+data/logs/aqara_and_nous/aqara_and_nous.json(.YYYY-MM-DD),room.*.temperature; room.*.humidity; room.*.occupancy_state; room.*.illuminance; room.*.co2
+data/logs/presence/presence_all.json(.YYYY-MM-DD),room.*.presence_detected
+data/logs/presence/oktopusz_presence.json(.YYYY-MM-DD),room.1.presence_detected
+data/logs/service_execution/heating_control/heating_control.json(.YYYY-MM-DD),room.*.set_temperature; heating.main.state; heating_cycle.*.state
+data/logs/pumps/power.json(.YYYY-MM-DD),heating_cycle.*.pump_power
+data/logs/heat_delivery/heatmeters_state.json(.YYYY-MM-DD),heating_cycle.*.flow_temperature; heating_cycle.*.return_temperature; heating_cycle.*.volume_flow; heating_cycle.*.power; heating_cycle.*.energy; heating_cycle.*.volume
+data/logs/radiator_temps/radiator_temps.json(.YYYY-MM-DD),radiator.*.temperature
+data/logs/thermostats/thermostats_state.json(.YYYY-MM-DD),radiator.*.valve_state
+data/logs/open_close/open_close_events.json(.YYYY-MM-DD),door.*.state; window.*.state
+data/logs/gas_consumption/gas_relay_turns.json(.YYYY-MM-DD),gas_meter.main.impulse
+data/logs/electricity/main_meter.json(.YYYY-MM-DD),electric_main_meter.main.*
+data/logs/electricity/submeters.json(.YYYY-MM-DD),electric_submeter.*.impulse
+data/logs/electricity/pv_inverter.json(.YYYY-MM-DD),pv.inverter.*
+data/logs/weather_station/weather_station.json(.YYYY-MM-DD),weather_station.ws90.*
+data/logs/external_temp/external_temp.json(.YYYY-MM-DD),outdoor.weather_com.temperature

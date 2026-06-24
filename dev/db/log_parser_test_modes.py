@@ -8,8 +8,8 @@ import log_parser
 
 # Edit these, then run: python log_parser_test_modes.py
 
-# Automatic default: one concrete stream example for every scope_type.variable
-# combination found in the streams metadata table.
+# Automatic default: one target for every scope_type.variable combination found
+# in the streams metadata table. Each relevant importer is tested for each target.
 TEST_TARGETS = "AUTO_ONE_PER_SCOPE_VARIABLE"
 
 # Explicit alternatives:
@@ -19,6 +19,7 @@ TEST_TARGETS = "AUTO_ONE_PER_SCOPE_VARIABLE"
 # TEST_TARGETS = [{"scope_type": "room", "variable": "temperature"}]
 
 MAX_DAYS_TO_TRY_PER_IMPORTER = 30
+INCLUDE_OLDEST_LOG_DAY = True
 INCLUDE_CURRENT_LOG = False
 REPORT_DIR = Path(__file__).resolve().parent / "test_reports"
 
@@ -30,6 +31,7 @@ IMPORTERS = {
     "import_heatmeters": ("heatmeters", log_parser.parse_heatmeters_file),
     "import_heating_control_state": ("heating_control", log_parser.parse_heating_control_file),
     "import_oktopusz_presence": ("oktopusz_presence", log_parser.parse_oktopusz_presence_file),
+    "import_room_presence": ("presence_all", log_parser.parse_presence_all_file),
     "import_open_close": ("open_close", log_parser.parse_open_close_file),
     "import_outdoor_weather_com": ("external_temp", log_parser.parse_external_temp_file),
     "import_pump_power": ("pumps", log_parser.parse_pump_power_file),
@@ -45,12 +47,12 @@ EXACT_IMPORTERS = {
     ("room", "temperature"): ["import_room_temperature_humidity", "import_aqara_and_nous"],
     ("room", "humidity"): ["import_room_temperature_humidity", "import_aqara_and_nous"],
     ("room", "set_temperature"): ["import_heating_control_state"],
-    ("room", "occupancy_state"): ["import_room_occupancy"],
-    ("room", "presence_detected"): ["import_aqara_and_nous", "import_oktopusz_presence"],
+    ("room", "occupancy_state"): ["import_aqara_and_nous"],
+    ("room", "presence_detected"): ["import_room_presence", "import_oktopusz_presence"],
     ("room", "co2"): ["import_aqara_and_nous"],
     ("room", "illuminance"): ["import_aqara_and_nous"],
-    ("radiator", "temperature"): ["import_radiator_temperatures", "import_radiator_thermostats"],
-    ("radiator", "valve_state"): ["import_heating_control_state", "import_radiator_thermostats"],
+    ("radiator", "temperature"): ["import_radiator_temperatures"],
+    ("radiator", "valve_state"): ["import_radiator_thermostats"],
     ("heating", "state"): ["import_heating_control_state"],
     ("heating_cycle", "state"): ["import_heating_control_state"],
     ("heating_cycle", "pump_power"): ["import_pump_power"],
@@ -186,6 +188,21 @@ def importers_for(target):
     return SCOPE_DEFAULT_IMPORTERS.get(target["scope_type"], [])
 
 
+def validate_importer_registry():
+    expected = set(log_parser.MODE_HANDLERS) - {"list_modes"}
+    configured = set(IMPORTERS)
+    missing = sorted(expected - configured)
+    extra = sorted(configured - expected)
+
+    if missing or extra:
+        messages = []
+        if missing:
+            messages.append(f"missing IMPORTERS entries: {', '.join(missing)}")
+        if extra:
+            messages.append(f"unknown IMPORTERS entries: {', '.join(extra)}")
+        raise ValueError("; ".join(messages))
+
+
 def current_path(source):
     directory, filename = log_parser.SOURCE_FILES[source]
     return log_parser.LOG_PATH / directory / filename
@@ -196,6 +213,16 @@ def day_paths(source):
     if INCLUDE_CURRENT_LOG and current_path(source).exists():
         paths.append((date.today(), current_path(source)))
     return sorted(paths, reverse=True)
+
+
+def candidate_day_paths(source):
+    paths = day_paths(source)
+    candidates = paths[:MAX_DAYS_TO_TRY_PER_IMPORTER]
+
+    if INCLUDE_OLDEST_LOG_DAY and paths and paths[-1] not in candidates:
+        candidates.append(paths[-1])
+
+    return candidates
 
 
 def parse_rows(importer, parser, path):
@@ -253,10 +280,10 @@ def summarize(rows, target, day, by_id):
     status = "PASS"
     if parsed == 0:
         status = "EMPTY_RESULT"
-    elif selected == 0:
-        status = "EMPTY_SELECTION"
     elif unknown:
         status = "UNKNOWN_STREAM_IDS"
+    elif selected == 0:
+        status = "EMPTY_SELECTION"
     elif malformed or before or after:
         status = "PASS_WITH_WARNINGS"
 
@@ -300,53 +327,115 @@ def score(result):
     summary = result.get("summary") or {}
     if summary.get("selected", 0) > 0:
         return 0
-    if result["status"] == "EMPTY_SELECTION":
+    if result["status"] == "UNKNOWN_STREAM_IDS":
         return 1
-    if result["status"] == "EMPTY_RESULT":
+    if result["status"] == "EMPTY_SELECTION":
         return 2
-    if result["status"] == "PARSE_EXCEPTION":
+    if result["status"] == "EMPTY_RESULT":
         return 3
-    return 4
+    if result["status"] == "PARSE_EXCEPTION":
+        return 4
+    return 5
 
 
-def test_target(target, by_id):
-    importers = importers_for(target)
+def no_attempt_result(target, status, traceback_text=None):
+    return {
+        "target": target,
+        "status": status,
+        "summary": None,
+        "traceback": traceback_text,
+        "attempts": [],
+        "checked": 0,
+        "importer": None,
+        "source": None,
+        "date": None,
+        "path": None,
+    }
+
+
+def test_importer_for_target(target, importer, by_id):
     attempts = []
+    source, parser = IMPORTERS[importer]
+    paths = candidate_day_paths(source)
 
-    if not target["candidate_stream_ids"]:
-        return {"target": target, "status": "CONFIG_ERROR", "summary": None, "traceback": "target has no matching metadata streams", "attempts": [], "checked": 0, "importer": None, "source": None, "date": None, "path": None}
+    if not paths:
+        attempt = {
+            "target": target,
+            "importer": importer,
+            "source": source,
+            "date": None,
+            "path": None,
+            "status": "NO_AVAILABLE_LOG_DAYS",
+            "summary": None,
+            "traceback": None,
+        }
+        result = dict(attempt)
+        result["attempts"] = [attempt]
+        result["checked"] = 0
+        return result
 
-    if not importers:
-        return {"target": target, "status": "NO_IMPORTER", "summary": None, "traceback": None, "attempts": [], "checked": 0, "importer": None, "source": None, "date": None, "path": None}
+    selected_result = None
+    for day, path in paths:
+        result = candidate_result(target, importer, source, parser, path, day, by_id)
+        attempts.append(result)
+        if selected_result is None and (result.get("summary") or {}).get("selected", 0) > 0:
+            selected_result = result
 
-    for importer in importers:
-        source, parser = IMPORTERS[importer]
-        paths = day_paths(source)
-        if not paths:
-            attempts.append({"target": target, "importer": importer, "source": source, "date": None, "path": None, "status": "NO_AVAILABLE_LOG_DAYS", "summary": None, "traceback": None})
-            continue
-        for day, path in paths[:MAX_DAYS_TO_TRY_PER_IMPORTER]:
-            result = candidate_result(target, importer, source, parser, path, day, by_id)
-            attempts.append(result)
-            if (result.get("summary") or {}).get("selected", 0) > 0:
-                best = dict(result)
-                best["attempts"] = attempts
-                best["checked"] = len(attempts)
-                return best
+    parse_exception = next(
+        (attempt for attempt in attempts if attempt["status"] == "PARSE_EXCEPTION"),
+        None,
+    )
+    if parse_exception is not None:
+        best = dict(parse_exception)
+        best["attempts"] = attempts
+        best["checked"] = len(attempts)
+        return best
 
-    best = dict(sorted(attempts, key=score)[0]) if attempts else {"target": target, "status": "NO_AVAILABLE_LOG_DAYS", "summary": None, "traceback": None, "importer": None, "source": None, "date": None, "path": None}
+    if selected_result is not None:
+        best = dict(selected_result)
+        best["attempts"] = attempts
+        best["checked"] = len(attempts)
+        return best
+
+    best = dict(sorted(attempts, key=score)[0])
     best["attempts"] = attempts
     best["checked"] = len(attempts)
     return best
 
 
+def test_target(target, by_id):
+    if not target["candidate_stream_ids"]:
+        return [
+            no_attempt_result(
+                target,
+                "CONFIG_ERROR",
+                "target has no matching metadata streams",
+            )
+        ]
+
+    importers = importers_for(target)
+    if not importers:
+        return [no_attempt_result(target, "NO_IMPORTER")]
+
+    return [
+        test_importer_for_target(target, importer, by_id)
+        for importer in importers
+    ]
+
+
 def write_report(results, streams):
     counts = Counter(result["status"] for result in results)
+    importer_counts = defaultdict(Counter)
+    for result in results:
+        importer = result.get("importer") or "(none)"
+        importer_counts[importer][result["status"]] += 1
+
     lines = [
-        "log_parser stream-variable coverage test report",
+        "log_parser importer/stream-variable test report",
         f"generated_at: {datetime.now():%Y-%m-%d %H:%M:%S}",
         f"test_targets: {TEST_TARGETS}",
         f"max_days_to_try_per_importer: {MAX_DAYS_TO_TRY_PER_IMPORTER}",
+        f"include_oldest_log_day: {INCLUDE_OLDEST_LOG_DAY}",
         f"include_current_log: {INCLUDE_CURRENT_LOG}",
         f"database: {log_parser.DB_PATH}",
         f"log_root: {log_parser.LOG_PATH}",
@@ -354,10 +443,19 @@ def write_report(results, streams):
         "",
         "summary",
         "-------",
-        f"total targets: {len(results)}",
+        f"total importer-target checks: {len(results)}",
     ]
     for status in STATUSES:
         lines.append(f"{status.lower()}: {counts.get(status, 0)}")
+
+    lines += ["", "importers", "---------"]
+    for importer in sorted(importer_counts):
+        parts = [
+            f"{status.lower()}={importer_counts[importer][status]}"
+            for status in STATUSES
+            if importer_counts[importer][status]
+        ]
+        lines.append(f"{importer}: {', '.join(parts)}")
 
     lines += ["", "targets", "-------"]
 
@@ -405,23 +503,25 @@ def write_report(results, streams):
 
 def main():
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    validate_importer_registry()
     streams = load_streams()
     by_id, by_group = metadata_indexes(streams)
     targets = build_targets(streams)
 
-    out("stream-variable parser test starting")
+    out("importer/stream-variable parser test starting")
     out(f"metadata_streams={len(streams)} targets={len(targets)}")
 
     results = []
     for index, target in enumerate(targets, start=1):
-        result = test_target(target, by_id)
-        results.append(result)
-        summary = result.get("summary") or {}
-        out(
-            f"{index}/{len(targets)} {result['status']} {target['label']} "
-            f"stream={summary.get('example_stream_id')} importer={result.get('importer')} "
-            f"date={result.get('date')} selected={summary.get('selected', 'n/a')}"
-        )
+        target_results = test_target(target, by_id)
+        results.extend(target_results)
+        for result in target_results:
+            summary = result.get("summary") or {}
+            out(
+                f"{index}/{len(targets)} {result['status']} {target['label']} "
+                f"stream={summary.get('example_stream_id')} importer={result.get('importer')} "
+                f"date={result.get('date')} selected={summary.get('selected', 'n/a')}"
+            )
 
     out(f"report written: {write_report(results, streams)}")
 

@@ -1,0 +1,767 @@
+2026-06-25 00:31:13 transcript: C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\dev\db\test_reports\overnight_import_20260625_003113.log
+2026-06-25 00:31:13 error report: C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\dev\db\test_reports\overnight_import_errors_20260625_003113.txt
+2026-06-25 00:31:13 ensuring database schema and stream metadata
+initialized C:/Users/Beno/Documents/SZAKI/dev/kazanfutes/dev/db/store/observations.duckdb
+loaded stream metadata C:/Users/Beno/Documents/SZAKI/dev/kazanfutes/dev/db/metadata/stream_metadata.csv
+stream count: 303
+2026-06-25 00:31:14 stream metadata ready: 303 streams
+2026-06-25 00:31:14 overnight log import starting
+2026-06-25 00:31:14 database: C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\dev\db\store\observations.duckdb
+2026-06-25 00:31:14 log root: C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\data\logs
+2026-06-25 00:31:14 start date: first
+2026-06-25 00:31:14 end date: last
+2026-06-25 00:31:14 include current log: False
+2026-06-25 00:31:14 existing observation policy: skip_existing
+2026-06-25 00:31:14 create database backup: False
+2026-06-25 00:31:14 clear observations before import: False
+2026-06-25 00:31:14 ensure schema and metadata: True
+2026-06-25 00:31:14 batch file count: 5
+2026-06-25 00:31:14 ingest targets: ALL_STREAMS_WITH_IMPORTERS
+2026-06-25 00:31:14 target groups: 82
+2026-06-25 00:31:14 planned importers: import_room_temperature_humidity, import_aqara_and_nous, import_room_presence, import_oktopusz_presence, import_heating_control_state, import_pump_power, import_heatmeters, import_radiator_temperatures, import_radiator_thermostats, import_open_close, import_gas_impulses, import_electric_main_meter, import_electric_submeter_impulses, import_pv_inverter, import_weather_station, import_outdoor_weather_com
+2026-06-25 00:31:14 database backup: disabled
+2026-06-25 00:31:14 clear observations before import: disabled
+2026-06-25 00:31:15 
+2026-06-25 00:31:15 === starting import_room_temperature_humidity ===
+2026-06-25 00:31:15 source files selected: 685
+2026-06-25 00:31:15 target stream IDs: 36
+2026-06-25 00:31:15 before: observations=13413012; loaded_streams=194
+2026-06-25 00:31:15 importing temperature_and_humidity
+2026-06-25 00:31:15 date range: first to last
+2026-06-25 00:31:15 include current log: False
+2026-06-25 00:31:15 log files: 685
+2026-06-25 00:31:15 first log file: C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\data\logs\temperature_and_humidity\temperature_and_humidity.json.2024-07-27
+2026-06-25 00:31:15 last log file: C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\data\logs\temperature_and_humidity\temperature_and_humidity.json.2026-06-23
+2026-06-25 00:31:15 batch file count: 5
+2026-06-25 00:31:15 existing observation policy: skip_existing
+2026-06-25 00:31:15 stream ID filter: 36 stream(s)
+2026-06-25 00:31:15 parsed 1/685 files (0%); file rows: 1948; total parsed: 1948; elapsed: 0.3s; last file: 0.2s
+2026-06-25 00:31:15 preparing batch at 5/685 files; pending rows: 8862
+2026-06-25 00:31:15 sorted pending rows in 0.0s
+2026-06-25 00:31:15 batch write starting; rows staged: 8862
+2026-06-25 00:31:15 batch transaction opened
+2026-06-25 00:31:15 cleared temp table in 0.0s
+2026-06-25 00:31:16 wrote batch CSV log_parser_batch_t8zma6g3.csv in 0.1s
+2026-06-25 00:31:16 loaded temp table from batch CSV in 0.2s
+2026-06-25 00:31:16 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:16 counted valid temp rows in 0.0s; valid: 8862
+2026-06-25 00:31:16 selected new exact observation rows in 0.1s; new: 0; existing: 8862
+2026-06-25 00:31:16 inserted observation rows in 0.0s; inserted: 0; skipped existing: 8862; replaced: 0
+2026-06-25 00:31:16 batch transaction committed in 0.0s
+2026-06-25 00:31:16 committed batch at 5/685 files (1%); batch inserted: 0; batch skipped existing: 8862; total inserted: 0; total skipped existing: 8862; batch time: 0.4s
+2026-06-25 00:31:17 parsed 10/685 files (1%); file rows: 1302; total parsed: 16318; elapsed: 2.2s; last file: 0.2s
+2026-06-25 00:31:17 preparing batch at 10/685 files; pending rows: 7456
+2026-06-25 00:31:17 sorted pending rows in 0.0s
+2026-06-25 00:31:17 batch write starting; rows staged: 7456
+2026-06-25 00:31:17 batch transaction opened
+2026-06-25 00:31:17 cleared temp table in 0.0s
+2026-06-25 00:31:17 wrote batch CSV log_parser_batch_3s83k_up.csv in 0.1s
+2026-06-25 00:31:17 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:31:17 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:17 counted valid temp rows in 0.0s; valid: 7456
+2026-06-25 00:31:17 selected new exact observation rows in 0.1s; new: 0; existing: 7456
+2026-06-25 00:31:17 inserted observation rows in 0.0s; inserted: 0; skipped existing: 7456; replaced: 0
+2026-06-25 00:31:17 batch transaction committed in 0.0s
+2026-06-25 00:31:17 committed batch at 10/685 files (1%); batch inserted: 0; batch skipped existing: 7456; total inserted: 0; total skipped existing: 16318; batch time: 0.2s
+2026-06-25 00:31:18 preparing batch at 15/685 files; pending rows: 8580
+2026-06-25 00:31:18 sorted pending rows in 0.0s
+2026-06-25 00:31:18 batch write starting; rows staged: 8580
+2026-06-25 00:31:18 batch transaction opened
+2026-06-25 00:31:18 cleared temp table in 0.0s
+2026-06-25 00:31:18 wrote batch CSV log_parser_batch_ncxa5ov1.csv in 0.1s
+2026-06-25 00:31:18 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:31:18 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:18 counted valid temp rows in 0.0s; valid: 8580
+2026-06-25 00:31:18 selected new exact observation rows in 0.1s; new: 0; existing: 8580
+2026-06-25 00:31:18 inserted observation rows in 0.0s; inserted: 0; skipped existing: 8580; replaced: 0
+2026-06-25 00:31:18 batch transaction committed in 0.0s
+2026-06-25 00:31:18 committed batch at 15/685 files (2%); batch inserted: 0; batch skipped existing: 8580; total inserted: 0; total skipped existing: 24898; batch time: 0.2s
+2026-06-25 00:31:19 parsed 20/685 files (3%); file rows: 1934; total parsed: 34558; elapsed: 4.0s; last file: 0.1s
+2026-06-25 00:31:19 preparing batch at 20/685 files; pending rows: 9660
+2026-06-25 00:31:19 sorted pending rows in 0.0s
+2026-06-25 00:31:19 batch write starting; rows staged: 9660
+2026-06-25 00:31:19 batch transaction opened
+2026-06-25 00:31:19 cleared temp table in 0.0s
+2026-06-25 00:31:19 wrote batch CSV log_parser_batch_2lnrn_fy.csv in 0.0s
+2026-06-25 00:31:19 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:31:19 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:19 counted valid temp rows in 0.0s; valid: 9660
+2026-06-25 00:31:19 selected new exact observation rows in 0.1s; new: 0; existing: 9660
+2026-06-25 00:31:19 inserted observation rows in 0.0s; inserted: 0; skipped existing: 9660; replaced: 0
+2026-06-25 00:31:19 batch transaction committed in 0.0s
+2026-06-25 00:31:19 committed batch at 20/685 files (3%); batch inserted: 0; batch skipped existing: 9660; total inserted: 0; total skipped existing: 34558; batch time: 0.1s
+2026-06-25 00:31:19 preparing batch at 25/685 files; pending rows: 9506
+2026-06-25 00:31:19 sorted pending rows in 0.0s
+2026-06-25 00:31:19 batch write starting; rows staged: 9506
+2026-06-25 00:31:19 batch transaction opened
+2026-06-25 00:31:19 cleared temp table in 0.0s
+2026-06-25 00:31:19 wrote batch CSV log_parser_batch_3d6y_v9u.csv in 0.0s
+2026-06-25 00:31:19 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:31:19 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:19 counted valid temp rows in 0.0s; valid: 9506
+2026-06-25 00:31:19 selected new exact observation rows in 0.0s; new: 0; existing: 9506
+2026-06-25 00:31:19 inserted observation rows in 0.0s; inserted: 0; skipped existing: 9506; replaced: 0
+2026-06-25 00:31:19 batch transaction committed in 0.0s
+2026-06-25 00:31:19 committed batch at 25/685 files (4%); batch inserted: 0; batch skipped existing: 9506; total inserted: 0; total skipped existing: 44064; batch time: 0.1s
+2026-06-25 00:31:20 parsed 30/685 files (4%); file rows: 1736; total parsed: 52432; elapsed: 5.0s; last file: 0.1s
+2026-06-25 00:31:20 preparing batch at 30/685 files; pending rows: 8368
+2026-06-25 00:31:20 sorted pending rows in 0.0s
+2026-06-25 00:31:20 batch write starting; rows staged: 8368
+2026-06-25 00:31:20 batch transaction opened
+2026-06-25 00:31:20 cleared temp table in 0.0s
+2026-06-25 00:31:20 wrote batch CSV log_parser_batch__mtcllr5.csv in 0.0s
+2026-06-25 00:31:20 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:31:20 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:20 counted valid temp rows in 0.0s; valid: 8368
+2026-06-25 00:31:20 selected new exact observation rows in 0.0s; new: 0; existing: 8368
+2026-06-25 00:31:20 inserted observation rows in 0.0s; inserted: 0; skipped existing: 8368; replaced: 0
+2026-06-25 00:31:20 batch transaction committed in 0.0s
+2026-06-25 00:31:20 committed batch at 30/685 files (4%); batch inserted: 0; batch skipped existing: 8368; total inserted: 0; total skipped existing: 52432; batch time: 0.1s
+2026-06-25 00:31:20 preparing batch at 35/685 files; pending rows: 8462
+2026-06-25 00:31:20 sorted pending rows in 0.0s
+2026-06-25 00:31:20 batch write starting; rows staged: 8462
+2026-06-25 00:31:20 batch transaction opened
+2026-06-25 00:31:20 cleared temp table in 0.0s
+2026-06-25 00:31:20 wrote batch CSV log_parser_batch_sp2awa4x.csv in 0.0s
+2026-06-25 00:31:20 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:31:20 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:20 counted valid temp rows in 0.0s; valid: 8462
+2026-06-25 00:31:20 selected new exact observation rows in 0.0s; new: 0; existing: 8462
+2026-06-25 00:31:20 inserted observation rows in 0.0s; inserted: 0; skipped existing: 8462; replaced: 0
+2026-06-25 00:31:20 batch transaction committed in 0.0s
+2026-06-25 00:31:20 committed batch at 35/685 files (5%); batch inserted: 0; batch skipped existing: 8462; total inserted: 0; total skipped existing: 60894; batch time: 0.1s
+2026-06-25 00:31:21 parsed 40/685 files (6%); file rows: 1568; total parsed: 68986; elapsed: 6.0s; last file: 0.1s
+2026-06-25 00:31:21 preparing batch at 40/685 files; pending rows: 8092
+2026-06-25 00:31:21 sorted pending rows in 0.0s
+2026-06-25 00:31:21 batch write starting; rows staged: 8092
+2026-06-25 00:31:21 batch transaction opened
+2026-06-25 00:31:21 cleared temp table in 0.0s
+2026-06-25 00:31:21 wrote batch CSV log_parser_batch_8s1ei9st.csv in 0.0s
+2026-06-25 00:31:21 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:31:21 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:21 counted valid temp rows in 0.0s; valid: 8092
+2026-06-25 00:31:21 selected new exact observation rows in 0.0s; new: 0; existing: 8092
+2026-06-25 00:31:21 inserted observation rows in 0.0s; inserted: 0; skipped existing: 8092; replaced: 0
+2026-06-25 00:31:21 batch transaction committed in 0.0s
+2026-06-25 00:31:21 committed batch at 40/685 files (6%); batch inserted: 0; batch skipped existing: 8092; total inserted: 0; total skipped existing: 68986; batch time: 0.1s
+2026-06-25 00:31:21 preparing batch at 45/685 files; pending rows: 5878
+2026-06-25 00:31:21 sorted pending rows in 0.0s
+2026-06-25 00:31:21 batch write starting; rows staged: 5878
+2026-06-25 00:31:21 batch transaction opened
+2026-06-25 00:31:21 cleared temp table in 0.0s
+2026-06-25 00:31:21 wrote batch CSV log_parser_batch_1a16pmyw.csv in 0.0s
+2026-06-25 00:31:21 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:31:21 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:21 counted valid temp rows in 0.0s; valid: 5878
+2026-06-25 00:31:21 selected new exact observation rows in 0.0s; new: 0; existing: 5878
+2026-06-25 00:31:21 inserted observation rows in 0.0s; inserted: 0; skipped existing: 5878; replaced: 0
+2026-06-25 00:31:21 batch transaction committed in 0.0s
+2026-06-25 00:31:21 committed batch at 45/685 files (7%); batch inserted: 0; batch skipped existing: 5878; total inserted: 0; total skipped existing: 74864; batch time: 0.1s
+2026-06-25 00:31:22 parsed 50/685 files (7%); file rows: 636; total parsed: 80698; elapsed: 7.4s; last file: 0.2s
+2026-06-25 00:31:22 preparing batch at 50/685 files; pending rows: 5834
+2026-06-25 00:31:22 sorted pending rows in 0.0s
+2026-06-25 00:31:22 batch write starting; rows staged: 5834
+2026-06-25 00:31:22 batch transaction opened
+2026-06-25 00:31:22 cleared temp table in 0.0s
+2026-06-25 00:31:22 wrote batch CSV log_parser_batch_5fwwr5eg.csv in 0.1s
+2026-06-25 00:31:22 loaded temp table from batch CSV in 0.2s
+2026-06-25 00:31:22 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:23 counted valid temp rows in 0.0s; valid: 5834
+2026-06-25 00:31:23 selected new exact observation rows in 0.1s; new: 0; existing: 5834
+2026-06-25 00:31:24 inserted observation rows in 0.0s; inserted: 0; skipped existing: 5834; replaced: 0
+2026-06-25 00:31:24 batch transaction committed in 0.0s
+2026-06-25 00:31:24 committed batch at 50/685 files (7%); batch inserted: 0; batch skipped existing: 5834; total inserted: 0; total skipped existing: 80698; batch time: 1.7s
+2026-06-25 00:31:25 preparing batch at 55/685 files; pending rows: 6640
+2026-06-25 00:31:25 sorted pending rows in 0.0s
+2026-06-25 00:31:25 batch write starting; rows staged: 6640
+2026-06-25 00:31:25 batch transaction opened
+2026-06-25 00:31:25 cleared temp table in 0.0s
+2026-06-25 00:31:26 wrote batch CSV log_parser_batch_bzfcmcag.csv in 0.2s
+2026-06-25 00:31:26 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:31:26 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:26 counted valid temp rows in 0.0s; valid: 6640
+2026-06-25 00:31:26 selected new exact observation rows in 0.1s; new: 0; existing: 6640
+2026-06-25 00:31:26 inserted observation rows in 0.0s; inserted: 0; skipped existing: 6640; replaced: 0
+2026-06-25 00:31:26 batch transaction committed in 0.0s
+2026-06-25 00:31:26 committed batch at 55/685 files (8%); batch inserted: 0; batch skipped existing: 6640; total inserted: 0; total skipped existing: 87338; batch time: 0.4s
+2026-06-25 00:31:26 parsed 60/685 files (9%); file rows: 1400; total parsed: 94156; elapsed: 11.9s; last file: 0.2s
+2026-06-25 00:31:26 preparing batch at 60/685 files; pending rows: 6818
+2026-06-25 00:31:26 sorted pending rows in 0.0s
+2026-06-25 00:31:26 batch write starting; rows staged: 6818
+2026-06-25 00:31:26 batch transaction opened
+2026-06-25 00:31:26 cleared temp table in 0.0s
+2026-06-25 00:31:27 wrote batch CSV log_parser_batch_udci916p.csv in 0.2s
+2026-06-25 00:31:27 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:31:27 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:27 counted valid temp rows in 0.0s; valid: 6818
+2026-06-25 00:31:27 selected new exact observation rows in 0.1s; new: 0; existing: 6818
+2026-06-25 00:31:27 inserted observation rows in 0.0s; inserted: 0; skipped existing: 6818; replaced: 0
+2026-06-25 00:31:27 batch transaction committed in 0.0s
+2026-06-25 00:31:27 committed batch at 60/685 files (9%); batch inserted: 0; batch skipped existing: 6818; total inserted: 0; total skipped existing: 94156; batch time: 0.4s
+2026-06-25 00:31:28 preparing batch at 65/685 files; pending rows: 5806
+2026-06-25 00:31:29 sorted pending rows in 0.0s
+2026-06-25 00:31:29 batch write starting; rows staged: 5806
+2026-06-25 00:31:29 batch transaction opened
+2026-06-25 00:31:29 cleared temp table in 0.0s
+2026-06-25 00:31:29 wrote batch CSV log_parser_batch_xwip_f_i.csv in 0.1s
+2026-06-25 00:31:29 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:31:29 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:29 counted valid temp rows in 0.0s; valid: 5806
+2026-06-25 00:31:29 selected new exact observation rows in 0.1s; new: 0; existing: 5806
+2026-06-25 00:31:29 inserted observation rows in 0.0s; inserted: 0; skipped existing: 5806; replaced: 0
+2026-06-25 00:31:29 batch transaction committed in 0.0s
+2026-06-25 00:31:29 committed batch at 65/685 files (9%); batch inserted: 0; batch skipped existing: 5806; total inserted: 0; total skipped existing: 99962; batch time: 0.4s
+2026-06-25 00:31:30 parsed 70/685 files (10%); file rows: 666; total parsed: 104496; elapsed: 15.0s; last file: 0.1s
+2026-06-25 00:31:30 preparing batch at 70/685 files; pending rows: 4534
+2026-06-25 00:31:30 sorted pending rows in 0.0s
+2026-06-25 00:31:30 batch write starting; rows staged: 4534
+2026-06-25 00:31:30 batch transaction opened
+2026-06-25 00:31:30 cleared temp table in 0.0s
+2026-06-25 00:31:30 wrote batch CSV log_parser_batch_z15y79wj.csv in 0.0s
+2026-06-25 00:31:30 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:31:30 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:30 counted valid temp rows in 0.0s; valid: 4534
+2026-06-25 00:31:30 selected new exact observation rows in 0.0s; new: 0; existing: 4534
+2026-06-25 00:31:30 inserted observation rows in 0.0s; inserted: 0; skipped existing: 4534; replaced: 0
+2026-06-25 00:31:30 batch transaction committed in 0.0s
+2026-06-25 00:31:30 committed batch at 70/685 files (10%); batch inserted: 0; batch skipped existing: 4534; total inserted: 0; total skipped existing: 104496; batch time: 0.2s
+2026-06-25 00:31:30 preparing batch at 75/685 files; pending rows: 5102
+2026-06-25 00:31:30 sorted pending rows in 0.0s
+2026-06-25 00:31:30 batch write starting; rows staged: 5102
+2026-06-25 00:31:30 batch transaction opened
+2026-06-25 00:31:30 cleared temp table in 0.0s
+2026-06-25 00:31:30 wrote batch CSV log_parser_batch_9fcs0zwn.csv in 0.1s
+2026-06-25 00:31:31 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:31:31 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:31 counted valid temp rows in 0.0s; valid: 5102
+2026-06-25 00:31:31 selected new exact observation rows in 0.1s; new: 0; existing: 5102
+2026-06-25 00:31:31 inserted observation rows in 0.0s; inserted: 0; skipped existing: 5102; replaced: 0
+2026-06-25 00:31:31 batch transaction committed in 0.0s
+2026-06-25 00:31:31 committed batch at 75/685 files (11%); batch inserted: 0; batch skipped existing: 5102; total inserted: 0; total skipped existing: 109598; batch time: 0.2s
+2026-06-25 00:31:32 parsed 80/685 files (12%); file rows: 2416; total parsed: 117286; elapsed: 17.6s; last file: 0.4s
+2026-06-25 00:31:32 preparing batch at 80/685 files; pending rows: 7688
+2026-06-25 00:31:32 sorted pending rows in 0.0s
+2026-06-25 00:31:32 batch write starting; rows staged: 7688
+2026-06-25 00:31:32 batch transaction opened
+2026-06-25 00:31:32 cleared temp table in 0.0s
+2026-06-25 00:31:32 wrote batch CSV log_parser_batch_5xjb427_.csv in 0.1s
+2026-06-25 00:31:32 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:31:32 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:32 counted valid temp rows in 0.0s; valid: 7688
+2026-06-25 00:31:32 selected new exact observation rows in 0.1s; new: 0; existing: 7688
+2026-06-25 00:31:32 inserted observation rows in 0.0s; inserted: 0; skipped existing: 7688; replaced: 0
+2026-06-25 00:31:32 batch transaction committed in 0.0s
+2026-06-25 00:31:32 committed batch at 80/685 files (12%); batch inserted: 0; batch skipped existing: 7688; total inserted: 0; total skipped existing: 117286; batch time: 0.3s
+2026-06-25 00:31:33 preparing batch at 85/685 files; pending rows: 11536
+2026-06-25 00:31:33 sorted pending rows in 0.0s
+2026-06-25 00:31:33 batch write starting; rows staged: 11536
+2026-06-25 00:31:33 batch transaction opened
+2026-06-25 00:31:33 cleared temp table in 0.0s
+2026-06-25 00:31:34 wrote batch CSV log_parser_batch_wsuit4gx.csv in 0.1s
+2026-06-25 00:31:34 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:31:34 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:34 counted valid temp rows in 0.0s; valid: 11536
+2026-06-25 00:31:34 selected new exact observation rows in 0.1s; new: 0; existing: 11536
+2026-06-25 00:31:34 inserted observation rows in 0.0s; inserted: 0; skipped existing: 11536; replaced: 0
+2026-06-25 00:31:34 batch transaction committed in 0.0s
+2026-06-25 00:31:34 committed batch at 85/685 files (12%); batch inserted: 0; batch skipped existing: 11536; total inserted: 0; total skipped existing: 128822; batch time: 0.2s
+2026-06-25 00:31:35 parsed 90/685 files (13%); file rows: 3170; total parsed: 144108; elapsed: 20.2s; last file: 0.2s
+2026-06-25 00:31:35 preparing batch at 90/685 files; pending rows: 15286
+2026-06-25 00:31:35 sorted pending rows in 0.0s
+2026-06-25 00:31:35 batch write starting; rows staged: 15286
+2026-06-25 00:31:35 batch transaction opened
+2026-06-25 00:31:35 cleared temp table in 0.0s
+2026-06-25 00:31:35 wrote batch CSV log_parser_batch_x27t3ovo.csv in 0.3s
+2026-06-25 00:31:35 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:31:35 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:35 counted valid temp rows in 0.0s; valid: 15286
+2026-06-25 00:31:35 selected new exact observation rows in 0.1s; new: 0; existing: 15286
+2026-06-25 00:31:35 inserted observation rows in 0.0s; inserted: 0; skipped existing: 15286; replaced: 0
+2026-06-25 00:31:35 batch transaction committed in 0.0s
+2026-06-25 00:31:35 committed batch at 90/685 files (13%); batch inserted: 0; batch skipped existing: 15286; total inserted: 0; total skipped existing: 144108; batch time: 0.6s
+2026-06-25 00:31:38 preparing batch at 95/685 files; pending rows: 15720
+2026-06-25 00:31:38 sorted pending rows in 0.0s
+2026-06-25 00:31:38 batch write starting; rows staged: 15720
+2026-06-25 00:31:38 batch transaction opened
+2026-06-25 00:31:38 cleared temp table in 0.0s
+2026-06-25 00:31:38 wrote batch CSV log_parser_batch_5j7we4vn.csv in 0.7s
+2026-06-25 00:31:38 loaded temp table from batch CSV in 0.2s
+2026-06-25 00:31:39 checked stream IDs in 0.1s; unknown: 0
+2026-06-25 00:31:39 counted valid temp rows in 0.0s; valid: 15720
+2026-06-25 00:31:39 selected new exact observation rows in 0.1s; new: 0; existing: 15720
+2026-06-25 00:31:39 inserted observation rows in 0.0s; inserted: 0; skipped existing: 15720; replaced: 0
+2026-06-25 00:31:39 batch transaction committed in 0.0s
+2026-06-25 00:31:39 committed batch at 95/685 files (14%); batch inserted: 0; batch skipped existing: 15720; total inserted: 0; total skipped existing: 159828; batch time: 1.2s
+2026-06-25 00:31:41 parsed 100/685 files (15%); file rows: 2874; total parsed: 174012; elapsed: 26.5s; last file: 0.2s
+2026-06-25 00:31:41 preparing batch at 100/685 files; pending rows: 14184
+2026-06-25 00:31:41 sorted pending rows in 0.0s
+2026-06-25 00:31:41 batch write starting; rows staged: 14184
+2026-06-25 00:31:41 batch transaction opened
+2026-06-25 00:31:41 cleared temp table in 0.0s
+2026-06-25 00:31:41 wrote batch CSV log_parser_batch_8p8epgo6.csv in 0.1s
+2026-06-25 00:31:41 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:31:41 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:41 counted valid temp rows in 0.0s; valid: 14184
+2026-06-25 00:31:41 selected new exact observation rows in 0.1s; new: 0; existing: 14184
+2026-06-25 00:31:41 inserted observation rows in 0.0s; inserted: 0; skipped existing: 14184; replaced: 0
+2026-06-25 00:31:41 batch transaction committed in 0.0s
+2026-06-25 00:31:41 committed batch at 100/685 files (15%); batch inserted: 0; batch skipped existing: 14184; total inserted: 0; total skipped existing: 174012; batch time: 0.3s
+2026-06-25 00:31:43 preparing batch at 105/685 files; pending rows: 14426
+2026-06-25 00:31:44 sorted pending rows in 0.0s
+2026-06-25 00:31:44 batch write starting; rows staged: 14426
+2026-06-25 00:31:44 batch transaction opened
+2026-06-25 00:31:44 cleared temp table in 0.0s
+2026-06-25 00:31:45 wrote batch CSV log_parser_batch_yz2trhhg.csv in 0.2s
+2026-06-25 00:31:45 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:31:45 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:45 counted valid temp rows in 0.0s; valid: 14426
+2026-06-25 00:31:45 selected new exact observation rows in 0.1s; new: 0; existing: 14426
+2026-06-25 00:31:45 inserted observation rows in 0.0s; inserted: 0; skipped existing: 14426; replaced: 0
+2026-06-25 00:31:45 batch transaction committed in 0.0s
+2026-06-25 00:31:45 committed batch at 105/685 files (15%); batch inserted: 0; batch skipped existing: 14426; total inserted: 0; total skipped existing: 188438; batch time: 1.1s
+2026-06-25 00:31:46 parsed 110/685 files (16%); file rows: 2890; total parsed: 202920; elapsed: 31.9s; last file: 0.2s
+2026-06-25 00:31:46 preparing batch at 110/685 files; pending rows: 14482
+2026-06-25 00:31:46 sorted pending rows in 0.0s
+2026-06-25 00:31:46 batch write starting; rows staged: 14482
+2026-06-25 00:31:46 batch transaction opened
+2026-06-25 00:31:46 cleared temp table in 0.0s
+2026-06-25 00:31:47 wrote batch CSV log_parser_batch_xs0rzmcm.csv in 0.2s
+2026-06-25 00:31:47 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:31:47 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:47 counted valid temp rows in 0.0s; valid: 14482
+2026-06-25 00:31:47 selected new exact observation rows in 0.1s; new: 0; existing: 14482
+2026-06-25 00:31:47 inserted observation rows in 0.0s; inserted: 0; skipped existing: 14482; replaced: 0
+2026-06-25 00:31:47 batch transaction committed in 0.0s
+2026-06-25 00:31:47 committed batch at 110/685 files (16%); batch inserted: 0; batch skipped existing: 14482; total inserted: 0; total skipped existing: 202920; batch time: 0.4s
+2026-06-25 00:31:48 preparing batch at 115/685 files; pending rows: 14360
+2026-06-25 00:31:48 sorted pending rows in 0.0s
+2026-06-25 00:31:48 batch write starting; rows staged: 14360
+2026-06-25 00:31:48 batch transaction opened
+2026-06-25 00:31:48 cleared temp table in 0.0s
+2026-06-25 00:31:48 wrote batch CSV log_parser_batch_11h_fps0.csv in 0.1s
+2026-06-25 00:31:48 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:31:48 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:48 counted valid temp rows in 0.0s; valid: 14360
+2026-06-25 00:31:48 selected new exact observation rows in 0.1s; new: 0; existing: 14360
+2026-06-25 00:31:48 inserted observation rows in 0.0s; inserted: 0; skipped existing: 14360; replaced: 0
+2026-06-25 00:31:48 batch transaction committed in 0.0s
+2026-06-25 00:31:48 committed batch at 115/685 files (17%); batch inserted: 0; batch skipped existing: 14360; total inserted: 0; total skipped existing: 217280; batch time: 0.3s
+2026-06-25 00:31:49 parsed 120/685 files (18%); file rows: 2882; total parsed: 231768; elapsed: 34.6s; last file: 0.1s
+2026-06-25 00:31:49 preparing batch at 120/685 files; pending rows: 14488
+2026-06-25 00:31:49 sorted pending rows in 0.0s
+2026-06-25 00:31:49 batch write starting; rows staged: 14488
+2026-06-25 00:31:49 batch transaction opened
+2026-06-25 00:31:49 cleared temp table in 0.0s
+2026-06-25 00:31:49 wrote batch CSV log_parser_batch_wmzd_16s.csv in 0.1s
+2026-06-25 00:31:49 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:31:49 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:49 counted valid temp rows in 0.0s; valid: 14488
+2026-06-25 00:31:49 selected new exact observation rows in 0.1s; new: 0; existing: 14488
+2026-06-25 00:31:49 inserted observation rows in 0.0s; inserted: 0; skipped existing: 14488; replaced: 0
+2026-06-25 00:31:49 batch transaction committed in 0.0s
+2026-06-25 00:31:49 committed batch at 120/685 files (18%); batch inserted: 0; batch skipped existing: 14488; total inserted: 0; total skipped existing: 231768; batch time: 0.2s
+2026-06-25 00:31:50 preparing batch at 125/685 files; pending rows: 14424
+2026-06-25 00:31:50 sorted pending rows in 0.0s
+2026-06-25 00:31:50 batch write starting; rows staged: 14424
+2026-06-25 00:31:50 batch transaction opened
+2026-06-25 00:31:50 cleared temp table in 0.0s
+2026-06-25 00:31:50 wrote batch CSV log_parser_batch_qab441rw.csv in 0.1s
+2026-06-25 00:31:50 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:31:50 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:50 counted valid temp rows in 0.0s; valid: 14424
+2026-06-25 00:31:50 selected new exact observation rows in 0.1s; new: 0; existing: 14424
+2026-06-25 00:31:51 inserted observation rows in 0.0s; inserted: 0; skipped existing: 14424; replaced: 0
+2026-06-25 00:31:51 batch transaction committed in 0.0s
+2026-06-25 00:31:51 committed batch at 125/685 files (18%); batch inserted: 0; batch skipped existing: 14424; total inserted: 0; total skipped existing: 246192; batch time: 0.3s
+2026-06-25 00:31:51 parsed 130/685 files (19%); file rows: 2872; total parsed: 260642; elapsed: 36.5s; last file: 0.1s
+2026-06-25 00:31:51 preparing batch at 130/685 files; pending rows: 14450
+2026-06-25 00:31:51 sorted pending rows in 0.0s
+2026-06-25 00:31:51 batch write starting; rows staged: 14450
+2026-06-25 00:31:51 batch transaction opened
+2026-06-25 00:31:51 cleared temp table in 0.0s
+2026-06-25 00:31:51 wrote batch CSV log_parser_batch_y2l8c0ur.csv in 0.1s
+2026-06-25 00:31:51 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:31:51 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:51 counted valid temp rows in 0.0s; valid: 14450
+2026-06-25 00:31:51 selected new exact observation rows in 0.0s; new: 0; existing: 14450
+2026-06-25 00:31:51 inserted observation rows in 0.0s; inserted: 0; skipped existing: 14450; replaced: 0
+2026-06-25 00:31:51 batch transaction committed in 0.0s
+2026-06-25 00:31:51 committed batch at 130/685 files (19%); batch inserted: 0; batch skipped existing: 14450; total inserted: 0; total skipped existing: 260642; batch time: 0.1s
+2026-06-25 00:31:52 preparing batch at 135/685 files; pending rows: 14388
+2026-06-25 00:31:52 sorted pending rows in 0.0s
+2026-06-25 00:31:52 batch write starting; rows staged: 14388
+2026-06-25 00:31:52 batch transaction opened
+2026-06-25 00:31:52 cleared temp table in 0.0s
+2026-06-25 00:31:52 wrote batch CSV log_parser_batch_v0i1vigt.csv in 0.1s
+2026-06-25 00:31:52 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:31:52 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:52 counted valid temp rows in 0.0s; valid: 14388
+2026-06-25 00:31:52 selected new exact observation rows in 0.0s; new: 0; existing: 14388
+2026-06-25 00:31:52 inserted observation rows in 0.0s; inserted: 0; skipped existing: 14388; replaced: 0
+2026-06-25 00:31:52 batch transaction committed in 0.0s
+2026-06-25 00:31:52 committed batch at 135/685 files (20%); batch inserted: 0; batch skipped existing: 14388; total inserted: 0; total skipped existing: 275030; batch time: 0.1s
+2026-06-25 00:31:52 parsed 140/685 files (20%); file rows: 2602; total parsed: 288826; elapsed: 37.7s; last file: 0.1s
+2026-06-25 00:31:52 preparing batch at 140/685 files; pending rows: 13796
+2026-06-25 00:31:52 sorted pending rows in 0.0s
+2026-06-25 00:31:52 batch write starting; rows staged: 13796
+2026-06-25 00:31:52 batch transaction opened
+2026-06-25 00:31:52 cleared temp table in 0.0s
+2026-06-25 00:31:52 wrote batch CSV log_parser_batch_medmjlwl.csv in 0.1s
+2026-06-25 00:31:52 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:31:52 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:52 counted valid temp rows in 0.0s; valid: 13796
+2026-06-25 00:31:52 selected new exact observation rows in 0.0s; new: 0; existing: 13796
+2026-06-25 00:31:52 inserted observation rows in 0.0s; inserted: 0; skipped existing: 13796; replaced: 0
+2026-06-25 00:31:52 batch transaction committed in 0.0s
+2026-06-25 00:31:52 committed batch at 140/685 files (20%); batch inserted: 0; batch skipped existing: 13796; total inserted: 0; total skipped existing: 288826; batch time: 0.1s
+2026-06-25 00:31:53 preparing batch at 145/685 files; pending rows: 13862
+2026-06-25 00:31:53 sorted pending rows in 0.0s
+2026-06-25 00:31:53 batch write starting; rows staged: 13862
+2026-06-25 00:31:53 batch transaction opened
+2026-06-25 00:31:53 cleared temp table in 0.0s
+2026-06-25 00:31:53 wrote batch CSV log_parser_batch_szs09c64.csv in 0.1s
+2026-06-25 00:31:53 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:31:53 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:53 counted valid temp rows in 0.0s; valid: 13862
+2026-06-25 00:31:53 selected new exact observation rows in 0.0s; new: 0; existing: 13862
+2026-06-25 00:31:53 inserted observation rows in 0.0s; inserted: 0; skipped existing: 13862; replaced: 0
+2026-06-25 00:31:53 batch transaction committed in 0.0s
+2026-06-25 00:31:53 committed batch at 145/685 files (21%); batch inserted: 0; batch skipped existing: 13862; total inserted: 0; total skipped existing: 302688; batch time: 0.1s
+2026-06-25 00:31:53 parsed 150/685 files (22%); file rows: 2916; total parsed: 317198; elapsed: 39.0s; last file: 0.2s
+2026-06-25 00:31:54 preparing batch at 150/685 files; pending rows: 14510
+2026-06-25 00:31:54 sorted pending rows in 0.0s
+2026-06-25 00:31:54 batch write starting; rows staged: 14510
+2026-06-25 00:31:54 batch transaction opened
+2026-06-25 00:31:54 cleared temp table in 0.0s
+2026-06-25 00:31:54 wrote batch CSV log_parser_batch_6mxxvu_9.csv in 0.2s
+2026-06-25 00:31:54 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:31:54 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:54 counted valid temp rows in 0.0s; valid: 14510
+2026-06-25 00:31:54 selected new exact observation rows in 0.1s; new: 0; existing: 14510
+2026-06-25 00:31:54 inserted observation rows in 0.0s; inserted: 0; skipped existing: 14510; replaced: 0
+2026-06-25 00:31:54 batch transaction committed in 0.0s
+2026-06-25 00:31:54 committed batch at 150/685 files (22%); batch inserted: 0; batch skipped existing: 14510; total inserted: 0; total skipped existing: 317198; batch time: 0.4s
+2026-06-25 00:31:56 preparing batch at 155/685 files; pending rows: 14524
+2026-06-25 00:31:56 sorted pending rows in 0.0s
+2026-06-25 00:31:56 batch write starting; rows staged: 14524
+2026-06-25 00:31:56 batch transaction opened
+2026-06-25 00:31:56 cleared temp table in 0.0s
+2026-06-25 00:31:56 wrote batch CSV log_parser_batch_0f4l27vo.csv in 0.2s
+2026-06-25 00:31:57 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:31:57 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:57 counted valid temp rows in 0.0s; valid: 14524
+2026-06-25 00:31:57 selected new exact observation rows in 0.1s; new: 0; existing: 14524
+2026-06-25 00:31:57 inserted observation rows in 0.0s; inserted: 0; skipped existing: 14524; replaced: 0
+2026-06-25 00:31:57 batch transaction committed in 0.0s
+2026-06-25 00:31:57 committed batch at 155/685 files (23%); batch inserted: 0; batch skipped existing: 14524; total inserted: 0; total skipped existing: 331722; batch time: 0.5s
+2026-06-25 00:31:58 parsed 160/685 files (23%); file rows: 2892; total parsed: 346184; elapsed: 43.1s; last file: 0.2s
+2026-06-25 00:31:58 preparing batch at 160/685 files; pending rows: 14462
+2026-06-25 00:31:58 sorted pending rows in 0.0s
+2026-06-25 00:31:58 batch write starting; rows staged: 14462
+2026-06-25 00:31:58 batch transaction opened
+2026-06-25 00:31:58 cleared temp table in 0.0s
+2026-06-25 00:31:58 wrote batch CSV log_parser_batch_p1byy187.csv in 0.2s
+2026-06-25 00:31:58 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:31:58 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:58 counted valid temp rows in 0.0s; valid: 14462
+2026-06-25 00:31:58 selected new exact observation rows in 0.1s; new: 0; existing: 14462
+2026-06-25 00:31:58 inserted observation rows in 0.0s; inserted: 0; skipped existing: 14462; replaced: 0
+2026-06-25 00:31:58 batch transaction committed in 0.0s
+2026-06-25 00:31:58 committed batch at 160/685 files (23%); batch inserted: 0; batch skipped existing: 14462; total inserted: 0; total skipped existing: 346184; batch time: 0.3s
+2026-06-25 00:31:59 preparing batch at 165/685 files; pending rows: 15354
+2026-06-25 00:31:59 sorted pending rows in 0.0s
+2026-06-25 00:31:59 batch write starting; rows staged: 15354
+2026-06-25 00:31:59 batch transaction opened
+2026-06-25 00:31:59 cleared temp table in 0.0s
+2026-06-25 00:31:59 wrote batch CSV log_parser_batch_4a_i_m96.csv in 0.1s
+2026-06-25 00:31:59 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:31:59 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:31:59 counted valid temp rows in 0.0s; valid: 15354
+2026-06-25 00:32:00 selected new exact observation rows in 0.1s; new: 0; existing: 15354
+2026-06-25 00:32:00 inserted observation rows in 0.0s; inserted: 0; skipped existing: 15354; replaced: 0
+2026-06-25 00:32:00 batch transaction committed in 0.0s
+2026-06-25 00:32:00 committed batch at 165/685 files (24%); batch inserted: 0; batch skipped existing: 15354; total inserted: 0; total skipped existing: 361538; batch time: 0.3s
+2026-06-25 00:32:00 parsed 170/685 files (25%); file rows: 2760; total parsed: 377440; elapsed: 45.7s; last file: 0.1s
+2026-06-25 00:32:00 preparing batch at 170/685 files; pending rows: 15902
+2026-06-25 00:32:00 sorted pending rows in 0.0s
+2026-06-25 00:32:00 batch write starting; rows staged: 15902
+2026-06-25 00:32:00 batch transaction opened
+2026-06-25 00:32:00 cleared temp table in 0.0s
+2026-06-25 00:32:00 wrote batch CSV log_parser_batch_6gqoy54x.csv in 0.1s
+2026-06-25 00:32:00 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:32:00 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:00 counted valid temp rows in 0.0s; valid: 15902
+2026-06-25 00:32:01 selected new exact observation rows in 0.1s; new: 0; existing: 15902
+2026-06-25 00:32:01 inserted observation rows in 0.0s; inserted: 0; skipped existing: 15902; replaced: 0
+2026-06-25 00:32:01 batch transaction committed in 0.0s
+2026-06-25 00:32:01 committed batch at 170/685 files (25%); batch inserted: 0; batch skipped existing: 15902; total inserted: 0; total skipped existing: 377440; batch time: 0.3s
+2026-06-25 00:32:01 preparing batch at 175/685 files; pending rows: 16104
+2026-06-25 00:32:01 sorted pending rows in 0.0s
+2026-06-25 00:32:01 batch write starting; rows staged: 16104
+2026-06-25 00:32:01 batch transaction opened
+2026-06-25 00:32:01 cleared temp table in 0.0s
+2026-06-25 00:32:02 wrote batch CSV log_parser_batch_u3dczevs.csv in 0.1s
+2026-06-25 00:32:02 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:32:02 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:02 counted valid temp rows in 0.0s; valid: 16104
+2026-06-25 00:32:02 selected new exact observation rows in 0.0s; new: 0; existing: 16104
+2026-06-25 00:32:02 inserted observation rows in 0.0s; inserted: 0; skipped existing: 16104; replaced: 0
+2026-06-25 00:32:02 batch transaction committed in 0.0s
+2026-06-25 00:32:02 committed batch at 175/685 files (26%); batch inserted: 0; batch skipped existing: 16104; total inserted: 0; total skipped existing: 393544; batch time: 0.3s
+2026-06-25 00:32:02 parsed 180/685 files (26%); file rows: 3362; total parsed: 410660; elapsed: 47.9s; last file: 0.1s
+2026-06-25 00:32:02 preparing batch at 180/685 files; pending rows: 17116
+2026-06-25 00:32:02 sorted pending rows in 0.0s
+2026-06-25 00:32:02 batch write starting; rows staged: 17116
+2026-06-25 00:32:02 batch transaction opened
+2026-06-25 00:32:02 cleared temp table in 0.0s
+2026-06-25 00:32:02 wrote batch CSV log_parser_batch_z2y1yk98.csv in 0.1s
+2026-06-25 00:32:03 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:32:03 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:03 counted valid temp rows in 0.0s; valid: 17116
+2026-06-25 00:32:03 selected new exact observation rows in 0.0s; new: 0; existing: 17116
+2026-06-25 00:32:03 inserted observation rows in 0.0s; inserted: 0; skipped existing: 17116; replaced: 0
+2026-06-25 00:32:03 batch transaction committed in 0.0s
+2026-06-25 00:32:03 committed batch at 180/685 files (26%); batch inserted: 0; batch skipped existing: 17116; total inserted: 0; total skipped existing: 410660; batch time: 0.1s
+2026-06-25 00:32:03 preparing batch at 185/685 files; pending rows: 16872
+2026-06-25 00:32:03 sorted pending rows in 0.0s
+2026-06-25 00:32:03 batch write starting; rows staged: 16872
+2026-06-25 00:32:03 batch transaction opened
+2026-06-25 00:32:03 cleared temp table in 0.0s
+2026-06-25 00:32:03 wrote batch CSV log_parser_batch_0jxm47eb.csv in 0.1s
+2026-06-25 00:32:03 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:32:03 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:03 counted valid temp rows in 0.0s; valid: 16872
+2026-06-25 00:32:03 selected new exact observation rows in 0.1s; new: 0; existing: 16872
+2026-06-25 00:32:03 inserted observation rows in 0.0s; inserted: 0; skipped existing: 16872; replaced: 0
+2026-06-25 00:32:03 batch transaction committed in 0.0s
+2026-06-25 00:32:03 committed batch at 185/685 files (27%); batch inserted: 0; batch skipped existing: 16872; total inserted: 0; total skipped existing: 427532; batch time: 0.2s
+2026-06-25 00:32:04 parsed 190/685 files (28%); file rows: 3468; total parsed: 444876; elapsed: 49.3s; last file: 0.1s
+2026-06-25 00:32:04 preparing batch at 190/685 files; pending rows: 17344
+2026-06-25 00:32:04 sorted pending rows in 0.0s
+2026-06-25 00:32:04 batch write starting; rows staged: 17344
+2026-06-25 00:32:04 batch transaction opened
+2026-06-25 00:32:04 cleared temp table in 0.0s
+2026-06-25 00:32:04 wrote batch CSV log_parser_batch_40a0i6t0.csv in 0.1s
+2026-06-25 00:32:04 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:32:04 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:04 counted valid temp rows in 0.0s; valid: 17344
+2026-06-25 00:32:04 selected new exact observation rows in 0.0s; new: 0; existing: 17344
+2026-06-25 00:32:04 inserted observation rows in 0.0s; inserted: 0; skipped existing: 17344; replaced: 0
+2026-06-25 00:32:04 batch transaction committed in 0.0s
+2026-06-25 00:32:04 committed batch at 190/685 files (28%); batch inserted: 0; batch skipped existing: 17344; total inserted: 0; total skipped existing: 444876; batch time: 0.1s
+2026-06-25 00:32:05 preparing batch at 195/685 files; pending rows: 17382
+2026-06-25 00:32:06 sorted pending rows in 0.0s
+2026-06-25 00:32:06 batch write starting; rows staged: 17382
+2026-06-25 00:32:06 batch transaction opened
+2026-06-25 00:32:06 cleared temp table in 0.0s
+2026-06-25 00:32:06 wrote batch CSV log_parser_batch_7879ee7p.csv in 0.3s
+2026-06-25 00:32:06 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:32:06 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:06 counted valid temp rows in 0.0s; valid: 17382
+2026-06-25 00:32:06 selected new exact observation rows in 0.2s; new: 0; existing: 17382
+2026-06-25 00:32:06 inserted observation rows in 0.0s; inserted: 0; skipped existing: 17382; replaced: 0
+2026-06-25 00:32:06 batch transaction committed in 0.0s
+2026-06-25 00:32:06 committed batch at 195/685 files (28%); batch inserted: 0; batch skipped existing: 17382; total inserted: 0; total skipped existing: 462258; batch time: 0.8s
+2026-06-25 00:32:08 parsed 200/685 files (29%); file rows: 3398; total parsed: 479546; elapsed: 54.0s; last file: 0.2s
+2026-06-25 00:32:08 preparing batch at 200/685 files; pending rows: 17288
+2026-06-25 00:32:09 sorted pending rows in 0.0s
+2026-06-25 00:32:09 batch write starting; rows staged: 17288
+2026-06-25 00:32:09 batch transaction opened
+2026-06-25 00:32:09 cleared temp table in 0.0s
+2026-06-25 00:32:09 wrote batch CSV log_parser_batch_w6c223ob.csv in 0.2s
+2026-06-25 00:32:09 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:32:09 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:09 counted valid temp rows in 0.0s; valid: 17288
+2026-06-25 00:32:09 selected new exact observation rows in 0.1s; new: 0; existing: 17288
+2026-06-25 00:32:09 inserted observation rows in 0.0s; inserted: 0; skipped existing: 17288; replaced: 0
+2026-06-25 00:32:09 batch transaction committed in 0.0s
+2026-06-25 00:32:09 committed batch at 200/685 files (29%); batch inserted: 0; batch skipped existing: 17288; total inserted: 0; total skipped existing: 479546; batch time: 0.3s
+2026-06-25 00:32:10 preparing batch at 205/685 files; pending rows: 16004
+2026-06-25 00:32:10 sorted pending rows in 0.0s
+2026-06-25 00:32:10 batch write starting; rows staged: 16004
+2026-06-25 00:32:10 batch transaction opened
+2026-06-25 00:32:10 cleared temp table in 0.0s
+2026-06-25 00:32:10 wrote batch CSV log_parser_batch_k5as0jhr.csv in 0.2s
+2026-06-25 00:32:11 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:32:11 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:11 counted valid temp rows in 0.0s; valid: 16004
+2026-06-25 00:32:11 selected new exact observation rows in 0.1s; new: 0; existing: 16004
+2026-06-25 00:32:11 inserted observation rows in 0.0s; inserted: 0; skipped existing: 16004; replaced: 0
+2026-06-25 00:32:11 batch transaction committed in 0.0s
+2026-06-25 00:32:11 committed batch at 205/685 files (30%); batch inserted: 0; batch skipped existing: 16004; total inserted: 0; total skipped existing: 495550; batch time: 0.3s
+2026-06-25 00:32:11 parsed 210/685 files (31%); file rows: 3180; total parsed: 511468; elapsed: 56.8s; last file: 0.1s
+2026-06-25 00:32:11 preparing batch at 210/685 files; pending rows: 15918
+2026-06-25 00:32:11 sorted pending rows in 0.0s
+2026-06-25 00:32:11 batch write starting; rows staged: 15918
+2026-06-25 00:32:11 batch transaction opened
+2026-06-25 00:32:11 cleared temp table in 0.0s
+2026-06-25 00:32:12 wrote batch CSV log_parser_batch_k8ufugyi.csv in 0.1s
+2026-06-25 00:32:12 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:32:12 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:12 counted valid temp rows in 0.0s; valid: 15918
+2026-06-25 00:32:12 selected new exact observation rows in 0.1s; new: 0; existing: 15918
+2026-06-25 00:32:12 inserted observation rows in 0.0s; inserted: 0; skipped existing: 15918; replaced: 0
+2026-06-25 00:32:12 batch transaction committed in 0.0s
+2026-06-25 00:32:12 committed batch at 210/685 files (31%); batch inserted: 0; batch skipped existing: 15918; total inserted: 0; total skipped existing: 511468; batch time: 0.3s
+2026-06-25 00:32:12 preparing batch at 215/685 files; pending rows: 17132
+2026-06-25 00:32:12 sorted pending rows in 0.0s
+2026-06-25 00:32:12 batch write starting; rows staged: 17132
+2026-06-25 00:32:12 batch transaction opened
+2026-06-25 00:32:12 cleared temp table in 0.0s
+2026-06-25 00:32:13 wrote batch CSV log_parser_batch_ins436j7.csv in 0.1s
+2026-06-25 00:32:13 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:32:13 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:13 counted valid temp rows in 0.0s; valid: 17132
+2026-06-25 00:32:13 selected new exact observation rows in 0.1s; new: 0; existing: 17132
+2026-06-25 00:32:13 inserted observation rows in 0.0s; inserted: 0; skipped existing: 17132; replaced: 0
+2026-06-25 00:32:13 batch transaction committed in 0.0s
+2026-06-25 00:32:13 committed batch at 215/685 files (31%); batch inserted: 0; batch skipped existing: 17132; total inserted: 0; total skipped existing: 528600; batch time: 0.3s
+2026-06-25 00:32:14 parsed 220/685 files (32%); file rows: 3462; total parsed: 545938; elapsed: 59.4s; last file: 0.2s
+2026-06-25 00:32:14 preparing batch at 220/685 files; pending rows: 17338
+2026-06-25 00:32:14 sorted pending rows in 0.0s
+2026-06-25 00:32:14 batch write starting; rows staged: 17338
+2026-06-25 00:32:14 batch transaction opened
+2026-06-25 00:32:14 cleared temp table in 0.0s
+2026-06-25 00:32:14 wrote batch CSV log_parser_batch_kj7i95hs.csv in 0.2s
+2026-06-25 00:32:14 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:32:14 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:14 counted valid temp rows in 0.0s; valid: 17338
+2026-06-25 00:32:14 selected new exact observation rows in 0.1s; new: 0; existing: 17338
+2026-06-25 00:32:14 inserted observation rows in 0.0s; inserted: 0; skipped existing: 17338; replaced: 0
+2026-06-25 00:32:14 batch transaction committed in 0.0s
+2026-06-25 00:32:14 committed batch at 220/685 files (32%); batch inserted: 0; batch skipped existing: 17338; total inserted: 0; total skipped existing: 545938; batch time: 0.3s
+2026-06-25 00:32:15 preparing batch at 225/685 files; pending rows: 17200
+2026-06-25 00:32:15 sorted pending rows in 0.0s
+2026-06-25 00:32:15 batch write starting; rows staged: 17200
+2026-06-25 00:32:15 batch transaction opened
+2026-06-25 00:32:15 cleared temp table in 0.0s
+2026-06-25 00:32:16 wrote batch CSV log_parser_batch_55_eeace.csv in 0.2s
+2026-06-25 00:32:16 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:32:16 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:16 counted valid temp rows in 0.0s; valid: 17200
+2026-06-25 00:32:16 selected new exact observation rows in 0.1s; new: 0; existing: 17200
+2026-06-25 00:32:16 inserted observation rows in 0.0s; inserted: 0; skipped existing: 17200; replaced: 0
+2026-06-25 00:32:16 batch transaction committed in 0.0s
+2026-06-25 00:32:16 committed batch at 225/685 files (33%); batch inserted: 0; batch skipped existing: 17200; total inserted: 0; total skipped existing: 563138; batch time: 0.4s
+2026-06-25 00:32:18 parsed 230/685 files (34%); file rows: 3450; total parsed: 580466; elapsed: 1m 4s; last file: 0.4s
+2026-06-25 00:32:18 preparing batch at 230/685 files; pending rows: 17328
+2026-06-25 00:32:18 sorted pending rows in 0.0s
+2026-06-25 00:32:18 batch write starting; rows staged: 17328
+2026-06-25 00:32:18 batch transaction opened
+2026-06-25 00:32:18 cleared temp table in 0.0s
+2026-06-25 00:32:18 wrote batch CSV log_parser_batch_abgpgfry.csv in 0.2s
+2026-06-25 00:32:18 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:32:18 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:18 counted valid temp rows in 0.0s; valid: 17328
+2026-06-25 00:32:18 selected new exact observation rows in 0.1s; new: 0; existing: 17328
+2026-06-25 00:32:18 inserted observation rows in 0.0s; inserted: 0; skipped existing: 17328; replaced: 0
+2026-06-25 00:32:18 batch transaction committed in 0.0s
+2026-06-25 00:32:18 committed batch at 230/685 files (34%); batch inserted: 0; batch skipped existing: 17328; total inserted: 0; total skipped existing: 580466; batch time: 0.4s
+2026-06-25 00:32:22 preparing batch at 235/685 files; pending rows: 17354
+2026-06-25 00:32:22 sorted pending rows in 0.0s
+2026-06-25 00:32:22 batch write starting; rows staged: 17354
+2026-06-25 00:32:22 batch transaction opened
+2026-06-25 00:32:22 cleared temp table in 0.0s
+2026-06-25 00:32:22 wrote batch CSV log_parser_batch_875vdge5.csv in 0.4s
+2026-06-25 00:32:22 loaded temp table from batch CSV in 0.2s
+2026-06-25 00:32:22 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:22 counted valid temp rows in 0.0s; valid: 17354
+2026-06-25 00:32:22 selected new exact observation rows in 0.2s; new: 0; existing: 17354
+2026-06-25 00:32:22 inserted observation rows in 0.0s; inserted: 0; skipped existing: 17354; replaced: 0
+2026-06-25 00:32:23 batch transaction committed in 0.0s
+2026-06-25 00:32:23 committed batch at 235/685 files (34%); batch inserted: 0; batch skipped existing: 17354; total inserted: 0; total skipped existing: 597820; batch time: 0.9s
+2026-06-25 00:32:26 parsed 240/685 files (35%); file rows: 3436; total parsed: 614834; elapsed: 1m 12s; last file: 0.6s
+2026-06-25 00:32:26 preparing batch at 240/685 files; pending rows: 17014
+2026-06-25 00:32:26 sorted pending rows in 0.0s
+2026-06-25 00:32:26 batch write starting; rows staged: 17014
+2026-06-25 00:32:26 batch transaction opened
+2026-06-25 00:32:26 cleared temp table in 0.0s
+2026-06-25 00:32:27 wrote batch CSV log_parser_batch_3r4nm8j6.csv in 0.4s
+2026-06-25 00:32:27 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:32:27 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:27 counted valid temp rows in 0.0s; valid: 17014
+2026-06-25 00:32:27 selected new exact observation rows in 0.2s; new: 0; existing: 17014
+2026-06-25 00:32:27 inserted observation rows in 0.0s; inserted: 0; skipped existing: 17014; replaced: 0
+2026-06-25 00:32:27 batch transaction committed in 0.0s
+2026-06-25 00:32:27 committed batch at 240/685 files (35%); batch inserted: 0; batch skipped existing: 17014; total inserted: 0; total skipped existing: 614834; batch time: 0.7s
+2026-06-25 00:32:30 preparing batch at 245/685 files; pending rows: 17030
+2026-06-25 00:32:30 sorted pending rows in 0.0s
+2026-06-25 00:32:30 batch write starting; rows staged: 17030
+2026-06-25 00:32:31 batch transaction opened
+2026-06-25 00:32:31 cleared temp table in 0.0s
+2026-06-25 00:32:31 wrote batch CSV log_parser_batch_ijr8kcl2.csv in 0.3s
+2026-06-25 00:32:31 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:32:31 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:31 counted valid temp rows in 0.0s; valid: 17030
+2026-06-25 00:32:31 selected new exact observation rows in 0.1s; new: 0; existing: 17030
+2026-06-25 00:32:31 inserted observation rows in 0.0s; inserted: 0; skipped existing: 17030; replaced: 0
+2026-06-25 00:32:31 batch transaction committed in 0.0s
+2026-06-25 00:32:31 committed batch at 245/685 files (36%); batch inserted: 0; batch skipped existing: 17030; total inserted: 0; total skipped existing: 631864; batch time: 0.7s
+2026-06-25 00:32:32 parsed 250/685 files (36%); file rows: 3182; total parsed: 648362; elapsed: 1m 18s; last file: 0.2s
+2026-06-25 00:32:32 preparing batch at 250/685 files; pending rows: 16498
+2026-06-25 00:32:32 sorted pending rows in 0.0s
+2026-06-25 00:32:32 batch write starting; rows staged: 16498
+2026-06-25 00:32:32 batch transaction opened
+2026-06-25 00:32:32 cleared temp table in 0.0s
+2026-06-25 00:32:33 wrote batch CSV log_parser_batch_k7e9jx2e.csv in 0.2s
+2026-06-25 00:32:33 loaded temp table from batch CSV in 0.1s
+2026-06-25 00:32:33 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:33 counted valid temp rows in 0.0s; valid: 16498
+2026-06-25 00:32:33 selected new exact observation rows in 0.1s; new: 0; existing: 16498
+2026-06-25 00:32:33 inserted observation rows in 0.0s; inserted: 0; skipped existing: 16498; replaced: 0
+2026-06-25 00:32:33 batch transaction committed in 0.1s
+2026-06-25 00:32:33 committed batch at 250/685 files (36%); batch inserted: 0; batch skipped existing: 16498; total inserted: 0; total skipped existing: 648362; batch time: 0.5s
+2026-06-25 00:32:34 preparing batch at 255/685 files; pending rows: 15302
+2026-06-25 00:32:34 sorted pending rows in 0.0s
+2026-06-25 00:32:34 batch write starting; rows staged: 15302
+2026-06-25 00:32:34 batch transaction opened
+2026-06-25 00:32:34 cleared temp table in 0.0s
+2026-06-25 00:32:34 wrote batch CSV log_parser_batch_h2ua6b4z.csv in 0.1s
+2026-06-25 00:32:34 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:32:35 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:35 counted valid temp rows in 0.0s; valid: 15302
+2026-06-25 00:32:35 selected new exact observation rows in 0.1s; new: 0; existing: 15302
+2026-06-25 00:32:35 inserted observation rows in 0.0s; inserted: 0; skipped existing: 15302; replaced: 0
+2026-06-25 00:32:35 batch transaction committed in 0.0s
+2026-06-25 00:32:35 committed batch at 255/685 files (37%); batch inserted: 0; batch skipped existing: 15302; total inserted: 0; total skipped existing: 663664; batch time: 0.3s
+2026-06-25 00:32:35 parsed 260/685 files (38%); file rows: 2970; total parsed: 678216; elapsed: 1m 21s; last file: 0.1s
+2026-06-25 00:32:35 preparing batch at 260/685 files; pending rows: 14552
+2026-06-25 00:32:35 sorted pending rows in 0.0s
+2026-06-25 00:32:35 batch write starting; rows staged: 14552
+2026-06-25 00:32:35 batch transaction opened
+2026-06-25 00:32:35 cleared temp table in 0.0s
+2026-06-25 00:32:35 wrote batch CSV log_parser_batch_jbm7cgpk.csv in 0.1s
+2026-06-25 00:32:35 loaded temp table from batch CSV in 0.0s
+2026-06-25 00:32:35 checked stream IDs in 0.0s; unknown: 0
+2026-06-25 00:32:35 counted valid temp rows in 0.0s; valid: 14552
+2026-06-25 00:32:35 selected new exact observation rows in 0.1s; new: 0; existing: 14552
+2026-06-25 00:32:35 inserted observation rows in 0.0s; inserted: 0; skipped existing: 14552; replaced: 0
+2026-06-25 00:32:35 batch transaction committed in 0.0s
+2026-06-25 00:32:35 committed batch at 260/685 files (38%); batch inserted: 0; batch skipped existing: 14552; total inserted: 0; total skipped existing: 678216; batch time: 0.2s
+2026-06-25 00:32:37 import interrupted by Ctrl+C
+2026-06-25 00:32:37 source: temperature_and_humidity
+2026-06-25 00:32:37 interrupted while: parsing file 265/685: C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\data\logs\temperature_and_humidity\temperature_and_humidity.json.2025-04-28
+2026-06-25 00:32:37 selected files: 685
+2026-06-25 00:32:37 last fully committed file index: 260/685
+2026-06-25 00:32:37 last fully committed file: C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\data\logs\temperature_and_humidity\temperature_and_humidity.json.2025-04-23
+2026-06-25 00:32:37 files parsed in this run: 265
+2026-06-25 00:32:37 observations parsed in this run: 690720
+2026-06-25 00:32:37 observations inserted in completed batches: 0
+2026-06-25 00:32:37 existing observations skipped in completed batches: 678216
+2026-06-25 00:32:37 pending uncommitted rows discarded: 12504
+2026-06-25 00:32:37 next uncommitted file: C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\data\logs\temperature_and_humidity\temperature_and_humidity.json.2025-04-24
+2026-06-25 00:32:37 restart hint: set START_DATE = "2025-04-24"
+2026-06-25 00:32:37 database connection closed
+2026-06-25 00:32:38 after: observations=13413012; loaded_streams=194
+2026-06-25 00:32:38 delta observations: 0
+2026-06-25 00:32:38 finished import_room_temperature_humidity in 1m 24s
+2026-06-25 00:32:38 stopping remaining modes because import was interrupted
+2026-06-25 00:32:38 
+2026-06-25 00:32:38 refreshing availability outputs
+wrote C:/Users/Beno/Documents/SZAKI/dev/kazanfutes/dev/db/stream_availability.html
+wrote C:/Users/Beno/Documents/SZAKI/dev/kazanfutes/dev/db/stream_availability.csv
+2026-06-25 00:32:39 
+2026-06-25 00:32:39 overnight log import summary
+2026-06-25 00:32:39 - INTERRUPTED import_room_temperature_humidity: delta=0; target_streams=36; files=685; elapsed=1m 24s
+2026-06-25 00:32:39 total elapsed: 1m 26s
+2026-06-25 00:32:39 wrote error report: C:\Users\Beno\Documents\SZAKI\dev\kazanfutes\dev\db\test_reports\overnight_import_errors_20260625_003113.txt
