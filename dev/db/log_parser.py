@@ -1,16 +1,14 @@
+import csv
 import json
 from datetime import date, datetime
 from pathlib import Path
+from tempfile import NamedTemporaryFile
+from time import perf_counter
 
 import duckdb
 
-
-MODE = "list_modes"
-
-START_DATE = None
-END_DATE = None
-INCLUDE_CURRENT_LOG = True
-BATCH_FILE_COUNT = 50
+BATCH_FILE_COUNT = 10
+IMPORT_EXISTING_POLICIES = {"skip_existing", "replace_existing", "fail_on_existing"}
 
 SCRIPT_PATH = Path(__file__).resolve()
 DEV_PATH = SCRIPT_PATH.parent.parent
@@ -26,6 +24,10 @@ SOURCE_FILES = {
     "external_temp": ("external_temp", "external_temp.json"),
     "gas_impulses": ("gas_consumption", "gas_relay_turns.json"),
     "heatmeters": ("heat_delivery", "heatmeters_state.json"),
+    "heating_control": (
+        "service_execution/heating_control",
+        "heating_control.json",
+    ),
     "occupancy": ("occupancy", "occupancy.json"),
     "open_close": ("open_close", "open_close_events.json"),
     "oktopusz_presence": ("presence", "oktopusz_presence.json"),
@@ -54,7 +56,7 @@ AQARA_ROOM_MAP = {
     "Aqara8": "18",
     "Aqara9": "6",
     "Aqara10": "24",
-    # Aqara11 was "DiosEdit" in old notes; no current scope.
+    "Aqara11": "12",
     "Aqara12": "11",
     "Aqara13": "3",
     "Aqara14": "5",
@@ -66,7 +68,7 @@ AQARA_ROOM_MAP = {
 
 NOUS_ROOM_MAP = {
     "Nous1": "13",
-    # Nous2 was "DiosEdit" in old notes; no current scope.
+    "Nous2": "12",
     "Nous3": "2",
     "Nous4": "17",
     "Nous5": "3",
@@ -74,7 +76,7 @@ NOUS_ROOM_MAP = {
     "Nous7": "7",
     "Nous8": "6",
     "Nous9": "5",
-    # Nous10 was "DiosEdit" in old notes; no current scope.
+    "Nous10": "4"
 }
 
 AQARA_FIELD_MAP = {
@@ -141,7 +143,7 @@ ELECTRIC_SUBMETER_SCOPE_MAP = {
     "pk": "pk",
     "studio": "studio",
     "szgk": "szgk",
-    # "hm division" has no canonical stream yet.
+    "hm division": "pk"
 }
 
 RADIATOR_TEMPERATURE_STREAM_MAP = {
@@ -178,6 +180,23 @@ THERMOSTAT_RADIATOR_SCOPE_MAP = {
     "Thermostat 75": "2.3",
     "Thermostat 77": "2.4",
     "Thermostat 79": "7.1",
+}
+
+HEATING_CONTROL_VALVE_STREAM_MAP = {
+    "1": ["radiator.1.1.valve_state", "radiator.1.2.valve_state"],
+    "2": [
+        "radiator.2.1.valve_state",
+        "radiator.2.2.valve_state",
+        "radiator.2.3.valve_state",
+        "radiator.2.4.valve_state",
+    ],
+    "3": ["radiator.3.1.valve_state"],
+    "4": ["radiator.4.1.valve_state"],
+    "5": ["radiator.5.1.valve_state"],
+    "6": ["radiator.6.1.valve_state"],
+    "7": ["radiator.7.1.valve_state"],
+    "12": ["radiator.12.1.valve_state"],
+    "13": ["radiator.13.1.valve_state"],
 }
 
 
@@ -279,6 +298,7 @@ MODE_DESCRIPTIONS = {
     "import_electric_submeter_impulses": "electric submeter impulse events",
     "import_gas_impulses": "gas meter impulse events",
     "import_heatmeters": "heating-cycle heatmeter readings",
+    "import_heating_control_state": "room set temperatures, actual heating states, and radiator valve states from heating-control logs",
     "import_oktopusz_presence": "legacy Oktopusz presence boolean",
     "import_open_close": "door/window open-close state events",
     "import_outdoor_weather_com": "Weather.com outdoor temperature scrape",
@@ -294,6 +314,124 @@ MODE_DESCRIPTIONS = {
 
 def connect():
     return duckdb.connect(str(DB_PATH))
+
+
+def output(message):
+    print(f"{datetime.now():%Y-%m-%d %H:%M:%S} {message}", flush=True)
+
+
+def report(message):
+    if REPORT_PROGRESS:
+        output(message)
+
+
+def format_seconds(seconds):
+    if seconds < 60:
+        return f"{seconds:.1f}s"
+
+    minutes = int(seconds // 60)
+    remaining_seconds = seconds % 60
+    return f"{minutes}m {remaining_seconds:.0f}s"
+
+
+def should_report_file_progress(index, total):
+    if REPORT_FILE_DETAILS or index == 1 or index == total:
+        return True
+
+    return (
+        REPORT_EVERY_FILES is not None
+        and REPORT_EVERY_FILES > 0
+        and index % REPORT_EVERY_FILES == 0
+    )
+
+
+_STREAM_ID_FILTER_SOURCE = object()
+_STREAM_ID_FILTER_SET = None
+
+
+def configured_stream_id_filter():
+    global _STREAM_ID_FILTER_SOURCE
+    global _STREAM_ID_FILTER_SET
+
+    if STREAM_ID_FILTER is _STREAM_ID_FILTER_SOURCE:
+        return _STREAM_ID_FILTER_SET
+
+    _STREAM_ID_FILTER_SOURCE = STREAM_ID_FILTER
+
+    if STREAM_ID_FILTER is None:
+        _STREAM_ID_FILTER_SET = None
+    elif isinstance(STREAM_ID_FILTER, str):
+        _STREAM_ID_FILTER_SET = {STREAM_ID_FILTER}
+    else:
+        _STREAM_ID_FILTER_SET = set(STREAM_ID_FILTER)
+
+    return _STREAM_ID_FILTER_SET
+
+
+def stream_id_is_selected(target_stream_id):
+    stream_id_filter = configured_stream_id_filter()
+    return stream_id_filter is None or target_stream_id in stream_id_filter
+
+
+def validate_import_config():
+    if IMPORT_EXISTING_POLICY not in IMPORT_EXISTING_POLICIES:
+        allowed_policies = ", ".join(sorted(IMPORT_EXISTING_POLICIES))
+        raise ValueError(
+            f"invalid IMPORT_EXISTING_POLICY {IMPORT_EXISTING_POLICY!r}; "
+            f"expected one of: {allowed_policies}"
+        )
+
+    configured_stream_id_filter()
+
+
+def log_day_from_path(path):
+    try:
+        return parse_day(path.name.rsplit(".", 1)[-1])
+    except ValueError:
+        return None
+
+
+def report_interrupted_import(
+    source_name,
+    paths,
+    last_committed_index,
+    current_index,
+    phase,
+    parsed_count,
+    inserted_count,
+    skipped_existing_count,
+    pending_row_count,
+):
+    output("import interrupted by Ctrl+C")
+    output(f"source: {source_name}")
+    output(f"interrupted while: {phase}")
+    output(f"selected files: {len(paths)}")
+    output(f"last fully committed file index: {last_committed_index}/{len(paths)}")
+
+    if last_committed_index > 0:
+        output(f"last fully committed file: {paths[last_committed_index - 1]}")
+    else:
+        output("last fully committed file: none")
+
+    output(f"files parsed in this run: {current_index}")
+    output(f"observations parsed in this run: {parsed_count}")
+    output(f"observations inserted in completed batches: {inserted_count}")
+    output(f"existing observations skipped in completed batches: {skipped_existing_count}")
+    output(f"pending uncommitted rows discarded: {pending_row_count}")
+
+    next_index = last_committed_index + 1
+    if next_index > len(paths):
+        output("restart hint: all selected files were committed before interruption")
+        return
+
+    next_path = paths[next_index - 1]
+    next_day = log_day_from_path(next_path)
+    output(f"next uncommitted file: {next_path}")
+
+    if next_day is None:
+        output("restart hint: next file is the current unsuffixed log; keep INCLUDE_CURRENT_LOG = True")
+    else:
+        output(f"restart hint: set START_DATE = \"{next_day.isoformat()}\"")
 
 
 def parse_day(day_text):
@@ -371,7 +509,7 @@ def iter_ndjson(path):
             try:
                 yield json.loads(line)
             except json.JSONDecodeError as error:
-                print(f"skipped invalid JSON in {path} line {line_number}: {error}")
+                output(f"skipped invalid JSON in {path} line {line_number}: {error}")
 
 
 def clean_value(value, scale=1):
@@ -386,6 +524,9 @@ def clean_value(value, scale=1):
 
 def add_row(rows_by_key, timestamp, stream_id, value, scale=1):
     if timestamp is None or stream_id is None or value is None:
+        return
+
+    if not stream_id_is_selected(stream_id):
         return
 
     rows_by_key[(timestamp, stream_id)] = (
@@ -644,6 +785,51 @@ def parse_heatmeters_file(path):
     return sorted(rows_by_key.values())
 
 
+def parse_heating_control_file(path):
+    rows_by_key = {}
+
+    for record in iter_ndjson(path):
+        timestamp = parse_timestamp(record.get("timestamp"))
+
+        for room_id, value in record.get("set_temps", {}).items():
+            add_row(
+                rows_by_key,
+                timestamp,
+                stream_id("room", room_id, "set_temperature"),
+                value,
+            )
+
+        for cycle_id, value in record.get("pump_states", {}).items():
+            add_row(
+                rows_by_key,
+                timestamp,
+                stream_id("heating_cycle", cycle_id, "state"),
+                value,
+            )
+
+        if "boiler_state" in record:
+            add_row(
+                rows_by_key,
+                timestamp,
+                "heating.main.state",
+                record.get("boiler_state"),
+            )
+
+        for room_id, values in record.get("valve_states", {}).items():
+            if not isinstance(values, list):
+                continue
+
+            stream_ids = HEATING_CONTROL_VALVE_STREAM_MAP.get(room_id, [])
+
+            for index, value in enumerate(values):
+                target_stream_id = (
+                    stream_ids[index] if index < len(stream_ids) else None
+                )
+                add_row(rows_by_key, timestamp, target_stream_id, value)
+
+    return sorted(rows_by_key.values())
+
+
 def parse_radiator_temperatures_file(path):
     rows_by_key = {}
 
@@ -702,115 +888,404 @@ def create_import_table(con):
     """)
 
 
+def load_imported_observations(con, rows):
+    temp_path = None
+
+    try:
+        step_started_at = perf_counter()
+        with NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            newline="",
+            suffix=".csv",
+            prefix="log_parser_batch_",
+            dir=SCRIPT_PATH.parent,
+            delete=False,
+        ) as temp_file:
+            temp_path = Path(temp_file.name)
+            writer = csv.writer(temp_file)
+            writer.writerows(rows)
+
+        report(
+            f"wrote batch CSV {temp_path.name} in "
+            f"{format_seconds(perf_counter() - step_started_at)}"
+        )
+
+        step_started_at = perf_counter()
+        con.execute("""
+        INSERT INTO imported_observations (
+            "timestamp",
+            stream_id,
+            value
+        )
+        SELECT
+            column0::TIMESTAMP,
+            column1::TEXT,
+            column2::DOUBLE
+        FROM read_csv(
+            ?,
+            header = false,
+            auto_detect = false,
+            columns = {
+                'column0': 'VARCHAR',
+                'column1': 'VARCHAR',
+                'column2': 'DOUBLE'
+            }
+        );
+        """, [str(temp_path)])
+        report(
+            "loaded temp table from batch CSV in "
+            f"{format_seconds(perf_counter() - step_started_at)}"
+        )
+
+    finally:
+        if temp_path is not None and temp_path.exists():
+            temp_path.unlink()
+
+
 def insert_observation_batch(con, rows):
     if not rows:
-        return 0
+        return 0, []
 
-    con.execute("DELETE FROM imported_observations;")
+    transaction_started = False
 
-    con.executemany("""
-    INSERT INTO imported_observations (
-        "timestamp",
-        stream_id,
-        value
-    )
-    VALUES (?, ?, ?);
-    """, rows)
+    try:
+        report(f"batch write starting; rows staged: {len(rows)}")
+        con.execute("BEGIN TRANSACTION;")
+        transaction_started = True
+        report("batch transaction opened")
 
-    unknown_stream_ids = con.execute("""
-    SELECT DISTINCT imported_observations.stream_id
-    FROM imported_observations
-    LEFT JOIN streams
-        ON imported_observations.stream_id = streams.stream_id
-    WHERE streams.stream_id IS NULL
-    ORDER BY imported_observations.stream_id;
-    """).fetchall()
+        step_started_at = perf_counter()
+        con.execute("DELETE FROM imported_observations;")
+        report(
+            "cleared temp table in "
+            f"{format_seconds(perf_counter() - step_started_at)}"
+        )
 
-    if unknown_stream_ids:
-        print("unknown stream IDs skipped:", flush=True)
-        for row in unknown_stream_ids:
-            print(" ", row[0], flush=True)
+        load_imported_observations(con, rows)
 
-        con.execute("""
-        DELETE FROM imported_observations
-        WHERE stream_id IN (
-            SELECT imported_observations.stream_id
+        step_started_at = perf_counter()
+        unknown_stream_ids = con.execute("""
+        SELECT DISTINCT imported_observations.stream_id
+        FROM imported_observations
+        LEFT JOIN streams
+            ON imported_observations.stream_id = streams.stream_id
+        WHERE streams.stream_id IS NULL
+        ORDER BY imported_observations.stream_id;
+        """).fetchall()
+        report(
+            f"checked stream IDs in {format_seconds(perf_counter() - step_started_at)}; "
+            f"unknown: {len(unknown_stream_ids)}"
+        )
+
+        if unknown_stream_ids:
+            output("unknown stream IDs skipped:")
+            for row in unknown_stream_ids:
+                output(f"  {row[0]}")
+
+            step_started_at = perf_counter()
+            con.execute("""
+            DELETE FROM imported_observations
+            WHERE stream_id IN (
+                SELECT imported_observations.stream_id
+                FROM imported_observations
+                LEFT JOIN streams
+                    ON imported_observations.stream_id = streams.stream_id
+                WHERE streams.stream_id IS NULL
+            );
+            """)
+            report(
+                "removed unknown stream rows from temp table in "
+                f"{format_seconds(perf_counter() - step_started_at)}"
+            )
+
+        step_started_at = perf_counter()
+        valid_count = con.execute("""
+        SELECT count(*)
+        FROM imported_observations;
+        """).fetchone()[0]
+        report(
+            f"counted valid temp rows in {format_seconds(perf_counter() - step_started_at)}; "
+            f"valid: {valid_count}"
+        )
+
+        replaced_count = 0
+        skipped_count = 0
+
+        if IMPORT_EXISTING_POLICY == "skip_existing":
+            step_started_at = perf_counter()
+            con.execute("""
+            CREATE OR REPLACE TEMP TABLE import_insert_candidates AS
+            SELECT
+                imported_observations."timestamp",
+                imported_observations.stream_id,
+                imported_observations.value
             FROM imported_observations
-            LEFT JOIN streams
-                ON imported_observations.stream_id = streams.stream_id
-            WHERE streams.stream_id IS NULL
-        );
-        """)
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM observations
+                WHERE observations."timestamp" = imported_observations."timestamp"
+                  AND observations.stream_id = imported_observations.stream_id
+            );
+            """)
+            inserted_count = con.execute("""
+            SELECT count(*)
+            FROM import_insert_candidates;
+            """).fetchone()[0]
+            skipped_count = valid_count - inserted_count
+            report(
+                "selected new observation keys in "
+                f"{format_seconds(perf_counter() - step_started_at)}; "
+                f"new: {inserted_count}; existing: {skipped_count}"
+            )
 
-    valid_count = con.execute("""
-    SELECT count(*)
-    FROM imported_observations;
-    """).fetchone()[0]
+            step_started_at = perf_counter()
+            con.execute("""
+            INSERT INTO observations (
+                "timestamp",
+                stream_id,
+                value
+            )
+            SELECT
+                "timestamp",
+                stream_id,
+                value
+            FROM import_insert_candidates
+            ORDER BY "timestamp", stream_id;
+            """)
+            report(
+                f"inserted observation rows in "
+                f"{format_seconds(perf_counter() - step_started_at)}; "
+                f"inserted: {inserted_count}; skipped existing: {skipped_count}; "
+                f"replaced: {replaced_count}"
+            )
+            con.execute("DROP TABLE IF EXISTS import_insert_candidates;")
 
-    con.execute("""
-    DELETE FROM observations
-    USING imported_observations
-    WHERE observations."timestamp" = imported_observations."timestamp"
-      AND observations.stream_id = imported_observations.stream_id;
-    """)
+        else:
+            step_started_at = perf_counter()
+            existing_count = con.execute("""
+            SELECT count(*)
+            FROM imported_observations
+            WHERE EXISTS (
+                SELECT 1
+                FROM observations
+                WHERE observations."timestamp" = imported_observations."timestamp"
+                  AND observations.stream_id = imported_observations.stream_id
+            );
+            """).fetchone()[0]
+            report(
+                f"checked existing observation keys in "
+                f"{format_seconds(perf_counter() - step_started_at)}; "
+                f"existing: {existing_count}"
+            )
 
-    con.execute("""
-    INSERT INTO observations (
-        "timestamp",
-        stream_id,
-        value
-    )
-    SELECT
-        "timestamp",
-        stream_id,
-        value
-    FROM imported_observations
-    ORDER BY "timestamp", stream_id;
-    """)
+            if IMPORT_EXISTING_POLICY == "fail_on_existing" and existing_count:
+                raise RuntimeError(
+                    "import batch contains existing observation keys; "
+                    "set IMPORT_EXISTING_POLICY to 'skip_existing' or "
+                    "'replace_existing' to proceed"
+                )
 
-    return valid_count
+            if IMPORT_EXISTING_POLICY == "replace_existing":
+                step_started_at = perf_counter()
+                con.execute("""
+                DELETE FROM observations
+                USING imported_observations
+                WHERE observations."timestamp" = imported_observations."timestamp"
+                  AND observations.stream_id = imported_observations.stream_id;
+                """)
+                replaced_count = existing_count
+                report(
+                    "deleted replaceable existing rows in "
+                    f"{format_seconds(perf_counter() - step_started_at)}"
+                )
+            else:
+                report("kept existing observation rows")
+
+            step_started_at = perf_counter()
+            con.execute("""
+            INSERT INTO observations (
+                "timestamp",
+                stream_id,
+                value
+            )
+            SELECT
+                imported_observations."timestamp",
+                imported_observations.stream_id,
+                imported_observations.value
+            FROM imported_observations
+            ORDER BY imported_observations."timestamp", imported_observations.stream_id;
+            """)
+            inserted_count = valid_count
+            report(
+                f"inserted observation rows in "
+                f"{format_seconds(perf_counter() - step_started_at)}; "
+                f"inserted: {inserted_count}; skipped existing: {skipped_count}; "
+                f"replaced: {replaced_count}"
+            )
+
+        step_started_at = perf_counter()
+        con.execute("COMMIT;")
+        transaction_started = False
+        report(
+            "batch transaction committed in "
+            f"{format_seconds(perf_counter() - step_started_at)}"
+        )
+
+        return inserted_count, [row[0] for row in unknown_stream_ids], skipped_count
+
+    except KeyboardInterrupt:
+        if transaction_started:
+            rollback_started_at = perf_counter()
+            try:
+                con.execute("ROLLBACK;")
+                output(
+                    "batch write interrupted; rolled back current batch in "
+                    f"{format_seconds(perf_counter() - rollback_started_at)}"
+                )
+            except Exception as rollback_error:
+                output(f"batch write interrupted; rollback failed: {rollback_error}")
+        raise
+
+    except Exception:
+        if transaction_started:
+            try:
+                con.execute("ROLLBACK;")
+                output("batch write failed; rolled back current batch")
+            except Exception as rollback_error:
+                output(f"batch write failed; rollback failed: {rollback_error}")
+        raise
 
 
 def import_source(source_name, parse_file):
+    started_at = perf_counter()
     paths = configured_source_paths(source_name)
 
     if not paths:
-        print("no log files found", flush=True)
+        output("no log files found")
         return
 
-    print(f"importing {source_name}", flush=True)
-    print("log files:", len(paths), flush=True)
-    print("first log file:", paths[0], flush=True)
-    print("last log file:", paths[-1], flush=True)
-
-    con = connect()
-    create_import_table(con)
-
+    con = None
     inserted_count = 0
+    skipped_existing_count = 0
     parsed_count = 0
+    current_index = 0
+    last_committed_index = 0
+    phase = "starting"
+    unknown_stream_ids = set()
     pending_rows_by_key = {}
 
-    for index, path in enumerate(paths, start=1):
-        rows = parse_file(path)
-        parsed_count += len(rows)
+    try:
+        report(f"importing {source_name}")
+        report(f"date range: {START_DATE or 'first'} to {END_DATE or 'last'}")
+        report(f"include current log: {INCLUDE_CURRENT_LOG}")
+        report(f"log files: {len(paths)}")
+        report(f"first log file: {paths[0]}")
+        report(f"last log file: {paths[-1]}")
+        report(f"batch file count: {BATCH_FILE_COUNT}")
+        report(f"existing observation policy: {IMPORT_EXISTING_POLICY}")
+        stream_id_filter = configured_stream_id_filter()
+        if stream_id_filter is None:
+            report("stream ID filter: all parsed streams")
+        else:
+            report(f"stream ID filter: {len(stream_id_filter)} stream(s)")
 
-        for row in rows:
-            pending_rows_by_key[(row[0], row[1])] = row
+        phase = "opening database"
+        con = connect()
+        create_import_table(con)
 
-        if index == len(paths) or index % BATCH_FILE_COUNT == 0:
-            pending_rows = sorted(pending_rows_by_key.values())
-            inserted_count += insert_observation_batch(con, pending_rows)
-            pending_rows_by_key = {}
+        for index, path in enumerate(paths, start=1):
+            current_index = index
+            phase = f"parsing file {index}/{len(paths)}: {path}"
+            file_started_at = perf_counter()
+            rows = parse_file(path)
+            file_seconds = perf_counter() - file_started_at
+            parsed_count += len(rows)
 
-            print(
-                f"processed {index}/{len(paths)} files; inserted {inserted_count} observations",
-                flush=True,
-            )
+            phase = f"staging parsed rows from file {index}/{len(paths)}: {path}"
+            for row in rows:
+                pending_rows_by_key[(row[0], row[1])] = row
 
-    con.close()
+            if should_report_file_progress(index, len(paths)):
+                elapsed_seconds = perf_counter() - started_at
+                report(
+                    f"parsed {index}/{len(paths)} files "
+                    f"({index / len(paths):.0%}); "
+                    f"file rows: {len(rows)}; "
+                    f"total parsed: {parsed_count}; "
+                    f"elapsed: {format_seconds(elapsed_seconds)}; "
+                    f"last file: {format_seconds(file_seconds)}"
+                )
 
-    print("parsed observations:", parsed_count, flush=True)
-    print("inserted observations:", inserted_count, flush=True)
+            if index == len(paths) or index % BATCH_FILE_COUNT == 0:
+                phase = f"preparing batch ending at file {index}/{len(paths)}"
+                report(
+                    f"preparing batch at {index}/{len(paths)} files; "
+                    f"pending unique rows: {len(pending_rows_by_key)}"
+                )
+                batch_prepare_started_at = perf_counter()
+                pending_rows = sorted(pending_rows_by_key.values())
+                report(
+                    "sorted pending rows in "
+                    f"{format_seconds(perf_counter() - batch_prepare_started_at)}"
+                )
+                batch_started_at = perf_counter()
+                phase = (
+                    f"writing batch for files {last_committed_index + 1}-{index} "
+                    f"of {len(paths)}"
+                )
+                (
+                    inserted_in_batch,
+                    unknown_in_batch,
+                    skipped_in_batch,
+                ) = insert_observation_batch(
+                    con,
+                    pending_rows,
+                )
+                last_committed_index = index
+                batch_seconds = perf_counter() - batch_started_at
+                inserted_count += inserted_in_batch
+                skipped_existing_count += skipped_in_batch
+                unknown_stream_ids.update(unknown_in_batch)
+                pending_rows_by_key = {}
+
+                report(
+                    f"committed batch at {index}/{len(paths)} files "
+                    f"({index / len(paths):.0%}); "
+                    f"batch inserted: {inserted_in_batch}; "
+                    f"batch skipped existing: {skipped_in_batch}; "
+                    f"total inserted: {inserted_count}; "
+                    f"total skipped existing: {skipped_existing_count}; "
+                    f"batch time: {format_seconds(batch_seconds)}"
+                )
+
+        elapsed_seconds = perf_counter() - started_at
+        report(f"finished {source_name} in {format_seconds(elapsed_seconds)}")
+        report(f"parsed observations: {parsed_count}")
+        report(f"inserted observations: {inserted_count}")
+        report(f"skipped existing observations: {skipped_existing_count}")
+        report(f"unknown stream IDs skipped: {len(unknown_stream_ids)}")
+
+    except KeyboardInterrupt:
+        report_interrupted_import(
+            source_name=source_name,
+            paths=paths,
+            last_committed_index=last_committed_index,
+            current_index=current_index,
+            phase=phase,
+            parsed_count=parsed_count,
+            inserted_count=inserted_count,
+            skipped_existing_count=skipped_existing_count,
+            pending_row_count=len(pending_rows_by_key),
+        )
+
+    finally:
+        if con is not None:
+            try:
+                con.close()
+                report("database connection closed")
+            except Exception as close_error:
+                output(f"database connection close failed: {close_error}")
 
 
 def import_aqara_and_nous():
@@ -834,6 +1309,10 @@ def import_gas_impulses():
 
 def import_heatmeters():
     import_source("heatmeters", parse_heatmeters_file)
+
+
+def import_heating_control_state():
+    import_source("heating_control", parse_heating_control_file)
 
 
 def import_oktopusz_presence():
@@ -880,9 +1359,9 @@ def import_weather_station():
 
 
 def list_modes():
-    print("Available MODE values:")
+    output("Available MODE values:")
     for mode_name in sorted(MODE_DESCRIPTIONS):
-        print(f"- {mode_name}: {MODE_DESCRIPTIONS[mode_name]}")
+        output(f"- {mode_name}: {MODE_DESCRIPTIONS[mode_name]}")
 
 
 MODE_HANDLERS = {
@@ -892,6 +1371,7 @@ MODE_HANDLERS = {
     "import_electric_submeter_impulses": import_electric_submeter_impulses,
     "import_gas_impulses": import_gas_impulses,
     "import_heatmeters": import_heatmeters,
+    "import_heating_control_state": import_heating_control_state,
     "import_oktopusz_presence": import_oktopusz_presence,
     "import_open_close": import_open_close,
     "import_outdoor_weather_com": import_outdoor_weather_com,
@@ -905,11 +1385,35 @@ MODE_HANDLERS = {
 }
 
 
+MODE = "import_heating_control_state"
+
+START_DATE = "2025-11-01"
+END_DATE = "2026-04-01"
+INCLUDE_CURRENT_LOG = False
+
+# Existing-row handling:
+# - "skip_existing": insert only missing (timestamp, stream_id) rows
+# - "replace_existing": rewrite matching rows, for directed repair imports
+# - "fail_on_existing": stop and roll back if any imported row already exists
+IMPORT_EXISTING_POLICY = "skip_existing"
+STREAM_ID_FILTER = None
+
+REPORT_PROGRESS = True
+REPORT_EVERY_FILES = 10
+REPORT_FILE_DETAILS = False
+
+
 def main():
+    try:
+        validate_import_config()
+    except ValueError as error:
+        output(str(error))
+        return
+
     handler = MODE_HANDLERS.get(MODE)
 
     if handler is None:
-        print("unknown MODE:", MODE)
+        output(f"unknown MODE: {MODE}")
         list_modes()
         return
 

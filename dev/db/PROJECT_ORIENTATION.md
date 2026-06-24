@@ -114,9 +114,13 @@ Default mode is:
 
 Broad imports can be long. The working rule is: the assistant prepares/debugs parser modes, but the user runs long prepared imports locally, then asks the assistant to inspect results/errors.
 
-### `dev/db/db_api.py`
+### `dev/db/db_queries.py`
 
 Read-only Python query layer.
+
+### `dev/db/db_client.py`
+
+Remote Python client wrapper intended for third-party scripts. It calls the JSON server and exposes `DbApi`.
 
 Current functions:
 
@@ -131,7 +135,7 @@ This is intended to be reused by a future HTTP API server rather than duplicatin
 
 ### `dev/db/API_local_test.py`
 
-Local sandbox for interacting with `db_api.py`. It is not a formal test suite.
+Local sandbox for interacting with `db_queries.py`. It is not a formal test suite.
 
 ### `dev/db/PLAN.md`
 

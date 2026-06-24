@@ -86,11 +86,11 @@ Keep responsibilities separated.
 
 `log_parser.py` parses source logs and imports observations.
 
-`db_api.py` provides read-only query functions.
+`db_queries.py` provides read-only query functions.
 
 Do not move responsibilities between these files unless explicitly asked.
 
-Do not duplicate query logic into a future server layer when `db_api.py` can be reused.
+Do not duplicate query logic into a server layer when `db_queries.py` can be reused.
 
 ## import discipline
 

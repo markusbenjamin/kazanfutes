@@ -1,4 +1,4 @@
-import db_api
+import db_queries
 import sys
 
 
@@ -8,14 +8,13 @@ if hasattr(sys.stdout, "reconfigure"):
 
 TEST_SCOPE_TYPE = "room"
 TEST_SCOPE_ID = "1"
-TEST_VARIABLES = ["temperature", "humidity"]
+TEST_VARIABLES = ["set_temperature"]
 
-# Both room.1.temperature and room.1.humidity currently have imported data here.
-RAW_FROM = "2024-12-01 00:00:00"
-RAW_TO = "2024-12-01 02:00:00"
+RAW_FROM = "2025-11-01 00:00:00"
+RAW_TO = "2025-11-01 06:00:00"
 
-SUMMARY_FROM = "2024-12-01 00:00:00"
-SUMMARY_TO = "2024-12-08 00:00:00"
+SUMMARY_FROM = "2025-11-01 00:00:00"
+SUMMARY_TO = "2025-11-08 00:00:00"
 
 
 def print_rows(title, rows, limit=5):
@@ -41,15 +40,15 @@ def print_test_settings():
 
 
 def main():
-    streams = db_api.get_streams()
-    availability = db_api.get_stream_availability()
+    streams = db_queries.get_streams()
+    availability = db_queries.get_stream_availability()
 
     room_1_availability = [
         row for row in availability
         if row["stream_id"] in ["room.1.temperature", "room.1.humidity"]
     ]
 
-    observations = db_api.query_observations(
+    observations = db_queries.query_observations(
         from_=RAW_FROM,
         to=RAW_TO,
         variables=TEST_VARIABLES,
@@ -57,7 +56,7 @@ def main():
         scope_id=TEST_SCOPE_ID,
     )
 
-    hourly_summary = db_api.query_summary(
+    hourly_summary = db_queries.query_summary(
         from_=SUMMARY_FROM,
         to=SUMMARY_TO,
         variables=TEST_VARIABLES,
@@ -66,7 +65,7 @@ def main():
         bin_="hour",
     )
 
-    daily_summary = db_api.query_summary(
+    daily_summary = db_queries.query_summary(
         from_=SUMMARY_FROM,
         to=SUMMARY_TO,
         variables=TEST_VARIABLES,
@@ -75,7 +74,7 @@ def main():
         bin_="day",
     )
 
-    observations_grouped = db_api.query_observations_grouped(
+    observations_grouped = db_queries.query_observations_grouped(
         from_=RAW_FROM,
         to=RAW_TO,
         variables=TEST_VARIABLES,
@@ -84,7 +83,7 @@ def main():
         bin_="hour",
     )
 
-    hourly_mean_wide = db_api.query_summary_wide(
+    hourly_mean_wide = db_queries.query_summary_wide(
         from_=SUMMARY_FROM,
         to=SUMMARY_TO,
         variables=TEST_VARIABLES,
@@ -92,6 +91,7 @@ def main():
         scope_id=TEST_SCOPE_ID,
         bin_="hour",
         metric="mean_value",
+        decimal_places=4
     )
 
     print_test_settings()
@@ -110,9 +110,9 @@ def main():
     )
     print_rows("raw observations", observations, limit=10)
     print_rows("grouped raw observations", observations_grouped, limit=3)
-    print_rows("hourly summary", hourly_summary, limit=10)
+    print_rows("hourly summary", hourly_summary, limit=24)
     print_rows("daily summary", daily_summary, limit=10)
-    print_rows("wide hourly mean summary", hourly_mean_wide, limit=10)
+    print_rows("wide hourly mean summary", hourly_mean_wide, limit=24)
 
 
 if __name__ == "__main__":

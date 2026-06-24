@@ -46,7 +46,7 @@ Raw log ingestion:
 
 It should grow source by source, carefully.
 
-### `db_api.py`
+### `db_queries.py`
 
 Reusable read-only query layer:
 
@@ -61,7 +61,7 @@ The future HTTP server should call this module rather than duplicating SQL.
 
 ### `API_local_test.py`
 
-Local sandbox for testing `db_api.py` directly.
+Local sandbox for testing `db_queries.py` directly.
 
 ## Design Rules
 
@@ -84,7 +84,7 @@ Local sandbox for testing `db_api.py` directly.
 
 Query/API layer:
 
-1. Maintain read-only query functions in `db_api.py`.
+1. Maintain read-only query functions in `db_queries.py`.
 2. Keep query logic reusable by the future HTTP server.
 3. Support raw observation queries and summary/statistical queries.
 4. Keep query shapes explicit:
@@ -121,7 +121,7 @@ Later implementation work:
    - `/api/query`
    - `/api/summary`
    - report downloads
-3. Keep server logic thin by calling `db_api.py`.
+3. Keep server logic thin by calling `db_queries.py`.
 4. Improve availability viewer with gap-aware timelines.
 5. Refine wide/pivoted summary outputs as more streams are imported.
 6. Add grouped raw observation output if users need raw readings organized by bins without timestamp alignment.
@@ -247,7 +247,7 @@ Deployment/access work:
 
 Before broad imports:
 
-- Confirm that `db_api.py` raw and summary query shapes are acceptable.
+- Confirm that `db_queries.py` raw and summary query shapes are acceptable.
 - Confirm whether early users need long-format data only, grouped raw data, or also wide/pivoted binned outputs.
 - Confirm that the availability CSV/HTML outputs communicate the right information.
 - Confirm that the first few imported streams look correct.

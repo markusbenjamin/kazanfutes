@@ -50,31 +50,26 @@ Current stream count:
 
 ## Current Loaded Observations
 
-Currently imported real observation streams:
+Current loaded observation summary:
 
-- `room.1.temperature`
-- `room.1.humidity`
-- `gas_meter.main.impulse`
+- loaded stream count: `31`
+- total observation count: `6063150`
 
-Current observed range for `room.1.temperature`:
+Loaded observations by scope/variable:
 
-- first observation: `2024-10-10 15:45:31`
-- last observation: `2026-06-23 13:13:30`
-- observation count: `87122`
+- `gas_meter.impulse`: 1 stream, 625 observations, `2025-02-10 00:13:38` to `2025-02-10 23:57:42`
+- `heating.state`: 1 stream, 211101 observations, `2025-11-01 00:00:06` to `2026-04-01 23:59:49`
+- `heating_cycle.state`: 4 streams, 844688 observations, `2025-11-01 00:00:06` to `2026-04-01 23:59:49`
+- `radiator.valve_state`: 11 streams, 2323805 observations, `2025-11-01 00:00:06` to `2026-04-01 23:59:49`
+- `room.humidity`: 1 stream, 60833 observations, `2024-10-10 15:45:31` to `2025-12-19 23:45:19`
+- `room.set_temperature`: 12 streams, 2534976 observations, `2025-11-01 00:00:06` to `2026-04-01 23:59:49`
+- `room.temperature`: 1 stream, 87122 observations, `2024-10-10 15:45:31` to `2026-06-23 13:13:30`
 
-Current observed range for `room.1.humidity`:
+Notes:
 
-- first observation: `2024-10-10 15:45:31`
-- last observation: `2025-12-19 23:45:19`
-- observation count: `60833`
-- note: this import is partial; the long import was intentionally stopped
-
-Current observed range for `gas_meter.main.impulse`:
-
-- first observation: `2025-02-10 00:13:38`
-- last observation: `2025-02-10 23:57:42`
-- observation count: `625`
-- note: this is a one-day test import from local date `2025-02-10`
+- `room.humidity` is partial; its long import was intentionally stopped.
+- `gas_meter.main.impulse` is still only a one-day test import from local date `2025-02-10`.
+- Heating-control streams have been loaded for `2025-11-01` through `2026-04-01`.
 
 ## Current Scripts
 
@@ -112,6 +107,7 @@ Current modes:
 - `import_electric_submeter_impulses`
 - `import_gas_impulses`
 - `import_heatmeters`
+- `import_heating_control_state`
 - `import_oktopusz_presence`
 - `import_open_close`
 - `import_outdoor_weather_com`
@@ -128,8 +124,15 @@ Current parser smoke-check result:
 - one representative daily file per mode was parsed successfully
 - all produced stream IDs matched the loaded `streams` catalog
 - no broad imports were run during the smoke check
+- `import_heating_control_state` was added and parse-only checked on `data/logs/service_execution/heating_control/heating_control.json.2026-06-23`
+- that heating-control check produced 40,180 candidate observations across 28 streams with no unknown stream IDs
+- `log_parser.py` now has toggleable import progress reporting; syntax/import checks passed without running an import
+- progress output now includes wall-clock timestamps and batch-write stage messages
+- `log_parser.py` now catches Ctrl+C during imports, closes the database connection, and prints the last committed file plus a restart `START_DATE` hint; this was checked with a simulated batch interrupt, not a real import
+- batch temp-table loading was changed from Python `executemany()` to a temporary CSV plus DuckDB `read_csv()` bulk load after a 10-file heating-control batch spent several minutes loading 396,103 rows through `executemany()`; the CSV loader passed an in-memory smoke check
+- imports now use `IMPORT_EXISTING_POLICY`; default `skip_existing` inserts only new `(timestamp, stream_id)` rows, while `replace_existing` is available for directed rewrites and `fail_on_existing` rejects collisions; all three policies passed in-memory smoke checks
 
-### `db_api.py`
+### `db_queries.py`
 
 Current read-only API functions:
 
@@ -146,18 +149,44 @@ Current summary fields:
 - `min_value`
 - `max_value`
 - `stddev_value`
+- `sum_value`
 - `observation_count`
 
 Numeric summary values are rounded to the requested measurement precision.
 
+### `db_server.py`
+
+Thin read-only JSON HTTP API server using Python standard-library `http.server`.
+
+Current endpoints:
+
+- `/api/health`
+- `/api/streams`
+- `/api/availability`
+- `/api/query`
+- `/api/summary`
+
+The server reuses `db_queries.py`; it does not duplicate SQL query logic. It accepts GET query strings and POSTed JSON bodies.
+
+### `db_client.py`
+
+Python client wrapper for remote scripts.
+
+It exposes `DbApi`, with methods matching the local `db_queries.py` query layer, and calls the JSON server internally. `API_remote_test.py` is a small sandbox/example script for third-party-style usage.
+
+### Removed stale scripts
+
+- `db_gui.py` was removed. It only launched DuckDB's generic UI and was no longer part of the active database/API workflow.
+
 ## Current Next Step
 
-The next implementation step should be chosen from `PLAN.md` based on the latest design decision.
+The next implementation step should be chosen from `PLAN.md` based on the latest design decision. If validation/import broadening remains deferred, the next feature-oriented step is likely lightweight API examples/manual notes, then deciding whether to improve availability gap reporting or start deployment packaging.
 
 ## Known Limitations
 
-- Only three real streams are imported so far; one is partial and one is a one-day test import.
+- Many catalog streams are still empty; currently `31` of `303` streams have observations.
+- `room.humidity` is partial and `gas_meter.main.impulse` is still a one-day test import.
 - `stream_availability` is only first/last/count and does not show gaps.
-- There is no HTTP server yet.
+- The HTTP server is local/dev only so far; deployment/service packaging is not done.
 - There is no final README/manual yet.
 - Some raw log names intentionally differ from canonical stream IDs; importers must handle that mapping.
