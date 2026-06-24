@@ -4,39 +4,18 @@ from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
 import duckdb
-
 import log_parser
 
-
-# Developer test parameters. Edit these, then run:
-# python log_parser_test_modes.py
-
-# "AUTO" selects a test date from available dated log files.
-# A literal YYYY-MM-DD string forces that date.
-TEST_DATE = "AUTO"
-
-# Used only when TEST_DATE = "AUTO".
-# "LATEST_PER_MODE": each mode tests its own latest available source day.
-# "LATEST_COMMON": all selected modes test the latest date common to all selected sources.
-AUTO_DATE_POLICY = "LATEST_PER_MODE"
-
-# "ALL" or an explicit list of mode names, for example:
-# TEST_MODES = ["import_heating_control_state", "import_radiator_thermostats"]
-TEST_MODES = "ALL"
-
-# "ALL" or a dict of scope_type -> "ALL" / explicit scope_id list.
-# Examples:
-# TEST_SCOPES = "ALL"
-# TEST_SCOPES = {"room": "ALL", "radiator": ["1.1", "1.2", "2.1", "2.3"]}
-# TEST_SCOPES = {"heating": ["main"], "heating_cycle": "ALL"}
+# Edit these, then run: python log_parser_test_modes.py
 TEST_SCOPES = "ALL"
-
-# Keep unknown stream IDs in the report even when TEST_SCOPES is explicit.
+# TEST_SCOPES = {"radiator": "ALL"}
+# TEST_SCOPES = {"room": "ALL", "radiator": ["1.1", "1.2", "2.1", "2.3"]}
+MAX_DAYS_TO_TRY_PER_IMPORTER = 30
+INCLUDE_CURRENT_LOG = False
 INCLUDE_UNKNOWN_STREAM_IDS = True
-
 REPORT_DIR = Path(__file__).resolve().parent / "test_reports"
 
-SPECS = {
+IMPORTERS = {
     "import_aqara_and_nous": ("aqara_and_nous", log_parser.parse_aqara_and_nous_file),
     "import_electric_main_meter": ("electric_main_meter", lambda p: log_parser.rows_from_mapping_file(p, log_parser.MAIN_METER_FIELD_MAP)),
     "import_electric_submeter_impulses": ("electric_submeters", log_parser.parse_electric_submeter_impulse_file),
@@ -55,141 +34,65 @@ SPECS = {
     "import_weather_station": ("weather_station", log_parser.parse_weather_station_file),
 }
 
-STATUSES = [
-    "PASS",
-    "PASS_WITH_WARNINGS",
-    "MISSING_SOURCE_FILE",
-    "EMPTY_RESULT",
-    "EMPTY_SELECTION",
-    "UNKNOWN_STREAM_IDS",
-    "PARSE_EXCEPTION",
-    "CONFIG_ERROR",
-]
+SCOPE_IMPORTERS = {
+    "room": ["import_aqara_and_nous", "import_heating_control_state", "import_oktopusz_presence", "import_room_occupancy", "import_room_temperature_humidity"],
+    "radiator": ["import_heating_control_state", "import_radiator_temperatures", "import_radiator_thermostats"],
+    "heating": ["import_heating_control_state"],
+    "heating_cycle": ["import_heatmeters", "import_heating_control_state", "import_pump_power"],
+    "door": ["import_open_close"],
+    "window": ["import_open_close"],
+    "gas_meter": ["import_gas_impulses"],
+    "electric_submeter": ["import_electric_submeter_impulses"],
+    "electric_main_meter": ["import_electric_main_meter"],
+    "pv": ["import_pv_inverter"],
+    "weather_station": ["import_weather_station"],
+    "outdoor": ["import_outdoor_weather_com"],
+}
+
+STATUSES = ["PASS", "PASS_WITH_WARNINGS", "NO_AVAILABLE_LOG_DAYS", "EMPTY_RESULT", "EMPTY_SELECTION", "UNKNOWN_STREAM_IDS", "PARSE_EXCEPTION", "CONFIG_ERROR"]
 
 
-def out(message):
-    print(f"{datetime.now():%Y-%m-%d %H:%M:%S} {message}", flush=True)
+def out(msg):
+    print(f"{datetime.now():%Y-%m-%d %H:%M:%S} {msg}", flush=True)
 
 
-def selected_specs():
-    if TEST_MODES == "ALL":
-        return SPECS
-
-    selected = {}
-    for mode in TEST_MODES:
-        if mode not in SPECS:
-            selected[mode] = (None, None)
-        else:
-            selected[mode] = SPECS[mode]
-    return selected
-
-
-def normalize_scope_filter():
+def scope_filter():
     if TEST_SCOPES == "ALL":
         return None
-
-    normalized = {}
+    result = {}
     for scope_type, scope_ids in TEST_SCOPES.items():
-        if scope_ids == "ALL":
-            normalized[scope_type] = None
-        else:
-            normalized[scope_type] = {str(scope_id) for scope_id in scope_ids}
-    return normalized
+        result[scope_type] = None if scope_ids == "ALL" else {str(x) for x in scope_ids}
+    return result
 
 
-def source_current_path(source):
+def selected_importers(filter_):
+    if filter_ is None:
+        return sorted(IMPORTERS)
+    names = set()
+    for scope_type in filter_:
+        names.update(SCOPE_IMPORTERS.get(scope_type, []))
+    return sorted(names)
+
+
+def current_path(source):
     directory, filename = log_parser.SOURCE_FILES[source]
     return log_parser.LOG_PATH / directory / filename
 
 
-def available_days(source):
-    return [day for day, path in log_parser.dated_log_paths(source)]
+def day_paths(source):
+    paths = list(log_parser.dated_log_paths(source))
+    if INCLUDE_CURRENT_LOG and current_path(source).exists():
+        paths.append((date.today(), current_path(source)))
+    return sorted(paths, reverse=True)
 
 
-def latest_available_day(source):
-    days = available_days(source)
-    if days:
-        return days[-1]
-
-    if source_current_path(source).exists():
-        return date.today()
-
-    return None
-
-
-def common_latest_day(specs):
-    common = None
-
-    for source, parser in specs.values():
-        if source not in log_parser.SOURCE_FILES:
-            continue
-
-        days = set(available_days(source))
-        if common is None:
-            common = days
-        else:
-            common &= days
-
-    if not common:
-        return None
-
-    return max(common)
-
-
-def test_day_for_source(source, common_day):
-    if TEST_DATE != "AUTO":
-        return date.fromisoformat(TEST_DATE)
-
-    if AUTO_DATE_POLICY == "LATEST_COMMON":
-        return common_day
-
-    if AUTO_DATE_POLICY == "LATEST_PER_MODE":
-        return latest_available_day(source)
-
-    raise ValueError(f"unknown AUTO_DATE_POLICY: {AUTO_DATE_POLICY}")
-
-
-def path_for(source, day):
-    if day is None:
-        return None
-
-    directory, filename = log_parser.SOURCE_FILES[source]
-    archived = log_parser.LOG_PATH / directory / f"{filename}.{day.isoformat()}"
-    if archived.exists():
-        return archived
-
-    current = log_parser.LOG_PATH / directory / filename
-    if day == date.today() and current.exists():
-        return current
-
-    return archived
-
-
-def report_path():
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    date_part = TEST_DATE if TEST_DATE != "AUTO" else f"auto_{AUTO_DATE_POLICY.lower()}"
-    return REPORT_DIR / f"log_parser_test_{date_part}_{timestamp}.txt"
-
-
-def catalog():
+def load_streams():
     con = duckdb.connect(str(log_parser.DB_PATH), read_only=True)
     try:
-        rows = con.execute("""
-        SELECT stream_id, scope_type, scope_id, variable
-        FROM streams
-        ORDER BY stream_id;
-        """).fetchall()
+        rows = con.execute("SELECT stream_id, scope_type, scope_id, variable FROM streams").fetchall()
     finally:
         con.close()
-
-    return {
-        sid: {
-            "scope_type": str(scope),
-            "scope_id": str(scope_id),
-            "variable": str(var),
-        }
-        for sid, scope, scope_id, var in rows
-    }
+    return {sid: {"scope_type": str(st), "scope_id": str(si), "variable": str(v)} for sid, st, si, v in rows}
 
 
 def normalize(row):
@@ -200,240 +103,138 @@ def normalize(row):
     return None
 
 
-def scope_is_selected(stream_id, streams, scope_filter):
-    if scope_filter is None:
+def keep(sid, streams, filter_):
+    if filter_ is None:
         return True
-
-    metadata = streams.get(stream_id)
-    if metadata is None:
+    meta = streams.get(sid)
+    if meta is None:
         return INCLUDE_UNKNOWN_STREAM_IDS
-
-    scope_type = metadata["scope_type"]
-    scope_id = metadata["scope_id"]
-
-    if scope_type not in scope_filter:
-        return False
-
-    selected_scope_ids = scope_filter[scope_type]
-    return selected_scope_ids is None or scope_id in selected_scope_ids
+    ids = filter_.get(meta["scope_type"], "__not_selected__")
+    return ids is None or meta["scope_id"] in ids
 
 
-def summarize(rows, streams, day, scope_filter):
+def summarize(rows, streams, day, filter_):
     start = datetime.combine(day, time.min)
     end = start + timedelta(days=1)
-    unknown = Counter()
-    scope_counts = Counter()
-    stream_counts = Counter()
-    timestamps = []
-    malformed = []
-    before = 0
-    after = 0
-    parsed_rows = len(rows)
-    selected_rows = 0
-    skipped_by_scope_filter = 0
-
+    unknown = Counter(); scopes = Counter(); streams_out = Counter()
+    malformed = []; timestamps = []
+    parsed = len(rows); selected = 0; skipped = 0; before = 0; after = 0
     for row in rows:
         item = normalize(row)
         if item is None:
-            malformed.append(row)
-            continue
-
+            malformed.append(row); continue
         ts, sid, value = item
-
-        if not scope_is_selected(sid, streams, scope_filter):
-            skipped_by_scope_filter += 1
-            continue
-
-        selected_rows += 1
-
-        metadata = streams.get(sid)
-        if metadata is None:
+        if not keep(sid, streams, filter_):
+            skipped += 1; continue
+        selected += 1
+        meta = streams.get(sid)
+        if meta is None:
             unknown[sid] += 1
         else:
-            scope_type = metadata["scope_type"]
-            scope_id = metadata["scope_id"]
-            variable = metadata["variable"]
-            scope_counts[f"{scope_type}.{scope_id}"] += 1
-            stream_counts[f"{scope_type}.{scope_id}.{variable}"] += 1
-
+            scopes[f"{meta['scope_type']}.{meta['scope_id']}"] += 1
+            streams_out[f"{meta['scope_type']}.{meta['scope_id']}.{meta['variable']}"] += 1
         if isinstance(ts, datetime):
             timestamps.append(ts)
-            if ts < start:
-                before += 1
-            elif ts >= end:
-                after += 1
-
+            if ts < start: before += 1
+            elif ts >= end: after += 1
     status = "PASS"
-    if parsed_rows == 0:
-        status = "EMPTY_RESULT"
-    elif selected_rows == 0:
-        status = "EMPTY_SELECTION"
-    elif unknown:
-        status = "UNKNOWN_STREAM_IDS"
-    elif malformed or before or after:
-        status = "PASS_WITH_WARNINGS"
-
-    return {
-        "status": status,
-        "parsed_rows": parsed_rows,
-        "selected_rows": selected_rows,
-        "skipped_by_scope_filter": skipped_by_scope_filter,
-        "unknown": unknown,
-        "scope_counts": scope_counts,
-        "stream_counts": stream_counts,
-        "malformed": malformed,
-        "first": min(timestamps) if timestamps else None,
-        "last": max(timestamps) if timestamps else None,
-        "before": before,
-        "after": after,
-    }
+    if parsed == 0: status = "EMPTY_RESULT"
+    elif selected == 0: status = "EMPTY_SELECTION"
+    elif unknown: status = "UNKNOWN_STREAM_IDS"
+    elif malformed or before or after: status = "PASS_WITH_WARNINGS"
+    return {"status": status, "parsed": parsed, "selected": selected, "skipped": skipped, "unknown": unknown, "scopes": scopes, "streams": streams_out, "malformed": malformed, "first": min(timestamps) if timestamps else None, "last": max(timestamps) if timestamps else None, "before": before, "after": after}
 
 
-def run_one(mode, source, parser, streams, day, scope_filter):
-    result = {
-        "mode": mode,
-        "source": source,
-        "date": day,
-        "status": None,
-        "path": None,
-        "summary": None,
-        "traceback": None,
-    }
-
-    if source not in log_parser.SOURCE_FILES or parser is None:
-        result["status"] = "CONFIG_ERROR"
-        result["traceback"] = "missing source or parser in SPECS"
-        return result
-
-    path = path_for(source, day)
-    result["path"] = path
-
-    if path is None or not path.exists():
-        result["status"] = "MISSING_SOURCE_FILE"
-        return result
-
+def run_candidate(importer, source, parser, path, day, streams, filter_):
+    result = {"importer": importer, "source": source, "date": day, "path": path, "status": None, "summary": None, "traceback": None}
     try:
-        summary = summarize(parser(path), streams, day, scope_filter)
-        result["summary"] = summary
-        result["status"] = summary["status"]
+        result["summary"] = summarize(parser(path), streams, day, filter_)
+        result["status"] = result["summary"]["status"]
     except Exception:
         result["status"] = "PARSE_EXCEPTION"
         result["traceback"] = traceback.format_exc()
-
     return result
 
 
-def format_scope_filter(scope_filter):
-    if scope_filter is None:
-        return "ALL"
+def score(result):
+    summary = result.get("summary") or {}
+    if summary.get("selected", 0) > 0: return 0
+    if result["status"] == "EMPTY_SELECTION": return 1
+    if result["status"] == "EMPTY_RESULT": return 2
+    if result["status"] == "PARSE_EXCEPTION": return 3
+    return 4
 
+
+def run_importer(name, streams, filter_):
+    if name not in IMPORTERS:
+        return {"importer": name, "source": None, "date": None, "path": None, "status": "CONFIG_ERROR", "summary": None, "traceback": "missing importer", "checked": 0, "attempts": []}
+    source, parser = IMPORTERS[name]
+    attempts = []
+    for day, path in day_paths(source)[:MAX_DAYS_TO_TRY_PER_IMPORTER]:
+        result = run_candidate(name, source, parser, path, day, streams, filter_)
+        attempts.append(result)
+        if (result.get("summary") or {}).get("selected", 0) > 0:
+            break
+    if not attempts:
+        return {"importer": name, "source": source, "date": None, "path": None, "status": "NO_AVAILABLE_LOG_DAYS", "summary": None, "traceback": None, "checked": 0, "attempts": []}
+    best = dict(sorted(attempts, key=score)[0])
+    best["checked"] = len(attempts); best["attempts"] = attempts
+    return best
+
+
+def filter_text(filter_):
+    if filter_ is None:
+        return "ALL"
     parts = []
-    for scope_type, scope_ids in sorted(scope_filter.items()):
-        if scope_ids is None:
-            parts.append(f"{scope_type}: ALL")
-        else:
-            parts.append(f"{scope_type}: {sorted(scope_ids)}")
+    for scope_type, ids in sorted(filter_.items()):
+        parts.append(f"{scope_type}: {'ALL' if ids is None else sorted(ids)}")
     return "; ".join(parts)
 
 
-def report(results, streams, scope_filter, common_day):
+def write_report(results, streams, filter_, names):
     counts = Counter(r["status"] for r in results)
-    lines = [
-        "log_parser TEST_MODES report",
-        f"generated_at: {datetime.now():%Y-%m-%d %H:%M:%S}",
-        f"test_date: {TEST_DATE}",
-        f"auto_date_policy: {AUTO_DATE_POLICY}",
-        f"common_auto_date: {common_day}",
-        f"test_modes: {TEST_MODES}",
-        f"test_scopes: {format_scope_filter(scope_filter)}",
-        f"include_unknown_stream_ids: {INCLUDE_UNKNOWN_STREAM_IDS}",
-        f"database: {log_parser.DB_PATH}",
-        f"log_root: {log_parser.LOG_PATH}",
-        f"stream_catalog_count: {len(streams)}",
-        "",
-        "summary",
-        "-------",
-        f"total modes: {len(results)}",
-    ]
-
+    lines = ["log_parser scope-driven parser test report", f"generated_at: {datetime.now():%Y-%m-%d %H:%M:%S}", f"test_scopes: {filter_text(filter_)}", f"selected_importers: {names}", f"max_days_to_try_per_importer: {MAX_DAYS_TO_TRY_PER_IMPORTER}", f"include_current_log: {INCLUDE_CURRENT_LOG}", f"database: {log_parser.DB_PATH}", f"log_root: {log_parser.LOG_PATH}", f"stream_catalog_count: {len(streams)}", "", "summary", "-------", f"total importers: {len(results)}"]
     for status in STATUSES:
         lines.append(f"{status.lower()}: {counts.get(status, 0)}")
-
-    lines += ["", "modes", "-----"]
-
-    for result in results:
-        lines += [
-            "",
-            f"[{result['status']}] {result['mode']}",
-            f"source: {result['source']}",
-            f"date: {result['date']}",
-            f"path: {result['path']}",
-        ]
-
-        summary = result.get("summary")
-        if summary:
-            lines += [
-                f"parsed_rows: {summary['parsed_rows']}",
-                f"selected_rows: {summary['selected_rows']}",
-                f"skipped_by_scope_filter: {summary['skipped_by_scope_filter']}",
-                f"first_timestamp: {summary['first']}",
-                f"last_timestamp: {summary['last']}",
-                f"out_of_date_rows_before: {summary['before']}",
-                f"out_of_date_rows_after: {summary['after']}",
-                f"malformed_rows: {len(summary['malformed'])}",
-            ]
-
-            if summary["scope_counts"]:
-                lines.append("scope_counts:")
-                for key, count in sorted(summary["scope_counts"].items()):
-                    lines.append(f"  {key}: {count}")
-
-            if summary["stream_counts"]:
-                lines.append("stream_counts:")
-                for key, count in sorted(summary["stream_counts"].items()):
-                    lines.append(f"  {key}: {count}")
-
-            if summary["unknown"]:
-                lines.append("unknown_stream_ids:")
-                for sid, count in sorted(summary["unknown"].items()):
-                    lines.append(f"  {sid}: {count}")
-
-            if summary["malformed"]:
-                lines.append("malformed_row_examples:")
-                for row in summary["malformed"][:10]:
-                    lines.append(f"  {row!r}")
-
-        if result.get("traceback"):
-            lines += ["traceback:", result["traceback"].rstrip()]
-
-    return "\n".join(lines) + "\n"
+    lines += ["", "importers", "---------"]
+    for r in results:
+        lines += ["", f"[{r['status']}] {r['importer']}", f"source: {r['source']}", f"selected_date: {r['date']}", f"candidate_dates_checked: {r['checked']}", f"path: {r['path']}"]
+        s = r.get("summary")
+        if s:
+            lines += [f"parsed_rows: {s['parsed']}", f"selected_rows: {s['selected']}", f"skipped_by_scope_filter: {s['skipped']}", f"first_timestamp: {s['first']}", f"last_timestamp: {s['last']}", f"out_of_date_rows_before: {s['before']}", f"out_of_date_rows_after: {s['after']}", f"malformed_rows: {len(s['malformed'])}"]
+            if s["scopes"]:
+                lines.append("scope_counts:"); lines += [f"  {k}: {v}" for k, v in sorted(s["scopes"].items())]
+            if s["streams"]:
+                lines.append("stream_counts:"); lines += [f"  {k}: {v}" for k, v in sorted(s["streams"].items())]
+            if s["unknown"]:
+                lines.append("unknown_stream_ids:"); lines += [f"  {k}: {v}" for k, v in sorted(s["unknown"].items())]
+            if s["malformed"]:
+                lines.append("malformed_row_examples:"); lines += [f"  {x!r}" for x in s["malformed"][:10]]
+        empty_attempts = [a for a in r["attempts"] if (a.get("summary") or {}).get("selected", 0) == 0]
+        if empty_attempts:
+            lines.append("candidate_dates_without_selected_rows:")
+            for a in empty_attempts[:10]:
+                s2 = a.get("summary") or {}
+                lines.append(f"  {a['date']}: {a['status']}; parsed={s2.get('parsed', 'n/a')}; selected={s2.get('selected', 'n/a')}; path={a['path']}")
+        if r.get("traceback"):
+            lines += ["traceback:", r["traceback"].rstrip()]
+    path = REPORT_DIR / f"log_parser_scope_test_{datetime.now():%Y%m%d_%H%M%S}.txt"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
 
 
 def main():
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
-    specs = selected_specs()
-    scope_filter = normalize_scope_filter()
-    common_day = common_latest_day(specs) if TEST_DATE == "AUTO" else None
-
-    out("TEST_MODES starting")
-    out(f"test_date={TEST_DATE}; auto_date_policy={AUTO_DATE_POLICY}")
-    out(f"test_modes={TEST_MODES}")
-    out(f"test_scopes={format_scope_filter(scope_filter)}")
-
-    streams = catalog()
+    filter_ = scope_filter(); names = selected_importers(filter_); streams = load_streams()
+    out("scope-driven parser test starting")
+    out(f"test_scopes={filter_text(filter_)}")
+    out(f"selected_importers={names}")
     results = []
-
-    for mode, (source, parser) in sorted(specs.items()):
-        day = None if source is None else test_day_for_source(source, common_day)
-        result = run_one(mode, source, parser, streams, day, scope_filter)
-        results.append(result)
-        summary = result.get("summary")
-        rows = f" parsed={summary['parsed_rows']} selected={summary['selected_rows']}" if summary else ""
-        out(f"{result['status']} {mode} date={result['date']}{rows}")
-
-    path = report_path()
-    path.write_text(report(results, streams, scope_filter, common_day), encoding="utf-8")
-    out(f"report written: {path}")
+    for name in names:
+        result = run_importer(name, streams, filter_); results.append(result)
+        s = result.get("summary") or {}
+        out(f"{result['status']} {name} date={result['date']} checked={result['checked']} parsed={s.get('parsed', 'n/a')} selected={s.get('selected', 'n/a')}")
+    out(f"report written: {write_report(results, streams, filter_, names)}")
 
 
 if __name__ == "__main__":
