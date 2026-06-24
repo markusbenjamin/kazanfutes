@@ -7,7 +7,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 
-API_BASE_URL = "http://127.0.0.1:8765"
+API_BASE_URL = "http://100.124.103.116:8765"
 
 
 def print_rows(title, rows, limit=5):

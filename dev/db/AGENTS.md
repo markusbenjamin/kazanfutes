@@ -6,6 +6,10 @@ It is not project status, not a roadmap, and not a task list.
 
 ## document boundaries
 
+Additional handoff document:
+
+- `RASPI_HANDOFF.md` - Raspberry Pi/Tailscale access handoff for dev API testing
+
 Use the existing documents as the source of truth:
 
 - `PROJECT_ORIENTATION.md` — what this subproject is
@@ -30,7 +34,8 @@ At the start of work in `dev/db`, read:
 1. `PROJECT_ORIENTATION.md`
 2. `STATUS.md`
 3. `PLAN.md`
-4. `REPO_MAP.txt`
+4. `RASPI_HANDOFF.md`
+5. `REPO_MAP.txt`
 
 Then inspect only files directly needed for the current task.
 

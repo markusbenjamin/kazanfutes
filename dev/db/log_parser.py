@@ -127,6 +127,8 @@ OPEN_CLOSE_STREAM_MAP = {
     "pk_ablak_4": "window.3.4.state",
     "pk_ajto": "door.3.1.state",
     "studio_ajto": "door.6.1.state",
+    "szgk_ablak_1": "window.4.1.state",
+    "szgk_ablak_2": "window.4.2.state",
     "szgk_ablak_3": "window.4.3.state",
     "szgk_ablak_4": "window.4.4.state",
     "szgk_ajto": "door.4.1.state",

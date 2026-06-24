@@ -132,6 +132,26 @@ Current parser smoke-check result:
 - batch temp-table loading was changed from Python `executemany()` to a temporary CSV plus DuckDB `read_csv()` bulk load after a 10-file heating-control batch spent several minutes loading 396,103 rows through `executemany()`; the CSV loader passed an in-memory smoke check
 - imports now use `IMPORT_EXISTING_POLICY`; default `skip_existing` inserts only new `(timestamp, stream_id)` rows, while `replace_existing` is available for directed rewrites and `fail_on_existing` rejects collisions; all three policies passed in-memory smoke checks
 
+Current parser coverage by scope:
+
+- `room`: temperature, humidity, set_temperature, occupancy_state, presence_detected, co2, illuminance. Coverage depends on source instrumentation: room temperature/humidity and occupancy are keyed by room ID; Aqara/Nous fields depend on explicit device-to-room mappings; CO2 is only available where a Nous device exists.
+- `heating`: main boiler/heating state from heating-control logs.
+- `heating_cycle`: state, pump_power, flow_temperature, return_temperature, volume_flow, power, energy, volume.
+- `radiator`: temperature and valve_state. Coverage depends on explicit radiator sensor mappings and, for heating-control valve states, room/list-position mappings.
+- `door` and `window`: state from explicitly mapped open/close sensors.
+- `gas_meter`: main impulse events.
+- `electric_submeter`: mapped submeter impulse events.
+- `electric_main_meter`: active power, import/export totals and tariffs, phase voltages, and phase currents.
+- `pv`: inverter voltages, currents, frequency, power, energy, MPPT cumulative energy, and related inverter metrics.
+- `weather_station`: WS90 temperature, humidity, dewpoint, illuminance, rain_status, wind speed/gust/direction, and UV index.
+- `outdoor`: Weather.com outdoor temperature scrape.
+
+Parser coverage notes:
+
+- Scope-level parser setup does not imply every catalog stream has physical instrumentation.
+- Some catalog streams are intentionally broader than current sensors, for example room CO2 exists only for rooms with Nous devices.
+- Some source mappings are intentionally explicit because raw logs use device names, sensor names, or ordered list positions rather than canonical stream IDs.
+
 ### `db_queries.py`
 
 Current read-only API functions:
