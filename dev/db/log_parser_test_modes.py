@@ -1,3 +1,4 @@
+import csv
 import traceback
 from collections import Counter
 from datetime import date, datetime, time, timedelta
@@ -8,12 +9,16 @@ import log_parser
 
 # Edit these, then run: python log_parser_test_modes.py
 TEST_SCOPES = "ALL"
+# TEST_SCOPES = {"radiator", "room"}  # first scope_id for each listed scope_type
+# TEST_SCOPES = {"radiator": "FIRST"}
 # TEST_SCOPES = {"radiator": "ALL"}
 # TEST_SCOPES = {"room": "ALL", "radiator": ["1.1", "1.2", "2.1", "2.3"]}
 MAX_DAYS_TO_TRY_PER_IMPORTER = 30
 INCLUDE_CURRENT_LOG = False
 INCLUDE_UNKNOWN_STREAM_IDS = True
 REPORT_DIR = Path(__file__).resolve().parent / "test_reports"
+SCOPE_LIST_PATH = Path(__file__).resolve().parent / "metadata" / "scope_list.csv"
+FIRST_SCOPE_ID = "FIRST"
 
 IMPORTERS = {
     "import_aqara_and_nous": ("aqara_and_nous", log_parser.parse_aqara_and_nous_file),
@@ -56,12 +61,44 @@ def out(msg):
     print(f"{datetime.now():%Y-%m-%d %H:%M:%S} {msg}", flush=True)
 
 
+def first_scope_ids_from_metadata():
+    first_ids = {}
+    with SCOPE_LIST_PATH.open(encoding="utf-8", newline="") as file:
+        for row in csv.DictReader(file):
+            scope_type = row["scope_type"]
+            scope_id = row["scope_id"]
+            if scope_type not in first_ids:
+                first_ids[scope_type] = scope_id
+    return first_ids
+
+
+def first_scope_id(scope_type, first_ids):
+    if scope_type not in first_ids:
+        raise ValueError(f"no scope_id found for scope_type {scope_type!r} in {SCOPE_LIST_PATH}")
+    return first_ids[scope_type]
+
+
 def scope_filter():
     if TEST_SCOPES == "ALL":
         return None
+
+    first_ids = first_scope_ids_from_metadata()
     result = {}
+
+    if isinstance(TEST_SCOPES, (set, list, tuple)):
+        for scope_type in TEST_SCOPES:
+            scope_type = str(scope_type)
+            result[scope_type] = {first_scope_id(scope_type, first_ids)}
+        return result
+
     for scope_type, scope_ids in TEST_SCOPES.items():
-        result[scope_type] = None if scope_ids == "ALL" else {str(x) for x in scope_ids}
+        scope_type = str(scope_type)
+        if scope_ids == "ALL":
+            result[scope_type] = None
+        elif scope_ids == FIRST_SCOPE_ID:
+            result[scope_type] = {first_scope_id(scope_type, first_ids)}
+        else:
+            result[scope_type] = {str(x) for x in scope_ids}
     return result
 
 
