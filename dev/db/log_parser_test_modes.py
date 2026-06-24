@@ -1,4 +1,3 @@
-import os
 import traceback
 from collections import Counter
 from datetime import date, datetime, time, timedelta
@@ -9,7 +8,10 @@ import duckdb
 import log_parser
 
 
-TEST_DATE = os.environ.get("TEST_DATE", "2026-03-01")
+# Developer test parameters. Edit this date, then run:
+# python log_parser_test_modes.py
+TEST_DATE = "2026-03-01"
+
 REPORT_DIR = Path(__file__).resolve().parent / "test_reports"
 REPORT_PATH = REPORT_DIR / f"log_parser_test_{TEST_DATE}.txt"
 
