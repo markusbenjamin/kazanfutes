@@ -15,10 +15,12 @@ Derived view:
 
 One observation row means:
 
-- one timestamped value
+- one timestamped analytical value
 - from one stream
 
 Missing data is represented by absent observation rows.
+
+The `observations` table should be treated as the analytical table. For now, do not enlarge the observations schema and do not add freshness/source views just to solve logger-snapshot duplication. Instead, importers should do the best possible source-specific reduction before insertion.
 
 ## Script Responsibilities
 
@@ -42,6 +44,7 @@ Raw log ingestion:
 - translate raw names to canonical stream IDs
 - normalize timestamps to Budapest local time
 - convert raw values to canonical units
+- reduce logger snapshots into analytical observations where possible
 - insert observations
 
 It should grow source by source, carefully.
@@ -80,6 +83,42 @@ Local sandbox for testing `db_queries.py` directly.
 - Summary/query APIs should expose generic metrics rather than enforce stream-specific semantic rules.
 - The API may allow mathematically valid but domain-meaningless calls; documentation and examples should guide users toward meaningful metrics.
 
+### Analytical timestamp and snapshot deduplication policy
+
+The current goal is a compact analytical observations table, not a raw logger-snapshot archive.
+
+For temperature-like and other gauge streams, a logger record can mean different things:
+
+- a fresh sensor/source update
+- a repeated snapshot of a previously known value
+- a cached value whose freshness is unknown
+
+Because the schema should not be enlarged for now, importers must choose one analytical interpretation before writing to `observations`.
+
+Preferred importer rules:
+
+1. If the raw source provides a per-sensor or per-state update timestamp such as `last_updated`, use that as `observations.timestamp`.
+2. If the raw source is event-like, use the event/log timestamp and preserve real events.
+3. If the raw source is a snapshot log with no usable source-update timestamp, use the log timestamp but drop consecutive same-value repeats per `stream_id` during import.
+4. Do not treat repeated logger snapshots as independent measurements.
+5. Do not add new observation columns, stream metadata fields, or source/freshness views for this issue at this stage.
+
+This means the table should approximate:
+
+- one row per real source update, where source update time is recoverable
+- one row per real event, for event streams
+- one row per value change, for snapshot-only gauge/state/counter streams where real update time is not recoverable
+
+Known implication:
+
+- If a snapshot-only source logs the same value repeatedly, exact freshness cannot be recovered after the fact.
+- Change-point compression may discard fresh reports that happened to report the same numeric value.
+- This is acceptable for the present analytical database because keeping every polling snapshot would create spurious measurement density and distort simple summaries.
+
+Temperature and similar gauge streams should not be analyzed as evenly spaced independent samples merely because the logger polled them repeatedly. Summaries should eventually prefer time-weighted/as-of semantics where relevant.
+
+Before broad imports, parser testing should identify which sources have reliable per-device update timestamps and which sources need snapshot deduplication.
+
 ## Agent Responsibilities
 
 Query/API layer:
@@ -110,7 +149,10 @@ Near-term import work:
    - one non-room stream, such as weather station temperature
 3. Keep raw-to-canonical mapping explicit in importer code.
 4. Validate imported streams through availability outputs before broadening further.
-5. Do not spend agent time running long prepared import scripts. Once a script is ready, the agent should recommend that the user run it locally, then inspect results or errors afterward.
+5. For each source, inspect raw logs for per-device/per-state freshness fields such as `last_updated`, `last_seen`, sequence numbers, or source timestamps.
+6. For snapshot-only logs, add importer-side consecutive same-value compression per `stream_id` before insertion.
+7. Revisit already imported high-duplication streams and, where necessary, rebuild them from logs using the analytical timestamp/deduplication policy.
+8. Do not spend agent time running long prepared import scripts. Once a script is ready, the agent should recommend that the user run it locally, then inspect results or errors afterward.
 
 Later implementation work:
 
@@ -144,7 +186,7 @@ Example columns:
 - `unit`
 - `value`
 
-This is the simplest and most faithful representation of the stored data.
+This is the simplest and most faithful representation of the stored analytical data. It is not guaranteed to preserve every raw logger snapshot.
 
 ### Long Binned Summaries
 
@@ -177,6 +219,10 @@ Summary statistics:
 Numeric summary values are rounded to the requested measurement precision.
 
 The API should not forbid summary metrics that are unhelpful for a given stream. For example, `mean_value` is usually meaningful for temperature, while `observation_count` or `sum_value` is usually meaningful for impulse/event streams. The caller chooses the metric; examples and documentation explain the recommended choices.
+
+Sparse transition-state streams need specialized summary semantics. For example, door/window open-close event logs produce state observations only at transition timestamps; a plain `mean_value` over those rows is not a time-weighted open fraction. API support for state-duration summaries should reconstruct intervals with as-of/last-observation-carried-forward logic.
+
+Gauge streams that were imported from snapshot-only logs may be change-point compressed. Plain row counts on these streams represent stored analytical points, not necessarily physical sampling frequency.
 
 ### Wide/Pivoted Binned Results
 
@@ -223,8 +269,11 @@ Examples:
 
 - `gas_impulse_count`: count gas-meter impulse events per bin
 - `heat_delivery`: derive delivered heat from heatmeter or heating-cycle streams
+- `door_open_fraction` or `window_open_duration`: derive state durations from sparse transition-state observations
 
 This should be added only after base stream imports and summary semantics are stable.
+
+Derived metrics based on sparse state-transition streams must use interval reconstruction rather than treating transition rows as dense samples.
 
 ## User Responsibilities
 
@@ -251,6 +300,8 @@ Before broad imports:
 - Confirm whether early users need long-format data only, grouped raw data, or also wide/pivoted binned outputs.
 - Confirm that the availability CSV/HTML outputs communicate the right information.
 - Confirm that the first few imported streams look correct.
+- Confirm the importer timestamp/deduplication policy per source before importing long ranges.
+- Confirm whether existing imported streams need to be rebuilt to remove logger-snapshot duplicates.
 
 Before server deployment:
 

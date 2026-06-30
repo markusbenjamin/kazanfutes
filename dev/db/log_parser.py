@@ -9,6 +9,7 @@ import duckdb
 
 BATCH_FILE_COUNT = 10
 IMPORT_EXISTING_POLICIES = {"skip_existing", "replace_existing", "fail_on_existing"}
+IMPORT_INTERRUPTED = False
 
 SCRIPT_PATH = Path(__file__).resolve()
 DEV_PATH = SCRIPT_PATH.parent.parent
@@ -16,6 +17,8 @@ PROJECT_PATH = DEV_PATH.parent
 
 DB_PATH = DEV_PATH / "db" / "store" / "observations.duckdb"
 LOG_PATH = PROJECT_PATH / "data" / "logs"
+SETUP_PATH = PROJECT_PATH / "system" / "setup.json"
+SCOPE_LIST_PATH = SCRIPT_PATH.parent / "metadata" / "scope_list.csv"
 
 SOURCE_FILES = {
     "aqara_and_nous": ("aqara_and_nous", "aqara_and_nous.json"),
@@ -31,6 +34,7 @@ SOURCE_FILES = {
     "occupancy": ("occupancy", "occupancy.json"),
     "open_close": ("open_close", "open_close_events.json"),
     "oktopusz_presence": ("presence", "oktopusz_presence.json"),
+    "presence_all": ("presence", "presence_all.json"),
     "pumps": ("pumps", "power.json"),
     "pv_inverter": ("electricity", "pv_inverter.json"),
     "radiator_temperatures": ("radiator_temps", "radiator_temps.json"),
@@ -82,13 +86,11 @@ NOUS_ROOM_MAP = {
 AQARA_FIELD_MAP = {
     "temp": "temperature",
     "hum": "humidity",
-    "presence": "presence_detected",
+    "presence": "occupancy_state",
     "lux": "illuminance",
 }
 
 NOUS_FIELD_MAP = {
-    "temp": "temperature",
-    "hum": "humidity",
     "co2": "co2",
 }
 
@@ -168,23 +170,107 @@ RADIATOR_TEMPERATURE_STREAM_MAP = {
     ("studio_radiator_shelly", "temperature:100"): "radiator.6.1.temperature",
 }
 
-# Mock mapping: thermostat names do not cleanly identify radiator IDs yet.
-THERMOSTAT_RADIATOR_SCOPE_MAP = {
-    "PK": "3.1",
-    "Merce_targyalo": "12.1",
-    "Merce": "5.1",
-    "SZGK": "4.1",
-    "GEP_muhely": "13.1",
-    "Thermostat 65": "1.1",
-    "Thermostat 67": "1.2",
-    "Thermostat 69": "2.1",
-    "Thermostat 71": "2.2",
-    "Thermostat 75": "2.3",
-    "Thermostat 77": "2.4",
-    "Thermostat 79": "7.1",
+# Thermostat log names are historical valve labels, not reliable room labels.
+# Resolve log labels to thermostat IDs first, then use system/setup.json for rooms.
+THERMOSTAT_LOG_NAME_TO_ID = {
+    "PK": "42",
+    "Merce_targyalo": "53",
+    "Merce": "57",
+    "SZGK": "59",
+    "GEP_muhely": "63",
+    "Golyairoda": "65",
+    "Lahmacun": "69",
+    "Golyafeszek_1": "71",
+    "Golyafeszek_2": "75",
+    "Oktopusz_szita_1": "77",
+    "Oktopusz_szita_2": "79",
 }
 
-HEATING_CONTROL_VALVE_STREAM_MAP = {
+
+def radiator_scope_sort_key(scope_id):
+    return tuple(int(part) for part in scope_id.split("."))
+
+
+def load_radiator_scope_ids_by_room():
+    radiator_scope_ids_by_room = {}
+
+    with SCOPE_LIST_PATH.open(newline="", encoding="utf-8") as file:
+        for row in csv.DictReader(file):
+            if row["scope_type"] != "radiator":
+                continue
+
+            room_id = row["scope_id"].split(".", 1)[0]
+            radiator_scope_ids_by_room.setdefault(room_id, []).append(row["scope_id"])
+
+    for radiator_scope_ids in radiator_scope_ids_by_room.values():
+        radiator_scope_ids.sort(key=radiator_scope_sort_key)
+
+    return radiator_scope_ids_by_room
+
+
+def thermostat_ids_from_setup_value(value):
+    if not isinstance(value, str):
+        return []
+
+    return [part.strip() for part in value.split(";") if part.strip()]
+
+
+def build_thermostat_id_to_radiator_scope_map():
+    with SETUP_PATH.open(encoding="utf-8") as file:
+        setup = json.load(file)
+
+    radiator_scope_ids_by_room = load_radiator_scope_ids_by_room()
+    thermostat_id_to_radiator_scope = {}
+
+    for room_id, room_config in setup.get("rooms", {}).items():
+        thermostat_ids = thermostat_ids_from_setup_value(
+            room_config.get("thermostats")
+        )
+        if not thermostat_ids:
+            continue
+
+        radiator_scope_ids = radiator_scope_ids_by_room.get(room_id, [])
+        if not radiator_scope_ids:
+            continue
+
+        for index, thermostat_id in enumerate(thermostat_ids):
+            radiator_index = min(
+                index * len(radiator_scope_ids) // len(thermostat_ids),
+                len(radiator_scope_ids) - 1,
+            )
+            thermostat_id_to_radiator_scope[thermostat_id] = radiator_scope_ids[
+                radiator_index
+            ]
+
+    return thermostat_id_to_radiator_scope
+
+
+def thermostat_id_from_log_entry(log_key, state):
+    log_key = str(log_key)
+
+    if log_key.isdigit():
+        return log_key
+
+    if log_key in THERMOSTAT_LOG_NAME_TO_ID:
+        return THERMOSTAT_LOG_NAME_TO_ID[log_key]
+
+    if log_key.startswith("Thermostat "):
+        suffix = log_key.removeprefix("Thermostat ").strip()
+        if suffix.isdigit():
+            return suffix
+
+    if isinstance(state, dict):
+        state_name = state.get("name")
+        if state_name in THERMOSTAT_LOG_NAME_TO_ID:
+            return THERMOSTAT_LOG_NAME_TO_ID[state_name]
+
+    return None
+
+
+THERMOSTAT_ID_TO_RADIATOR_SCOPE_MAP = build_thermostat_id_to_radiator_scope_map()
+
+# Historical scratch map only; heating-control logs are not a valve-state source.
+DEPRECATED_HEATING_CONTROL_VALVE_STREAM_MAP = {
     # Oktopusz: two radiators, each with its own TRV
     "1": [
         "radiator.1.1.valve_state",
@@ -301,19 +387,20 @@ HEATMETER_FIELD_MAP = {
 
 MODE_DESCRIPTIONS = {
     "list_modes": "print available modes",
-    "import_aqara_and_nous": "room temp/humidity/CO2/presence/illuminance from Aqara/Nous logs",
+    "import_aqara_and_nous": "Aqara room readings and Nous CO2 from Aqara/Nous logs",
     "import_electric_main_meter": "main electric meter values",
     "import_electric_submeter_impulses": "electric submeter impulse events",
     "import_gas_impulses": "gas meter impulse events",
     "import_heatmeters": "heating-cycle heatmeter readings",
-    "import_heating_control_state": "room set temperatures, actual heating states, and radiator valve states from heating-control logs",
+    "import_heating_control_state": "room set temperatures and actual heating states from heating-control logs",
     "import_oktopusz_presence": "legacy Oktopusz presence boolean",
     "import_open_close": "door/window open-close state events",
     "import_outdoor_weather_com": "Weather.com outdoor temperature scrape",
+    "import_room_presence": "raw room presence_detected readings from presence_all logs",
     "import_pump_power": "heating-cycle pump power readings",
     "import_pv_inverter": "PV inverter readings",
     "import_radiator_temperatures": "radiator Shelly temperature readings",
-    "import_radiator_thermostats": "radiator thermostat temperature/valve readings",
+    "import_radiator_thermostats": "radiator thermostat valve readings",
     "import_room_occupancy": "room occupancy state readings",
     "import_room_temperature_humidity": "legacy room temperature/humidity readings",
     "import_weather_station": "WS90 weather station readings",
@@ -455,7 +542,15 @@ def parse_timestamp(timestamp_text):
     if str(timestamp_text).lower() == "none":
         return None
 
-    return datetime.strptime(timestamp_text, "%Y-%m-%d-%H-%M-%S")
+    for timestamp_format in ("%Y-%m-%d-%H-%M-%S", "%Y-%m-%d-%H-%M"):
+        try:
+            return datetime.strptime(timestamp_text, timestamp_format)
+        except ValueError:
+            pass
+
+    raise ValueError(
+        f"time data {timestamp_text!r} does not match supported timestamp formats"
+    )
 
 
 def dated_log_paths(source_name):
@@ -544,6 +639,16 @@ def add_row(rows_by_key, timestamp, stream_id, value, scale=1):
     )
 
 
+def append_row(rows, timestamp, stream_id, value, scale=1):
+    if timestamp is None or stream_id is None or value is None:
+        return
+
+    if not stream_id_is_selected(stream_id):
+        return
+
+    rows.append((timestamp, stream_id, clean_value(value, scale)))
+
+
 def stream_id(scope_type, scope_id, variable):
     return f"{scope_type}.{scope_id}.{variable}"
 
@@ -598,7 +703,8 @@ def parse_room_temperature_humidity_file(path):
 
 
 def parse_aqara_and_nous_file(path):
-    rows_by_key = {}
+    rows = []
+    occupancy_rows_by_key = {}
 
     for record in iter_ndjson(path):
         timestamp = parse_timestamp(record.get("timestamp"))
@@ -610,12 +716,32 @@ def parse_aqara_and_nous_file(path):
                 continue
 
             for raw_key, variable in AQARA_FIELD_MAP.items():
-                add_row(
-                    rows_by_key,
-                    timestamp,
-                    stream_id("room", room_id, variable),
-                    state.get(raw_key),
-                )
+                target_stream_id = stream_id("room", room_id, variable)
+                if variable == "occupancy_state":
+                    value = state.get(raw_key)
+                    if (
+                        timestamp is None
+                        or value is None
+                        or not stream_id_is_selected(target_stream_id)
+                    ):
+                        continue
+
+                    key = (timestamp, target_stream_id)
+                    current = occupancy_rows_by_key.get(key)
+                    next_value = clean_value(value)
+                    if current is None or next_value > current[2]:
+                        occupancy_rows_by_key[key] = (
+                            timestamp,
+                            target_stream_id,
+                            next_value,
+                        )
+                else:
+                    append_row(
+                        rows,
+                        timestamp,
+                        target_stream_id,
+                        state.get(raw_key),
+                    )
 
         for device_name, state in states.get("nous", {}).items():
             room_id = NOUS_ROOM_MAP.get(device_name)
@@ -623,14 +749,15 @@ def parse_aqara_and_nous_file(path):
                 continue
 
             for raw_key, variable in NOUS_FIELD_MAP.items():
-                add_row(
-                    rows_by_key,
+                append_row(
+                    rows,
                     timestamp,
                     stream_id("room", room_id, variable),
                     state.get(raw_key),
                 )
 
-    return sorted(rows_by_key.values())
+    rows.extend(occupancy_rows_by_key.values())
+    return sorted(rows)
 
 
 def parse_occupancy_file(path):
@@ -662,6 +789,30 @@ def parse_oktopusz_presence_file(path):
             "room.1.presence_detected",
             record.get("presence"),
         )
+
+    return sorted(rows_by_key.values())
+
+
+def parse_presence_all_file(path):
+    rows_by_key = {}
+
+    for record in iter_ndjson(path):
+        timestamp = parse_timestamp(record.get("timestamp"))
+        states = record.get("states", {})
+
+        for room_id, state in states.items():
+            if not isinstance(state, dict):
+                continue
+
+            if state.get("reachable") is not True:
+                continue
+
+            add_row(
+                rows_by_key,
+                timestamp,
+                stream_id("room", room_id, "presence_detected"),
+                state.get("state"),
+            )
 
     return sorted(rows_by_key.values())
 
@@ -823,18 +974,6 @@ def parse_heating_control_file(path):
                 record.get("boiler_state"),
             )
 
-        for room_id, values in record.get("valve_states", {}).items():
-            if not isinstance(values, list):
-                continue
-
-            stream_ids = HEATING_CONTROL_VALVE_STREAM_MAP.get(room_id, [])
-
-            for index, value in enumerate(values):
-                target_stream_id = (
-                    stream_ids[index] if index < len(stream_ids) else None
-                )
-                add_row(rows_by_key, timestamp, target_stream_id, value)
-
     return sorted(rows_by_key.values())
 
 
@@ -859,29 +998,31 @@ def parse_radiator_temperatures_file(path):
 
 def parse_thermostats_file(path):
     rows_by_key = {}
+    unmapped_thermostat_keys = set()
 
     for record in iter_ndjson(path):
         timestamp = parse_timestamp(record.get("timestamp"))
         states = record.get("states", {})
 
-        for thermostat_name, state in states.items():
-            radiator_scope_id = THERMOSTAT_RADIATOR_SCOPE_MAP.get(thermostat_name)
+        for thermostat_key, state in states.items():
+            thermostat_id = thermostat_id_from_log_entry(thermostat_key, state)
+            radiator_scope_id = THERMOSTAT_ID_TO_RADIATOR_SCOPE_MAP.get(thermostat_id)
             if radiator_scope_id is None:
+                unmapped_thermostat_keys.add(f"{thermostat_key}->{thermostat_id}")
                 continue
 
-            add_row(
-                rows_by_key,
-                timestamp,
-                stream_id("radiator", radiator_scope_id, "temperature"),
-                state.get("temperature"),
-                100,
-            )
             add_row(
                 rows_by_key,
                 timestamp,
                 stream_id("radiator", radiator_scope_id, "valve_state"),
                 state.get("valve"),
             )
+
+    if unmapped_thermostat_keys:
+        report(
+            f"skipped unmapped thermostat keys in {path.name}: "
+            + ", ".join(sorted(unmapped_thermostat_keys))
+        )
 
     return sorted(rows_by_key.values())
 
@@ -1023,18 +1164,51 @@ def insert_observation_batch(con, rows):
         if IMPORT_EXISTING_POLICY == "skip_existing":
             step_started_at = perf_counter()
             con.execute("""
-            CREATE OR REPLACE TEMP TABLE import_insert_candidates AS
+            CREATE OR REPLACE TEMP TABLE import_existing_observation_counts AS
             SELECT
-                imported_observations."timestamp",
-                imported_observations.stream_id,
-                imported_observations.value
-            FROM imported_observations
-            WHERE NOT EXISTS (
-                SELECT 1
-                FROM observations
-                WHERE observations."timestamp" = imported_observations."timestamp"
-                  AND observations.stream_id = imported_observations.stream_id
-            );
+                observations."timestamp",
+                observations.stream_id,
+                observations.value,
+                count(*) AS existing_count
+            FROM observations
+            INNER JOIN (
+                SELECT DISTINCT
+                    "timestamp",
+                    stream_id,
+                    value
+                FROM imported_observations
+            ) AS imported_distinct
+                ON observations."timestamp" = imported_distinct."timestamp"
+               AND observations.stream_id = imported_distinct.stream_id
+               AND observations.value = imported_distinct.value
+            GROUP BY
+                observations."timestamp",
+                observations.stream_id,
+                observations.value;
+            """)
+            con.execute("""
+            CREATE OR REPLACE TEMP TABLE import_insert_candidates AS
+            WITH imported_ranked AS (
+                SELECT
+                    "timestamp",
+                    stream_id,
+                    value,
+                    row_number() OVER (
+                        PARTITION BY "timestamp", stream_id, value
+                        ORDER BY "timestamp", stream_id, value
+                    ) AS occurrence_number
+                FROM imported_observations
+            )
+            SELECT
+                imported_ranked."timestamp",
+                imported_ranked.stream_id,
+                imported_ranked.value
+            FROM imported_ranked
+            LEFT JOIN import_existing_observation_counts AS existing
+                ON imported_ranked."timestamp" = existing."timestamp"
+               AND imported_ranked.stream_id = existing.stream_id
+               AND imported_ranked.value = existing.value
+            WHERE imported_ranked.occurrence_number > coalesce(existing.existing_count, 0);
             """)
             inserted_count = con.execute("""
             SELECT count(*)
@@ -1042,7 +1216,7 @@ def insert_observation_batch(con, rows):
             """).fetchone()[0]
             skipped_count = valid_count - inserted_count
             report(
-                "selected new observation keys in "
+                "selected new exact observation rows in "
                 f"{format_seconds(perf_counter() - step_started_at)}; "
                 f"new: {inserted_count}; existing: {skipped_count}"
             )
@@ -1068,6 +1242,7 @@ def insert_observation_batch(con, rows):
                 f"replaced: {replaced_count}"
             )
             con.execute("DROP TABLE IF EXISTS import_insert_candidates;")
+            con.execute("DROP TABLE IF EXISTS import_existing_observation_counts;")
 
         else:
             step_started_at = perf_counter()
@@ -1166,6 +1341,9 @@ def insert_observation_batch(con, rows):
 
 
 def import_source(source_name, parse_file):
+    global IMPORT_INTERRUPTED
+
+    IMPORT_INTERRUPTED = False
     started_at = perf_counter()
     paths = configured_source_paths(source_name)
 
@@ -1181,7 +1359,7 @@ def import_source(source_name, parse_file):
     last_committed_index = 0
     phase = "starting"
     unknown_stream_ids = set()
-    pending_rows_by_key = {}
+    pending_rows = []
 
     try:
         report(f"importing {source_name}")
@@ -1211,8 +1389,7 @@ def import_source(source_name, parse_file):
             parsed_count += len(rows)
 
             phase = f"staging parsed rows from file {index}/{len(paths)}: {path}"
-            for row in rows:
-                pending_rows_by_key[(row[0], row[1])] = row
+            pending_rows.extend(rows)
 
             if should_report_file_progress(index, len(paths)):
                 elapsed_seconds = perf_counter() - started_at
@@ -1229,10 +1406,10 @@ def import_source(source_name, parse_file):
                 phase = f"preparing batch ending at file {index}/{len(paths)}"
                 report(
                     f"preparing batch at {index}/{len(paths)} files; "
-                    f"pending unique rows: {len(pending_rows_by_key)}"
+                    f"pending rows: {len(pending_rows)}"
                 )
                 batch_prepare_started_at = perf_counter()
-                pending_rows = sorted(pending_rows_by_key.values())
+                pending_rows = sorted(pending_rows)
                 report(
                     "sorted pending rows in "
                     f"{format_seconds(perf_counter() - batch_prepare_started_at)}"
@@ -1255,7 +1432,7 @@ def import_source(source_name, parse_file):
                 inserted_count += inserted_in_batch
                 skipped_existing_count += skipped_in_batch
                 unknown_stream_ids.update(unknown_in_batch)
-                pending_rows_by_key = {}
+                pending_rows = []
 
                 report(
                     f"committed batch at {index}/{len(paths)} files "
@@ -1275,6 +1452,7 @@ def import_source(source_name, parse_file):
         report(f"unknown stream IDs skipped: {len(unknown_stream_ids)}")
 
     except KeyboardInterrupt:
+        IMPORT_INTERRUPTED = True
         report_interrupted_import(
             source_name=source_name,
             paths=paths,
@@ -1284,7 +1462,7 @@ def import_source(source_name, parse_file):
             parsed_count=parsed_count,
             inserted_count=inserted_count,
             skipped_existing_count=skipped_existing_count,
-            pending_row_count=len(pending_rows_by_key),
+            pending_row_count=len(pending_rows),
         )
 
     finally:
@@ -1325,6 +1503,10 @@ def import_heating_control_state():
 
 def import_oktopusz_presence():
     import_source("oktopusz_presence", parse_oktopusz_presence_file)
+
+
+def import_room_presence():
+    import_source("presence_all", parse_presence_all_file)
 
 
 def import_open_close():
@@ -1381,6 +1563,7 @@ MODE_HANDLERS = {
     "import_heatmeters": import_heatmeters,
     "import_heating_control_state": import_heating_control_state,
     "import_oktopusz_presence": import_oktopusz_presence,
+    "import_room_presence": import_room_presence,
     "import_open_close": import_open_close,
     "import_outdoor_weather_com": import_outdoor_weather_com,
     "import_pump_power": import_pump_power,
@@ -1400,7 +1583,7 @@ END_DATE = "2026-04-01"
 INCLUDE_CURRENT_LOG = False
 
 # Existing-row handling:
-# - "skip_existing": insert only missing (timestamp, stream_id) rows
+# - "skip_existing": insert exact observation rows not already present
 # - "replace_existing": rewrite matching rows, for directed repair imports
 # - "fail_on_existing": stop and roll back if any imported row already exists
 IMPORT_EXISTING_POLICY = "skip_existing"
