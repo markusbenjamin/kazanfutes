@@ -6147,5 +6147,16 @@
         "reported_timestamp": "2026-06-30-18-55-19",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to update local copy of weekly_cycle/1: failed to download sheet '<googleapiclient.discovery.Resource object at 0xf3f01330>' from spreadsheet 'f\u0171t\u00e9s heti ciklus 25/26': <HttpError 503 when requesting https://sheets.googleapis.com/v4/spreadsheets/1OmcLOB4OvFqmVw6Jq1lxu5fo7FchPBNMM6MFoNgM7r4/values/Oktopusz%21A1%3AZ10000?alt=json returned \"The service is currently unavailable.\". Details: \"The service is currently unavailable.\"> (HttpError).",
+        "severity": 3,
+        "origin": "schedule_and_config_updater.py/update_local_scheduling_files:181 --> project.py/download_google_sheet_to_2D_array:3426",
+        "origin_timestamp": "2026-06-30-19-21-13",
+        "registration_timestamp": "2026-06-30-19-21-13",
+        "reported": true,
+        "reported_timestamp": "2026-06-30-19-25-20",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
