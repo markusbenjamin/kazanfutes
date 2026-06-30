@@ -6180,5 +6180,16 @@
         "reported_timestamp": "2026-06-30-23-50-22",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while extracting presence patterns.: unexpected error while loading data/logs/presence/presence_all.json.2026-06-24 to array of JSONs: [Errno 2] No such file or directory: '/media/pi/program_stick/kazanfutes/data/logs/presence/presence_all.json.2026-06-24' (FileNotFoundError).",
+        "severity": 2,
+        "origin": "presence_pattern_calculator.py:30 --> project.py/load_ndjson_to_json_list:3156",
+        "origin_timestamp": "2026-07-01-00-03-02",
+        "registration_timestamp": "2026-07-01-00-03-02",
+        "reported": true,
+        "reported_timestamp": "2026-07-01-00-05-19",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
