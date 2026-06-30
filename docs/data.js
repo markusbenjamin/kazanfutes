@@ -545,6 +545,7 @@ function extractRoomScheduleFromCondensedSchedule(roomNum, setTempsData) {
 
 function convertTimestamps(dataJSON, day) {
     const parseTime = d3.timeParse("%Y-%m-%d-%H-%M-%S");
+    const formatDay = d3.timeFormat("%Y-%m-%d");
     if (!Array.isArray(dataJSON)) {
         return [];
     }
@@ -557,16 +558,19 @@ function convertTimestamps(dataJSON, day) {
             if (!parsedDate) return null;
 
             // Keep only items that match the day in 'day'
-            if (parsedDate.getDay() !== new Date(day).getDay()) {
+            if (formatDay(parsedDate) !== day) {
                 return null;
             }
 
             // If kept, compute fractional hour
-            d.h_of_day_frac = parsedDate.getHours() + parsedDate.getMinutes() / 60;
-            return d;
+            return {
+                ...d,
+                h_of_day_frac: parsedDate.getHours() + parsedDate.getMinutes() / 60 + parsedDate.getSeconds() / 3600
+            };
         })
         // Filter out the nulls (mismatched days or unparsable timestamps)
-        .filter(Boolean);
+        .filter(Boolean)
+        .sort((a, b) => a.h_of_day_frac - b.h_of_day_frac);
 }
 
 let loadedData = {};

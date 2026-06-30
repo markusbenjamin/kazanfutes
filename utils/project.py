@@ -370,44 +370,80 @@ class JSONNodeAtURL:
 #endregion
 
 #region GitHub
+def _normalize_git_paths(project_paths):
+    if isinstance(project_paths, (str, os.PathLike)):
+        project_paths = [project_paths]
+
+    normalized_paths = []
+    for project_path in project_paths:
+        path = os.fspath(project_path).replace('\\', '/').strip()
+        if path in ('', '.'):
+            path = '.'
+        else:
+            path = path.strip('/')
+
+        if os.path.isabs(path) or path == '..' or path.startswith('../') or '/../' in f'/{path}/':
+            raise ModuleException(f"unsafe path for repository sync: {project_path}", severity=1)
+
+        normalized_paths.append(path)
+
+    if not normalized_paths:
+        raise ModuleException("no paths were provided for repository sync", severity=1)
+
+    return normalized_paths
+
+def _run_git_command(args):
+    subprocess.run(['git', '-C', get_project_root()] + args, check=True)
+
+def sync_paths_with_repo(project_paths, commit_message, timeout_on_lock = 30):
+    """
+    Commits selected repository paths, pulls remote changes, then pushes.
+    """
+    git_paths = _normalize_git_paths(project_paths)
+
+    for git_path in git_paths:
+        check_start = datetime.now()
+        while check_lock(git_path):
+            if (datetime.now() - check_start).total_seconds() >= timeout_on_lock:
+                return False
+            time.sleep(1)
+
+    repo_sync_lock_path = os.path.join(get_project_root(), 'system', 'repo_sync.lock')
+    try:
+        with filelock.FileLock(repo_sync_lock_path, timeout=timeout_on_lock):
+            _run_git_command(['add', '--'] + git_paths)
+
+            result = subprocess.run(
+                ['git', '-C', get_project_root(), 'diff', '--cached', '--exit-code'],
+                check=False
+            )
+            if result.returncode not in (0, 1):
+                result.check_returncode()
+
+            if result.returncode != 0:
+                _run_git_command(['commit', '-m', commit_message])
+            else:
+                report("No changes staged for commit. Pulling remote changes only.", verbose=True)
+
+            _run_git_command([
+                '-c', 'merge.autoStash=false',
+                '-c', 'rebase.autoStash=false',
+                'pull', '--no-rebase', '--no-edit', 'origin', 'main'
+            ])
+            _run_git_command(['push', '-u', 'origin', 'main'])
+        return True
+    except filelock.Timeout:
+        return False
+    except subprocess.CalledProcessError:
+        raise ModuleException(f"git command failed",severity=2)
+    except Exception:
+        raise ModuleException(f"unexpected error while syncing {git_paths} with repo",severity=2)
+
 def sync_dir_with_repo(project_dir_path, commit_message, timeout_on_lock = 30):
     """
     Pushes a project directory to the GitHub repository.
     """
-    try: 
-        os.chdir(os.path.join(get_project_root(), project_dir_path))
-    except (FileNotFoundError, PermissionError, OSError):
-        raise ModuleException(f"failed to change directory to {project_dir_path}",severity=1)
-    except Exception:
-        raise ModuleException(f"unexpected error while changing directory to {project_dir_path}",severity=1)
-
-    check_start = datetime.now()
-    while check_lock(project_dir_path):
-        if (datetime.now() - check_start).total_seconds() >= timeout_on_lock:
-            return False
-        time.sleep(1)
-    try:
-        subprocess.run(['git', 'add', '.'], check=True)
-        
-        subprocess.run(['git', 'pull', 'origin','main'], check=True)
-
-        # Check if there are changes staged for commit
-        result = subprocess.run(['git', 'diff', '--cached', '--exit-code'], check=False)
-
-        # Only commit and push if there are staged changes
-        if result.returncode != 0:
-            # Handle 'git commit'
-            subprocess.run(['git', 'commit', '-m', commit_message], check=True)
-
-            # Push the changes to the remote repository
-            subprocess.run(['git', 'push','-u','origin','main'], check=True)
-        else:
-            report("No changes staged for commit. Skipping commit and push.")
-        return True
-    except subprocess.CalledProcessError:
-        raise ModuleException(f"git command failed",severity=2)
-    except Exception:
-        raise ModuleException(f"unexpected error while pushing {project_dir_path} to repo",severity=2)
+    return sync_paths_with_repo([project_dir_path], commit_message, timeout_on_lock)
     
 def check_index_lock(stale_threshold=300):
     """

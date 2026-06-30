@@ -10,12 +10,8 @@ settings['log'] = False
 success = False
 try:
     check_index_lock()
-    if not sync_dir_with_repo('services/', 'Sync services.', 30):
-        report("Services dir locked, couldn't push.")
-    if not sync_dir_with_repo('system/', 'Sync system def.', 30):
-        report("System dir locked, couldn't push.")
-    if not sync_dir_with_repo('utils/', 'Sync utils.', 30):
-        report("Utils dir locked, couldn't push.")
+    if not sync_paths_with_repo(['services/', 'system/', 'utils/'], 'Sync services, system def and utils.', 30):
+        report("Services, system or utils paths locked, couldn't push.")
     success = True
 except ModuleException as e:
     ServiceException("Module error while trying to sync services, system def and utils with repo", original_exception=e, severity = 2)
