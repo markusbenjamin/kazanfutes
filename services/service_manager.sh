@@ -29,6 +29,8 @@ MANAGER_PATH=$MOUNT_POINT/kazanfutes/services/service_manager.sh
 LIST=$MOUNT_POINT/kazanfutes/services/services_and_timers.list
 STATE_DIR=/var/lib/kazanfutes
 DESIRED_STATE_FILE=$STATE_DIR/desired_state
+MONITOR_DIR=$STATE_DIR/unit_monitor
+NOTIFY_AFTER_SECONDS=${KAZANFUTES_NOTIFY_AFTER_SECONDS:-600}
 TARGET_NAME=kazanfutes.target
 TARGET=/etc/systemd/system/$TARGET_NAME
 WANTS=/etc/systemd/system/$TARGET_NAME.wants
@@ -171,6 +173,197 @@ service_has_timer() {
     unit_in_list "${unit%.service}.timer"
 }
 
+unit_should_be_monitored() {
+    local unit="$1"
+
+    [[ "$unit" == *.timer ]] && return 0
+    [[ "$unit" == *.service ]] || return 1
+    service_has_timer "$unit" && return 1
+    return 0
+}
+
+unit_is_healthy() {
+    local unit="$1"
+    local state
+
+    state=$(systemctl is-active "$unit" 2>/dev/null || true)
+    case "$state" in
+        active|activating|reloading|waiting)
+            return 0
+            ;;
+    esac
+
+    return 1
+}
+
+unit_state_summary() {
+    local unit="$1"
+    local active sub load result
+
+    active=$(systemctl show -p ActiveState --value "$unit" 2>/dev/null || true)
+    sub=$(systemctl show -p SubState --value "$unit" 2>/dev/null || true)
+    load=$(systemctl show -p LoadState --value "$unit" 2>/dev/null || true)
+    result=$(systemctl show -p Result --value "$unit" 2>/dev/null || true)
+
+    printf 'ActiveState=%s\nSubState=%s\nLoadState=%s\nResult=%s\n' \
+        "${active:--}" "${sub:--}" "${load:--}" "${result:--}"
+}
+
+unit_monitor_key() {
+    printf '%s' "$1" | tr '/ ' '__'
+}
+
+send_admin_email() {
+    local subject="$1"
+    local body="$2"
+
+    if ! command -v python3 >/dev/null 2>&1; then
+        printf '%spython3 missing%s; could not notify admin\n' "$RED" "$RESET" >&2
+        return 1
+    fi
+
+    KAZANFUTES_EMAIL_SUBJECT="$subject" \
+    KAZANFUTES_EMAIL_BODY="$body" \
+    PYTHONPATH="$MOUNT_POINT/kazanfutes" \
+    python3 -c 'import os; from utils.project import notify_admin; notify_admin(subject=os.environ["KAZANFUTES_EMAIL_SUBJECT"], body=os.environ["KAZANFUTES_EMAIL_BODY"])' \
+        >/dev/null 2>&1
+}
+
+notify_unit_outage() {
+    local unit="$1"
+    local elapsed="$2"
+    local down_since="$3"
+    local now_iso down_iso subject body
+
+    now_iso=$(date --iso-8601=seconds 2>/dev/null || date)
+    down_iso=$(date --date="@$down_since" --iso-8601=seconds 2>/dev/null || printf '%s' "$down_since")
+    subject="Kazanfutes unit not running: $unit"
+
+    body=$(cat <<EOF
+Kazanfutes expected this unit to be active, but it has been unhealthy long enough to trigger an alert.
+
+Unit: $unit
+Down since: $down_iso
+Elapsed seconds: $elapsed
+Checked at: $now_iso
+Notify threshold seconds: $NOTIFY_AFTER_SECONDS
+
+Current systemd state:
+$(unit_state_summary "$unit")
+
+The recovery timer will keep trying to restart expected-active units.
+
+Useful commands:
+  systemctl status $unit
+  journalctl -u $unit --since '$down_iso' --no-pager
+  /media/pi/program_stick/kazanfutes/services/service_manager.sh report
+EOF
+)
+
+    send_admin_email "$subject" "$body"
+}
+
+notify_unit_recovery() {
+    local unit="$1"
+    local down_since="$2"
+    local last_notified="$3"
+    local now now_iso down_iso notified_iso elapsed subject body
+
+    now=$(date +%s)
+    now_iso=$(date --iso-8601=seconds 2>/dev/null || date)
+    down_iso=$(date --date="@$down_since" --iso-8601=seconds 2>/dev/null || printf '%s' "$down_since")
+    notified_iso=$(date --date="@$last_notified" --iso-8601=seconds 2>/dev/null || printf '%s' "$last_notified")
+    elapsed=$((now - down_since))
+    subject="Kazanfutes unit recovered: $unit"
+
+    body=$(cat <<EOF
+Kazanfutes expected this unit to be active, previously sent an outage alert, and now sees it as healthy again.
+
+Unit: $unit
+Down since: $down_iso
+Outage alert sent: $notified_iso
+Recovered at: $now_iso
+Elapsed seconds: $elapsed
+
+Current systemd state:
+$(unit_state_summary "$unit")
+
+Useful commands:
+  systemctl status $unit
+  journalctl -u $unit --since '$down_iso' --no-pager
+  /media/pi/program_stick/kazanfutes/services/service_manager.sh report
+EOF
+)
+
+    send_admin_email "$subject" "$body"
+}
+
+monitor_expected_units() {
+    local unit now key unit_dir down_file notified_file down_since elapsed last_notified
+
+    [ "$(desired_state)" = "running" ] || return 0
+    mountpoint -q "$MOUNT_POINT" || return 0
+    [ -f "$LIST" ] || return 0
+
+    mkdir -p "$MONITOR_DIR"
+    now=$(date +%s)
+
+    while IFS= read -r unit; do
+        [ -z "$unit" ] && continue
+        unit_should_be_monitored "$unit" || continue
+
+        key=$(unit_monitor_key "$unit")
+        unit_dir="$MONITOR_DIR/$key"
+        down_file="$unit_dir/down_since"
+        notified_file="$unit_dir/last_notified"
+
+        if unit_is_healthy "$unit"; then
+            if [ -f "$notified_file" ]; then
+                down_since=$(sed -n '1p' "$down_file" 2>/dev/null || printf '%s' "$now")
+                last_notified=$(sed -n '1p' "$notified_file" 2>/dev/null || printf '%s' "$now")
+                case "$down_since" in
+                    ''|*[!0-9]*) down_since=$now ;;
+                esac
+                case "$last_notified" in
+                    ''|*[!0-9]*) last_notified=$now ;;
+                esac
+                notify_unit_recovery "$unit" "$down_since" "$last_notified" || true
+            fi
+            rm -rf "$unit_dir"
+            continue
+        fi
+
+        mkdir -p "$unit_dir"
+
+        if [ ! -f "$down_file" ]; then
+            printf '%s\n' "$now" >"$down_file"
+            continue
+        fi
+
+        down_since=$(sed -n '1p' "$down_file")
+        case "$down_since" in
+            ''|*[!0-9]*)
+                down_since=$now
+                printf '%s\n' "$now" >"$down_file"
+                ;;
+        esac
+
+        elapsed=$((now - down_since))
+        [ "$elapsed" -ge "$NOTIFY_AFTER_SECONDS" ] || continue
+
+        [ ! -f "$notified_file" ] || continue
+
+        if notify_unit_outage "$unit" "$elapsed" "$down_since"; then
+            printf '%s\n' "$now" >"$notified_file"
+            printf '%snotified admin%s %s has been unhealthy for %ss\n' \
+                "$YELLOW" "$RESET" "$unit" "$elapsed"
+        else
+            printf '%sfailed to notify admin%s %s has been unhealthy for %ss\n' \
+                "$RED" "$RESET" "$unit" "$elapsed"
+        fi
+    done < <(unit_lines)
+}
+
 reset_failed_units() {
     local unit
 
@@ -258,6 +451,7 @@ recover_units() {
 
     reset_failed_units
     start_missing_units || true
+    monitor_expected_units
 }
 
 install_recovery_units() {
@@ -303,6 +497,7 @@ stop_units() {
     local unit
 
     set_desired_state stopped
+    rm -rf "$MONITOR_DIR"
     systemctl stop "$TARGET_NAME" 2>/dev/null || true
 
     while IFS= read -r unit; do
@@ -481,6 +676,7 @@ start_target() {
     if mountpoint -q "$MOUNT_POINT"; then
         echo "recovering inactive timers and continuous services:"
         start_missing_units || true
+        monitor_expected_units
     else
         echo "mount is absent; inactive unit recovery skipped"
     fi

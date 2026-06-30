@@ -108,8 +108,9 @@ def report(message, *, verbose = False):
 #endregion
 
 #region Email
-def notify_admin():
-    pass
+def notify_admin(subject='Kazanfutes notification', body=''):
+    """Send an email notification to the configured admin address."""
+    return send_email(to=settings['admin_email'], subject=subject, body=body)
 
 def send_email(to, subject='', body=''):
     """
