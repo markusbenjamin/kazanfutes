@@ -6235,5 +6235,16 @@
         "reported_timestamp": "2026-07-01-16-20-28",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while acquiring boiler state: couldn't read boiler state: couldn't read state of GPIO pin 6: unexpected error while loading system/GPIO_state.json to dict: Expecting value: line 1 column 1 (char 0) (JSONDecodeError) (ModuleException) (ModuleException).",
+        "severity": 3,
+        "origin": "heating_control.py/get_system_state:270 --> project.py/get_boiler_state:776",
+        "origin_timestamp": "2026-07-01-17-00-21",
+        "registration_timestamp": "2026-07-01-17-00-21",
+        "reported": true,
+        "reported_timestamp": "2026-07-01-17-00-30",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
