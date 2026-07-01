@@ -6213,5 +6213,16 @@
         "reported_timestamp": "2026-07-01-08-00-26",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to update local copy of override_rooms: failed to interact with node 'update' via patch: HTTPSConnectionPool(host='kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app', port=443): Max retries exceeded with url: /update/override_rooms.json (Caused by NewConnectionError(\"HTTPSConnection(host='kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable\")) (ConnectionError).",
+        "severity": 3,
+        "origin": "schedule_and_config_updater.py/update_local_scheduling_files:192 --> project.py/write:317 --> project.py/interact:297",
+        "origin_timestamp": "2026-07-01-10-49-56",
+        "registration_timestamp": "2026-07-01-10-49-56",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
