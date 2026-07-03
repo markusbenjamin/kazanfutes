@@ -6290,5 +6290,16 @@
         "reported_timestamp": "2026-07-03-19-30-29",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while trying to read and log FusionSolar inverter data: Message: \n.",
+        "severity": 2,
+        "origin": "pv_logger.py:404 --> pv_logger.py/read_live_row:238 --> wait.py/until:121",
+        "origin_timestamp": "2026-07-03-22-10-38",
+        "registration_timestamp": "2026-07-03-22-10-38",
+        "reported": true,
+        "reported_timestamp": "2026-07-03-22-15-20",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
