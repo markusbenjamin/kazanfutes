@@ -6334,5 +6334,27 @@
         "reported_timestamp": "2026-07-04-09-20-31",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "module error acquiring pump powers: 'dps'.",
+        "severity": 2,
+        "origin": "pump_power_logger.py:24 --> project.py/get_pump_powers:816",
+        "origin_timestamp": "2026-07-06-03-22-44",
+        "registration_timestamp": "2026-07-06-03-22-44",
+        "reported": true,
+        "reported_timestamp": "2026-07-06-03-25-18",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while acquiring pump states: couldn't read pump states: couldn't read state of pump 1: 'dps' (KeyError) (ModuleException).",
+        "severity": 3,
+        "origin": "heating_control.py/get_system_state:254 --> project.py/get_pump_states:802",
+        "origin_timestamp": "2026-07-06-03-23-08",
+        "registration_timestamp": "2026-07-06-03-23-08",
+        "reported": true,
+        "reported_timestamp": "2026-07-06-03-25-20",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
