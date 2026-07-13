@@ -6391,24 +6391,13 @@
         "checked_timestamp": null
     },
     {
-        "message": "Could not send out daily report for 2026-07-11",
-        "severity": 1,
-        "origin": "error_manager.py/send_daily_error_report:175 --> error_manager.py:240",
-        "origin_timestamp": "2026-07-13-22-00-43",
-        "registration_timestamp": "2026-07-13-22-00-43",
-        "reported": false,
-        "reported_timestamp": null,
-        "checked": false,
-        "checked_timestamp": null
-    },
-    {
         "message": "Module error while trying to acquire presence states: couldn't get rooms presence: couldn't read presence sensors: failed to connect to Deconz API due to unexpected error: Error requesting data from 192.168.29.55: Cannot connect to host 192.168.29.55:80 ssl:default [Network is unreachable] (RequestError) (ModuleException) (ModuleException).",
         "severity": 2,
         "origin": "presence_logger.py:10 --> project.py/get_presence_rooms:1094",
         "origin_timestamp": "2026-07-13-22-04-56",
         "registration_timestamp": "2026-07-13-22-04-56",
-        "reported": false,
-        "reported_timestamp": null,
+        "reported": true,
+        "reported_timestamp": "2026-07-13-22-05-16",
         "checked": false,
         "checked_timestamp": null
     },
@@ -6424,24 +6413,13 @@
         "checked_timestamp": null
     },
     {
-        "message": "Error while trying to log open/close events",
-        "severity": 1,
-        "origin": "open_close_logger.py:72",
-        "origin_timestamp": "2026-07-13-22-04-56",
-        "registration_timestamp": "2026-07-13-22-04-56",
-        "reported": false,
-        "reported_timestamp": null,
-        "checked": false,
-        "checked_timestamp": null
-    },
-    {
         "message": "Module error while trying to acquire heatmeter states: Failed to connect to 192.168.29.25:502.",
         "severity": 2,
         "origin": "heatmeters_logger.py:26 --> project.py/get_heatmeter_data:2637",
         "origin_timestamp": "2026-07-13-22-04-56",
         "registration_timestamp": "2026-07-13-22-04-56",
-        "reported": false,
-        "reported_timestamp": null,
+        "reported": true,
+        "reported_timestamp": "2026-07-13-22-05-36",
         "checked": false,
         "checked_timestamp": null
     },
@@ -6451,8 +6429,8 @@
         "origin": "aqara_and_nous_logger.py:206 --> aqara_and_nous_logger.py/collect_air_sensor_states:114 --> aqara_and_nous_logger.py/read_deconz_sensors_raw:33",
         "origin_timestamp": "2026-07-13-22-04-57",
         "registration_timestamp": "2026-07-13-22-04-57",
-        "reported": false,
-        "reported_timestamp": null,
+        "reported": true,
+        "reported_timestamp": "2026-07-13-22-05-36",
         "checked": false,
         "checked_timestamp": null
     }
