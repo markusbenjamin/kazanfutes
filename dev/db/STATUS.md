@@ -2,6 +2,12 @@
 
 This file records the current working state of the experimental DuckDB data layer.
 
+Document boundary:
+
+- `PLAN.md` records roadmap and design direction.
+- `STATUS.md` records durable implementation state and stable known limitations.
+- `HANDOFF.md` records the live baton for context switches, interrupted runs, fragile config, latest reports, and exact next steps.
+
 ## Current Data Location
 
 Database:
@@ -52,18 +58,18 @@ Current stream count:
 
 Current loaded observation summary:
 
-- loaded stream count: `0`
-- total observation count: `0`
+- active overnight import/rebuild state is volatile; read `HANDOFF.md` for latest verified counts and latest run artifacts
 
 Loaded observations by scope/variable:
 
-- none currently loaded
+- not currently maintained here during the active overnight rebuild; regenerate from `stream_availability` after the rebuild is stable
 
 Notes:
 
 - `observations` was cleared after user-confirmed backup so the database can be rebuilt from the current parser specs.
 - the clean reinitialized database has been reloaded with `303` stream metadata rows from `metadata/stream_metadata.csv`.
 - `stream_availability.html` and `stream_availability.csv` were regenerated after clearing observations.
+- a later partial overnight import succeeded substantially before hitting a DuckDB file-lock issue; see `HANDOFF.md` for current operational state.
 
 ## Current Scripts
 
@@ -198,6 +204,14 @@ Latest report reviewed:
 
 Fail-safe runner for long local ingestion runs.
 
+Current context handoff:
+
+- `HANDOFF.md`
+
+Older focused handoff retained for reference:
+
+- `OVERNIGHT_IMPORT_HANDOFF.md`
+
 Current behavior:
 
 - hardcoded top-level config, no CLI arguments required
@@ -283,11 +297,11 @@ It exposes `DbApi`, with methods matching the local `db_queries.py` query layer,
 
 ## Current Next Step
 
-Rerun `python3 log_parser_test_modes.py`, inspect the new report, manually review `stream_ingestion_routes.csv`, and only then unlock and run `python3 log_parser_overnight_import.py` on the Windows development machine. Keep `INCLUDE_CURRENT_LOG = False` for this run, and stop any local DB API server before importing so DuckDB can open the database for writing.
+Read `HANDOFF.md` for the active overnight import/rebuild next step. Keep this section stable rather than using it as a live run log.
 
 ## Known Limitations
 
-- All catalog streams are currently empty after the observation-table reset; rebuild imports have not been rerun yet.
+- Active import/rebuild state is volatile; use `HANDOFF.md` for current run status and update this file only after stable counts are available.
 - `stream_availability` is only first/last/count and does not show gaps.
 - Sparse transition-state streams such as door/window open-close state need state-aware API summary logic for duration/open-fraction style metrics; ordinary observation means over event rows are not semantically meaningful.
 - Derived streams that depend on sparse state transitions should reconstruct intervals or use as-of/last-observation-carried-forward logic rather than treating transition rows as dense samples.

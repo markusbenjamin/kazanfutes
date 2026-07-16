@@ -8,8 +8,6 @@ from datetime import datetime
 from pathlib import Path
 from time import perf_counter
 
-import duckdb
-
 import db_manager
 import log_parser
 import log_parser_test_modes
@@ -49,6 +47,8 @@ IMPORTER_ORDER = [
 # long ingestion. room.*.occupancy_state currently comes only from Aqara occupancy.
 EXCLUDED_IMPORTERS = ["import_room_occupancy"]
 
+START_AT_IMPORTER = None
+
 # Safety breadcrumb: read dev/db/stream_ingestion_routes.csv before every broad
 # ingestion run, then replace this exact string with the required acknowledgement.
 ROUTE_REVIEW_ACK = "I_REVIEWED_STREAM_INGESTION_ROUTES_CSV_FOR_THIS_RUN"
@@ -69,7 +69,7 @@ TERMINAL_DASHBOARD_MIN_RENDER_SECONDS = 0.25
 TERMINAL_DASHBOARD_RECENT_EVENTS = 7
 TERMINAL_DASHBOARD_MAX_TARGET_LINES = 4
 
-CREATE_DB_BACKUP = False
+CREATE_DB_BACKUP = True
 
 # Optional destructive clean rebuild. Leave False for resume/append runs.
 # To use: set True, confirm you have a backup, then replace the breadcrumb below.
@@ -79,7 +79,7 @@ REQUIRED_CLEAR_OBSERVATIONS_ACK = (
     "I_BACKED_UP_AND_WANT_TO_CLEAR_OBSERVATIONS_BEFORE_IMPORT"
 )
 
-CONTINUE_ON_MODE_FAILURE = True
+CONTINUE_ON_MODE_FAILURE = False
 REFRESH_AVAILABILITY_OUTPUTS = True
 ENSURE_DB_SCHEMA_AND_METADATA = True
 
@@ -115,7 +115,10 @@ class TerminalDashboard:
     PARSED_RE = re.compile(
         r"parsed (?P<done>\d+)/(?P<total>\d+) files .*"
         r"file rows: (?P<file_rows>\d+); "
+        r"(?:staged rows: (?P<staged_rows>\d+); )?"
+        r"(?:source-reduced: (?P<source_reduced>\d+); )?"
         r"total parsed: (?P<total_parsed>\d+); "
+        r"(?:total source-reduced: (?P<total_source_reduced>\d+); )?"
         r"elapsed: (?P<elapsed>[^;]+); "
         r"last file: (?P<last_file>.+)$"
     )
@@ -674,7 +677,7 @@ def configure_log_parser(mode, stream_id_filter):
 
 
 def observation_snapshot():
-    con = duckdb.connect(str(log_parser.DB_PATH), read_only=True)
+    con = log_parser.connect(read_only=True)
     try:
         total = con.execute("SELECT count(*) FROM observations;").fetchone()[0]
         loaded_streams = con.execute("""
@@ -689,7 +692,7 @@ def observation_snapshot():
 
 
 def checkpoint_database():
-    con = duckdb.connect(str(log_parser.DB_PATH))
+    con = log_parser.connect()
     try:
         con.execute("CHECKPOINT;")
     finally:
@@ -721,7 +724,7 @@ def clear_observations_if_requested():
         f"before observations={before_total}; loaded_streams={before_streams}"
     )
 
-    con = duckdb.connect(str(log_parser.DB_PATH))
+    con = log_parser.connect()
     try:
         con.execute("DELETE FROM observations;")
         con.execute("CHECKPOINT;")
@@ -811,6 +814,17 @@ def build_import_plan():
     unordered = sorted(set(planned_stream_ids) - set(IMPORTER_ORDER))
     plan.extend((importer, planned_stream_ids[importer]) for importer in unordered)
 
+    if START_AT_IMPORTER is not None:
+        planned_importers = [importer for importer, _ in plan]
+        if START_AT_IMPORTER not in planned_importers:
+            raise ValueError(
+                f"START_AT_IMPORTER is {START_AT_IMPORTER!r}, "
+                "but that importer is not in the current plan"
+            )
+
+        start_index = planned_importers.index(START_AT_IMPORTER)
+        plan = plan[start_index:]
+
     return plan, skipped_targets, targets
 
 
@@ -892,6 +906,7 @@ def run_imports():
     out(f"ensure schema and metadata: {ENSURE_DB_SCHEMA_AND_METADATA}")
     out(f"batch file count: {BATCH_FILE_COUNT}")
     out(f"ingest targets: {INGEST_TARGETS}")
+    out(f"start at importer: {START_AT_IMPORTER or 'first planned importer'}")
     out(f"target groups: {len(targets)}")
     out(f"planned importers: {', '.join(mode for mode, _ in plan)}")
 
@@ -977,7 +992,21 @@ def run_imports():
 
     out("")
     out("refreshing availability outputs")
-    refresh_availability_outputs()
+    try:
+        refresh_availability_outputs()
+    except Exception:
+        traceback_text = traceback.format_exc()
+        out("availability refresh failed")
+        print(traceback_text, end="")
+        errors.append(
+            error_event(
+                "REFRESH_FAILURE",
+                "availability refresh failed",
+                traceback_text,
+            )
+        )
+        if TERMINAL_DASHBOARD is not None:
+            TERMINAL_DASHBOARD.record_error(errors[-1])
 
     out("")
     out("overnight log import summary")

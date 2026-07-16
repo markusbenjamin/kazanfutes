@@ -3,13 +3,15 @@ import json
 from datetime import date, datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from time import perf_counter
+from time import perf_counter, sleep
 
 import duckdb
 
 BATCH_FILE_COUNT = 10
 IMPORT_EXISTING_POLICIES = {"skip_existing", "replace_existing", "fail_on_existing"}
 IMPORT_INTERRUPTED = False
+DUCKDB_CONNECT_RETRY_SECONDS = 180
+DUCKDB_CONNECT_RETRY_INTERVAL_SECONDS = 2
 
 SCRIPT_PATH = Path(__file__).resolve()
 DEV_PATH = SCRIPT_PATH.parent.parent
@@ -384,6 +386,28 @@ HEATMETER_FIELD_MAP = {
     "return_temperature_c": ("return_temperature", 1),
 }
 
+SOURCE_REDUCTION_POLICIES = {
+    # Source-update timestamps are available; repeated archive snapshots should
+    # not create duplicate analytical rows.
+    "temperature_and_humidity": "exact",
+    "weather_station": "exact",
+
+    # These sources are state/gauge snapshots. Keep analytical change points,
+    # not every logger poll that repeats the same value.
+    "aqara_and_nous": "changes",
+    "electric_main_meter": "changes",
+    "external_temp": "changes",
+    "heatmeters": "changes",
+    "heating_control": "changes",
+    "occupancy": "changes",
+    "oktopusz_presence": "changes",
+    "presence_all": "changes",
+    "pumps": "changes",
+    "pv_inverter": "changes",
+    "radiator_temperatures": "changes",
+    "thermostats": "changes",
+}
+
 
 MODE_DESCRIPTIONS = {
     "list_modes": "print available modes",
@@ -407,8 +431,44 @@ MODE_DESCRIPTIONS = {
 }
 
 
-def connect():
-    return duckdb.connect(str(DB_PATH))
+def is_duckdb_file_lock_error(error):
+    message = str(error).lower()
+    return (
+        "cannot open file" in message
+        and (
+            "used by another process" in message
+            or "file is already open" in message
+        )
+    )
+
+
+def connect(read_only=False):
+    started_at = perf_counter()
+    next_report_at = 0
+    attempts = 0
+
+    while True:
+        attempts += 1
+        try:
+            return duckdb.connect(str(DB_PATH), read_only=read_only)
+        except Exception as error:
+            if not is_duckdb_file_lock_error(error):
+                raise
+
+            elapsed = perf_counter() - started_at
+            if elapsed >= DUCKDB_CONNECT_RETRY_SECONDS:
+                raise
+
+            if elapsed >= next_report_at:
+                mode = "read-only" if read_only else "read-write"
+                output(
+                    "DuckDB file is locked; "
+                    f"waiting to open {mode} connection "
+                    f"(attempt {attempts}, elapsed {format_seconds(elapsed)})"
+                )
+                next_report_at = elapsed + 10
+
+            sleep(DUCKDB_CONNECT_RETRY_INTERVAL_SECONDS)
 
 
 def output(message):
@@ -496,6 +556,7 @@ def report_interrupted_import(
     inserted_count,
     skipped_existing_count,
     pending_row_count,
+    source_reduced_count=0,
 ):
     output("import interrupted by Ctrl+C")
     output(f"source: {source_name}")
@@ -510,6 +571,7 @@ def report_interrupted_import(
 
     output(f"files parsed in this run: {current_index}")
     output(f"observations parsed in this run: {parsed_count}")
+    output(f"observations dropped by source reduction: {source_reduced_count}")
     output(f"observations inserted in completed batches: {inserted_count}")
     output(f"existing observations skipped in completed batches: {skipped_existing_count}")
     output(f"pending uncommitted rows discarded: {pending_row_count}")
@@ -603,8 +665,28 @@ def configured_source_paths(source_name):
 
 
 def iter_ndjson(path):
-    with path.open(encoding="utf-8") as file:
-        for line_number, line in enumerate(file, start=1):
+    decode_error_count = 0
+    decode_error_report_limit = 5
+
+    with path.open("rb") as file:
+        for line_number, raw_line in enumerate(file, start=1):
+            raw_line = raw_line.strip()
+            if not raw_line:
+                continue
+
+            try:
+                line = raw_line.decode("utf-8")
+            except UnicodeDecodeError as error:
+                decode_error_count += 1
+                if decode_error_count <= decode_error_report_limit:
+                    output(
+                        f"skipped undecodable line in {path} "
+                        f"line {line_number}: {error}"
+                    )
+                elif decode_error_count == decode_error_report_limit + 1:
+                    output(f"further undecodable lines in {path} suppressed")
+                continue
+
             line = line.strip()
             if not line:
                 continue
@@ -613,6 +695,9 @@ def iter_ndjson(path):
                 yield json.loads(line)
             except json.JSONDecodeError as error:
                 output(f"skipped invalid JSON in {path} line {line_number}: {error}")
+
+    if decode_error_count > decode_error_report_limit:
+        output(f"skipped {decode_error_count} undecodable lines in {path}")
 
 
 def clean_value(value, scale=1):
@@ -639,14 +724,18 @@ def add_row(rows_by_key, timestamp, stream_id, value, scale=1):
     )
 
 
-def append_row(rows, timestamp, stream_id, value, scale=1):
+def append_row(rows, timestamp, stream_id, value, scale=1, reduction_key=None):
     if timestamp is None or stream_id is None or value is None:
         return
 
     if not stream_id_is_selected(stream_id):
         return
 
-    rows.append((timestamp, stream_id, clean_value(value, scale)))
+    row = (timestamp, stream_id, clean_value(value, scale))
+    if reduction_key is not None:
+        row = (*row, reduction_key)
+
+    rows.append(row)
 
 
 def stream_id(scope_type, scope_id, variable):
@@ -741,6 +830,7 @@ def parse_aqara_and_nous_file(path):
                         timestamp,
                         target_stream_id,
                         state.get(raw_key),
+                        reduction_key=("aqara", device_name, variable),
                     )
 
         for device_name, state in states.get("nous", {}).items():
@@ -754,6 +844,7 @@ def parse_aqara_and_nous_file(path):
                     timestamp,
                     stream_id("room", room_id, variable),
                     state.get(raw_key),
+                    reduction_key=("nous", device_name, variable),
                 )
 
     rows.extend(occupancy_rows_by_key.values())
@@ -782,7 +873,9 @@ def parse_oktopusz_presence_file(path):
     rows_by_key = {}
 
     for record in iter_ndjson(path):
-        timestamp = parse_timestamp(record.get("timestamp"))
+        timestamp = parse_timestamp(
+            record.get("last_updated") or record.get("timestamp")
+        )
         add_row(
             rows_by_key,
             timestamp,
@@ -797,7 +890,7 @@ def parse_presence_all_file(path):
     rows_by_key = {}
 
     for record in iter_ndjson(path):
-        timestamp = parse_timestamp(record.get("timestamp"))
+        fallback_timestamp = parse_timestamp(record.get("timestamp"))
         states = record.get("states", {})
 
         for room_id, state in states.items():
@@ -807,6 +900,7 @@ def parse_presence_all_file(path):
             if state.get("reachable") is not True:
                 continue
 
+            timestamp = parse_timestamp(state.get("last_updated")) or fallback_timestamp
             add_row(
                 rows_by_key,
                 timestamp,
@@ -1001,7 +1095,7 @@ def parse_thermostats_file(path):
     unmapped_thermostat_keys = set()
 
     for record in iter_ndjson(path):
-        timestamp = parse_timestamp(record.get("timestamp"))
+        fallback_timestamp = parse_timestamp(record.get("timestamp"))
         states = record.get("states", {})
 
         for thermostat_key, state in states.items():
@@ -1011,6 +1105,9 @@ def parse_thermostats_file(path):
                 unmapped_thermostat_keys.add(f"{thermostat_key}->{thermostat_id}")
                 continue
 
+            timestamp = parse_timestamp(
+                state.get("lastupdated") or state.get("last_updated")
+            ) or fallback_timestamp
             add_row(
                 rows_by_key,
                 timestamp,
@@ -1094,7 +1191,7 @@ def load_imported_observations(con, rows):
 
 def insert_observation_batch(con, rows):
     if not rows:
-        return 0, []
+        return 0, [], 0
 
     transaction_started = False
 
@@ -1340,6 +1437,54 @@ def insert_observation_batch(con, rows):
         raise
 
 
+def source_reduction_policy(source_name):
+    return SOURCE_REDUCTION_POLICIES.get(source_name, "none")
+
+
+def source_reduction_description(policy):
+    if policy == "exact":
+        return "drop exact duplicate analytical rows"
+
+    if policy == "changes":
+        return "drop exact duplicates and consecutive same-value snapshots"
+
+    return "none"
+
+
+def reduce_source_rows(source_name, rows, reduction_state):
+    policy = source_reduction_policy(source_name)
+    if policy == "none" or not rows:
+        return rows, 0
+
+    rows = sorted(rows)
+    kept_rows = []
+    dropped_count = 0
+    seen_rows = reduction_state.setdefault("seen_rows", set())
+    last_values = reduction_state.setdefault("last_values", {})
+
+    for row in rows:
+        timestamp, target_stream_id, value = row[:3]
+        reduction_key = row[3] if len(row) > 3 else target_stream_id
+
+        seen_key = (reduction_key, timestamp, target_stream_id, value)
+        if seen_key in seen_rows:
+            dropped_count += 1
+            continue
+
+        if policy == "changes":
+            previous_value = last_values.get(reduction_key)
+            if reduction_key in last_values and previous_value == value:
+                dropped_count += 1
+                continue
+
+            last_values[reduction_key] = value
+
+        seen_rows.add(seen_key)
+        kept_rows.append((timestamp, target_stream_id, value))
+
+    return kept_rows, dropped_count
+
+
 def import_source(source_name, parse_file):
     global IMPORT_INTERRUPTED
 
@@ -1355,13 +1500,16 @@ def import_source(source_name, parse_file):
     inserted_count = 0
     skipped_existing_count = 0
     parsed_count = 0
+    source_reduced_count = 0
     current_index = 0
     last_committed_index = 0
     phase = "starting"
     unknown_stream_ids = set()
     pending_rows = []
+    reduction_state = {}
 
     try:
+        reduction_policy = source_reduction_policy(source_name)
         report(f"importing {source_name}")
         report(f"date range: {START_DATE or 'first'} to {END_DATE or 'last'}")
         report(f"include current log: {INCLUDE_CURRENT_LOG}")
@@ -1370,6 +1518,10 @@ def import_source(source_name, parse_file):
         report(f"last log file: {paths[-1]}")
         report(f"batch file count: {BATCH_FILE_COUNT}")
         report(f"existing observation policy: {IMPORT_EXISTING_POLICY}")
+        report(
+            "source reduction: "
+            f"{source_reduction_description(reduction_policy)}"
+        )
         stream_id_filter = configured_stream_id_filter()
         if stream_id_filter is None:
             report("stream ID filter: all parsed streams")
@@ -1384,9 +1536,15 @@ def import_source(source_name, parse_file):
             current_index = index
             phase = f"parsing file {index}/{len(paths)}: {path}"
             file_started_at = perf_counter()
-            rows = parse_file(path)
+            parsed_rows = parse_file(path)
             file_seconds = perf_counter() - file_started_at
-            parsed_count += len(rows)
+            parsed_count += len(parsed_rows)
+            rows, reduced_in_file = reduce_source_rows(
+                source_name,
+                parsed_rows,
+                reduction_state,
+            )
+            source_reduced_count += reduced_in_file
 
             phase = f"staging parsed rows from file {index}/{len(paths)}: {path}"
             pending_rows.extend(rows)
@@ -1396,8 +1554,11 @@ def import_source(source_name, parse_file):
                 report(
                     f"parsed {index}/{len(paths)} files "
                     f"({index / len(paths):.0%}); "
-                    f"file rows: {len(rows)}; "
+                    f"file rows: {len(parsed_rows)}; "
+                    f"staged rows: {len(rows)}; "
+                    f"source-reduced: {reduced_in_file}; "
                     f"total parsed: {parsed_count}; "
+                    f"total source-reduced: {source_reduced_count}; "
                     f"elapsed: {format_seconds(elapsed_seconds)}; "
                     f"last file: {format_seconds(file_seconds)}"
                 )
@@ -1447,6 +1608,7 @@ def import_source(source_name, parse_file):
         elapsed_seconds = perf_counter() - started_at
         report(f"finished {source_name} in {format_seconds(elapsed_seconds)}")
         report(f"parsed observations: {parsed_count}")
+        report(f"source-reduced observations: {source_reduced_count}")
         report(f"inserted observations: {inserted_count}")
         report(f"skipped existing observations: {skipped_existing_count}")
         report(f"unknown stream IDs skipped: {len(unknown_stream_ids)}")
@@ -1463,6 +1625,7 @@ def import_source(source_name, parse_file):
             inserted_count=inserted_count,
             skipped_existing_count=skipped_existing_count,
             pending_row_count=len(pending_rows),
+            source_reduced_count=source_reduced_count,
         )
 
     finally:
