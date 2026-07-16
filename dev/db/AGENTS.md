@@ -6,22 +6,26 @@ It is not project status, not a roadmap, and not a task list.
 
 ## document boundaries
 
-Additional handoff document:
+Additional handoff documents:
 
+- `HANDOFF.md` - current active handoff for context switches, interrupted runs, or resumed work
 - `RASPI_HANDOFF.md` - Raspberry Pi/Tailscale access handoff for dev API testing
 
 Use the existing documents as the source of truth:
 
 - `PROJECT_ORIENTATION.md` — what this subproject is
 - `PLAN.md` — design direction and roadmap
-- `STATUS.md` — current implementation state
+- `STATUS.md` — durable current implementation state, not a live task log
+- `HANDOFF.md` — latest operational baton for the next agent when context changes
 - `REPO_MAP.txt` — repository navigation and large/ignored areas
 
 Do not duplicate those documents here.
 
 Do not put current next steps, live observations, stream counts, loaded-data status, or design decisions in this file.
 
-When implementation state changes, update `STATUS.md`, not this file.
+When durable implementation state changes, update `STATUS.md`, not this file.
+
+When stopping mid-task, switching context, handing off an interrupted run, or leaving a fragile operational state, write/update `HANDOFF.md`.
 
 When design direction changes, update `PLAN.md`, not this file.
 
@@ -33,9 +37,10 @@ At the start of work in `dev/db`, read:
 
 1. `PROJECT_ORIENTATION.md`
 2. `STATUS.md`
-3. `PLAN.md`
-4. `RASPI_HANDOFF.md`
-5. `REPO_MAP.txt`
+3. `HANDOFF.md`
+4. `PLAN.md`
+5. `RASPI_HANDOFF.md`
+6. `REPO_MAP.txt`
 
 Then inspect only files directly needed for the current task.
 
@@ -146,17 +151,27 @@ Do not treat a broad import as validation unless explicitly requested.
 
 ## handoff discipline
 
-After a meaningful implementation change, or before stopping at a context/usage boundary, update `STATUS.md` if the change affects the live project state.
+Keep `STATUS.md` and `HANDOFF.md` separate:
+
+- `STATUS.md` records durable implementation state: current scripts, behavior, schema assumptions, stable checks, and stable known limitations.
+- `HANDOFF.md` records the live baton: what is currently happening, latest relevant files/reports, fragile config flags, blockers, exact next commands, and what not to do.
+- `PLAN.md` records roadmap/design direction, not live state.
+
+After a meaningful implementation change, update `STATUS.md` if the change affects durable project state.
+
+Before stopping at a context/usage boundary, interrupted run, or fragile operational state, update `HANDOFF.md`.
 
 Keep the update compact. Record only:
 
-- what changed
+- what changed or was observed
 - what was checked
 - whether it worked
-- any blocker or unresolved decision
-- the next useful step
+- any blocker, fragile config, or unresolved decision
+- the exact next useful step
 
 Do not update `STATUS.md` for purely exploratory reads, failed experiments with no retained change, trivial typo fixes, or local scratch work that does not affect the project state.
+
+Do not use `STATUS.md` as a blow-by-blow run log. For volatile run state, update `HANDOFF.md` instead.
 
 Final responses should be short and operational:
 
@@ -175,4 +190,4 @@ Pause and report before continuing when:
 - a long import would be required
 - the task would cross file responsibilities
 - the requested change would alter the database model
-- the context has become large enough that `STATUS.md` should be updated before continuing
+- the context has become large enough that `STATUS.md` or `HANDOFF.md` should be updated before continuing
