@@ -6466,5 +6466,16 @@
         "reported_timestamp": "2026-07-23-01-30-23",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to set light state tuzzaro_ajtonal: cannot set state of light tuzzaro_ajtonal: 403 Client Error: Forbidden for url: http://127.0.0.1:80/api%0AE22495BD8D/lights/1/state: 403 Client Error: Forbidden for url: http://127.0.0.1:80/api%0AE22495BD8D/lights/1/state (HTTPError).",
+        "severity": 2,
+        "origin": "light_state_manager.py:43 --> project.py/set_light_state:1529",
+        "origin_timestamp": "2026-07-27-19-09-45",
+        "registration_timestamp": "2026-07-27-19-09-45",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
