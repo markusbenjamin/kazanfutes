@@ -6499,5 +6499,16 @@
         "reported_timestamp": "2026-08-15-20-40-19",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while extracting presence patterns.: couldn't export dict to /config/scheduling/local_scheduling_files/occupancy.json: [Errno 13] Permission denied: '/config' (PermissionError).",
+        "severity": 2,
+        "origin": "presence_pattern_calculator.py:59 --> project.py/export_dict_as_json:3144",
+        "origin_timestamp": "2026-08-24-00-07-48",
+        "registration_timestamp": "2026-08-24-00-07-48",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
