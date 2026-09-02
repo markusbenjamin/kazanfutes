@@ -7,7 +7,7 @@ Included:
 - Tuya pump smart plugs from system/setup.json
 - Modbus heat-meter gateway and meters 1..4
 - HomeWizard P1 meter
-- ConBee II USB coordinator + deCONZ API
+- ConBee II / deCONZ coordinator
 
 Intentionally excluded:
 - Shelly devices on the separate 192.168.101.x subnet
@@ -15,9 +15,8 @@ Intentionally excluded:
   those are reached through deCONZ rather than directly through the LAN
 - Internet/cloud services
 
-This script performs read-only/probe operations only. A device being switched
-off (for example a Tuya pump plug whose relay state is off) is still reported OK
-when it responds correctly.
+Health means that the endpoint returned a valid response. Zero readings and OFF
+states are valid and do not count as faults.
 
 Run from repository root:
     python dev/dev_scripts/local_subnet_device_tester.py
@@ -33,7 +32,7 @@ import glob
 import socket
 import subprocess
 from dataclasses import dataclass
-from typing import Callable, Optional
+from typing import Callable
 
 import requests
 
@@ -57,7 +56,12 @@ class CheckResult:
     detail: str = ""
 
 
-def _safe_check(name: str, address: str, func: Callable[[], str | None]) -> CheckResult:
+def _safe_check(
+    name: str,
+    address: str,
+    func: Callable[[], str | None],
+    issue_hint: str,
+) -> CheckResult:
     try:
         detail = func() or ""
         return CheckResult(name=name, address=address, ok=True, detail=detail)
@@ -66,7 +70,7 @@ def _safe_check(name: str, address: str, func: Callable[[], str | None]) -> Chec
             name=name,
             address=address,
             ok=False,
-            detail=f"{type(exc).__name__}: {exc}",
+            detail=f"suspected: {issue_hint}; error: {type(exc).__name__}: {exc}",
         )
 
 
@@ -76,49 +80,110 @@ def _tcp_probe(host: str, port: int, timeout: float = 3.0) -> str:
 
 
 def _check_tuya_pump(cycle: str) -> str:
-    # Read only: the return value may be True or False depending on the relay
-    # state. Either value proves that the plug answered successfully.
-    state = project.get_pump_state(cycle)
-    if not isinstance(state, bool):
-        raise RuntimeError(f"unexpected pump state response: {state!r}")
-    return f"relay={'ON' if state else 'OFF'}"
+    """
+    A Tuya plug is OK if either its relay-state query or its power query returns
+    a valid value. OFF (0) and 0 W are both normal valid responses.
+    """
+    state = None
+    power = None
+    state_error = None
+    power_error = None
+
+    try:
+        state = project.get_pump_state(cycle)
+    except Exception as exc:
+        state_error = f"{type(exc).__name__}: {exc}"
+
+    try:
+        powers = project.get_pump_powers([cycle])
+        if isinstance(powers, dict):
+            power = powers.get(cycle)
+    except Exception as exc:
+        power_error = f"{type(exc).__name__}: {exc}"
+
+    state_ok = isinstance(state, (int, bool)) and state in (0, 1)
+    power_ok = isinstance(power, (int, float)) and not isinstance(power, bool)
+
+    if not state_ok and not power_ok:
+        raise RuntimeError(
+            "no valid state or power reply; "
+            f"state={state!r} ({state_error or 'invalid response'}), "
+            f"power={power!r} ({power_error or 'invalid response'})"
+        )
+
+    details = []
+    details.append(
+        f"relay={'ON' if int(state) == 1 else 'OFF'}" if state_ok else "relay=unavailable"
+    )
+    details.append(f"power={power} W" if power_ok else "power=unavailable")
+    return ", ".join(details)
 
 
 def _check_heatmeter(meter_id: int) -> str:
+    """A meter is OK when a real Modbus measurement comes back, including zero."""
     values = project.get_heatmeter_data(
         meter_id,
         ip=HEATMETER_IP,
         port=HEATMETER_PORT,
-        fields=["flow_temperature_c"],
+        fields=["flow_temperature_c", "power_w"],
     )
+
     if not isinstance(values, dict):
-        raise RuntimeError(f"unexpected response: {values!r}")
-    if values.get("flow_temperature_c") is None:
-        raise RuntimeError(f"no flow_temperature_c returned: {values!r}")
-    return f"flow_temp={values['flow_temperature_c']} C"
+        raise RuntimeError(f"unexpected response type: {type(values).__name__}")
+
+    flow_temp = values.get("flow_temperature_c")
+    power = values.get("power_w")
+
+    flow_ok = isinstance(flow_temp, (int, float)) and not isinstance(flow_temp, bool)
+    power_ok = isinstance(power, (int, float)) and not isinstance(power, bool)
+
+    if not flow_ok and not power_ok:
+        raise RuntimeError(f"no valid measurement returned: {values!r}")
+
+    details = []
+    if flow_ok:
+        details.append(f"flow_temp={flow_temp} C")
+    if power_ok:
+        details.append(f"power={power} W")
+    return ", ".join(details)
 
 
 def _check_homewizard() -> str:
     response = requests.get(HOMEWIZARD_URL, timeout=5)
     response.raise_for_status()
     data = response.json()
+
     if not isinstance(data, dict):
-        raise RuntimeError("HomeWizard response is not a JSON object")
-    if "active_power_w" not in data:
-        raise RuntimeError("HomeWizard response lacks active_power_w")
-    return f"active_power={data.get('active_power_w')} W"
+        raise RuntimeError("response is not a JSON object")
+
+    # Zero is a valid meter reading; field presence and numeric type are what
+    # matter for this health check.
+    active_power = data.get("active_power_w")
+    voltage_l1 = data.get("active_voltage_l1_v")
+
+    power_ok = isinstance(active_power, (int, float)) and not isinstance(active_power, bool)
+    voltage_ok = isinstance(voltage_l1, (int, float)) and not isinstance(voltage_l1, bool)
+
+    if not power_ok and not voltage_ok:
+        raise RuntimeError(
+            "response lacks valid active_power_w and active_voltage_l1_v readings"
+        )
+
+    details = []
+    if power_ok:
+        details.append(f"active_power={active_power} W")
+    if voltage_ok:
+        details.append(f"L1={voltage_l1} V")
+    return ", ".join(details)
 
 
 def _conbee_usb_present() -> tuple[bool, str]:
     """Look for a locally attached ConBee II without modifying anything."""
-    # First use stable /dev/serial aliases when available.
     for path in glob.glob("/dev/serial/by-id/*"):
         lowered = path.lower()
         if "conbee" in lowered or "dresden" in lowered:
             return True, path
 
-    # Fall back to lsusb. ConBee II normally identifies as Dresden Elektronik;
-    # 1cf1 is the Dresden Elektronik USB vendor ID.
     try:
         proc = subprocess.run(
             ["lsusb"],
@@ -128,7 +193,7 @@ def _conbee_usb_present() -> tuple[bool, str]:
             check=False,
         )
     except FileNotFoundError:
-        return False, "lsusb unavailable and no matching /dev/serial/by-id entry"
+        return False, "USB enumeration unavailable"
 
     text = proc.stdout or ""
     for line in text.splitlines():
@@ -136,33 +201,48 @@ def _conbee_usb_present() -> tuple[bool, str]:
         if "conbee" in lowered or "dresden elektronik" in lowered or "1cf1:" in lowered:
             return True, line.strip()
 
-    return False, "ConBee II not found in /dev/serial/by-id or lsusb"
+    return False, "ConBee II not found by /dev/serial/by-id or lsusb"
+
+
+def _manager_items(manager, label: str):
+    """Enumerate a pydeCONZ resource manager without assuming len() support."""
+    if manager is None:
+        raise RuntimeError(f"deCONZ {label} manager is missing")
+    if not hasattr(manager, "items"):
+        raise RuntimeError(f"deCONZ {label} manager has no items() method")
+    return list(manager.items())
 
 
 def _check_conbee_deconz() -> str:
+    """
+    deCONZ is considered healthy when a real state refresh succeeds and its
+    resource managers can be enumerated. USB detection is reported as supporting
+    information, but a working deCONZ state refresh is the decisive condition.
+    """
     usb_ok, usb_detail = _conbee_usb_present()
-    if not usb_ok:
-        raise RuntimeError(usb_detail)
 
-    # Existing project helper performs a real deCONZ state refresh. This checks
-    # more than whether port 80 is open: the deCONZ API must answer correctly.
     state = project.read_deconz_state()
     if state is None:
         raise RuntimeError("read_deconz_state() returned None")
 
-    if not hasattr(state, "sensors") or not hasattr(state, "lights"):
-        raise RuntimeError("deCONZ state did not expose sensors/lights collections")
+    sensor_items = _manager_items(getattr(state, "sensors", None), "sensor")
+    light_items = _manager_items(getattr(state, "lights", None), "light")
 
-    sensor_count = len(state.sensors)
-    light_count = len(state.lights)
-    return f"USB present; deCONZ API OK; sensors={sensor_count}, lights={light_count}"
+    # In this installation the Zigbee network is populated. An entirely empty
+    # state is therefore suspicious even if the API itself answered.
+    if not sensor_items and not light_items:
+        raise RuntimeError("deCONZ refreshed but returned zero sensor/light resources")
+
+    usb_text = "USB detected" if usb_ok else f"USB not independently detected ({usb_detail})"
+    return (
+        f"deCONZ state OK; sensors={len(sensor_items)}, lights={len(light_items)}; "
+        f"{usb_text}"
+    )
 
 
 def collect_results() -> list[CheckResult]:
     results: list[CheckResult] = []
 
-    # Tuya devices are taken dynamically from the existing project setup so the
-    # tester follows future IP/config changes without duplicating secrets here.
     try:
         pumps = project.get_pumps_info()
     except Exception as exc:
@@ -171,7 +251,10 @@ def collect_results() -> list[CheckResult]:
                 name="Tuya pump configuration",
                 address="system/setup.json",
                 ok=False,
-                detail=f"{type(exc).__name__}: {exc}",
+                detail=(
+                    "suspected: local pump configuration cannot be loaded; "
+                    f"error: {type(exc).__name__}: {exc}"
+                ),
             )
         )
         pumps = {}
@@ -184,16 +267,22 @@ def collect_results() -> list[CheckResult]:
                 name=f"Tuya pump {cycle}",
                 address=ip,
                 func=lambda cycle=cycle: _check_tuya_pump(cycle),
+                issue_hint=(
+                    "Tuya plug is unreachable, its local key/IP is wrong, or it is not "
+                    "returning valid state/power data"
+                ),
             )
         )
 
-    # Report the Modbus TCP gateway separately. If it is down, all meter reads
-    # will also fail, making the root cause immediately visible.
     results.append(
         _safe_check(
             name="Heatmeter Modbus gateway",
             address=f"{HEATMETER_IP}:{HEATMETER_PORT}",
             func=lambda: _tcp_probe(HEATMETER_IP, HEATMETER_PORT),
+            issue_hint=(
+                "Modbus TCP gateway is offline, unreachable from the RasPi, or port 502 "
+                "is not listening"
+            ),
         )
     )
 
@@ -203,6 +292,10 @@ def collect_results() -> list[CheckResult]:
                 name=f"Heatmeter {meter_id}",
                 address=f"{HEATMETER_IP} / meter {meter_id}",
                 func=lambda meter_id=meter_id: _check_heatmeter(meter_id),
+                issue_hint=(
+                    f"heatmeter {meter_id} is not answering through the Modbus gateway, "
+                    "or its register read is failing"
+                ),
             )
         )
 
@@ -211,6 +304,10 @@ def collect_results() -> list[CheckResult]:
             name="HomeWizard P1",
             address="192.168.29.88",
             func=_check_homewizard,
+            issue_hint=(
+                "HomeWizard is unreachable, its local API is disabled/failing, or its "
+                "meter response is malformed"
+            ),
         )
     )
 
@@ -219,6 +316,10 @@ def collect_results() -> list[CheckResult]:
             name="ConBee II + deCONZ",
             address="local USB / local deCONZ API",
             func=_check_conbee_deconz,
+            issue_hint=(
+                "deCONZ cannot refresh/enumerate the Zigbee network; possible deCONZ "
+                "service, API credential, serial-device, or ConBee coordinator problem"
+            ),
         )
     )
 
@@ -235,8 +336,9 @@ def print_report(results: list[CheckResult]) -> None:
     for result in results:
         status = "OK" if result.ok else "NOT OK"
         print(f"{result.name:<{name_width}}  {result.address:<{address_width}}  {status}")
-        if not result.ok and result.detail:
-            print(f"  -> {result.detail}")
+        if result.detail:
+            prefix = "  -> " if not result.ok else "     "
+            print(f"{prefix}{result.detail}")
 
     print("=" * 72)
     overall = all(result.ok for result in results)
