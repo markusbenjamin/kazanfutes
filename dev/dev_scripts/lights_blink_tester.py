@@ -2,13 +2,14 @@
 """
 Sequential smart-light blink tester for the kazanfutes deCONZ installation.
 
-Each real bulb is toggled once, then restored to its original on/off state.
-Brightness, color temperature, XY color, effects, etc. are left untouched.
+Uses the existing utils.project light-control functions. The tester normalizes
+the deCONZ access parameters only inside this Python process because the secret
+files may contain trailing newlines while set_light_state() concatenates the
+values directly.
 
-Known non-bulb deCONZ light resources (such as SONOFF DONGLE-E_R routers) are
-skipped.
+No shared utility or secret file is modified.
 
-Run from the repository root, for example:
+Run from the repository root:
     python dev/dev_scripts/lights_blink_tester.py
 
 Optional:
@@ -21,19 +22,45 @@ import argparse
 import time
 from typing import Any
 
-from utils.project import *  # noqa: F401,F403 - project light/deCONZ helpers
+import utils.project as project
 
 
-settings["log"] = False
-settings["verbosity"] = False
-
+project.settings["log"] = False
+project.settings["verbosity"] = False
 
 EXCLUDED_MODELS = {"DONGLE-E_R"}
 EXCLUDED_NAME_PREFIXES = ("router_",)
 
 
+def _install_local_deconz_param_normalizer() -> None:
+    """
+    Make the existing project light helpers see normalized access parameters.
+
+    This changes only the imported module object in this tester process.
+    utils/project.py and the secret files are not written or modified.
+    """
+    original_get_params = project.get_deconz_access_params
+
+    def get_clean_params():
+        params = dict(original_get_params())
+        api_url = str(params.get("api_url") or "").strip().rstrip("/")
+        api_key = str(params.get("api_key") or "").strip()
+
+        if not api_url:
+            raise RuntimeError("deCONZ API URL is empty")
+        if not api_key:
+            raise RuntimeError("deCONZ API key is empty")
+
+        # set_light_state() concatenates api_url + api_key directly, so the URL
+        # supplied to it must end with exactly one slash.
+        params["api_url"] = api_url + "/"
+        params["api_key"] = api_key
+        return params
+
+    project.get_deconz_access_params = get_clean_params
+
+
 def _is_real_light(raw: dict[str, Any]) -> tuple[bool, str | None]:
-    """Reject deCONZ light resources that are known not to be physical bulbs."""
     model = str(raw.get("modelid") or "").strip()
     name = str(raw.get("name") or "").strip()
 
@@ -47,40 +74,43 @@ def _is_real_light(raw: dict[str, Any]) -> tuple[bool, str | None]:
 
 
 def _command_light(light_id: Any, name: str, on: bool) -> None:
-    """Set only the on/off field and treat an explicit False return as failure."""
-    result = set_light_state(light_id, name, {"on": on})
-    if result is False:
-        raise RuntimeError("set_light_state() returned False")
+    """Use the project's existing light setter."""
+    result = project.set_light_state(light_id, name, {"on": on})
+    if result is not True:
+        raise RuntimeError(f"set_light_state() returned {result!r}")
 
 
 def blink_light(light_id: Any, raw: dict[str, Any], duration: float) -> dict[str, Any]:
-    """Toggle one light, wait, and restore its original on/off state."""
     name = str(raw.get("name") or f"light_{light_id}")
     state = raw.get("state") or {}
     original_on = state.get("on")
+    reachable = state.get("reachable")
 
     result = {
         "id": str(light_id),
         "name": name,
         "model": raw.get("modelid"),
-        "manufacturer": raw.get("manufacturername"),
-        "reachable": state.get("reachable"),
+        "reachable": reachable,
         "original_on": original_on,
         "status": "pending",
         "error": None,
         "restore_error": None,
     }
 
+    if reachable is False:
+        result["status"] = "unreachable"
+        result["error"] = "deCONZ reports light unreachable"
+        return result
+
     if not isinstance(original_on, bool):
         result["status"] = "skipped"
         result["error"] = "light has no boolean state['on'] value"
         return result
 
-    test_on = not original_on
     changed = False
 
     try:
-        _command_light(light_id, name, test_on)
+        _command_light(light_id, name, not original_on)
         changed = True
         time.sleep(duration)
         result["status"] = "blink_commanded"
@@ -121,10 +151,12 @@ def main() -> int:
     if args.gap < 0:
         parser.error("--gap must be 0 or greater")
 
+    _install_local_deconz_param_normalizer()
+
     candidates = []
     excluded = []
 
-    for light_id, info in read_lights():
+    for light_id, info in project.read_lights():
         raw = info.raw
         include, reason = _is_real_light(raw)
         if include:
@@ -178,6 +210,8 @@ def main() -> int:
                 "  WARNING: blink was sent but restoring the original state failed: "
                 f"{result['restore_error']}"
             )
+        elif result["status"] == "unreachable":
+            print("  UNREACHABLE: deCONZ currently reports this light offline.")
         elif result["status"] == "skipped":
             print(f"  SKIP: {result['error']}")
         else:
@@ -188,19 +222,21 @@ def main() -> int:
 
     ok = sum(result["status"] == "blink_commanded" for result in results)
     failed = sum(result["status"] in {"failed", "restore_failed"} for result in results)
+    unreachable = sum(result["status"] == "unreachable" for result in results)
     skipped = sum(result["status"] == "skipped" for result in results)
 
     print()
     print(
-        f"RESULT: {ok} blinked/restored, {failed} failed, "
-        f"{skipped} skipped, {len(excluded)} non-bulb resources excluded."
+        f"RESULT: {ok} blinked/restored, {failed} command failures, "
+        f"{unreachable} unreachable, {skipped} skipped, "
+        f"{len(excluded)} non-bulb resources excluded."
     )
     print(
-        "Note: this confirms command/API success only. Visual confirmation is still "
-        "needed to prove that each named physical lamp actually blinked."
+        "Visual confirmation is still required to prove that each named physical "
+        "lamp actually blinked."
     )
 
-    return 1 if failed else 0
+    return 1 if failed or unreachable else 0
 
 
 if __name__ == "__main__":
