@@ -1,0 +1,4225 @@
+{
+  "generated_at": "2026-09-02-18-05-13",
+  "host": "phoscon",
+  "mode": "read_only",
+  "stale_after_hours": 24.0,
+  "skipped_categories": {
+    "nous_sensors": "explicitly skipped: known unavailable",
+    "aqara_sensors": "explicitly skipped: known unavailable"
+  },
+  "summary": {
+    "totals": {
+      "total": 70,
+      "ok": 58,
+      "degraded": 1,
+      "unreachable": 11,
+      "error": 0,
+      "not_tested": 0,
+      "category_errors": 0
+    },
+    "by_category": {
+      "tuya_smart_plugs": {
+        "total": 4,
+        "ok": 4,
+        "degraded": 0,
+        "unreachable": 0,
+        "error": 0,
+        "not_tested": 0,
+        "category_error": null
+      },
+      "modbus_heatmeters": {
+        "total": 4,
+        "ok": 4,
+        "degraded": 0,
+        "unreachable": 0,
+        "error": 0,
+        "not_tested": 0,
+        "category_error": null
+      },
+      "smart_bulbs": {
+        "total": 15,
+        "ok": 11,
+        "degraded": 1,
+        "unreachable": 3,
+        "error": 0,
+        "not_tested": 0,
+        "category_error": null
+      },
+      "sonoff_temperature_humidity": {
+        "total": 13,
+        "ok": 9,
+        "degraded": 0,
+        "unreachable": 4,
+        "error": 0,
+        "not_tested": 0,
+        "category_error": null
+      },
+      "sonoff_motion_presence": {
+        "total": 9,
+        "ok": 7,
+        "degraded": 0,
+        "unreachable": 2,
+        "error": 0,
+        "not_tested": 0,
+        "category_error": null
+      },
+      "danfoss_ally_valves": {
+        "total": 11,
+        "ok": 9,
+        "degraded": 0,
+        "unreachable": 2,
+        "error": 0,
+        "not_tested": 0,
+        "category_error": null
+      },
+      "ikea_parasoll": {
+        "total": 0,
+        "ok": 0,
+        "degraded": 0,
+        "unreachable": 0,
+        "error": 0,
+        "not_tested": 0,
+        "category_error": null
+      },
+      "shelly_radiator_temperature": {
+        "total": 10,
+        "ok": 10,
+        "degraded": 0,
+        "unreachable": 0,
+        "error": 0,
+        "not_tested": 0,
+        "category_error": null
+      },
+      "shelly_electric_submeters": {
+        "total": 2,
+        "ok": 2,
+        "degraded": 0,
+        "unreachable": 0,
+        "error": 0,
+        "not_tested": 0,
+        "category_error": null
+      },
+      "ws90_weather_probe": {
+        "total": 1,
+        "ok": 1,
+        "degraded": 0,
+        "unreachable": 0,
+        "error": 0,
+        "not_tested": 0,
+        "category_error": null
+      },
+      "homewizard_p1": {
+        "total": 1,
+        "ok": 1,
+        "degraded": 0,
+        "unreachable": 0,
+        "error": 0,
+        "not_tested": 0,
+        "category_error": null
+      }
+    }
+  },
+  "categories": {
+    "tuya_smart_plugs": {
+      "label": "Tuya smart plugs",
+      "probe": "get_pump_state() + get_pump_powers()",
+      "category_error": null,
+      "units": [
+        {
+          "unit": "1",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "configured_ip": "192.168.29.77",
+          "checks": {
+            "state": {
+              "ok": true,
+              "elapsed_ms": 19.6,
+              "data": 0
+            },
+            "electrical": {
+              "ok": true,
+              "elapsed_ms": 20.6,
+              "data": 0.0
+            }
+          }
+        },
+        {
+          "unit": "2",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "configured_ip": "192.168.29.74",
+          "checks": {
+            "state": {
+              "ok": true,
+              "elapsed_ms": 23.8,
+              "data": 0
+            },
+            "electrical": {
+              "ok": true,
+              "elapsed_ms": 29.8,
+              "data": 0.0
+            }
+          }
+        },
+        {
+          "unit": "3",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "configured_ip": "192.168.29.90",
+          "checks": {
+            "state": {
+              "ok": true,
+              "elapsed_ms": 22.6,
+              "data": 0
+            },
+            "electrical": {
+              "ok": true,
+              "elapsed_ms": 33.5,
+              "data": 0.0
+            }
+          }
+        },
+        {
+          "unit": "4",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "configured_ip": "192.168.29.53",
+          "checks": {
+            "state": {
+              "ok": true,
+              "elapsed_ms": 60.3,
+              "data": 0
+            },
+            "electrical": {
+              "ok": true,
+              "elapsed_ms": 58.3,
+              "data": 0.0
+            }
+          }
+        }
+      ]
+    },
+    "modbus_heatmeters": {
+      "label": "Heat meters over Modbus",
+      "probe": "get_heatmeter_data()",
+      "category_error": null,
+      "units": [
+        {
+          "unit": "1",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "fields_requested": [
+            "flow_temperature_c",
+            "return_temperature_c",
+            "volume_flow_m3h",
+            "power_w",
+            "energy_kwh",
+            "volume_m3"
+          ],
+          "check": {
+            "ok": true,
+            "elapsed_ms": 60.6,
+            "data": {
+              "energy_kwh": 58342000.0,
+              "volume_m3": 7116.15576171875,
+              "power_w": 0.0,
+              "volume_flow_m3h": 0.0,
+              "flow_temperature_c": 28.0,
+              "return_temperature_c": 28.0
+            }
+          }
+        },
+        {
+          "unit": "2",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "fields_requested": [
+            "flow_temperature_c",
+            "return_temperature_c",
+            "volume_flow_m3h",
+            "power_w",
+            "energy_kwh",
+            "volume_m3"
+          ],
+          "check": {
+            "ok": true,
+            "elapsed_ms": 60.1,
+            "data": {
+              "energy_kwh": 53043000.0,
+              "volume_m3": 7810.06396484375,
+              "power_w": 0.0,
+              "volume_flow_m3h": 0.0,
+              "flow_temperature_c": 28.0,
+              "return_temperature_c": 27.0
+            }
+          }
+        },
+        {
+          "unit": "3",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "fields_requested": [
+            "flow_temperature_c",
+            "return_temperature_c",
+            "volume_flow_m3h",
+            "power_w",
+            "energy_kwh",
+            "volume_m3"
+          ],
+          "check": {
+            "ok": true,
+            "elapsed_ms": 61.0,
+            "data": {
+              "energy_kwh": 33391000.0,
+              "volume_m3": 4507.22119140625,
+              "power_w": 0.0,
+              "volume_flow_m3h": 0.0,
+              "flow_temperature_c": 28.0,
+              "return_temperature_c": 28.0
+            }
+          }
+        },
+        {
+          "unit": "4",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "fields_requested": [
+            "flow_temperature_c",
+            "return_temperature_c",
+            "volume_flow_m3h",
+            "power_w",
+            "energy_kwh",
+            "volume_m3"
+          ],
+          "check": {
+            "ok": true,
+            "elapsed_ms": 60.0,
+            "data": {
+              "energy_kwh": 6188000.0,
+              "volume_m3": 2129.343994140625,
+              "power_w": 0.0,
+              "volume_flow_m3h": 0.0,
+              "flow_temperature_c": 28.0,
+              "return_temperature_c": 28.0
+            }
+          }
+        }
+      ]
+    },
+    "smart_bulbs": {
+      "label": "Smart bulbs",
+      "probe": "deCONZ light snapshot via read_deconz_state()",
+      "category_error": null,
+      "units": [
+        {
+          "unit": "Dimmable light 13",
+          "physical_id": "08:b9:5f:ff:fe:c7:1d:49",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "SONOFF"
+          ],
+          "model": [
+            "DONGLE-E_R"
+          ],
+          "deconz_types": [
+            "Dimmable light",
+            "Extended color light"
+          ],
+          "names": [
+            "Dimmable light 13",
+            "router_1"
+          ],
+          "battery_percent": null,
+          "last_seen": "2026-09-02T16:04Z",
+          "last_seen_age_hours": 0.02,
+          "last_updated": null,
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "13",
+              "name": "Dimmable light 13",
+              "type": "Dimmable light",
+              "manufacturer": "SONOFF",
+              "model": "DONGLE-E_R",
+              "uniqueid": "08:b9:5f:ff:fe:c7:1d:49-01",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2026-08-10T22:30:08Z",
+              "state": {
+                "alert": "none",
+                "bri": 51,
+                "on": true,
+                "reachable": true
+              },
+              "config": {
+                "groups": [
+                  "0",
+                  "1"
+                ]
+              }
+            },
+            {
+              "endpoint_id": "14",
+              "name": "router_1",
+              "type": "Extended color light",
+              "manufacturer": "SONOFF",
+              "model": "DONGLE-E_R",
+              "uniqueid": "08:b9:5f:ff:fe:c7:1d:49-02",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2026-08-10T22:30:08Z",
+              "state": {
+                "alert": "none",
+                "bri": 51,
+                "colormode": "ct",
+                "ct": 17476,
+                "effect": "none",
+                "hue": 0,
+                "on": true,
+                "reachable": true,
+                "sat": 0,
+                "xy": [
+                  0.3805,
+                  0.3769
+                ]
+              },
+              "config": {
+                "groups": [
+                  "0",
+                  "1"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Dimmable light 15",
+          "physical_id": "1c:c0:89:ff:fe:df:ee:57",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "SONOFF"
+          ],
+          "model": [
+            "DONGLE-E_R"
+          ],
+          "deconz_types": [
+            "Dimmable light",
+            "Extended color light"
+          ],
+          "names": [
+            "Dimmable light 15",
+            "router_2"
+          ],
+          "battery_percent": null,
+          "last_seen": "2026-09-02T16:03Z",
+          "last_seen_age_hours": 0.03,
+          "last_updated": null,
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "15",
+              "name": "Dimmable light 15",
+              "type": "Dimmable light",
+              "manufacturer": "SONOFF",
+              "model": "DONGLE-E_R",
+              "uniqueid": "1c:c0:89:ff:fe:df:ee:57-01",
+              "last_seen": "2026-09-02T16:03Z",
+              "last_announced": "2026-08-13T02:33:28Z",
+              "state": {
+                "alert": "none",
+                "bri": 254,
+                "on": true,
+                "reachable": true
+              },
+              "config": {
+                "groups": [
+                  "0",
+                  "1"
+                ]
+              }
+            },
+            {
+              "endpoint_id": "16",
+              "name": "router_2",
+              "type": "Extended color light",
+              "manufacturer": "SONOFF",
+              "model": "DONGLE-E_R",
+              "uniqueid": "1c:c0:89:ff:fe:df:ee:57-02",
+              "last_seen": "2026-09-02T16:03Z",
+              "last_announced": "2026-08-13T02:33:28Z",
+              "state": {
+                "alert": "none",
+                "bri": 254,
+                "colormode": "ct",
+                "ct": 450,
+                "effect": "none",
+                "hue": 0,
+                "on": true,
+                "reachable": true,
+                "sat": 0,
+                "xy": [
+                  0.6472,
+                  0.7209
+                ]
+              },
+              "config": {
+                "groups": [
+                  "0",
+                  "1"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Dimmable light 17",
+          "physical_id": "08:b9:5f:ff:fe:c6:91:1d",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "SONOFF"
+          ],
+          "model": [
+            "DONGLE-E_R"
+          ],
+          "deconz_types": [
+            "Dimmable light",
+            "Extended color light"
+          ],
+          "names": [
+            "Dimmable light 17",
+            "router_3"
+          ],
+          "battery_percent": null,
+          "last_seen": "2026-09-02T16:04Z",
+          "last_seen_age_hours": 0.02,
+          "last_updated": null,
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "17",
+              "name": "Dimmable light 17",
+              "type": "Dimmable light",
+              "manufacturer": "SONOFF",
+              "model": "DONGLE-E_R",
+              "uniqueid": "08:b9:5f:ff:fe:c6:91:1d-01",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2025-09-29T19:24:33Z",
+              "state": {
+                "alert": "none",
+                "bri": 51,
+                "on": true,
+                "reachable": true
+              },
+              "config": {
+                "groups": [
+                  "0",
+                  "1"
+                ]
+              }
+            },
+            {
+              "endpoint_id": "18",
+              "name": "router_3",
+              "type": "Extended color light",
+              "manufacturer": "SONOFF",
+              "model": "DONGLE-E_R",
+              "uniqueid": "08:b9:5f:ff:fe:c6:91:1d-02",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2025-09-29T19:24:33Z",
+              "state": {
+                "alert": "none",
+                "bri": 51,
+                "colormode": "ct",
+                "ct": 17476,
+                "effect": "none",
+                "hue": 0,
+                "on": true,
+                "reachable": true,
+                "sat": 0,
+                "xy": [
+                  0.3805,
+                  0.3769
+                ]
+              },
+              "config": {
+                "groups": [
+                  "0",
+                  "1"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "unit": "golyairoda_elott",
+          "physical_id": "58:8e:81:ff:fe:d1:98:fe",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "_TZ3000_keabpigv"
+          ],
+          "model": [
+            "TS0505A"
+          ],
+          "deconz_types": [
+            "Extended color light"
+          ],
+          "names": [
+            "golyairoda_elott"
+          ],
+          "battery_percent": null,
+          "last_seen": "2026-09-02T16:04Z",
+          "last_seen_age_hours": 0.02,
+          "last_updated": null,
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "11",
+              "name": "golyairoda_elott",
+              "type": "Extended color light",
+              "manufacturer": "_TZ3000_keabpigv",
+              "model": "TS0505A",
+              "uniqueid": "58:8e:81:ff:fe:d1:98:fe-01",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2026-08-12T22:43:05Z",
+              "state": {
+                "alert": "none",
+                "bri": 255,
+                "colormode": "ct",
+                "ct": 153,
+                "effect": "none",
+                "hue": 0,
+                "on": true,
+                "reachable": true,
+                "sat": 254,
+                "xy": [
+                  0.511,
+                  0.2171
+                ]
+              },
+              "config": {
+                "groups": [
+                  "0",
+                  "1"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "unit": "keramia_elott",
+          "physical_id": "58:8e:81:ff:fe:d1:98:ce",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "_TZ3000_keabpigv"
+          ],
+          "model": [
+            "TS0505A"
+          ],
+          "deconz_types": [
+            "Extended color light"
+          ],
+          "names": [
+            "keramia_elott"
+          ],
+          "battery_percent": null,
+          "last_seen": "2026-09-02T16:05Z",
+          "last_seen_age_hours": 0.0,
+          "last_updated": null,
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "10",
+              "name": "keramia_elott",
+              "type": "Extended color light",
+              "manufacturer": "_TZ3000_keabpigv",
+              "model": "TS0505A",
+              "uniqueid": "58:8e:81:ff:fe:d1:98:ce-01",
+              "last_seen": "2026-09-02T16:05Z",
+              "last_announced": "2026-08-12T10:01:48Z",
+              "state": {
+                "alert": "none",
+                "bri": 255,
+                "colormode": "ct",
+                "ct": 153,
+                "effect": "none",
+                "hue": 0,
+                "on": true,
+                "reachable": true,
+                "sat": 254,
+                "xy": [
+                  0.941,
+                  0.2483
+                ]
+              },
+              "config": {
+                "groups": [
+                  "0",
+                  "1"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "unit": "lahma_elott",
+          "physical_id": "58:8e:81:ff:fe:d1:a1:5d",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "_TZ3000_keabpigv"
+          ],
+          "model": [
+            "TS0505A"
+          ],
+          "deconz_types": [
+            "Extended color light"
+          ],
+          "names": [
+            "lahma_elott"
+          ],
+          "battery_percent": null,
+          "last_seen": "2026-09-02T16:03Z",
+          "last_seen_age_hours": 0.03,
+          "last_updated": null,
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "3",
+              "name": "lahma_elott",
+              "type": "Extended color light",
+              "manufacturer": "_TZ3000_keabpigv",
+              "model": "TS0505A",
+              "uniqueid": "58:8e:81:ff:fe:d1:a1:5d-01",
+              "last_seen": "2026-09-02T16:03Z",
+              "last_announced": "2026-08-14T10:31:53Z",
+              "state": {
+                "alert": "none",
+                "bri": 255,
+                "colormode": "ct",
+                "ct": 153,
+                "effect": "none",
+                "hue": 0,
+                "on": true,
+                "reachable": true,
+                "sat": 254,
+                "xy": [
+                  0.0533,
+                  0.1398
+                ]
+              },
+              "config": {
+                "groups": [
+                  "0",
+                  "1"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "unit": "merce_elott",
+          "physical_id": "58:8e:81:ff:fe:d3:d3:ae",
+          "status": "degraded",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "_TZ3000_keabpigv"
+          ],
+          "model": [
+            "TS0505A"
+          ],
+          "deconz_types": [
+            "Extended color light"
+          ],
+          "names": [
+            "merce_elott"
+          ],
+          "battery_percent": null,
+          "last_seen": "2025-10-13T06:06Z",
+          "last_seen_age_hours": 7785.98,
+          "last_updated": null,
+          "problems": [
+            "last seen 7785.98 h ago (threshold 24.0 h)"
+          ],
+          "endpoints": [
+            {
+              "endpoint_id": "8",
+              "name": "merce_elott",
+              "type": "Extended color light",
+              "manufacturer": "_TZ3000_keabpigv",
+              "model": "TS0505A",
+              "uniqueid": "58:8e:81:ff:fe:d3:d3:ae-01",
+              "last_seen": "2025-10-13T06:06Z",
+              "last_announced": "2025-06-02T15:42:09Z",
+              "state": {
+                "alert": "none",
+                "bri": 254,
+                "colormode": "ct",
+                "ct": 450,
+                "effect": "none",
+                "hue": 0,
+                "on": true,
+                "reachable": true,
+                "sat": 254,
+                "xy": [
+                  0.0425,
+                  0.8025
+                ]
+              },
+              "config": {
+                "groups": [
+                  "0",
+                  "1"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "unit": "oktopusz",
+          "physical_id": "84:2e:14:ff:fe:0f:c9:7a",
+          "status": "unreachable",
+          "accessible": false,
+          "can_report_data": true,
+          "manufacturer": [
+            "_TZ3000_keabpigv"
+          ],
+          "model": [
+            "TS0505A"
+          ],
+          "deconz_types": [
+            "Extended color light"
+          ],
+          "names": [
+            "oktopusz"
+          ],
+          "battery_percent": null,
+          "last_seen": "2026-08-13T18:59Z",
+          "last_seen_age_hours": 477.1,
+          "last_updated": null,
+          "problems": [
+            "deCONZ reports unreachable",
+            "last seen 477.1 h ago (threshold 24.0 h)"
+          ],
+          "endpoints": [
+            {
+              "endpoint_id": "5",
+              "name": "oktopusz",
+              "type": "Extended color light",
+              "manufacturer": "_TZ3000_keabpigv",
+              "model": "TS0505A",
+              "uniqueid": "84:2e:14:ff:fe:0f:c9:7a-01",
+              "last_seen": "2026-08-13T18:59Z",
+              "last_announced": "2026-08-13T09:19:47Z",
+              "state": {
+                "alert": "none",
+                "bri": 255,
+                "colormode": "ct",
+                "ct": 153,
+                "effect": "none",
+                "hue": 0,
+                "on": true,
+                "reachable": false,
+                "sat": 254,
+                "xy": [
+                  0.0416,
+                  0.7118
+                ]
+              },
+              "config": {
+                "groups": [
+                  "0",
+                  "1"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "unit": "ovi_elott",
+          "physical_id": "58:8e:81:ff:fe:de:35:a7",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "_TZ3000_keabpigv"
+          ],
+          "model": [
+            "TS0505A"
+          ],
+          "deconz_types": [
+            "Extended color light"
+          ],
+          "names": [
+            "ovi_elott"
+          ],
+          "battery_percent": null,
+          "last_seen": "2026-09-02T16:03Z",
+          "last_seen_age_hours": 0.03,
+          "last_updated": null,
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "12",
+              "name": "ovi_elott",
+              "type": "Extended color light",
+              "manufacturer": "_TZ3000_keabpigv",
+              "model": "TS0505A",
+              "uniqueid": "58:8e:81:ff:fe:de:35:a7-01",
+              "last_seen": "2026-09-02T16:03Z",
+              "last_announced": "2026-08-13T19:48:50Z",
+              "state": {
+                "alert": "none",
+                "bri": 255,
+                "colormode": "ct",
+                "ct": 153,
+                "effect": "none",
+                "hue": 0,
+                "on": true,
+                "reachable": true,
+                "sat": 254,
+                "xy": [
+                  0.562,
+                  0.5927
+                ]
+              },
+              "config": {
+                "groups": [
+                  "0",
+                  "1"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "unit": "PK_elott",
+          "physical_id": "84:2e:14:ff:fe:25:f7:0e",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "_TZ3000_keabpigv"
+          ],
+          "model": [
+            "TS0505A"
+          ],
+          "deconz_types": [
+            "Extended color light"
+          ],
+          "names": [
+            "PK_elott"
+          ],
+          "battery_percent": null,
+          "last_seen": "2026-09-02T16:04Z",
+          "last_seen_age_hours": 0.02,
+          "last_updated": null,
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "7",
+              "name": "PK_elott",
+              "type": "Extended color light",
+              "manufacturer": "_TZ3000_keabpigv",
+              "model": "TS0505A",
+              "uniqueid": "84:2e:14:ff:fe:25:f7:0e-01",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2026-08-12T12:34:05Z",
+              "state": {
+                "alert": "none",
+                "bri": 255,
+                "colormode": "ct",
+                "ct": 153,
+                "effect": "none",
+                "hue": 0,
+                "on": true,
+                "reachable": true,
+                "sat": 254,
+                "xy": [
+                  0.5464,
+                  0.3273
+                ]
+              },
+              "config": {
+                "groups": [
+                  "0",
+                  "1"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "unit": "pult",
+          "physical_id": "84:2e:14:ff:fe:25:f6:d3",
+          "status": "unreachable",
+          "accessible": false,
+          "can_report_data": true,
+          "manufacturer": [
+            "_TZ3000_keabpigv"
+          ],
+          "model": [
+            "TS0505A"
+          ],
+          "deconz_types": [
+            "Extended color light"
+          ],
+          "names": [
+            "pult"
+          ],
+          "battery_percent": null,
+          "last_seen": "2026-08-30T23:11Z",
+          "last_seen_age_hours": 64.9,
+          "last_updated": null,
+          "problems": [
+            "deCONZ reports unreachable",
+            "last seen 64.9 h ago (threshold 24.0 h)"
+          ],
+          "endpoints": [
+            {
+              "endpoint_id": "2",
+              "name": "pult",
+              "type": "Extended color light",
+              "manufacturer": "_TZ3000_keabpigv",
+              "model": "TS0505A",
+              "uniqueid": "84:2e:14:ff:fe:25:f6:d3-01",
+              "last_seen": "2026-08-30T23:11Z",
+              "last_announced": "2026-08-04T03:41:23Z",
+              "state": {
+                "alert": "none",
+                "bri": 255,
+                "colormode": "ct",
+                "ct": 153,
+                "effect": "none",
+                "hue": 0,
+                "on": true,
+                "reachable": false,
+                "sat": 254,
+                "xy": [
+                  0.6785,
+                  0.9185
+                ]
+              },
+              "config": {
+                "groups": [
+                  "0",
+                  "1"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "unit": "teakonyha",
+          "physical_id": "84:2e:14:ff:fe:0f:c5:f1",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "_TZ3000_keabpigv"
+          ],
+          "model": [
+            "TS0505A"
+          ],
+          "deconz_types": [
+            "Extended color light"
+          ],
+          "names": [
+            "teakonyha"
+          ],
+          "battery_percent": null,
+          "last_seen": "2026-09-02T16:03Z",
+          "last_seen_age_hours": 0.03,
+          "last_updated": null,
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "4",
+              "name": "teakonyha",
+              "type": "Extended color light",
+              "manufacturer": "_TZ3000_keabpigv",
+              "model": "TS0505A",
+              "uniqueid": "84:2e:14:ff:fe:0f:c5:f1-01",
+              "last_seen": "2026-09-02T16:03Z",
+              "last_announced": "2026-08-11T20:39:52Z",
+              "state": {
+                "alert": "none",
+                "bri": 255,
+                "colormode": "ct",
+                "ct": 153,
+                "effect": "none",
+                "hue": 0,
+                "on": true,
+                "reachable": true,
+                "sat": 254,
+                "xy": [
+                  0.7011,
+                  0.1743
+                ]
+              },
+              "config": {
+                "groups": [
+                  "0",
+                  "1"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "unit": "trafohaz",
+          "physical_id": "84:2e:14:ff:fe:0e:33:84",
+          "status": "unreachable",
+          "accessible": false,
+          "can_report_data": true,
+          "manufacturer": [
+            "_TZ3000_keabpigv"
+          ],
+          "model": [
+            "TS0505A"
+          ],
+          "deconz_types": [
+            "Extended color light"
+          ],
+          "names": [
+            "trafohaz"
+          ],
+          "battery_percent": null,
+          "last_seen": "2026-09-01T22:27Z",
+          "last_seen_age_hours": 17.63,
+          "last_updated": null,
+          "problems": [
+            "deCONZ reports unreachable"
+          ],
+          "endpoints": [
+            {
+              "endpoint_id": "6",
+              "name": "trafohaz",
+              "type": "Extended color light",
+              "manufacturer": "_TZ3000_keabpigv",
+              "model": "TS0505A",
+              "uniqueid": "84:2e:14:ff:fe:0e:33:84-01",
+              "last_seen": "2026-09-01T22:27Z",
+              "last_announced": "2026-08-10T21:33:59Z",
+              "state": {
+                "alert": "none",
+                "bri": 255,
+                "colormode": "ct",
+                "ct": 153,
+                "effect": "none",
+                "hue": 0,
+                "on": true,
+                "reachable": false,
+                "sat": 254,
+                "xy": [
+                  0.7629,
+                  0.6058
+                ]
+              },
+              "config": {
+                "groups": [
+                  "0",
+                  "1"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "unit": "tuzzaro_ajtonal",
+          "physical_id": "84:2e:14:ff:fe:0f:c1:5f",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "_TZ3000_keabpigv"
+          ],
+          "model": [
+            "TS0505A"
+          ],
+          "deconz_types": [
+            "Extended color light"
+          ],
+          "names": [
+            "tuzzaro_ajtonal"
+          ],
+          "battery_percent": null,
+          "last_seen": "2026-09-02T16:04Z",
+          "last_seen_age_hours": 0.02,
+          "last_updated": null,
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "1",
+              "name": "tuzzaro_ajtonal",
+              "type": "Extended color light",
+              "manufacturer": "_TZ3000_keabpigv",
+              "model": "TS0505A",
+              "uniqueid": "84:2e:14:ff:fe:0f:c1:5f-01",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2026-08-12T07:48:00Z",
+              "state": {
+                "alert": "none",
+                "bri": 255,
+                "colormode": "ct",
+                "ct": 153,
+                "effect": "none",
+                "hue": 0,
+                "on": true,
+                "reachable": true,
+                "sat": 254,
+                "xy": [
+                  0.0698,
+                  0.1846
+                ]
+              },
+              "config": {
+                "groups": [
+                  "0",
+                  "1"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "unit": "tuzzaro_es_merce_kozott",
+          "physical_id": "58:8e:81:ff:fe:d1:9c:1d",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "_TZ3000_keabpigv"
+          ],
+          "model": [
+            "TS0505A"
+          ],
+          "deconz_types": [
+            "Extended color light"
+          ],
+          "names": [
+            "tuzzaro_es_merce_kozott"
+          ],
+          "battery_percent": null,
+          "last_seen": "2026-09-02T16:04Z",
+          "last_seen_age_hours": 0.02,
+          "last_updated": null,
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "9",
+              "name": "tuzzaro_es_merce_kozott",
+              "type": "Extended color light",
+              "manufacturer": "_TZ3000_keabpigv",
+              "model": "TS0505A",
+              "uniqueid": "58:8e:81:ff:fe:d1:9c:1d-01",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2026-08-12T23:08:51Z",
+              "state": {
+                "alert": "none",
+                "bri": 255,
+                "colormode": "ct",
+                "ct": 153,
+                "effect": "none",
+                "hue": 0,
+                "on": true,
+                "reachable": true,
+                "sat": 254,
+                "xy": [
+                  0.1304,
+                  0.0721
+                ]
+              },
+              "config": {
+                "groups": [
+                  "0",
+                  "1"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "deconz_snapshot_elapsed_ms": 42.1
+    },
+    "sonoff_temperature_humidity": {
+      "label": "Sonoff temperature/humidity sensors",
+      "probe": "deCONZ sensor snapshot, physical-device grouping",
+      "category_error": null,
+      "units": [
+        {
+          "unit": "Sonoff1",
+          "physical_id": "00:12:4b:00:29:20:2d:d7",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "eWeLink"
+          ],
+          "model": [
+            "TH01"
+          ],
+          "deconz_types": [
+            "ZHAHumidity",
+            "ZHATemperature"
+          ],
+          "names": [
+            "Sonoff1"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-09-02T16:03Z",
+          "last_seen_age_hours": 0.03,
+          "last_updated": "2026-09-02T16:03:25.102",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "30",
+              "name": "Sonoff1",
+              "type": "ZHAHumidity",
+              "manufacturer": "eWeLink",
+              "model": "TH01",
+              "uniqueid": "00:12:4b:00:29:20:2d:d7-01-0405",
+              "last_seen": "2026-09-02T16:03Z",
+              "last_announced": "2026-08-26T10:26:47Z",
+              "state": {
+                "humidity": 4743,
+                "lastupdated": "2026-09-02T16:00:02.827"
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": true
+              }
+            },
+            {
+              "endpoint_id": "29",
+              "name": "Sonoff1",
+              "type": "ZHATemperature",
+              "manufacturer": "eWeLink",
+              "model": "TH01",
+              "uniqueid": "00:12:4b:00:29:20:2d:d7-01-0402",
+              "last_seen": "2026-09-02T16:03Z",
+              "last_announced": "2026-08-26T10:26:47Z",
+              "state": {
+                "lastupdated": "2026-09-02T16:03:25.102",
+                "temperature": 2696
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Sonoff10",
+          "physical_id": "84:27:12:ff:fe:56:1f:fd",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "SONOFF"
+          ],
+          "model": [
+            "SNZB-02D"
+          ],
+          "deconz_types": [
+            "ZHAHumidity",
+            "ZHATemperature"
+          ],
+          "names": [
+            "Sonoff10"
+          ],
+          "battery_percent": [
+            60
+          ],
+          "last_seen": "2026-09-02T16:03Z",
+          "last_seen_age_hours": 0.03,
+          "last_updated": "2026-09-02T16:03:40.396",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "18",
+              "name": "Sonoff10",
+              "type": "ZHAHumidity",
+              "manufacturer": "SONOFF",
+              "model": "SNZB-02D",
+              "uniqueid": "84:27:12:ff:fe:56:1f:fd-01-0405",
+              "last_seen": "2026-09-02T16:03Z",
+              "last_announced": "2026-08-18T09:33:32Z",
+              "state": {
+                "humidity": 4630,
+                "lastupdated": "2026-09-02T15:57:58.054"
+              },
+              "config": {
+                "battery": 60,
+                "offset": 0,
+                "on": true,
+                "reachable": true
+              }
+            },
+            {
+              "endpoint_id": "17",
+              "name": "Sonoff10",
+              "type": "ZHATemperature",
+              "manufacturer": "SONOFF",
+              "model": "SNZB-02D",
+              "uniqueid": "84:27:12:ff:fe:56:1f:fd-01-0402",
+              "last_seen": "2026-09-02T16:03Z",
+              "last_announced": "2026-08-18T09:33:32Z",
+              "state": {
+                "lastupdated": "2026-09-02T16:03:40.396",
+                "temperature": 2660
+              },
+              "config": {
+                "battery": 60,
+                "offset": 0,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Sonoff11",
+          "physical_id": "84:27:12:ff:fe:56:00:00",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "SONOFF"
+          ],
+          "model": [
+            "SNZB-02D"
+          ],
+          "deconz_types": [
+            "ZHAHumidity",
+            "ZHATemperature"
+          ],
+          "names": [
+            "Sonoff11"
+          ],
+          "battery_percent": [
+            80
+          ],
+          "last_seen": "2026-09-02T16:03Z",
+          "last_seen_age_hours": 0.03,
+          "last_updated": "2026-09-02T16:00:35.113",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "20",
+              "name": "Sonoff11",
+              "type": "ZHAHumidity",
+              "manufacturer": "SONOFF",
+              "model": "SNZB-02D",
+              "uniqueid": "84:27:12:ff:fe:56:00:00-01-0405",
+              "last_seen": "2026-09-02T16:03Z",
+              "last_announced": "2026-08-08T22:22:59Z",
+              "state": {
+                "humidity": 4050,
+                "lastupdated": "2026-09-02T15:59:53.162"
+              },
+              "config": {
+                "battery": 80,
+                "offset": 0,
+                "on": true,
+                "reachable": true
+              }
+            },
+            {
+              "endpoint_id": "19",
+              "name": "Sonoff11",
+              "type": "ZHATemperature",
+              "manufacturer": "SONOFF",
+              "model": "SNZB-02D",
+              "uniqueid": "84:27:12:ff:fe:56:00:00-01-0402",
+              "last_seen": "2026-09-02T16:03Z",
+              "last_announced": "2026-08-08T22:22:59Z",
+              "state": {
+                "lastupdated": "2026-09-02T16:00:35.113",
+                "temperature": 2800
+              },
+              "config": {
+                "battery": 80,
+                "offset": 0,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Sonoff12",
+          "physical_id": "84:27:12:ff:fe:35:0c:da",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "SONOFF"
+          ],
+          "model": [
+            "SNZB-02D"
+          ],
+          "deconz_types": [
+            "ZHAHumidity",
+            "ZHATemperature"
+          ],
+          "names": [
+            "Sonoff12"
+          ],
+          "battery_percent": [
+            80
+          ],
+          "last_seen": "2026-09-02T16:02Z",
+          "last_seen_age_hours": 0.05,
+          "last_updated": "2026-09-02T15:59:08.074",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "22",
+              "name": "Sonoff12",
+              "type": "ZHAHumidity",
+              "manufacturer": "SONOFF",
+              "model": "SNZB-02D",
+              "uniqueid": "84:27:12:ff:fe:35:0c:da-01-0405",
+              "last_seen": "2026-09-02T16:02Z",
+              "last_announced": "2026-08-20T11:42:45Z",
+              "state": {
+                "humidity": 4300,
+                "lastupdated": "2026-09-02T15:59:08.074"
+              },
+              "config": {
+                "battery": 80,
+                "offset": 0,
+                "on": true,
+                "reachable": true
+              }
+            },
+            {
+              "endpoint_id": "21",
+              "name": "Sonoff12",
+              "type": "ZHATemperature",
+              "manufacturer": "SONOFF",
+              "model": "SNZB-02D",
+              "uniqueid": "84:27:12:ff:fe:35:0c:da-01-0402",
+              "last_seen": "2026-09-02T16:02Z",
+              "last_announced": "2026-08-20T11:42:45Z",
+              "state": {
+                "lastupdated": "2026-09-02T15:58:12.676",
+                "temperature": 2740
+              },
+              "config": {
+                "battery": 80,
+                "offset": 0,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Sonoff13",
+          "physical_id": "84:27:12:ff:fe:55:71:41",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "SONOFF"
+          ],
+          "model": [
+            "SNZB-02D"
+          ],
+          "deconz_types": [
+            "ZHAHumidity",
+            "ZHATemperature"
+          ],
+          "names": [
+            "Sonoff13"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-09-02T16:00Z",
+          "last_seen_age_hours": 0.08,
+          "last_updated": "2026-09-02T16:00:47.344",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "24",
+              "name": "Sonoff13",
+              "type": "ZHAHumidity",
+              "manufacturer": "SONOFF",
+              "model": "SNZB-02D",
+              "uniqueid": "84:27:12:ff:fe:55:71:41-01-0405",
+              "last_seen": "2026-09-02T16:00Z",
+              "last_announced": "2026-08-29T10:25:24Z",
+              "state": {
+                "humidity": 3860,
+                "lastupdated": "2026-09-02T16:00:47.344"
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": true
+              }
+            },
+            {
+              "endpoint_id": "23",
+              "name": "Sonoff13",
+              "type": "ZHATemperature",
+              "manufacturer": "SONOFF",
+              "model": "SNZB-02D",
+              "uniqueid": "84:27:12:ff:fe:55:71:41-01-0402",
+              "last_seen": "2026-09-02T16:00Z",
+              "last_announced": "2026-08-29T10:25:24Z",
+              "state": {
+                "lastupdated": "2026-09-02T15:57:46.046",
+                "temperature": 2750
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Sonoff14",
+          "physical_id": "0c:ae:5f:ff:fe:d1:23:8b",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "SONOFF"
+          ],
+          "model": [
+            "SNZB-02D"
+          ],
+          "deconz_types": [
+            "ZHAHumidity",
+            "ZHATemperature"
+          ],
+          "names": [
+            "Sonoff14"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-09-02T16:04Z",
+          "last_seen_age_hours": 0.02,
+          "last_updated": "2026-09-02T16:04:29.103",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "26",
+              "name": "Sonoff14",
+              "type": "ZHAHumidity",
+              "manufacturer": "SONOFF",
+              "model": "SNZB-02D",
+              "uniqueid": "0c:ae:5f:ff:fe:d1:23:8b-01-0405",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2026-08-05T13:17:02Z",
+              "state": {
+                "humidity": 4350,
+                "lastupdated": "2026-09-02T16:04:29.103"
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": true
+              }
+            },
+            {
+              "endpoint_id": "25",
+              "name": "Sonoff14",
+              "type": "ZHATemperature",
+              "manufacturer": "SONOFF",
+              "model": "SNZB-02D",
+              "uniqueid": "0c:ae:5f:ff:fe:d1:23:8b-01-0402",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2026-08-05T13:17:02Z",
+              "state": {
+                "lastupdated": "2026-09-02T16:01:41.396",
+                "temperature": 2720
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Sonoff2",
+          "physical_id": "00:12:4b:00:25:12:fd:9e",
+          "status": "unreachable",
+          "accessible": false,
+          "can_report_data": true,
+          "manufacturer": [
+            "eWeLink"
+          ],
+          "model": [
+            "TH01"
+          ],
+          "deconz_types": [
+            "ZHAHumidity",
+            "ZHATemperature"
+          ],
+          "names": [
+            "Sonoff2"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-08-14T20:13Z",
+          "last_seen_age_hours": 451.87,
+          "last_updated": "2026-08-14T20:13:45.865",
+          "problems": [
+            "deCONZ reports unreachable",
+            "last seen 451.87 h ago (threshold 24.0 h)"
+          ],
+          "endpoints": [
+            {
+              "endpoint_id": "34",
+              "name": "Sonoff2",
+              "type": "ZHAHumidity",
+              "manufacturer": "eWeLink",
+              "model": "TH01",
+              "uniqueid": "00:12:4b:00:25:12:fd:9e-01-0405",
+              "last_seen": "2026-08-14T20:13Z",
+              "last_announced": "2026-08-14T02:03:17Z",
+              "state": {
+                "humidity": 5095,
+                "lastupdated": "2026-08-14T20:13:11.550"
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": false
+              }
+            },
+            {
+              "endpoint_id": "33",
+              "name": "Sonoff2",
+              "type": "ZHATemperature",
+              "manufacturer": "eWeLink",
+              "model": "TH01",
+              "uniqueid": "00:12:4b:00:25:12:fd:9e-01-0402",
+              "last_seen": "2026-08-14T20:13Z",
+              "last_announced": "2026-08-14T02:03:17Z",
+              "state": {
+                "lastupdated": "2026-08-14T20:13:45.865",
+                "temperature": 2918
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": false
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Sonoff3",
+          "physical_id": "00:12:4b:00:29:20:33:73",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "eWeLink"
+          ],
+          "model": [
+            "TH01"
+          ],
+          "deconz_types": [
+            "ZHAHumidity",
+            "ZHATemperature"
+          ],
+          "names": [
+            "Sonoff3"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-09-02T16:02Z",
+          "last_seen_age_hours": 0.05,
+          "last_updated": "2026-09-02T16:02:19.210",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "28",
+              "name": "Sonoff3",
+              "type": "ZHAHumidity",
+              "manufacturer": "eWeLink",
+              "model": "TH01",
+              "uniqueid": "00:12:4b:00:29:20:33:73-01-0405",
+              "last_seen": "2026-09-02T16:02Z",
+              "last_announced": "2026-08-13T19:15:37Z",
+              "state": {
+                "humidity": 4919,
+                "lastupdated": "2026-09-02T16:02:19.210"
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": true
+              }
+            },
+            {
+              "endpoint_id": "27",
+              "name": "Sonoff3",
+              "type": "ZHATemperature",
+              "manufacturer": "eWeLink",
+              "model": "TH01",
+              "uniqueid": "00:12:4b:00:29:20:33:73-01-0402",
+              "last_seen": "2026-09-02T16:02Z",
+              "last_announced": "2026-08-13T19:15:37Z",
+              "state": {
+                "lastupdated": "2026-09-02T15:55:39.813",
+                "temperature": 2684
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Sonoff4",
+          "physical_id": "00:12:4b:00:29:20:30:59",
+          "status": "unreachable",
+          "accessible": false,
+          "can_report_data": true,
+          "manufacturer": [
+            "eWeLink"
+          ],
+          "model": [
+            "TH01"
+          ],
+          "deconz_types": [
+            "ZHAHumidity",
+            "ZHATemperature"
+          ],
+          "names": [
+            "Sonoff4"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-07-27T12:44Z",
+          "last_seen_age_hours": 891.35,
+          "last_updated": "2025-10-10T08:17:04.602",
+          "problems": [
+            "deCONZ reports unreachable",
+            "last seen 891.35 h ago (threshold 24.0 h)"
+          ],
+          "endpoints": [
+            {
+              "endpoint_id": "5",
+              "name": "Sonoff4",
+              "type": "ZHAHumidity",
+              "manufacturer": "eWeLink",
+              "model": "TH01",
+              "uniqueid": "00:12:4b:00:29:20:30:59-01-0405",
+              "last_seen": "2026-07-27T12:44Z",
+              "last_announced": null,
+              "state": {
+                "humidity": 6039,
+                "lastupdated": "2025-10-10T08:17:04.602"
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": false
+              }
+            },
+            {
+              "endpoint_id": "4",
+              "name": "Sonoff4",
+              "type": "ZHATemperature",
+              "manufacturer": "eWeLink",
+              "model": "TH01",
+              "uniqueid": "00:12:4b:00:29:20:30:59-01-0402",
+              "last_seen": "2026-07-27T12:44Z",
+              "last_announced": null,
+              "state": {
+                "lastupdated": "2025-10-10T08:14:48.351",
+                "temperature": 2038
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": false
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Sonoff5",
+          "physical_id": "00:12:4b:00:25:12:fd:82",
+          "status": "unreachable",
+          "accessible": false,
+          "can_report_data": true,
+          "manufacturer": [
+            "eWeLink"
+          ],
+          "model": [
+            "TH01"
+          ],
+          "deconz_types": [
+            "ZHAHumidity",
+            "ZHATemperature"
+          ],
+          "names": [
+            "Sonoff5"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-08-06T22:08Z",
+          "last_seen_age_hours": 641.95,
+          "last_updated": "2026-08-06T22:08:07.335",
+          "problems": [
+            "deCONZ reports unreachable",
+            "last seen 641.95 h ago (threshold 24.0 h)"
+          ],
+          "endpoints": [
+            {
+              "endpoint_id": "9",
+              "name": "Sonoff5",
+              "type": "ZHAHumidity",
+              "manufacturer": "eWeLink",
+              "model": "TH01",
+              "uniqueid": "00:12:4b:00:25:12:fd:82-01-0405",
+              "last_seen": "2026-08-06T22:08Z",
+              "last_announced": "2026-08-06T11:33:28Z",
+              "state": {
+                "humidity": 6981,
+                "lastupdated": "2026-08-06T22:08:07.335"
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": false
+              }
+            },
+            {
+              "endpoint_id": "8",
+              "name": "Sonoff5",
+              "type": "ZHATemperature",
+              "manufacturer": "eWeLink",
+              "model": "TH01",
+              "uniqueid": "00:12:4b:00:25:12:fd:82-01-0402",
+              "last_seen": "2026-08-06T22:08Z",
+              "last_announced": "2026-08-06T11:33:28Z",
+              "state": {
+                "lastupdated": "2026-08-06T21:44:29.762",
+                "temperature": 2802
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": false
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Sonoff6",
+          "physical_id": "00:12:4b:00:25:13:04:d0",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "eWeLink"
+          ],
+          "model": [
+            "TH01"
+          ],
+          "deconz_types": [
+            "ZHAHumidity",
+            "ZHATemperature"
+          ],
+          "names": [
+            "Sonoff6"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-09-02T15:57Z",
+          "last_seen_age_hours": 0.13,
+          "last_updated": "2026-09-02T15:57:34.211",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "3",
+              "name": "Sonoff6",
+              "type": "ZHAHumidity",
+              "manufacturer": "eWeLink",
+              "model": "TH01",
+              "uniqueid": "00:12:4b:00:25:13:04:d0-01-0405",
+              "last_seen": "2026-09-02T15:57Z",
+              "last_announced": "2026-08-07T04:03:03Z",
+              "state": {
+                "humidity": 4843,
+                "lastupdated": "2026-09-02T15:57:13.302"
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": true
+              }
+            },
+            {
+              "endpoint_id": "2",
+              "name": "Sonoff6",
+              "type": "ZHATemperature",
+              "manufacturer": "eWeLink",
+              "model": "TH01",
+              "uniqueid": "00:12:4b:00:25:13:04:d0-01-0402",
+              "last_seen": "2026-09-02T15:57Z",
+              "last_announced": "2026-08-07T04:03:03Z",
+              "state": {
+                "lastupdated": "2026-09-02T15:57:34.211",
+                "temperature": 2769
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Sonoff7",
+          "physical_id": "00:12:4b:00:29:20:2c:4a",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "eWeLink"
+          ],
+          "model": [
+            "TH01"
+          ],
+          "deconz_types": [
+            "ZHAHumidity",
+            "ZHATemperature"
+          ],
+          "names": [
+            "Sonoff7"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-09-02T15:58Z",
+          "last_seen_age_hours": 0.12,
+          "last_updated": "2026-09-02T15:58:11.448",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "7",
+              "name": "Sonoff7",
+              "type": "ZHAHumidity",
+              "manufacturer": "eWeLink",
+              "model": "TH01",
+              "uniqueid": "00:12:4b:00:29:20:2c:4a-01-0405",
+              "last_seen": "2026-09-02T15:58Z",
+              "last_announced": "2026-08-31T23:27:47Z",
+              "state": {
+                "humidity": 8000,
+                "lastupdated": "2026-09-02T15:58:11.448"
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": true
+              }
+            },
+            {
+              "endpoint_id": "6",
+              "name": "Sonoff7",
+              "type": "ZHATemperature",
+              "manufacturer": "eWeLink",
+              "model": "TH01",
+              "uniqueid": "00:12:4b:00:29:20:2c:4a-01-0402",
+              "last_seen": "2026-09-02T15:58Z",
+              "last_announced": "2026-08-31T23:27:47Z",
+              "state": {
+                "lastupdated": "2026-09-02T15:58:11.438",
+                "temperature": 2200
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Sonoff8",
+          "physical_id": "00:12:4b:00:29:20:48:66",
+          "status": "unreachable",
+          "accessible": false,
+          "can_report_data": true,
+          "manufacturer": [
+            "eWeLink"
+          ],
+          "model": [
+            "TH01"
+          ],
+          "deconz_types": [
+            "ZHAHumidity",
+            "ZHATemperature"
+          ],
+          "names": [
+            "Sonoff8"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-07-27T12:44Z",
+          "last_seen_age_hours": 891.35,
+          "last_updated": "2025-10-10T08:54:58.475",
+          "problems": [
+            "deCONZ reports unreachable",
+            "last seen 891.35 h ago (threshold 24.0 h)"
+          ],
+          "endpoints": [
+            {
+              "endpoint_id": "36",
+              "name": "Sonoff8",
+              "type": "ZHAHumidity",
+              "manufacturer": "eWeLink",
+              "model": "TH01",
+              "uniqueid": "00:12:4b:00:29:20:48:66-01-0405",
+              "last_seen": "2026-07-27T12:44Z",
+              "last_announced": null,
+              "state": {
+                "humidity": 5991,
+                "lastupdated": "2025-10-10T08:54:58.475"
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": false
+              }
+            },
+            {
+              "endpoint_id": "35",
+              "name": "Sonoff8",
+              "type": "ZHATemperature",
+              "manufacturer": "eWeLink",
+              "model": "TH01",
+              "uniqueid": "00:12:4b:00:29:20:48:66-01-0402",
+              "last_seen": "2026-07-27T12:44Z",
+              "last_announced": null,
+              "state": {
+                "lastupdated": "2025-10-10T08:54:07.431",
+                "temperature": 2170
+              },
+              "config": {
+                "battery": 100,
+                "offset": 0,
+                "on": true,
+                "reachable": false
+              }
+            }
+          ]
+        }
+      ],
+      "deconz_snapshot_elapsed_ms": 42.1
+    },
+    "sonoff_motion_presence": {
+      "label": "Sonoff motion/presence sensors",
+      "probe": "deCONZ ZHAPresence snapshot, physical-device grouping",
+      "category_error": null,
+      "units": [
+        {
+          "unit": "Pres1",
+          "physical_id": "00:12:4b:00:25:13:a2:58",
+          "status": "unreachable",
+          "accessible": false,
+          "can_report_data": true,
+          "manufacturer": [
+            "eWeLink"
+          ],
+          "model": [
+            "MS01"
+          ],
+          "deconz_types": [
+            "ZHAPresence"
+          ],
+          "names": [
+            "Pres1"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-08-06T01:11Z",
+          "last_seen_age_hours": 662.9,
+          "last_updated": "2026-08-05T16:10:23.631",
+          "problems": [
+            "deCONZ reports unreachable",
+            "last seen 662.9 h ago (threshold 24.0 h)"
+          ],
+          "endpoints": [
+            {
+              "endpoint_id": "41",
+              "name": "Pres1",
+              "type": "ZHAPresence",
+              "manufacturer": "eWeLink",
+              "model": "MS01",
+              "uniqueid": "00:12:4b:00:25:13:a2:58-01-0500",
+              "last_seen": "2026-08-06T01:11Z",
+              "last_announced": "2026-07-31T18:24:25Z",
+              "state": {
+                "lastupdated": "2026-08-05T16:10:23.631",
+                "lowbattery": false,
+                "presence": false,
+                "tampered": false
+              },
+              "config": {
+                "battery": 100,
+                "duration": 60,
+                "enrolled": 1,
+                "on": true,
+                "pending": [],
+                "reachable": false
+              }
+            }
+          ],
+          "subtype": "motion"
+        },
+        {
+          "unit": "Pres10",
+          "physical_id": "d4:48:67:ff:fe:0d:b6:04",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "eWeLink"
+          ],
+          "model": [
+            "SNZB-03P"
+          ],
+          "deconz_types": [
+            "ZHAPresence"
+          ],
+          "names": [
+            "Pres10"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-09-02T16:03Z",
+          "last_seen_age_hours": 0.03,
+          "last_updated": "2026-09-02T16:02:07.307",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "45",
+              "name": "Pres10",
+              "type": "ZHAPresence",
+              "manufacturer": "eWeLink",
+              "model": "SNZB-03P",
+              "uniqueid": "d4:48:67:ff:fe:0d:b6:04-01-0406",
+              "last_seen": "2026-09-02T16:03Z",
+              "last_announced": "2026-08-09T14:13:33Z",
+              "state": {
+                "lastupdated": "2026-09-02T16:02:07.307",
+                "presence": false
+              },
+              "config": {
+                "battery": 100,
+                "duration": 60,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ],
+          "subtype": "motion"
+        },
+        {
+          "unit": "Pres11",
+          "physical_id": "d4:48:67:ff:fe:0d:95:be",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "eWeLink"
+          ],
+          "model": [
+            "SNZB-03P"
+          ],
+          "deconz_types": [
+            "ZHAPresence"
+          ],
+          "names": [
+            "Pres11"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-09-02T16:04Z",
+          "last_seen_age_hours": 0.02,
+          "last_updated": "2026-09-02T16:04:26.713",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "44",
+              "name": "Pres11",
+              "type": "ZHAPresence",
+              "manufacturer": "eWeLink",
+              "model": "SNZB-03P",
+              "uniqueid": "d4:48:67:ff:fe:0d:95:be-01-0406",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2026-08-08T20:00:33Z",
+              "state": {
+                "lastupdated": "2026-09-02T16:04:26.713",
+                "presence": false
+              },
+              "config": {
+                "battery": 100,
+                "duration": 60,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ],
+          "subtype": "motion"
+        },
+        {
+          "unit": "Pres2",
+          "physical_id": "e4:06:bf:ff:fe:db:25:73",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "eWeLink"
+          ],
+          "model": [
+            "SNZB-03P"
+          ],
+          "deconz_types": [
+            "ZHAPresence"
+          ],
+          "names": [
+            "Pres2"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-09-02T16:03Z",
+          "last_seen_age_hours": 0.03,
+          "last_updated": "2026-09-02T16:01:58.625",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "52",
+              "name": "Pres2",
+              "type": "ZHAPresence",
+              "manufacturer": "eWeLink",
+              "model": "SNZB-03P",
+              "uniqueid": "e4:06:bf:ff:fe:db:25:73-01-0406",
+              "last_seen": "2026-09-02T16:03Z",
+              "last_announced": "2026-07-28T19:19:49Z",
+              "state": {
+                "lastupdated": "2026-09-02T16:01:58.625",
+                "presence": false
+              },
+              "config": {
+                "battery": 100,
+                "duration": 60,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ],
+          "subtype": "motion"
+        },
+        {
+          "unit": "Pres3",
+          "physical_id": "d4:48:67:ff:fe:0d:84:db",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "eWeLink"
+          ],
+          "model": [
+            "SNZB-03P"
+          ],
+          "deconz_types": [
+            "ZHAPresence"
+          ],
+          "names": [
+            "Pres3"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-09-02T16:04Z",
+          "last_seen_age_hours": 0.02,
+          "last_updated": "2026-09-02T16:03:19.951",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "50",
+              "name": "Pres3",
+              "type": "ZHAPresence",
+              "manufacturer": "eWeLink",
+              "model": "SNZB-03P",
+              "uniqueid": "d4:48:67:ff:fe:0d:84:db-01-0406",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2026-08-25T15:29:54Z",
+              "state": {
+                "lastupdated": "2026-09-02T16:03:19.951",
+                "presence": false
+              },
+              "config": {
+                "battery": 100,
+                "duration": 60,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ],
+          "subtype": "motion"
+        },
+        {
+          "unit": "Pres4",
+          "physical_id": "d4:48:67:ff:fe:0d:87:89",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "eWeLink"
+          ],
+          "model": [
+            "SNZB-03P"
+          ],
+          "deconz_types": [
+            "ZHAPresence"
+          ],
+          "names": [
+            "Pres4"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-09-02T16:04Z",
+          "last_seen_age_hours": 0.02,
+          "last_updated": "2026-09-02T16:00:51.779",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "49",
+              "name": "Pres4",
+              "type": "ZHAPresence",
+              "manufacturer": "eWeLink",
+              "model": "SNZB-03P",
+              "uniqueid": "d4:48:67:ff:fe:0d:87:89-01-0406",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2026-08-13T23:06:44Z",
+              "state": {
+                "lastupdated": "2026-09-02T16:00:51.779",
+                "presence": false
+              },
+              "config": {
+                "battery": 100,
+                "duration": 60,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ],
+          "subtype": "motion"
+        },
+        {
+          "unit": "Pres5",
+          "physical_id": "d4:48:67:ff:fe:0d:7b:03",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "eWeLink"
+          ],
+          "model": [
+            "SNZB-03P"
+          ],
+          "deconz_types": [
+            "ZHAPresence"
+          ],
+          "names": [
+            "Pres5"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-09-02T16:04Z",
+          "last_seen_age_hours": 0.02,
+          "last_updated": "2026-09-02T16:01:09.886",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "51",
+              "name": "Pres5",
+              "type": "ZHAPresence",
+              "manufacturer": "eWeLink",
+              "model": "SNZB-03P",
+              "uniqueid": "d4:48:67:ff:fe:0d:7b:03-01-0406",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2026-08-13T23:06:29Z",
+              "state": {
+                "lastupdated": "2026-09-02T16:01:09.886",
+                "presence": false
+              },
+              "config": {
+                "battery": 100,
+                "duration": 60,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ],
+          "subtype": "motion"
+        },
+        {
+          "unit": "Pres7",
+          "physical_id": "e4:06:bf:ff:fe:db:1d:f1",
+          "status": "unreachable",
+          "accessible": false,
+          "can_report_data": true,
+          "manufacturer": [
+            "eWeLink"
+          ],
+          "model": [
+            "SNZB-03P"
+          ],
+          "deconz_types": [
+            "ZHAPresence"
+          ],
+          "names": [
+            "Pres7"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-08-26T03:26Z",
+          "last_seen_age_hours": 180.65,
+          "last_updated": "2026-08-26T03:27:21.678",
+          "problems": [
+            "deCONZ reports unreachable",
+            "last seen 180.65 h ago (threshold 24.0 h)"
+          ],
+          "endpoints": [
+            {
+              "endpoint_id": "46",
+              "name": "Pres7",
+              "type": "ZHAPresence",
+              "manufacturer": "eWeLink",
+              "model": "SNZB-03P",
+              "uniqueid": "e4:06:bf:ff:fe:db:1d:f1-01-0406",
+              "last_seen": "2026-08-26T03:26Z",
+              "last_announced": "2026-08-26T03:26:56Z",
+              "state": {
+                "lastupdated": "2026-08-26T03:27:21.678",
+                "presence": false
+              },
+              "config": {
+                "battery": 100,
+                "duration": 60,
+                "on": true,
+                "reachable": false
+              }
+            }
+          ],
+          "subtype": "motion"
+        },
+        {
+          "unit": "Pres8",
+          "physical_id": "d4:48:67:ff:fe:0d:c0:c9",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "eWeLink"
+          ],
+          "model": [
+            "SNZB-03P"
+          ],
+          "deconz_types": [
+            "ZHAPresence"
+          ],
+          "names": [
+            "Pres8"
+          ],
+          "battery_percent": [
+            100
+          ],
+          "last_seen": "2026-09-02T16:04Z",
+          "last_seen_age_hours": 0.02,
+          "last_updated": "2026-09-02T16:01:54.752",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "48",
+              "name": "Pres8",
+              "type": "ZHAPresence",
+              "manufacturer": "eWeLink",
+              "model": "SNZB-03P",
+              "uniqueid": "d4:48:67:ff:fe:0d:c0:c9-01-0406",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2026-08-26T23:11:55Z",
+              "state": {
+                "lastupdated": "2026-09-02T16:01:54.752",
+                "presence": false
+              },
+              "config": {
+                "battery": 100,
+                "duration": 60,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ],
+          "subtype": "motion"
+        }
+      ],
+      "deconz_snapshot_elapsed_ms": 42.1
+    },
+    "danfoss_ally_valves": {
+      "label": "Danfoss Ally smart valves",
+      "probe": "deCONZ ZHAThermostat snapshot",
+      "category_error": null,
+      "units": [
+        {
+          "unit": "GEP_muhely",
+          "physical_id": "14:2d:41:ff:fe:67:44:83",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "Danfoss"
+          ],
+          "model": [
+            "eTRV0103"
+          ],
+          "deconz_types": [
+            "ZHAThermostat",
+            "ZHATime"
+          ],
+          "names": [
+            "GEP_muhely",
+            "Time 64"
+          ],
+          "battery_percent": [
+            38
+          ],
+          "last_seen": "2026-09-02T15:51Z",
+          "last_seen_age_hours": 0.23,
+          "last_updated": "2026-09-02T15:21:49.439",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "63",
+              "name": "GEP_muhely",
+              "type": "ZHAThermostat",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0103",
+              "uniqueid": "14:2d:41:ff:fe:67:44:83-01-0201",
+              "last_seen": "2026-09-02T15:51Z",
+              "last_announced": "2026-08-13T06:56:31Z",
+              "state": {
+                "errorcode": "none",
+                "lastupdated": "2026-09-02T15:21:49.439",
+                "mountingmodeactive": false,
+                "on": false,
+                "temperature": 2707,
+                "valve": 0,
+                "windowopen": "closed"
+              },
+              "config": {
+                "battery": 38,
+                "displayflipped": false,
+                "externalsensortemp": -8000,
+                "externalwindowopen": false,
+                "heatsetpoint": 1600,
+                "loadbalancing": true,
+                "locked": false,
+                "mode": "heat",
+                "mountingmode": false,
+                "offset": 0,
+                "on": true,
+                "radiatorcovered": false,
+                "reachable": true,
+                "schedule": {},
+                "schedule_on": false,
+                "windowopendetectionenabled": false
+              }
+            },
+            {
+              "endpoint_id": "64",
+              "name": "Time 64",
+              "type": "ZHATime",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0103",
+              "uniqueid": "14:2d:41:ff:fe:67:44:83-01-000a",
+              "last_seen": "2026-09-02T15:51Z",
+              "last_announced": "2026-08-13T06:56:31Z",
+              "state": {
+                "lastset": "2026-08-15T15:43:58Z",
+                "lastupdated": "2026-08-15T15:43:59.575",
+                "localtime": "2026-09-02T17:05:12",
+                "utc": "2026-09-02T15:05:12Z"
+              },
+              "config": {
+                "battery": 38,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Golyafeszek_1",
+          "physical_id": "14:2d:41:ff:fe:68:90:3e",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "Danfoss"
+          ],
+          "model": [
+            "eTRV0103"
+          ],
+          "deconz_types": [
+            "ZHAThermostat",
+            "ZHATime"
+          ],
+          "names": [
+            "Golyafeszek_1",
+            "Time 72"
+          ],
+          "battery_percent": [
+            39
+          ],
+          "last_seen": "2026-09-02T16:04Z",
+          "last_seen_age_hours": 0.02,
+          "last_updated": "2026-09-02T16:04:56.619",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "71",
+              "name": "Golyafeszek_1",
+              "type": "ZHAThermostat",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0103",
+              "uniqueid": "14:2d:41:ff:fe:68:90:3e-01-0201",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2026-08-19T17:40:05Z",
+              "state": {
+                "errorcode": "none",
+                "lastupdated": "2026-09-02T16:04:56.619",
+                "mountingmodeactive": false,
+                "on": false,
+                "temperature": 2799,
+                "valve": 0,
+                "windowopen": "closed"
+              },
+              "config": {
+                "battery": 39,
+                "displayflipped": false,
+                "externalsensortemp": -8000,
+                "externalwindowopen": false,
+                "heatsetpoint": 500,
+                "loadbalancing": true,
+                "locked": false,
+                "mode": "heat",
+                "mountingmode": false,
+                "offset": 0,
+                "on": true,
+                "radiatorcovered": false,
+                "reachable": true,
+                "schedule": {},
+                "schedule_on": false,
+                "windowopendetectionenabled": false
+              }
+            },
+            {
+              "endpoint_id": "72",
+              "name": "Time 72",
+              "type": "ZHATime",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0103",
+              "uniqueid": "14:2d:41:ff:fe:68:90:3e-01-000a",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2026-08-19T17:40:05Z",
+              "state": {
+                "lastset": "2026-08-22T18:53:01Z",
+                "lastupdated": "2026-09-02T16:03:42.490",
+                "localtime": "2026-09-02T18:03:44",
+                "utc": "2026-09-02T16:03:37Z"
+              },
+              "config": {
+                "battery": 39,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Golyafeszek_2",
+          "physical_id": "04:cd:15:ff:fe:3b:b9:dc",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "Danfoss"
+          ],
+          "model": [
+            "eTRV0100"
+          ],
+          "deconz_types": [
+            "ZHAThermostat",
+            "ZHATime"
+          ],
+          "names": [
+            "Golyafeszek_2",
+            "Time 76"
+          ],
+          "battery_percent": [
+            34
+          ],
+          "last_seen": "2026-09-02T16:03Z",
+          "last_seen_age_hours": 0.03,
+          "last_updated": "2026-09-02T16:04:01.336",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "75",
+              "name": "Golyafeszek_2",
+              "type": "ZHAThermostat",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0100",
+              "uniqueid": "04:cd:15:ff:fe:3b:b9:dc-01-0201",
+              "last_seen": "2026-09-02T16:03Z",
+              "last_announced": "2026-08-13T08:40:44Z",
+              "state": {
+                "errorcode": "none",
+                "lastupdated": "2026-09-02T16:04:01.336",
+                "mountingmodeactive": false,
+                "on": false,
+                "temperature": 2806,
+                "valve": 0,
+                "windowopen": "closed"
+              },
+              "config": {
+                "battery": 34,
+                "displayflipped": false,
+                "externalsensortemp": -8000,
+                "externalwindowopen": false,
+                "heatsetpoint": 500,
+                "loadbalancing": true,
+                "locked": false,
+                "mode": "heat",
+                "mountingmode": false,
+                "offset": 0,
+                "on": true,
+                "radiatorcovered": false,
+                "reachable": true,
+                "schedule": {},
+                "schedule_on": false,
+                "windowopendetectionenabled": false
+              }
+            },
+            {
+              "endpoint_id": "76",
+              "name": "Time 76",
+              "type": "ZHATime",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0100",
+              "uniqueid": "04:cd:15:ff:fe:3b:b9:dc-01-000a",
+              "last_seen": "2026-09-02T16:03Z",
+              "last_announced": "2026-08-13T08:40:44Z",
+              "state": {
+                "lastset": "2026-09-01T12:52:48Z",
+                "lastupdated": "2026-09-01T12:52:49.206",
+                "localtime": "2026-09-02T18:03:06",
+                "utc": "2026-09-02T16:03:04Z"
+              },
+              "config": {
+                "battery": 34,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Golyairoda",
+          "physical_id": "14:2d:41:ff:fe:67:9b:a5",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "Danfoss"
+          ],
+          "model": [
+            "eTRV0103"
+          ],
+          "deconz_types": [
+            "ZHAThermostat",
+            "ZHATime"
+          ],
+          "names": [
+            "Golyairoda",
+            "Time 66"
+          ],
+          "battery_percent": [
+            39
+          ],
+          "last_seen": "2026-09-02T16:00Z",
+          "last_seen_age_hours": 0.08,
+          "last_updated": "2026-09-02T15:22:59.673",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "65",
+              "name": "Golyairoda",
+              "type": "ZHAThermostat",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0103",
+              "uniqueid": "14:2d:41:ff:fe:67:9b:a5-01-0201",
+              "last_seen": "2026-09-02T16:00Z",
+              "last_announced": "2026-08-13T15:05:44Z",
+              "state": {
+                "errorcode": "none",
+                "lastupdated": "2026-09-02T15:22:59.673",
+                "mountingmodeactive": false,
+                "on": false,
+                "temperature": 2751,
+                "valve": 0,
+                "windowopen": "closed"
+              },
+              "config": {
+                "battery": 39,
+                "displayflipped": false,
+                "externalsensortemp": -8000,
+                "externalwindowopen": false,
+                "heatsetpoint": 500,
+                "loadbalancing": true,
+                "locked": false,
+                "mode": "heat",
+                "mountingmode": false,
+                "offset": 0,
+                "on": true,
+                "radiatorcovered": false,
+                "reachable": true,
+                "schedule": {},
+                "schedule_on": false,
+                "windowopendetectionenabled": false
+              }
+            },
+            {
+              "endpoint_id": "66",
+              "name": "Time 66",
+              "type": "ZHATime",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0103",
+              "uniqueid": "14:2d:41:ff:fe:67:9b:a5-01-000a",
+              "last_seen": "2026-09-02T16:00Z",
+              "last_announced": "2026-08-13T15:05:44Z",
+              "state": {
+                "lastset": "2026-08-14T05:11:23Z",
+                "lastupdated": "2026-08-14T05:11:25.344",
+                "localtime": "2026-09-02T17:16:00",
+                "utc": "2026-09-02T15:16:00Z"
+              },
+              "config": {
+                "battery": 39,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Lahmacun",
+          "physical_id": "04:cd:15:ff:fe:34:21:fc",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "Danfoss"
+          ],
+          "model": [
+            "eTRV0100"
+          ],
+          "deconz_types": [
+            "ZHAThermostat",
+            "ZHATime"
+          ],
+          "names": [
+            "Lahmacun",
+            "Time 70"
+          ],
+          "battery_percent": [
+            37
+          ],
+          "last_seen": "2026-09-02T15:58Z",
+          "last_seen_age_hours": 0.12,
+          "last_updated": "2026-09-02T15:45:39.461",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "69",
+              "name": "Lahmacun",
+              "type": "ZHAThermostat",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0100",
+              "uniqueid": "04:cd:15:ff:fe:34:21:fc-01-0201",
+              "last_seen": "2026-09-02T15:58Z",
+              "last_announced": "2026-08-31T12:05:51Z",
+              "state": {
+                "errorcode": "none",
+                "lastupdated": "2026-09-02T15:45:39.461",
+                "mountingmodeactive": false,
+                "on": false,
+                "temperature": 2626,
+                "valve": 0,
+                "windowopen": "closed"
+              },
+              "config": {
+                "battery": 37,
+                "displayflipped": false,
+                "externalsensortemp": -8000,
+                "externalwindowopen": false,
+                "heatsetpoint": 500,
+                "loadbalancing": true,
+                "locked": false,
+                "mode": "heat",
+                "mountingmode": false,
+                "offset": 0,
+                "on": true,
+                "radiatorcovered": false,
+                "reachable": true,
+                "schedule": {},
+                "schedule_on": false,
+                "windowopendetectionenabled": false
+              }
+            },
+            {
+              "endpoint_id": "70",
+              "name": "Time 70",
+              "type": "ZHATime",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0100",
+              "uniqueid": "04:cd:15:ff:fe:34:21:fc-01-000a",
+              "last_seen": "2026-09-02T15:58Z",
+              "last_announced": "2026-08-31T12:05:51Z",
+              "state": {
+                "lastset": "2026-08-31T07:22:30Z",
+                "lastupdated": "2026-08-31T07:22:32.939",
+                "localtime": "2026-09-02T17:41:58",
+                "utc": "2026-09-02T15:41:58Z"
+              },
+              "config": {
+                "battery": 37,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Merce",
+          "physical_id": "14:2d:41:ff:fe:67:66:3d",
+          "status": "unreachable",
+          "accessible": false,
+          "can_report_data": true,
+          "manufacturer": [
+            "Danfoss"
+          ],
+          "model": [
+            "eTRV0103"
+          ],
+          "deconz_types": [
+            "ZHAThermostat",
+            "ZHATime"
+          ],
+          "names": [
+            "Merce",
+            "Time 58"
+          ],
+          "battery_percent": [
+            11
+          ],
+          "last_seen": "2026-08-07T18:25Z",
+          "last_seen_age_hours": 621.67,
+          "last_updated": "2026-08-07T13:08:24.504",
+          "problems": [
+            "deCONZ reports unreachable",
+            "last seen 621.67 h ago (threshold 24.0 h)"
+          ],
+          "endpoints": [
+            {
+              "endpoint_id": "57",
+              "name": "Merce",
+              "type": "ZHAThermostat",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0103",
+              "uniqueid": "14:2d:41:ff:fe:67:66:3d-01-0201",
+              "last_seen": "2026-08-07T18:25Z",
+              "last_announced": "2026-08-06T01:16:44Z",
+              "state": {
+                "errorcode": "E14,E15",
+                "lastupdated": "2026-08-07T13:08:24.504",
+                "mountingmodeactive": false,
+                "on": false,
+                "temperature": 2088,
+                "valve": 0,
+                "windowopen": "closed"
+              },
+              "config": {
+                "battery": 11,
+                "displayflipped": false,
+                "externalsensortemp": 2120,
+                "externalwindowopen": false,
+                "heatsetpoint": 500,
+                "loadbalancing": true,
+                "locked": false,
+                "mode": "heat",
+                "mountingmode": false,
+                "offset": 0,
+                "on": true,
+                "radiatorcovered": false,
+                "reachable": false,
+                "schedule": {},
+                "schedule_on": false,
+                "windowopendetectionenabled": false
+              }
+            },
+            {
+              "endpoint_id": "58",
+              "name": "Time 58",
+              "type": "ZHATime",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0103",
+              "uniqueid": "14:2d:41:ff:fe:67:66:3d-01-000a",
+              "last_seen": "2026-08-07T18:25Z",
+              "last_announced": "2026-08-06T01:16:44Z",
+              "state": {
+                "lastset": "2026-08-04T05:04:43Z",
+                "lastupdated": "2026-08-06T13:31:58.158",
+                "localtime": "2026-08-06T15:31:52",
+                "utc": "2026-08-06T13:31:52Z"
+              },
+              "config": {
+                "battery": 11,
+                "on": true,
+                "reachable": false
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Merce_targyalo",
+          "physical_id": "14:2d:41:ff:fe:68:02:c5",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "Danfoss"
+          ],
+          "model": [
+            "eTRV0103"
+          ],
+          "deconz_types": [
+            "ZHAThermostat",
+            "ZHATime"
+          ],
+          "names": [
+            "Merce_targyalo",
+            "Time 54"
+          ],
+          "battery_percent": [
+            41
+          ],
+          "last_seen": "2026-09-02T15:56Z",
+          "last_seen_age_hours": 0.15,
+          "last_updated": "2026-09-02T15:42:12.491",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "53",
+              "name": "Merce_targyalo",
+              "type": "ZHAThermostat",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0103",
+              "uniqueid": "14:2d:41:ff:fe:68:02:c5-01-0201",
+              "last_seen": "2026-09-02T15:56Z",
+              "last_announced": "2026-08-12T13:14:58Z",
+              "state": {
+                "errorcode": "none",
+                "lastupdated": "2026-09-02T15:42:12.491",
+                "mountingmodeactive": false,
+                "on": false,
+                "temperature": 2666,
+                "valve": 0,
+                "windowopen": "closed"
+              },
+              "config": {
+                "battery": 41,
+                "displayflipped": false,
+                "externalsensortemp": -8000,
+                "externalwindowopen": false,
+                "heatsetpoint": 2100,
+                "loadbalancing": false,
+                "locked": false,
+                "mode": "heat",
+                "mountingmode": false,
+                "offset": 0,
+                "on": true,
+                "radiatorcovered": false,
+                "reachable": true,
+                "schedule": {},
+                "schedule_on": false,
+                "windowopendetectionenabled": false
+              }
+            },
+            {
+              "endpoint_id": "54",
+              "name": "Time 54",
+              "type": "ZHATime",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0103",
+              "uniqueid": "14:2d:41:ff:fe:68:02:c5-01-000a",
+              "last_seen": "2026-09-02T15:56Z",
+              "last_announced": "2026-08-12T13:14:58Z",
+              "state": {
+                "lastset": "2026-08-12T19:33:43Z",
+                "lastupdated": "2026-08-12T19:33:44.465",
+                "localtime": "2026-09-02T17:36:22",
+                "utc": "2026-09-02T15:36:21Z"
+              },
+              "config": {
+                "battery": 41,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Oktopusz_szita_1",
+          "physical_id": "14:2d:41:ff:fe:68:8e:8b",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "Danfoss"
+          ],
+          "model": [
+            "eTRV0103"
+          ],
+          "deconz_types": [
+            "ZHAThermostat",
+            "ZHATime"
+          ],
+          "names": [
+            "Oktopusz_szita_1",
+            "Time 78"
+          ],
+          "battery_percent": [
+            39
+          ],
+          "last_seen": "2026-09-02T15:56Z",
+          "last_seen_age_hours": 0.15,
+          "last_updated": "2026-09-02T15:56:39.233",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "77",
+              "name": "Oktopusz_szita_1",
+              "type": "ZHAThermostat",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0103",
+              "uniqueid": "14:2d:41:ff:fe:68:8e:8b-01-0201",
+              "last_seen": "2026-09-02T15:56Z",
+              "last_announced": "2026-08-13T23:06:01Z",
+              "state": {
+                "errorcode": "none",
+                "lastupdated": "2026-09-02T15:56:39.233",
+                "mountingmodeactive": false,
+                "on": false,
+                "temperature": 2616,
+                "valve": 1,
+                "windowopen": "closed"
+              },
+              "config": {
+                "battery": 39,
+                "displayflipped": false,
+                "externalsensortemp": -8000,
+                "externalwindowopen": false,
+                "heatsetpoint": 500,
+                "loadbalancing": false,
+                "locked": false,
+                "mode": "heat",
+                "mountingmode": false,
+                "offset": 0,
+                "on": true,
+                "radiatorcovered": false,
+                "reachable": true,
+                "schedule": {},
+                "schedule_on": false,
+                "windowopendetectionenabled": false
+              }
+            },
+            {
+              "endpoint_id": "78",
+              "name": "Time 78",
+              "type": "ZHATime",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0103",
+              "uniqueid": "14:2d:41:ff:fe:68:8e:8b-01-000a",
+              "last_seen": "2026-09-02T15:56Z",
+              "last_announced": "2026-08-13T23:06:01Z",
+              "state": {
+                "lastset": "2026-08-20T17:09:57Z",
+                "lastupdated": "2026-08-20T17:09:58.366",
+                "localtime": "2026-09-02T17:53:23",
+                "utc": "2026-09-02T15:53:23Z"
+              },
+              "config": {
+                "battery": 39,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ]
+        },
+        {
+          "unit": "Oktopusz_szita_2",
+          "physical_id": "14:2d:41:ff:fe:68:67:1e",
+          "status": "unreachable",
+          "accessible": false,
+          "can_report_data": true,
+          "manufacturer": [
+            "Danfoss"
+          ],
+          "model": [
+            "eTRV0103"
+          ],
+          "deconz_types": [
+            "ZHAThermostat",
+            "ZHATime"
+          ],
+          "names": [
+            "Oktopusz_szita_2",
+            "Time 80"
+          ],
+          "battery_percent": [
+            91
+          ],
+          "last_seen": "2026-07-27T12:44Z",
+          "last_seen_age_hours": 891.35,
+          "last_updated": "2025-10-13T09:59:33.319",
+          "problems": [
+            "deCONZ reports unreachable",
+            "last seen 891.35 h ago (threshold 24.0 h)"
+          ],
+          "endpoints": [
+            {
+              "endpoint_id": "79",
+              "name": "Oktopusz_szita_2",
+              "type": "ZHAThermostat",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0103",
+              "uniqueid": "14:2d:41:ff:fe:68:67:1e-01-0201",
+              "last_seen": "2026-07-27T12:44Z",
+              "last_announced": null,
+              "state": {
+                "errorcode": "E10",
+                "lastupdated": "2025-10-13T09:59:33.319",
+                "mountingmodeactive": false,
+                "on": false,
+                "temperature": 1919,
+                "valve": 3,
+                "windowopen": "quarantine"
+              },
+              "config": {
+                "battery": 91,
+                "displayflipped": false,
+                "externalsensortemp": 1860,
+                "externalwindowopen": false,
+                "heatsetpoint": 1800,
+                "loadbalancing": true,
+                "locked": false,
+                "mode": "heat",
+                "mountingmode": false,
+                "offset": 0,
+                "on": true,
+                "radiatorcovered": false,
+                "reachable": false,
+                "schedule": {},
+                "schedule_on": false,
+                "windowopendetectionenabled": false
+              }
+            },
+            {
+              "endpoint_id": "80",
+              "name": "Time 80",
+              "type": "ZHATime",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0103",
+              "uniqueid": "14:2d:41:ff:fe:68:67:1e-01-000a",
+              "last_seen": "2026-07-27T12:44Z",
+              "last_announced": null,
+              "state": {
+                "lastset": null,
+                "lastupdated": "2025-10-09T13:28:55.081",
+                "localtime": "2025-10-09T17:28:53",
+                "utc": null
+              },
+              "config": {
+                "battery": 91,
+                "on": true,
+                "reachable": false
+              }
+            }
+          ]
+        },
+        {
+          "unit": "PK",
+          "physical_id": "14:2d:41:ff:fe:68:7c:03",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "Danfoss"
+          ],
+          "model": [
+            "eTRV0103"
+          ],
+          "deconz_types": [
+            "ZHAThermostat",
+            "ZHATime"
+          ],
+          "names": [
+            "PK",
+            "Time 43"
+          ],
+          "battery_percent": [
+            42
+          ],
+          "last_seen": "2026-09-02T16:04Z",
+          "last_seen_age_hours": 0.02,
+          "last_updated": "2026-09-02T15:43:54.137",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "42",
+              "name": "PK",
+              "type": "ZHAThermostat",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0103",
+              "uniqueid": "14:2d:41:ff:fe:68:7c:03-01-0201",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2026-08-13T16:32:03Z",
+              "state": {
+                "errorcode": "none",
+                "lastupdated": "2026-09-02T15:43:54.137",
+                "mountingmodeactive": false,
+                "on": false,
+                "temperature": 2793,
+                "valve": 0,
+                "windowopen": "closed"
+              },
+              "config": {
+                "battery": 42,
+                "displayflipped": false,
+                "externalsensortemp": -8000,
+                "externalwindowopen": false,
+                "heatsetpoint": 500,
+                "loadbalancing": false,
+                "locked": false,
+                "mode": "heat",
+                "mountingmode": false,
+                "offset": 0,
+                "on": true,
+                "radiatorcovered": false,
+                "reachable": true,
+                "schedule": {},
+                "schedule_on": false,
+                "windowopendetectionenabled": false
+              }
+            },
+            {
+              "endpoint_id": "43",
+              "name": "Time 43",
+              "type": "ZHATime",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0103",
+              "uniqueid": "14:2d:41:ff:fe:68:7c:03-01-000a",
+              "last_seen": "2026-09-02T16:04Z",
+              "last_announced": "2026-08-13T16:32:03Z",
+              "state": {
+                "lastset": "2026-08-27T09:39:39Z",
+                "lastupdated": "2026-08-27T09:39:43.677",
+                "localtime": "2026-09-02T17:28:00",
+                "utc": "2026-09-02T15:28:00Z"
+              },
+              "config": {
+                "battery": 42,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ]
+        },
+        {
+          "unit": "SZGK",
+          "physical_id": "14:2d:41:ff:fe:68:0f:b4",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "manufacturer": [
+            "Danfoss"
+          ],
+          "model": [
+            "eTRV0103"
+          ],
+          "deconz_types": [
+            "ZHAThermostat",
+            "ZHATime"
+          ],
+          "names": [
+            "SZGK",
+            "Time 60"
+          ],
+          "battery_percent": [
+            41
+          ],
+          "last_seen": "2026-09-02T16:00Z",
+          "last_seen_age_hours": 0.08,
+          "last_updated": "2026-09-02T15:36:28.971",
+          "problems": [],
+          "endpoints": [
+            {
+              "endpoint_id": "59",
+              "name": "SZGK",
+              "type": "ZHAThermostat",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0103",
+              "uniqueid": "14:2d:41:ff:fe:68:0f:b4-01-0201",
+              "last_seen": "2026-09-02T16:00Z",
+              "last_announced": "2026-08-26T08:38:26Z",
+              "state": {
+                "errorcode": "none",
+                "lastupdated": "2026-09-02T15:36:28.971",
+                "mountingmodeactive": false,
+                "on": false,
+                "temperature": 2717,
+                "valve": 0,
+                "windowopen": "closed"
+              },
+              "config": {
+                "battery": 41,
+                "displayflipped": false,
+                "externalsensortemp": -8000,
+                "externalwindowopen": false,
+                "heatsetpoint": 500,
+                "loadbalancing": false,
+                "locked": false,
+                "mode": "heat",
+                "mountingmode": false,
+                "offset": 0,
+                "on": true,
+                "radiatorcovered": false,
+                "reachable": true,
+                "schedule": {},
+                "schedule_on": false,
+                "windowopendetectionenabled": false
+              }
+            },
+            {
+              "endpoint_id": "60",
+              "name": "Time 60",
+              "type": "ZHATime",
+              "manufacturer": "Danfoss",
+              "model": "eTRV0103",
+              "uniqueid": "14:2d:41:ff:fe:68:0f:b4-01-000a",
+              "last_seen": "2026-09-02T16:00Z",
+              "last_announced": "2026-08-26T08:38:26Z",
+              "state": {
+                "lastset": "2026-09-02T09:13:48Z",
+                "lastupdated": "2026-09-02T09:13:49.387",
+                "localtime": "2026-09-02T17:16:54",
+                "utc": "2026-09-02T15:16:54Z"
+              },
+              "config": {
+                "battery": 41,
+                "on": true,
+                "reachable": true
+              }
+            }
+          ]
+        }
+      ],
+      "deconz_snapshot_elapsed_ms": 42.1
+    },
+    "ikea_parasoll": {
+      "label": "IKEA Parasoll opening sensors",
+      "probe": "deCONZ open/close sensor snapshot",
+      "category_error": null,
+      "units": [],
+      "deconz_snapshot_elapsed_ms": 42.1
+    },
+    "shelly_radiator_temperature": {
+      "label": "Shelly radiator-temperature readers",
+      "probe": "get_radiator_temps(..., detailed=True)",
+      "category_error": null,
+      "units": [
+        {
+          "unit": "golya_radiatorok_shelly",
+          "ip": "192.168.101.26",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "check": {
+            "ok": true,
+            "elapsed_ms": 139.1,
+            "data": {
+              "timestamp": "2026-09-02-18-05-04",
+              "devices": {
+                "golya_radiatorok_shelly": {
+                  "ip": "192.168.101.26",
+                  "peripherals": {
+                    "gólya1": {
+                      "temp": 26.5,
+                      "component": "temperature:100",
+                      "addr": "40:177:223:121:0:0:0:36",
+                      "errors": []
+                    },
+                    "gólya2": {
+                      "temp": 26.4,
+                      "component": "temperature:101",
+                      "addr": "40:223:108:113:0:0:0:233",
+                      "errors": []
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "unit": "szgk_radiator_shelly",
+          "ip": "192.168.101.28",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "check": {
+            "ok": true,
+            "elapsed_ms": 308.6,
+            "data": {
+              "timestamp": "2026-09-02-18-05-04",
+              "devices": {
+                "szgk_radiator_shelly": {
+                  "ip": "192.168.101.28",
+                  "peripherals": {
+                    "temperature:100": {
+                      "temp": 26.8,
+                      "component": "temperature:100",
+                      "addr": "40:10:74:120:0:0:0:49",
+                      "errors": []
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "unit": "pk_radiatorok_shelly",
+          "ip": "192.168.101.29",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "check": {
+            "ok": true,
+            "elapsed_ms": 579.6,
+            "data": {
+              "timestamp": "2026-09-02-18-05-05",
+              "devices": {
+                "pk_radiatorok_shelly": {
+                  "ip": "192.168.101.29",
+                  "peripherals": {
+                    "temperature:100": {
+                      "temp": 27.4,
+                      "component": "temperature:100",
+                      "addr": "40:107:250:119:0:0:0:16",
+                      "errors": []
+                    },
+                    "temperature:101": {
+                      "temp": 27.7,
+                      "component": "temperature:101",
+                      "addr": "40:61:231:110:0:0:0:183",
+                      "errors": []
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "unit": "oktopusz_1_radiator_shelly",
+          "ip": "192.168.101.21",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "check": {
+            "ok": true,
+            "elapsed_ms": 241.2,
+            "data": {
+              "timestamp": "2026-09-02-18-05-05",
+              "devices": {
+                "oktopusz_1_radiator_shelly": {
+                  "ip": "192.168.101.21",
+                  "peripherals": {
+                    "temperature:100": {
+                      "temp": 26.2,
+                      "component": "temperature:100",
+                      "addr": "40:121:10:122:0:0:0:30",
+                      "errors": []
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "unit": "oktopusz_2_radiator_shelly",
+          "ip": "192.168.101.83",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "check": {
+            "ok": true,
+            "elapsed_ms": 104.9,
+            "data": {
+              "timestamp": "2026-09-02-18-05-06",
+              "devices": {
+                "oktopusz_2_radiator_shelly": {
+                  "ip": "192.168.101.83",
+                  "peripherals": {}
+                }
+              }
+            }
+          }
+        },
+        {
+          "unit": "gep_radiator_shelly",
+          "ip": "192.168.101.42",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "check": {
+            "ok": true,
+            "elapsed_ms": 377.9,
+            "data": {
+              "timestamp": "2026-09-02-18-05-06",
+              "devices": {
+                "gep_radiator_shelly": {
+                  "ip": "192.168.101.42",
+                  "peripherals": {
+                    "temperature:100": {
+                      "temp": 26.5,
+                      "component": "temperature:100",
+                      "addr": "40:2:241:121:0:0:0:32",
+                      "errors": []
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "unit": "merce_radiatorok_1_shelly",
+          "ip": "192.168.101.37",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "check": {
+            "ok": true,
+            "elapsed_ms": 518.5,
+            "data": {
+              "timestamp": "2026-09-02-18-05-06",
+              "devices": {
+                "merce_radiatorok_1_shelly": {
+                  "ip": "192.168.101.37",
+                  "peripherals": {
+                    "temperature:100": {
+                      "temp": 26.8,
+                      "component": "temperature:100",
+                      "addr": "40:221:243:120:0:0:0:204",
+                      "errors": []
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "unit": "merce_radiatorok_2_shelly",
+          "ip": "192.168.101.94",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "check": {
+            "ok": true,
+            "elapsed_ms": 3582.5,
+            "data": {
+              "timestamp": "2026-09-02-18-05-07",
+              "devices": {
+                "merce_radiatorok_2_shelly": {
+                  "ip": "192.168.101.94",
+                  "peripherals": {
+                    "temperature:100": {
+                      "temp": 26.9,
+                      "component": "temperature:100",
+                      "addr": "40:202:196:122:0:0:0:192",
+                      "errors": []
+                    },
+                    "temperature:101": {
+                      "temp": 26.8,
+                      "component": "temperature:101",
+                      "addr": "40:37:68:120:0:0:0:1",
+                      "errors": []
+                    },
+                    "temperature:102": {
+                      "temp": 27.1,
+                      "component": "temperature:102",
+                      "addr": "40:86:130:124:0:0:0:112",
+                      "errors": []
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "unit": "ovi_radiatorok_shelly",
+          "ip": "192.168.101.47",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "check": {
+            "ok": true,
+            "elapsed_ms": 1657.2,
+            "data": {
+              "timestamp": "2026-09-02-18-05-10",
+              "devices": {
+                "ovi_radiatorok_shelly": {
+                  "ip": "192.168.101.47",
+                  "peripherals": {
+                    "temperature:100": {
+                      "temp": 27.5,
+                      "component": "temperature:100",
+                      "addr": "40:146:200:121:0:0:0:230",
+                      "errors": []
+                    },
+                    "temperature:101": {
+                      "temp": 27.6,
+                      "component": "temperature:101",
+                      "addr": "40:149:147:111:0:0:0:183",
+                      "errors": []
+                    },
+                    "temperature:102": {
+                      "temp": 27.4,
+                      "component": "temperature:102",
+                      "addr": "40:183:99:71:0:0:0:165",
+                      "errors": []
+                    },
+                    "temperature:103": {
+                      "temp": 27.5,
+                      "component": "temperature:103",
+                      "addr": "40:26:255:123:0:0:0:127",
+                      "errors": []
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "unit": "studio_radiator_shelly",
+          "ip": "192.168.101.74",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "check": {
+            "ok": true,
+            "elapsed_ms": 516.8,
+            "data": {
+              "timestamp": "2026-09-02-18-05-12",
+              "devices": {
+                "studio_radiator_shelly": {
+                  "ip": "192.168.101.74",
+                  "peripherals": {
+                    "temperature:100": {
+                      "temp": 25.7,
+                      "component": "temperature:100",
+                      "addr": "40:232:177:121:0:0:0:47",
+                      "errors": []
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "shelly_electric_submeters": {
+      "label": "Shelly electric submeter readers",
+      "probe": "Shelly.GetDeviceInfo + Shelly.GetStatus",
+      "category_error": null,
+      "units": [
+        {
+          "unit": "192.168.101.85",
+          "ip": "192.168.101.85",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "channels": {
+            "0": "keramia",
+            "1": "hm division",
+            "2": "ovi",
+            "3": "merce"
+          },
+          "pulse_reporting": {
+            "method": "WebSocket single_push events",
+            "repo_helper": "listen_shelly_single_pushes()",
+            "actively_waited_for_pulse": false,
+            "note": "The production submeter service counts edge events. This non-blocking tester confirms Shelly RPC access/status but does not wait indefinitely for a real meter pulse."
+          },
+          "checks": {
+            "device_info": {
+              "ok": true,
+              "elapsed_ms": 159.9,
+              "data": {
+                "name": "almero1",
+                "id": "shellyplusi4-841fe8f9b408",
+                "mac": "841FE8F9B408",
+                "slot": 1,
+                "model": "SNSN-0D24X",
+                "gen": 2,
+                "fw_id": "20260311-095904/1.7.5-g9979d16",
+                "ver": "1.7.5",
+                "app": "PlusI4",
+                "auth_en": false,
+                "auth_domain": null,
+                "provision": "complete"
+              }
+            },
+            "status": {
+              "ok": true,
+              "elapsed_ms": 104.3,
+              "data": {
+                "ble": {},
+                "cloud": {
+                  "connected": false
+                },
+                "input:0": {
+                  "id": 0,
+                  "state": null
+                },
+                "input:1": {
+                  "id": 1,
+                  "state": null
+                },
+                "input:2": {
+                  "id": 2,
+                  "state": null
+                },
+                "input:3": {
+                  "id": 3,
+                  "state": null
+                },
+                "mqtt": {
+                  "connected": false
+                },
+                "sys": {
+                  "mac": "841FE8F9B408",
+                  "restart_required": false,
+                  "time": "18:05",
+                  "unixtime": 1788365112,
+                  "last_sync_ts": 1788364143,
+                  "uptime": 10739762,
+                  "ram_size": 266336,
+                  "ram_free": 128964,
+                  "ram_min_free": 110252,
+                  "fs_size": 393216,
+                  "fs_free": 126976,
+                  "cfg_rev": 29,
+                  "kvs_rev": 0,
+                  "schedule_rev": 0,
+                  "webhook_rev": 1,
+                  "btrelay_rev": 0,
+                  "available_updates": {},
+                  "reset_reason": 1,
+                  "utc_offset": 7200
+                },
+                "wifi": {
+                  "sta_ip": "192.168.101.85",
+                  "status": "got ip",
+                  "ssid": "Kazan_irodak",
+                  "bssid": "24:2f:d0:6a:67:58",
+                  "rssi": -77
+                },
+                "ws": {
+                  "connected": false
+                }
+              }
+            }
+          }
+        },
+        {
+          "unit": "192.168.101.76",
+          "ip": "192.168.101.76",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "channels": {
+            "0": "studio",
+            "1": "szgk",
+            "2": "golya",
+            "3": "edzoterem"
+          },
+          "pulse_reporting": {
+            "method": "WebSocket single_push events",
+            "repo_helper": "listen_shelly_single_pushes()",
+            "actively_waited_for_pulse": false,
+            "note": "The production submeter service counts edge events. This non-blocking tester confirms Shelly RPC access/status but does not wait indefinitely for a real meter pulse."
+          },
+          "checks": {
+            "device_info": {
+              "ok": true,
+              "elapsed_ms": 65.4,
+              "data": {
+                "name": "almero2",
+                "id": "shellyplusi4-80f3dae42380",
+                "mac": "80F3DAE42380",
+                "slot": 0,
+                "model": "SNSN-0D24X",
+                "gen": 2,
+                "fw_id": "20260311-095904/1.7.5-g9979d16",
+                "ver": "1.7.5",
+                "app": "PlusI4",
+                "auth_en": false,
+                "auth_domain": null,
+                "provision": "complete"
+              }
+            },
+            "status": {
+              "ok": true,
+              "elapsed_ms": 50.2,
+              "data": {
+                "ble": {},
+                "cloud": {
+                  "connected": false
+                },
+                "input:0": {
+                  "id": 0,
+                  "state": null
+                },
+                "input:1": {
+                  "id": 1,
+                  "state": null
+                },
+                "input:2": {
+                  "id": 2,
+                  "state": null
+                },
+                "input:3": {
+                  "id": 3,
+                  "state": null
+                },
+                "mqtt": {
+                  "connected": false
+                },
+                "sys": {
+                  "mac": "80F3DAE42380",
+                  "restart_required": false,
+                  "time": "18:05",
+                  "unixtime": 1788365113,
+                  "last_sync_ts": 1788364595,
+                  "uptime": 10739437,
+                  "ram_size": 266384,
+                  "ram_free": 129752,
+                  "ram_min_free": 107536,
+                  "fs_size": 393216,
+                  "fs_free": 131072,
+                  "cfg_rev": 22,
+                  "kvs_rev": 0,
+                  "schedule_rev": 0,
+                  "webhook_rev": 0,
+                  "btrelay_rev": 0,
+                  "available_updates": {},
+                  "reset_reason": 1,
+                  "utc_offset": 7200
+                },
+                "wifi": {
+                  "sta_ip": "192.168.101.76",
+                  "status": "got ip",
+                  "ssid": "Kazan_irodak",
+                  "bssid": "24:2f:d0:6a:67:58",
+                  "rssi": -80
+                },
+                "ws": {
+                  "connected": false
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ws90_weather_probe": {
+      "label": "WS90 external weather probe",
+      "probe": "get_weather_station_state()",
+      "category_error": null,
+      "units": [
+        {
+          "unit": "fc:4d:6a:24:64:c7",
+          "gateway_shelly_ip": "192.168.101.26",
+          "ws90_bt_addr": "fc:4d:6a:24:64:c7",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "check": {
+            "ok": true,
+            "elapsed_ms": 82.4,
+            "data": {
+              "timestamp": "2026-09-02-18-05-13",
+              "last_updated": "2026-09-02-18-05-12",
+              "state": {
+                "illuminance_lux": 6110.0,
+                "rain_status": false,
+                "wind_speed_m_s": 0.0,
+                "gust_speed_m_s": 1.1,
+                "uv_index": 0.0,
+                "wind_direction_deg": 11.0,
+                "battery_pct": 85,
+                "dewpoint_c": 9.66,
+                "humidity_pct": 32,
+                "temperature_c": 27.9
+              }
+            }
+          }
+        }
+      ]
+    },
+    "homewizard_p1": {
+      "label": "HomeWizard P1 main electricity meter reader",
+      "probe": "HTTP GET /api/v1/data",
+      "category_error": null,
+      "units": [
+        {
+          "unit": "http://192.168.29.88/api/v1/data",
+          "url": "http://192.168.29.88/api/v1/data",
+          "status": "ok",
+          "accessible": true,
+          "can_report_data": true,
+          "check": {
+            "ok": true,
+            "elapsed_ms": 42.2,
+            "data": {
+              "wifi_ssid": "futes",
+              "wifi_strength": 44,
+              "meter_model": "AUX59903177198",
+              "unique_id": "9903177198",
+              "active_tariff": 1,
+              "total_power_import_kwh": 101436.172,
+              "total_power_import_t1_kwh": 41822.667,
+              "total_power_import_t2_kwh": 59613.505,
+              "total_power_import_t3_kwh": 0,
+              "total_power_import_t4_kwh": 0,
+              "total_power_export_kwh": 53147.142,
+              "total_power_export_t1_kwh": 34962.014,
+              "total_power_export_t2_kwh": 18185.128,
+              "total_power_export_t3_kwh": 0,
+              "total_power_export_t4_kwh": 0,
+              "active_power_w": 5661,
+              "active_voltage_l1_v": 233.1,
+              "active_voltage_l2_v": 235.4,
+              "active_voltage_l3_v": 231.1,
+              "active_current_a": 27,
+              "active_current_l1_a": 2,
+              "active_current_l2_a": 3,
+              "active_current_l3_a": 22,
+              "active_frequency_hz": 50.04,
+              "external": []
+            }
+          }
+        }
+      ]
+    }
+  }
+}
