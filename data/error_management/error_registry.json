@@ -6576,5 +6576,27 @@
         "reported_timestamp": "2026-09-07-19-25-30",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to sync data and config with repo: Git command failed with exit code 1: git -C /media/pi/program_stick/kazanfutes -c rebase.autoStash=false rebase -X theirs 1aa51e0cfbfd0642074704325957bbf8b54fb562\nerror: cannot rebase: You have unstaged changes.\nerror: Please commit or stash them.: Git command failed with exit code 1: git -C /media/pi/program_stick/kazanfutes -c rebase.autoStash=false rebase -X theirs 1aa51e0cfbfd0642074704325957bbf8b54fb562\nerror: cannot rebase: You have unstaged changes.\nerror: Please commit or stash them. (GitCommandError).",
+        "severity": 2,
+        "origin": "data_and_config_uploader.py:137 --> project.py/sync_snapshot_paths_with_repo:481",
+        "origin_timestamp": "2026-09-07-21-20-27",
+        "registration_timestamp": "2026-09-07-21-20-28",
+        "reported": true,
+        "reported_timestamp": "2026-09-07-21-20-35",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while acquiring boiler state: couldn't read boiler state: couldn't read state of GPIO pin 6: unexpected error while loading system/GPIO_state.json to dict: Expecting value: line 1 column 1 (char 0) (JSONDecodeError) (ModuleException) (ModuleException).",
+        "severity": 3,
+        "origin": "heating_control.py/get_system_state:270 --> project.py/get_boiler_state:821",
+        "origin_timestamp": "2026-09-07-21-33-10",
+        "registration_timestamp": "2026-09-07-21-33-10",
+        "reported": true,
+        "reported_timestamp": "2026-09-07-21-35-32",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
