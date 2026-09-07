@@ -3,15 +3,27 @@ Reads and logs weather station state.
 """
 
 from utils.project import *
+from utils.shelly_discovery import (
+    build_shelly_resolver,
+    load_shelly_config,
+)
 
-WEATHER_STATION = {
-    "shelly_ip": "192.168.101.26",
-    "ws90_bt_addr": "fc:4d:6a:24:64:c7",
-}
+PROJECT_ROOT = get_project_root()
+SHELLY_CONFIG = load_shelly_config(PROJECT_ROOT)
+SHELLY_RESOLVER = build_shelly_resolver(PROJECT_ROOT, SHELLY_CONFIG)
+WEATHER_STATION = SHELLY_CONFIG["weather_station"]
 
 success = False
 try:
-    weather_station_state = get_weather_station_state(**WEATHER_STATION)
+    gateway_name = WEATHER_STATION["gateway_device"]
+    gateway = SHELLY_RESOLVER.resolve_one(
+        gateway_name,
+        SHELLY_CONFIG["devices"][gateway_name],
+    )
+    weather_station_state = get_weather_station_state(
+        shelly_ip=gateway["ip"],
+        ws90_bt_addr=WEATHER_STATION["ws90_bt_addr"],
+    )
 
     #system_node = JSONNodeAtURL(node_relative_path='system')
     #system_node.write({"weather_station": weather_station_state}, "state")

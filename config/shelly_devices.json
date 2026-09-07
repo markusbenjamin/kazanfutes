@@ -1,0 +1,150 @@
+{
+  "discovery": {
+    "networks": [
+      "10.10.120.0/24"
+    ],
+    "cache_relative_path": "data/cache/shelly_devices.json",
+    "probe_timeout_seconds": 0.8,
+    "rpc_timeout_seconds": 1.5,
+    "scan_workers": 48,
+    "reconnect_delay_seconds": 10
+  },
+  "devices": {
+    "almero1": {
+      "mac": "84:1f:e8:f9:b4:08",
+      "device_names": [
+        "almero1",
+        "shellyplusi4-841fe8f9b408"
+      ]
+    },
+    "almero2": {
+      "mac": "80:f3:da:e4:23:80",
+      "device_names": [
+        "almero2",
+        "shellyplusi4-80f3dae42380"
+      ]
+    },
+    "golya_radiatorok_shelly": {
+      "sensor_addresses": [
+        "40:177:223:121:0:0:0:36",
+        "40:223:108:113:0:0:0:233"
+      ],
+      "bthome_addresses": [
+        "fc:4d:6a:24:64:c7"
+      ],
+      "device_names": [
+        "golya_radiatorok_shelly"
+      ]
+    },
+    "szgk_radiator_shelly": {
+      "sensor_addresses": [
+        "40:10:74:120:0:0:0:49"
+      ],
+      "device_names": [
+        "szgk_radiator_shelly"
+      ]
+    },
+    "pk_radiatorok_shelly": {
+      "sensor_addresses": [
+        "40:107:250:119:0:0:0:16",
+        "40:61:231:110:0:0:0:183"
+      ],
+      "device_names": [
+        "pk_radiatorok_shelly"
+      ]
+    },
+    "oktopusz_1_radiator_shelly": {
+      "sensor_addresses": [
+        "40:121:10:122:0:0:0:30"
+      ],
+      "device_names": [
+        "oktopusz_1_radiator_shelly"
+      ]
+    },
+    "oktopusz_2_radiator_shelly": {
+      "device_names": [
+        "oktopusz_2_radiator_shelly"
+      ],
+      "required": false
+    },
+    "gep_radiator_shelly": {
+      "sensor_addresses": [
+        "40:2:241:121:0:0:0:32"
+      ],
+      "device_names": [
+        "gep_radiator_shelly"
+      ]
+    },
+    "merce_radiatorok_1_shelly": {
+      "sensor_addresses": [
+        "40:221:243:120:0:0:0:204"
+      ],
+      "device_names": [
+        "merce_radiatorok_1_shelly"
+      ]
+    },
+    "merce_radiatorok_2_shelly": {
+      "sensor_addresses": [
+        "40:202:196:122:0:0:0:192",
+        "40:37:68:120:0:0:0:1",
+        "40:86:130:124:0:0:0:112"
+      ],
+      "device_names": [
+        "merce_radiatorok_2_shelly"
+      ]
+    },
+    "ovi_radiatorok_shelly": {
+      "sensor_addresses": [
+        "40:146:200:121:0:0:0:230",
+        "40:149:147:111:0:0:0:183",
+        "40:183:99:71:0:0:0:165",
+        "40:26:255:123:0:0:0:127"
+      ],
+      "device_names": [
+        "ovi_radiatorok_shelly"
+      ]
+    },
+    "studio_radiator_shelly": {
+      "sensor_addresses": [
+        "40:232:177:121:0:0:0:47"
+      ],
+      "device_names": [
+        "studio_radiator_shelly"
+      ]
+    }
+  },
+  "submeters": {
+    "almero1": {
+      "inputs": {
+        "0": "keramia",
+        "1": "hm division",
+        "2": "ovi",
+        "3": "merce"
+      }
+    },
+    "almero2": {
+      "inputs": {
+        "0": "studio",
+        "1": "szgk",
+        "2": "golya",
+        "3": "edzoterem"
+      }
+    }
+  },
+  "radiator_devices": [
+    "golya_radiatorok_shelly",
+    "szgk_radiator_shelly",
+    "pk_radiatorok_shelly",
+    "oktopusz_1_radiator_shelly",
+    "oktopusz_2_radiator_shelly",
+    "gep_radiator_shelly",
+    "merce_radiatorok_1_shelly",
+    "merce_radiatorok_2_shelly",
+    "ovi_radiatorok_shelly",
+    "studio_radiator_shelly"
+  ],
+  "weather_station": {
+    "gateway_device": "golya_radiatorok_shelly",
+    "ws90_bt_addr": "fc:4d:6a:24:64:c7"
+  }
+}

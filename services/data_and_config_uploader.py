@@ -134,7 +134,7 @@ def report_blocking_locks():
 success = False
 try:
     check_index_lock()
-    success = sync_paths_with_repo(SYNC_PATHS, 'Automatic data and config push.', 30)
+    success = sync_snapshot_paths_with_repo(SYNC_PATHS, 'Automatic data and config push.', 30)
     if not success:
         report("Data and config paths locked, couldn't push.")
         report_blocking_locks()
@@ -146,3 +146,6 @@ except Exception:
     ServiceException("Unexpected error while trying to sync data and config with repo", severity=2)
 
 log({"success": success})
+
+if not success:
+    raise SystemExit(1)

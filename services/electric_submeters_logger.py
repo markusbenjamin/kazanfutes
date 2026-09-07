@@ -3,21 +3,19 @@ Reads and logs submeter impulses from two Shelly Plus I4 devices.
 """
 
 from utils.project import *
+from utils.shelly_discovery import (
+    build_shelly_resolver,
+    load_shelly_config,
+)
 
-SHELLIES = {
-    "192.168.101.85": {
-        0: "keramia",
-        1: "hm division",
-        2: "ovi",
-        3: "merce",
-    },
-    "192.168.101.76": {
-        0: "studio",
-        1: "szgk",
-        2: "golya",
-        3: "edzoterem",
-    },
-}
+PROJECT_ROOT = get_project_root()
+SHELLY_CONFIG = load_shelly_config(PROJECT_ROOT)
+SHELLY_RESOLVER = build_shelly_resolver(PROJECT_ROOT, SHELLY_CONFIG)
+SUBMETERS = SHELLY_CONFIG["submeters"]
+DEVICE_SPECS = SHELLY_CONFIG["devices"]
+RECONNECT_DELAY_SECONDS = float(
+    SHELLY_CONFIG["discovery"].get("reconnect_delay_seconds", 10)
+)
 
 LOCK_PATH = os.path.join(
     get_project_root(),
@@ -30,8 +28,7 @@ system_node = JSONNodeAtURL(node_relative_path='system')
 write_lock = threading.Lock()
 
 
-def make_event_handler(ip: str):
-    input_lookup = SHELLIES[ip]
+def make_event_handler(device_name: str, input_lookup: dict[int, str]):
 
     def handle_event(event):
         out = {
@@ -47,11 +44,32 @@ def make_event_handler(ip: str):
     return handle_event
 
 
-def run_listener(ip: str):
-    listen_shelly_single_pushes(
-        ip=ip,
-        event_handler=make_event_handler(ip),
-    )
+def run_listener(device_name: str):
+    input_lookup = {
+        int(input_id): submeter
+        for input_id, submeter in SUBMETERS[device_name]["inputs"].items()
+    }
+
+    while True:
+        try:
+            device = SHELLY_RESOLVER.resolve_one(
+                device_name,
+                DEVICE_SPECS[device_name],
+            )
+            report(
+                f"listening for {device_name} impulses at {device['ip']} "
+                f"({device['mac']})"
+            )
+            listen_shelly_single_pushes(
+                ip=device["ip"],
+                event_handler=make_event_handler(device_name, input_lookup),
+            )
+        except Exception as e:
+            report(
+                f"{device_name} listener unavailable: {e}; "
+                f"retrying in {RECONNECT_DELAY_SECONDS:g} seconds"
+            )
+            time.sleep(RECONNECT_DELAY_SECONDS)
 
 
 success = False
@@ -61,12 +79,12 @@ try:
     with filelock.FileLock(LOCK_PATH, timeout=0):
         threads = []
 
-        for ip in SHELLIES:
+        for device_name in SUBMETERS:
             thread = threading.Thread(
                 target=run_listener,
-                args=(ip,),
+                args=(device_name,),
                 daemon=False,
-                name=f"submeter_listener_{ip}",
+                name=f"submeter_listener_{device_name}",
             )
             thread.start()
             threads.append(thread)

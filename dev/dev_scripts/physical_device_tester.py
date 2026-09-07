@@ -31,6 +31,7 @@ from typing import Any, Callable
 import requests
 
 from utils.project import *  # noqa: F401,F403 - project helpers are the probe API
+from utils.shelly_discovery import build_shelly_resolver, load_shelly_config
 
 
 settings["log"] = False
@@ -49,41 +50,16 @@ HEATMETER_FIELDS = [
     "volume_m3",
 ]
 
-# Mirrors services/radiator_temps_logger.py.
-RADIATOR_SHELLIES = {
-    "golya_radiatorok_shelly": "192.168.101.26",
-    "szgk_radiator_shelly": "192.168.101.28",
-    "pk_radiatorok_shelly": "192.168.101.29",
-    "oktopusz_1_radiator_shelly": "192.168.101.21",
-    "oktopusz_2_radiator_shelly": "192.168.101.83",
-    "gep_radiator_shelly": "192.168.101.42",
-    "merce_radiatorok_1_shelly": "192.168.101.37",
-    "merce_radiatorok_2_shelly": "192.168.101.94",
-    "ovi_radiatorok_shelly": "192.168.101.47",
-    "studio_radiator_shelly": "192.168.101.74",
+# Shared with the production Shelly loggers.
+SHELLY_PROJECT_ROOT = get_project_root()
+SHELLY_CONFIG = load_shelly_config(SHELLY_PROJECT_ROOT)
+SHELLY_RESOLVER = build_shelly_resolver(SHELLY_PROJECT_ROOT, SHELLY_CONFIG)
+RADIATOR_DEVICE_SPECS = {
+    name: SHELLY_CONFIG["devices"][name]
+    for name in SHELLY_CONFIG["radiator_devices"]
 }
-
-# Mirrors services/electric_submeters_logger.py.
-SUBMETER_SHELLIES = {
-    "192.168.101.85": {
-        0: "keramia",
-        1: "hm division",
-        2: "ovi",
-        3: "merce",
-    },
-    "192.168.101.76": {
-        0: "studio",
-        1: "szgk",
-        2: "golya",
-        3: "edzoterem",
-    },
-}
-
-# Mirrors services/weather_station_logger.py.
-WEATHER_STATION = {
-    "shelly_ip": "192.168.101.26",
-    "ws90_bt_addr": "fc:4d:6a:24:64:c7",
-}
+SUBMETER_CONFIG = SHELLY_CONFIG["submeters"]
+WEATHER_STATION = SHELLY_CONFIG["weather_station"]
 
 # Mirrors services/electric_meter_logger.py.
 HOMEWIZARD_P1_URL = "http://192.168.29.88/api/v1/data"
@@ -552,19 +528,31 @@ def probe_deconz_categories(stale_hours: float) -> dict[str, dict[str, Any]]:
 
 def probe_radiator_shelly_readers() -> dict[str, Any]:
     category = _new_category("shelly_radiator_temperature")
+    resolved, resolution_errors = SHELLY_RESOLVER.resolve_many(RADIATOR_DEVICE_SPECS)
 
-    for name, ip in RADIATOR_SHELLIES.items():
-        check = _timed_call(
-            lambda name=name, ip=ip: get_radiator_temps(
-                {name: ip},
-                detailed=True,
+    for name in RADIATOR_DEVICE_SPECS:
+        if name in resolved:
+            device = resolved[name]
+            ip = device["ip"]
+            check = _timed_call(
+                lambda name=name, ip=ip: get_radiator_temps(
+                    {name: ip},
+                    detailed=True,
+                )
             )
-        )
+        else:
+            ip = None
+            check = {
+                "ok": False,
+                "elapsed_ms": 0.0,
+                "error": resolution_errors[name],
+            }
         status = "ok" if check["ok"] else "unreachable"
         category["units"].append(
             {
                 "unit": name,
                 "ip": ip,
+                "mac": resolved.get(name, {}).get("mac"),
                 "status": status,
                 "accessible": check["ok"],
                 "can_report_data": check["ok"],
@@ -577,22 +565,44 @@ def probe_radiator_shelly_readers() -> dict[str, Any]:
 
 def probe_submeter_shelly_readers() -> dict[str, Any]:
     category = _new_category("shelly_electric_submeters")
+    specs = {
+        name: SHELLY_CONFIG["devices"][name]
+        for name in SUBMETER_CONFIG
+    }
+    resolved, resolution_errors = SHELLY_RESOLVER.resolve_many(specs)
 
-    for ip, channels in SUBMETER_SHELLIES.items():
-        checks = {
-            "device_info": _timed_call(
-                lambda ip=ip: shelly_rpc(ip, "Shelly.GetDeviceInfo")
-            ),
-            "status": _timed_call(
-                lambda ip=ip: shelly_rpc(ip, "Shelly.GetStatus")
-            ),
+    for name, submeter_config in SUBMETER_CONFIG.items():
+        channels = {
+            int(input_id): submeter
+            for input_id, submeter in submeter_config["inputs"].items()
         }
+        if name in resolved:
+            device = resolved[name]
+            ip = device["ip"]
+            checks = {
+                "device_info": _timed_call(
+                    lambda ip=ip: shelly_rpc(ip, "Shelly.GetDeviceInfo")
+                ),
+                "status": _timed_call(
+                    lambda ip=ip: shelly_rpc(ip, "Shelly.GetStatus")
+                ),
+            }
+        else:
+            ip = None
+            checks = {
+                "discovery": {
+                    "ok": False,
+                    "elapsed_ms": 0.0,
+                    "error": resolution_errors[name],
+                }
+            }
         status, accessible = _status_from_checks(checks)
 
         category["units"].append(
             {
-                "unit": ip,
+                "unit": name,
                 "ip": ip,
+                "mac": resolved.get(name, {}).get("mac"),
                 "status": status,
                 "accessible": accessible,
                 "can_report_data": accessible,
@@ -616,15 +626,32 @@ def probe_submeter_shelly_readers() -> dict[str, Any]:
 
 def probe_ws90() -> dict[str, Any]:
     category = _new_category("ws90_weather_probe")
-    check = _timed_call(
-        lambda: get_weather_station_state(**WEATHER_STATION)
+    gateway_name = WEATHER_STATION["gateway_device"]
+    resolved, resolution_errors = SHELLY_RESOLVER.resolve_many(
+        {gateway_name: SHELLY_CONFIG["devices"][gateway_name]}
     )
+    if gateway_name in resolved:
+        gateway = resolved[gateway_name]
+        check = _timed_call(
+            lambda: get_weather_station_state(
+                shelly_ip=gateway["ip"],
+                ws90_bt_addr=WEATHER_STATION["ws90_bt_addr"],
+            )
+        )
+    else:
+        gateway = {}
+        check = {
+            "ok": False,
+            "elapsed_ms": 0.0,
+            "error": resolution_errors[gateway_name],
+        }
     status = "ok" if check["ok"] else "unreachable"
 
     category["units"].append(
         {
             "unit": WEATHER_STATION["ws90_bt_addr"],
-            "gateway_shelly_ip": WEATHER_STATION["shelly_ip"],
+            "gateway_shelly_ip": gateway.get("ip"),
+            "gateway_shelly_mac": gateway.get("mac"),
             "ws90_bt_addr": WEATHER_STATION["ws90_bt_addr"],
             "status": status,
             "accessible": check["ok"],

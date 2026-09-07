@@ -3,23 +3,38 @@ Reads and logs radiator temperatures.
 """
 
 from utils.project import *
+from utils.shelly_discovery import (
+    ShellyDiscoveryError,
+    build_shelly_resolver,
+    load_shelly_config,
+)
 
-SHELLY_IPS = {
-    "golya_radiatorok_shelly": "192.168.101.26",
-    "szgk_radiator_shelly": "192.168.101.28",
-    "pk_radiatorok_shelly": "192.168.101.29",
-    "oktopusz_1_radiator_shelly": "192.168.101.21",
-    "oktopusz_2_radiator_shelly": "192.168.101.83",
-    "gep_radiator_shelly": "192.168.101.42",
-    "merce_radiatorok_1_shelly": "192.168.101.37",
-    "merce_radiatorok_2_shelly": "192.168.101.94",
-    "ovi_radiatorok_shelly": "192.168.101.47",
-    "studio_radiator_shelly": "192.168.101.74",
+PROJECT_ROOT = get_project_root()
+SHELLY_CONFIG = load_shelly_config(PROJECT_ROOT)
+SHELLY_RESOLVER = build_shelly_resolver(PROJECT_ROOT, SHELLY_CONFIG)
+RADIATOR_DEVICE_SPECS = {
+    device_name: SHELLY_CONFIG["devices"][device_name]
+    for device_name in SHELLY_CONFIG["radiator_devices"]
 }
 
 success = False
 try:
-    radiator_temps_detailed = get_radiator_temps(SHELLY_IPS, detailed=True)
+    resolved_devices, resolution_errors = SHELLY_RESOLVER.resolve_many(
+        RADIATOR_DEVICE_SPECS
+    )
+    shelly_ips = {
+        device_name: device["ip"]
+        for device_name, device in resolved_devices.items()
+    }
+    radiator_temps_detailed = get_radiator_temps(shelly_ips, detailed=True)
+
+    for device_name, error in resolution_errors.items():
+        radiator_temps_detailed["devices"][device_name] = {
+            "ip": None,
+            "peripherals": {},
+            "error": error,
+        }
+        report(error)
 
     radiator_temps = {}
     for device_name, device_data in radiator_temps_detailed["devices"].items():
@@ -31,6 +46,13 @@ try:
     #system_node.write({"radiator_temps": radiator_temps}, "state")
 
     log_data(radiator_temps, "radiator_temps/radiator_temps.json")
+
+    required_errors = {
+        name: error for name, error in resolution_errors.items()
+        if RADIATOR_DEVICE_SPECS[name].get("required", True)
+    }
+    if required_errors:
+        raise ShellyDiscoveryError("; ".join(required_errors.values()))
 
     success = True
 
