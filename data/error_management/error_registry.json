@@ -6532,5 +6532,27 @@
         "reported_timestamp": "2026-09-03-11-05-17",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to set light state pult: light pult unreachable, cannot set state.",
+        "severity": 2,
+        "origin": "light_state_manager.py:43 --> project.py/set_light_state:1554",
+        "origin_timestamp": "2026-09-07-18-41-05",
+        "registration_timestamp": "2026-09-07-18-41-05",
+        "reported": true,
+        "reported_timestamp": "2026-09-07-18-45-25",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while trying to read and log radiator temperatures: could not find 'oktopusz_1_radiator_shelly' by configured DS18B20 address on 10.10.120.0/24.",
+        "severity": 2,
+        "origin": "radiator_temps_logger.py:56",
+        "origin_timestamp": "2026-09-07-18-50-17",
+        "registration_timestamp": "2026-09-07-18-50-17",
+        "reported": true,
+        "reported_timestamp": "2026-09-07-18-50-26",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
