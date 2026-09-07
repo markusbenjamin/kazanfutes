@@ -302,7 +302,7 @@ def write_jsonl_atomic(path, rows):
     tmp = path.with_name(path.name + ".pv_backfill.tmp")
     with tmp.open("w", encoding="utf-8") as f:
         for row in rows:
-            f.write(json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n")
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
         f.flush()
         os.fsync(f.fileno())
     os.replace(tmp, path)
