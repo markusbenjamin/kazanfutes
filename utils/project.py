@@ -44,6 +44,7 @@ import time
 from typing import Dict, Any
 from datetime import datetime, timedelta, timezone
 from logging.handlers import TimedRotatingFileHandler
+from utils.git_sync import GitSyncError, sync_snapshot_paths
 import google.auth
 from googleapiclient.discovery import build
 from google.oauth2.service_account import Credentials
@@ -439,6 +440,50 @@ def sync_paths_with_repo(project_paths, commit_message, timeout_on_lock = 30):
         raise ModuleException(f"git command failed",severity=2)
     except Exception:
         raise ModuleException(f"unexpected error while syncing {git_paths} with repo",severity=2)
+
+def sync_snapshot_paths_with_repo(project_paths, commit_message, timeout_on_lock = 30):
+    """Publishes at most one verified, unpublished snapshot commit.
+
+    Unlike ``sync_paths_with_repo``, this mode is intended for frequently
+    changing runtime files.  Failed snapshots may be amended or collapsed only
+    after their commit message and changed paths have been verified.  Manual
+    commits, merge commits and unrelated staged changes cause a safe failure.
+    """
+    git_paths = _normalize_git_paths(project_paths)
+
+    for git_path in git_paths:
+        check_start = datetime.now()
+        while check_lock(git_path):
+            if (datetime.now() - check_start).total_seconds() >= timeout_on_lock:
+                return False
+            time.sleep(1)
+
+    repo_sync_lock_path = os.path.join(get_project_root(), 'system', 'repo_sync.lock')
+    try:
+        with filelock.FileLock(repo_sync_lock_path, timeout=timeout_on_lock):
+            result = sync_snapshot_paths(
+                get_project_root(),
+                git_paths,
+                commit_message,
+                reporter=report,
+            )
+            report(
+                "Git snapshot sync complete: "
+                f"base={result.remote_commit[:12]}, "
+                f"head={result.local_commit[:12]}, "
+                f"pushed={result.pushed}, "
+                f"collapsed={result.collapsed_commits}."
+            )
+        return True
+    except filelock.Timeout:
+        return False
+    except GitSyncError as error:
+        raise ModuleException(str(error), severity=2)
+    except Exception as error:
+        raise ModuleException(
+            f"unexpected error while snapshot-syncing {git_paths} with repo: {error}",
+            severity=2,
+        )
 
 def sync_dir_with_repo(project_dir_path, commit_message, timeout_on_lock = 30):
     """
