@@ -6609,5 +6609,60 @@
         "reported_timestamp": "2026-09-07-21-55-29",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error during thermostats management: failed to connect to Deconz API due to unexpected error: Error requesting data from 127.0.0.1: Cannot connect to host 127.0.0.1:80 ssl:default [Connect call failed ('127.0.0.1', 80)] (RequestError).",
+        "severity": 3,
+        "origin": "thermostats_manager.py:23 --> project.py/read_thermostats:1592 --> project.py/read_deconz_state:1407",
+        "origin_timestamp": "2026-09-07-22-56-04",
+        "registration_timestamp": "2026-09-07-22-56-04",
+        "reported": true,
+        "reported_timestamp": "2026-09-07-23-00-36",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to acquire presence states: couldn't get rooms presence: couldn't read presence sensors: failed to connect to Deconz API due to unexpected error: Error requesting data from 127.0.0.1: Cannot connect to host 127.0.0.1:80 ssl:default [Connect call failed ('127.0.0.1', 80)] (RequestError) (ModuleException) (ModuleException).",
+        "severity": 2,
+        "origin": "presence_logger.py:10 --> project.py/get_presence_rooms:1139",
+        "origin_timestamp": "2026-09-07-22-56-04",
+        "registration_timestamp": "2026-09-07-22-56-04",
+        "reported": true,
+        "reported_timestamp": "2026-09-07-23-00-36",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while acquiring measured temps and humidity: couldn't read temp and humidity due to: failed to connect to Deconz API due to unexpected error: Error requesting data from 127.0.0.1: Cannot connect to host 127.0.0.1:80 ssl:default [Connect call failed ('127.0.0.1', 80)] (RequestError) (ModuleException).",
+        "severity": 3,
+        "origin": "heating_control.py/get_system_state:72 --> project.py/get_room_temps_and_humidity:1029",
+        "origin_timestamp": "2026-09-07-22-56-05",
+        "registration_timestamp": "2026-09-07-22-56-05",
+        "reported": true,
+        "reported_timestamp": "2026-09-07-23-00-39",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while acquiring valve states: failed to connect to Deconz API due to unexpected error: Error requesting data from 127.0.0.1: Cannot connect to host 127.0.0.1:80 ssl:default [Connect call failed ('127.0.0.1', 80)] (RequestError).",
+        "severity": 3,
+        "origin": "heating_control.py/get_system_state:216 --> project.py/get_thermostat_state_by_id:1656 --> project.py/read_sensors:1443 --> project.py/read_deconz_state:1407",
+        "origin_timestamp": "2026-09-07-22-56-05",
+        "registration_timestamp": "2026-09-07-22-56-05",
+        "reported": true,
+        "reported_timestamp": "2026-09-07-23-00-41",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while shutting down heating: couldn't shut down heating: couldn't shut down all thermostats: failed to connect to Deconz API due to unexpected error: Error requesting data from 127.0.0.1: Cannot connect to host 127.0.0.1:80 ssl:default [Connect call failed ('127.0.0.1', 80)] (RequestError) (ModuleException) (ModuleException).",
+        "severity": 3,
+        "origin": "heating_control.py:861 --> project.py/shutdown_heating:927",
+        "origin_timestamp": "2026-09-07-22-56-06",
+        "registration_timestamp": "2026-09-07-22-56-06",
+        "reported": true,
+        "reported_timestamp": "2026-09-07-23-00-43",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
