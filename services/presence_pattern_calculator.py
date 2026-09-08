@@ -56,7 +56,14 @@ try:
             for hour in hours:
                 occupancy_patterns[room][day][hour] = mean_without_none(occupancy_patterns[room][day][hour], 0)
 
-    export_dict_as_json(occupancy_patterns,f"{export_path_prefix}/config/scheduling/local_scheduling_files/occupancy.json")
+    occupancy_export_path = os.path.join(
+        export_path_prefix,
+        "config",
+        "scheduling",
+        "local_scheduling_files",
+        "occupancy.json",
+    )
+    export_dict_as_json(occupancy_patterns, occupancy_export_path)
     report(f"Succesfully extracted presence patterns.",verbose=True)
     success = True
 except ModuleException as e:

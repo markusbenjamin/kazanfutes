@@ -20,6 +20,7 @@ last = None
 
 while True:
     success = False
+    diff_big = False
     try:
         curr = get_pump_powers(PUMPS)                    # {'1': xx.x, ...}
         if last is None:
