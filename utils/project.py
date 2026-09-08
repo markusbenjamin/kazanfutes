@@ -9,6 +9,7 @@ import bisect
 import copy
 from collections import defaultdict
 import csv
+from dataclasses import dataclass
 import json
 import logging
 
@@ -38,19 +39,18 @@ for logger_name in ["pydeconz", "pydeconz.models"]:
 import math
 import os
 import random
+import shlex
 import subprocess
 import threading
 import time
-from typing import Dict, Any
+from typing import Any, Dict, Optional
 from datetime import datetime, timedelta, timezone
 from logging.handlers import TimedRotatingFileHandler
-from utils.git_sync import GitSyncError, sync_snapshot_paths
 import google.auth
 from googleapiclient.discovery import build
 from google.oauth2.service_account import Credentials
 import itertools
 import struct
-from typing import Dict, Any, Optional
 import websockets
 
 on_raspi = False
@@ -372,6 +372,222 @@ class JSONNodeAtURL:
 #endregion
 
 #region GitHub
+GIT_COMMAND_TIMEOUT_SECONDS = 5 * 60
+GIT_PUSH_RACE_RETRY_DELAY_SECONDS = 5
+
+
+class GitSyncError(RuntimeError):
+    """Base class for repository-sync failures."""
+
+
+class GitCommandError(GitSyncError):
+    """A failed or timed-out Git command, including Git's diagnostic output."""
+
+    def __init__(self, command, returncode, stdout="", stderr=""):
+        details = (stderr or stdout or "").strip()
+        message = f"Git command failed with exit code {returncode}: {shlex.join(command)}"
+        if details:
+            message += f"\n{details}"
+        super().__init__(message)
+        self.command = command
+        self.returncode = returncode
+        self.stdout = stdout
+        self.stderr = stderr
+
+
+@dataclass(frozen=True)
+class GitSyncResult:
+    committed: bool
+    head: str
+    push_attempts: int
+
+
+def _git_output_text(value):
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return value or ""
+
+
+def _run_git_command(
+    repo_root,
+    args,
+    *,
+    check=True,
+    timeout=GIT_COMMAND_TIMEOUT_SECONDS,
+):
+    command = ["git", "-C", repo_root] + list(args)
+    try:
+        result = subprocess.run(
+            command,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as error:
+        stdout = _git_output_text(error.stdout)
+        stderr = _git_output_text(error.stderr)
+        if stderr:
+            stderr = stderr.rstrip() + "\n"
+        stderr += f"Git command timed out after {timeout} seconds."
+        raise GitCommandError(command, -1, stdout=stdout, stderr=stderr) from error
+
+    if check and result.returncode != 0:
+        raise GitCommandError(
+            command,
+            result.returncode,
+            stdout=result.stdout,
+            stderr=result.stderr,
+        )
+    return result
+
+
+def _git_output(repo_root, args):
+    return _run_git_command(repo_root, args).stdout.strip()
+
+
+def _git_has_cached_changes(repo_root):
+    result = _run_git_command(
+        repo_root,
+        ["diff", "--cached", "--quiet"],
+        check=False,
+    )
+    if result.returncode not in (0, 1):
+        raise GitCommandError(
+            result.args,
+            result.returncode,
+            stdout=result.stdout,
+            stderr=result.stderr,
+        )
+    return result.returncode == 1
+
+
+def _git_marker_exists(repo_root, marker):
+    marker_path = _git_output(repo_root, ["rev-parse", "--git-path", marker])
+    if not os.path.isabs(marker_path):
+        marker_path = os.path.join(repo_root, marker_path)
+    return os.path.exists(marker_path)
+
+
+def _quit_orphaned_git_autostash(repo_root):
+    """Clear the harmless marker left when only a rebase autostash remains."""
+    marker_path = _git_output(repo_root, ["rev-parse", "--git-path", "rebase-merge"])
+    if not os.path.isabs(marker_path):
+        marker_path = os.path.join(repo_root, marker_path)
+    if not os.path.isdir(marker_path) or set(os.listdir(marker_path)) != {"autostash"}:
+        return
+
+    result = _run_git_command(repo_root, ["rebase", "--quit"], check=False)
+    if result.returncode != 0 or os.path.exists(marker_path):
+        details = (result.stderr or result.stdout).strip()
+        raise GitSyncError(
+            "Git found an orphaned rebase autostash marker but could not clear it"
+            + (f": {details}" if details else "")
+        )
+    report("Git sync: cleared an orphaned rebase autostash marker.")
+
+
+def _git_push_lost_remote_race(error):
+    details = f"{error.stdout}\n{error.stderr}".lower()
+    return (
+        "non-fast-forward" in details
+        or "fetch first" in details
+        or ("[rejected]" in details and "failed to push some refs" in details)
+    )
+
+
+def _pull_repo_with_cleanup(repo_root, remote, branch):
+    """Merge-pull and abort only a merge started by this call if it fails."""
+    merge_was_active = _git_marker_exists(repo_root, "MERGE_HEAD")
+    try:
+        _run_git_command(
+            repo_root,
+            [
+                "-c",
+                "merge.autoStash=false",
+                "-c",
+                "rebase.autoStash=false",
+                "pull",
+                "--no-rebase",
+                "--no-edit",
+                remote,
+                branch,
+            ],
+        )
+    except GitCommandError:
+        if not merge_was_active and _git_marker_exists(repo_root, "MERGE_HEAD"):
+            abort_result = _run_git_command(
+                repo_root,
+                ["merge", "--abort"],
+                check=False,
+            )
+            if abort_result.returncode == 0:
+                report("Git sync: aborted the failed merge started by this run.")
+            else:
+                details = (abort_result.stderr or abort_result.stdout).strip()
+                report(f"Git sync: could not abort its failed merge: {details}")
+        raise
+
+
+def _sync_paths_with_repo_unlocked(
+    repo_root,
+    git_paths,
+    commit_message,
+    *,
+    remote="origin",
+    branch="main",
+    max_push_attempts=2,
+    retry_delay_seconds=GIT_PUSH_RACE_RETRY_DELAY_SECONDS,
+):
+    """Stage, commit, merge-pull, and push after the caller acquires locks."""
+    if max_push_attempts < 1:
+        raise ValueError("max_push_attempts must be at least 1")
+
+    repo_root = os.path.abspath(repo_root)
+    _quit_orphaned_git_autostash(repo_root)
+
+    report("Git sync: staging configured paths.")
+    _run_git_command(repo_root, ["add", "-A", "--"] + git_paths)
+
+    committed = _git_has_cached_changes(repo_root)
+    if committed:
+        _run_git_command(
+            repo_root,
+            ["commit", "--no-gpg-sign", "-m", commit_message],
+        )
+        report("Git sync: committed staged changes.")
+    else:
+        report("Git sync: no configured-path changes to commit.")
+
+    for push_attempt in range(1, max_push_attempts + 1):
+        report(f"Git sync: merge-pulling {remote}/{branch} (attempt {push_attempt}).")
+        _pull_repo_with_cleanup(repo_root, remote, branch)
+
+        report(f"Git sync: pushing {remote}/{branch} (attempt {push_attempt}).")
+        try:
+            _run_git_command(repo_root, ["push", "-u", remote, branch])
+            head = _git_output(repo_root, ["rev-parse", "HEAD"])
+            report(f"Git sync: completed successfully at {head[:12]}.")
+            return GitSyncResult(
+                committed=committed,
+                head=head,
+                push_attempts=push_attempt,
+            )
+        except GitCommandError as error:
+            if push_attempt >= max_push_attempts or not _git_push_lost_remote_race(error):
+                raise
+            report(
+                "Git sync: remote advanced before push; "
+                f"retrying after {retry_delay_seconds} seconds."
+            )
+            time.sleep(retry_delay_seconds)
+
+    raise GitSyncError("Git sync exhausted its push attempts")
+
+
 def _normalize_git_paths(project_paths):
     if isinstance(project_paths, (str, os.PathLike)):
         project_paths = [project_paths]
@@ -394,12 +610,12 @@ def _normalize_git_paths(project_paths):
 
     return normalized_paths
 
-def _run_git_command(args):
-    subprocess.run(['git', '-C', get_project_root()] + args, check=True)
-
 def sync_paths_with_repo(project_paths, commit_message, timeout_on_lock = 30):
     """
-    Commits selected repository paths, pulls remote changes, then pushes.
+    Commits selected repository paths, merge-pulls remote changes, then pushes.
+
+    Git commands are bounded by a timeout, preserve their diagnostic output,
+    and retry once if the push loses a race with another remote update.
     """
     git_paths = _normalize_git_paths(project_paths)
 
@@ -413,66 +629,16 @@ def sync_paths_with_repo(project_paths, commit_message, timeout_on_lock = 30):
     repo_sync_lock_path = os.path.join(get_project_root(), 'system', 'repo_sync.lock')
     try:
         with filelock.FileLock(repo_sync_lock_path, timeout=timeout_on_lock):
-            _run_git_command(['add', '--'] + git_paths)
-
-            result = subprocess.run(
-                ['git', '-C', get_project_root(), 'diff', '--cached', '--exit-code'],
-                check=False
-            )
-            if result.returncode not in (0, 1):
-                result.check_returncode()
-
-            if result.returncode != 0:
-                _run_git_command(['commit', '-m', commit_message])
-            else:
-                report("No changes staged for commit. Pulling remote changes only.", verbose=True)
-
-            _run_git_command([
-                '-c', 'merge.autoStash=false',
-                '-c', 'rebase.autoStash=false',
-                'pull', '--no-rebase', '--no-edit', 'origin', 'main'
-            ])
-            _run_git_command(['push', '-u', 'origin', 'main'])
-        return True
-    except filelock.Timeout:
-        return False
-    except subprocess.CalledProcessError:
-        raise ModuleException(f"git command failed",severity=2)
-    except Exception:
-        raise ModuleException(f"unexpected error while syncing {git_paths} with repo",severity=2)
-
-def sync_snapshot_paths_with_repo(project_paths, commit_message, timeout_on_lock = 30):
-    """Publishes at most one verified, unpublished snapshot commit.
-
-    Unlike ``sync_paths_with_repo``, this mode is intended for frequently
-    changing runtime files.  Failed snapshots may be amended or collapsed only
-    after their commit message and changed paths have been verified.  Manual
-    commits, merge commits and unrelated staged changes cause a safe failure.
-    """
-    git_paths = _normalize_git_paths(project_paths)
-
-    for git_path in git_paths:
-        check_start = datetime.now()
-        while check_lock(git_path):
-            if (datetime.now() - check_start).total_seconds() >= timeout_on_lock:
-                return False
-            time.sleep(1)
-
-    repo_sync_lock_path = os.path.join(get_project_root(), 'system', 'repo_sync.lock')
-    try:
-        with filelock.FileLock(repo_sync_lock_path, timeout=timeout_on_lock):
-            result = sync_snapshot_paths(
+            result = _sync_paths_with_repo_unlocked(
                 get_project_root(),
                 git_paths,
                 commit_message,
-                reporter=report,
             )
             report(
-                "Git snapshot sync complete: "
-                f"base={result.remote_commit[:12]}, "
-                f"head={result.local_commit[:12]}, "
-                f"pushed={result.pushed}, "
-                f"collapsed={result.collapsed_commits}."
+                "Git sync complete: "
+                f"head={result.head[:12]}, "
+                f"committed={result.committed}, "
+                f"push_attempts={result.push_attempts}."
             )
         return True
     except filelock.Timeout:
@@ -481,7 +647,7 @@ def sync_snapshot_paths_with_repo(project_paths, commit_message, timeout_on_lock
         raise ModuleException(str(error), severity=2)
     except Exception as error:
         raise ModuleException(
-            f"unexpected error while snapshot-syncing {git_paths} with repo: {error}",
+            f"unexpected error while syncing {git_paths} with repo: {error}",
             severity=2,
         )
 
