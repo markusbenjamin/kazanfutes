@@ -6840,5 +6840,27 @@
         "reported_timestamp": "2026-09-08-18-00-34",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to acquire heatmeter states: failed to interact with node 'system' via get: 500 Server Error: Internal Server Error for url: https://kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app/system/.json (HTTPError).",
+        "severity": 2,
+        "origin": "heatmeters_logger.py:42 --> project.py/__init__:278 --> project.py/read:304 --> project.py/interact:298",
+        "origin_timestamp": "2026-09-08-18-45-05",
+        "registration_timestamp": "2026-09-08-18-45-06",
+        "reported": true,
+        "reported_timestamp": "2026-09-08-18-45-25",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to scrape and log external temperature: failed to interact with node 'system' via get: 500 Server Error: Internal Server Error for url: https://kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app/system/.json (HTTPError).",
+        "severity": 2,
+        "origin": "external_temp_scraper_and_logger.py:10 --> project.py/__init__:278 --> project.py/read:304 --> project.py/interact:298",
+        "origin_timestamp": "2026-09-08-18-45-07",
+        "registration_timestamp": "2026-09-08-18-45-07",
+        "reported": true,
+        "reported_timestamp": "2026-09-08-18-45-25",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
