@@ -6785,5 +6785,16 @@
         "reported_timestamp": "2026-09-08-14-10-31",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to update local copy of override_rooms: failed to set up Google Sheets API: <HttpError 503 when requesting https://sheets.googleapis.com/v4/spreadsheets/1Cir4TYYhIx14Qja9c4nN9m2GTeZ0FHrJRt03oXs_fgI?alt=json returned \"The service is currently unavailable.\". Details: \"The service is currently unavailable.\"> (HttpError).",
+        "severity": 3,
+        "origin": "schedule_and_config_updater.py/update_local_scheduling_files:181 --> project.py/download_google_sheet_to_2D_array:3615",
+        "origin_timestamp": "2026-09-08-14-24-53",
+        "registration_timestamp": "2026-09-08-14-24-53",
+        "reported": true,
+        "reported_timestamp": "2026-09-08-14-25-29",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
