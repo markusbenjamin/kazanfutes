@@ -41,6 +41,7 @@ import os
 import random
 import shlex
 import subprocess
+import tempfile
 import threading
 import time
 from typing import Any, Dict, Optional
@@ -256,6 +257,43 @@ def rotate_log_file(relative_log_file_path: str, when: str = 'midnight', interva
 #endregion
 
 #region Firebase
+HTTP_REQUEST_TIMEOUT_SECONDS = 15
+HTTP_REQUEST_ATTEMPTS = 3
+HTTP_REQUEST_RETRY_DELAY_SECONDS = 1
+TRANSIENT_HTTP_STATUS_CODES = {429, 500, 502, 503, 504}
+
+
+def _request_with_retries(method, url, attempts=HTTP_REQUEST_ATTEMPTS, **kwargs):
+    """Run a requests call with bounded retries for transient transport failures."""
+    kwargs.setdefault('timeout', HTTP_REQUEST_TIMEOUT_SECONDS)
+
+    for attempt in range(1, attempts + 1):
+        response = None
+        try:
+            response = method(url, **kwargs)
+            response.raise_for_status()
+            return response
+        except requests.exceptions.RequestException as error:
+            status_code = response.status_code if response is not None else None
+            retryable = (
+                isinstance(
+                    error,
+                    (requests.exceptions.ConnectionError, requests.exceptions.Timeout),
+                )
+                or status_code in TRANSIENT_HTTP_STATUS_CODES
+            )
+            if not retryable or attempt == attempts:
+                raise
+
+            delay = HTTP_REQUEST_RETRY_DELAY_SECONDS * attempt
+            report(
+                f"Transient HTTP failure during {method.__name__} {url} "
+                f"(attempt {attempt}/{attempts}); retrying in {delay:g} seconds.",
+                verbose=True,
+            )
+            time.sleep(delay)
+
+
 def default_firebase_callback(relative_path, node_changes):
     """
     Default callback function for the JSONNodeAtURL class 
@@ -284,14 +322,22 @@ class JSONNodeAtURL:
         """
         response = None
         try:
-            response = method(self.url+"/"+subpath+".json",**kwargs)
-            response.raise_for_status()
+            response = _request_with_retries(
+                method,
+                self.url+"/"+subpath+".json",
+                **kwargs,
+            )
             report(f"Successfully interacted with node '{self.node_relative_path}' via {method.__name__}.", verbose = True)
             if method.__name__ == 'get':
                 return jsonify_array(response.json())
-        except Exception:
-            if response:
-                report(f"Failed to interact with node via {method.__name__}. Status code: {response.status_code}", verbose = True)
+        except Exception as error:
+            failed_response = (
+                response
+                if response is not None
+                else getattr(error, 'response', None)
+            )
+            if failed_response is not None:
+                report(f"Failed to interact with node via {method.__name__}. Status code: {failed_response.status_code}", verbose = True)
                 raise ModuleException(f"failed to interact with node '{self.node_relative_path}' via {method.__name__}")
             else:
                 report(f"Failed to interact with node via {method.__name__}, response is not even initialized.", verbose = True)
@@ -918,8 +964,7 @@ def scrape_weather(lat:float = 47.4984, lon:float = 19.0405):
     }
 
     try:
-        response = requests.get(url, params=params)
-        response.raise_for_status()
+        response = _request_with_retries(requests.get, url, params=params)
         data = response.json()
 
         return data
@@ -939,8 +984,7 @@ def scrape_external_temperature(lat:float = 47.4984, lon:float = 19.0405):
     }
 
     try:
-        response = requests.get(url, params=params)
-        response.raise_for_status()
+        response = _request_with_retries(requests.get, url, params=params)
         data = response.json()
 
         return data['current_weather']['temperature']
@@ -1012,6 +1056,64 @@ def get_pump_states():
     except Exception:
         raise ModuleException(f"couldn't read pump states")
 
+PUMP_STATUS_ATTEMPTS = 3
+PUMP_STATUS_RETRY_DELAY_SECONDS = 0.5
+
+
+def _read_pump_dps(pump, required_keys, requested_keys=None, attempts=PUMP_STATUS_ATTEMPTS):
+    """Read and validate a pump status response, retrying transient incomplete replies."""
+    required_keys = tuple(str(key) for key in required_keys)
+    requested_keys = tuple(str(key) for key in (requested_keys or ()))
+    last_problem = "no response"
+
+    for attempt in range(1, attempts + 1):
+        try:
+            device = connect_to_pump(pump)
+            if device is None:
+                last_problem = "no device was returned"
+            else:
+                if requested_keys:
+                    device.set_dpsUsed({key: None for key in requested_keys})
+
+                response = device.status()
+                if not isinstance(response, dict):
+                    last_problem = f"response type was {type(response).__name__}"
+                else:
+                    dps = response.get('dps')
+                    if not isinstance(dps, dict):
+                        last_problem = (
+                            "response did not contain a DPS dictionary; "
+                            f"response keys were {sorted(str(key) for key in response)}"
+                        )
+                    else:
+                        dps = {str(key): value for key, value in dps.items()}
+                        missing_keys = [
+                            key for key in required_keys
+                            if key not in dps or dps[key] is None
+                        ]
+                        if not missing_keys:
+                            return dps
+                        last_problem = (
+                            f"missing DPS keys {missing_keys}; "
+                            f"available DPS keys were {sorted(dps)}"
+                        )
+        except Exception as error:
+            last_problem = f"{type(error).__name__}: {error}"
+
+        if attempt < attempts:
+            report(
+                f"Incomplete status from pump {pump} ({last_problem}); "
+                f"retrying in {PUMP_STATUS_RETRY_DELAY_SECONDS:g} seconds.",
+                verbose=True,
+            )
+            time.sleep(PUMP_STATUS_RETRY_DELAY_SECONDS)
+
+    raise ModuleException(
+        f"pump {pump} did not return required status after {attempts} attempts: "
+        f"{last_problem}"
+    )
+
+
 def get_pump_powers(pumps):
     """
     Return {'power_w': float, 'current_a': float, 'voltage_v': float}
@@ -1019,13 +1121,11 @@ def get_pump_powers(pumps):
     """
     power = {}
     for pump in pumps:
-        dev = connect_to_pump(pump)
-        if dev is None:
-            raise ModuleException(f"no device for '{pump}'")
-
-        dev.set_dpsUsed({'18': None, '19': None, '20': None})  # current, power, voltage
-        dps = dev.status()['dps']
-
+        dps = _read_pump_dps(
+            pump,
+            required_keys=('19',),
+            requested_keys=('18', '19', '20'),
+        )
         power[pump] = int(dps['19'])/10
     
     return power
@@ -1035,9 +1135,8 @@ def get_pump_state(pump:str):
     Returns a faux val for development purposes for now.
     """
     try:
-        device = connect_to_pump(pump)
-        if device:
-            return int(device.status()['dps']['1']) # This path encodes the on/off state in the JSON reply
+        dps = _read_pump_dps(pump, required_keys=('1',))
+        return int(dps['1']) # This path encodes the on/off state in the JSON reply
     except Exception:
         raise ModuleException(f"couldn't read state of pump {pump}")
 
@@ -1050,10 +1149,23 @@ def set_pump_state(pump:str,state:int):
     try:
         device = connect_to_pump(pump)
         if device:
-            if state:
-                success = device.turn_on()['dps']['1']
-            else:
-                success = device.turn_off()['dps']['1'] == False
+            response = device.turn_on() if state else device.turn_off()
+            dps = response.get('dps') if isinstance(response, dict) else None
+            reported_state = dps.get('1') if isinstance(dps, dict) else None
+
+            if reported_state is None:
+                report(
+                    f"Pump {pump} switch response did not contain DPS 1; "
+                    "verifying the resulting state.",
+                    verbose=True,
+                )
+                reported_state = _read_pump_dps(
+                    pump,
+                    required_keys=('1',),
+                    attempts=2,
+                )['1']
+
+            success = bool(reported_state) == bool(state)
     except Exception:
         raise ModuleException(f"couldn't turn pump {pump} {['OFF','ON'][state]}")
     return success
@@ -2920,40 +3032,107 @@ if not on_raspi:
 
 #endregion
 
-def load_GPIO_state(pin:int = None):
-    GPIO_state = load_json_to_dict('system/GPIO_state.json')
-    pin_key = str(pin)
-    if isinstance(pin,str):
-        pin = int(pin)
-    if pin and pin_key not in GPIO_state:
-        GPIO_state[pin_key] = {}
+GPIO_STATE_RELATIVE_PATH = 'system/GPIO_state.json'
+GPIO_STATE_LOCK_TIMEOUT_SECONDS = 10
+
+
+def _GPIO_state_paths():
+    state_path = os.path.join(get_project_root(), GPIO_STATE_RELATIVE_PATH)
+    return state_path, state_path + '.lock'
+
+
+def _load_GPIO_state_unlocked(pin:int = None):
+    state_path, _ = _GPIO_state_paths()
+    with open(state_path, 'r', encoding='utf-8') as state_file:
+        GPIO_state = json.load(state_file)
+    if not isinstance(GPIO_state, dict):
+        raise ValueError(f"{GPIO_STATE_RELATIVE_PATH} must contain a JSON object")
+
+    if pin is not None:
+        pin_key = str(int(pin))
+        if pin_key not in GPIO_state:
+            GPIO_state[pin_key] = {}
     return GPIO_state
 
+
+def _save_GPIO_state_unlocked(GPIO_state:dict):
+    """Atomically replace the GPIO state file while its lock is held."""
+    state_path, _ = _GPIO_state_paths()
+    state_directory = os.path.dirname(state_path)
+    os.makedirs(state_directory, exist_ok=True)
+    temporary_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode='w',
+            encoding='utf-8',
+            dir=state_directory,
+            prefix='.GPIO_state.',
+            suffix='.lock',
+            delete=False,
+        ) as temporary_file:
+            temporary_path = temporary_file.name
+            json.dump(GPIO_state, temporary_file, indent=4)
+            temporary_file.flush()
+            os.fsync(temporary_file.fileno())
+        os.replace(temporary_path, state_path)
+        temporary_path = None
+        return True
+    finally:
+        if temporary_path and os.path.exists(temporary_path):
+            os.remove(temporary_path)
+
+
+def _GPIO_state_lock():
+    _, lock_path = _GPIO_state_paths()
+    return filelock.FileLock(lock_path, timeout=GPIO_STATE_LOCK_TIMEOUT_SECONDS)
+
+
+def load_GPIO_state(pin:int = None):
+    try:
+        with _GPIO_state_lock():
+            return _load_GPIO_state_unlocked(pin)
+    except Exception:
+        raise ModuleException(
+            f"unexpected error while loading {GPIO_STATE_RELATIVE_PATH}"
+        )
+
+
 def save_GPIO_state(GPIO_state:dict):
-    return export_dict_as_json(GPIO_state,'system/GPIO_state.json')
+    try:
+        with _GPIO_state_lock():
+            return _save_GPIO_state_unlocked(GPIO_state)
+    except Exception:
+        raise ModuleException(
+            f"unexpected error while saving {GPIO_STATE_RELATIVE_PATH}"
+        )
 
 def release_pin(pin:int):
     """
     Sets a GPIO pin to IN with no pull-down state set and removes it from GPIO setup.
     """
+    pin = int(pin)
     pin_key = str(pin)
-    if isinstance(pin,str):
-        pin = int(pin)
-    set_pin_mode(pin, GPIO.IN)
-    GPIO_state = load_GPIO_state()
-    GPIO_state.pop(pin_key,None)
-    save_GPIO_state(GPIO_state)
+    try:
+        with _GPIO_state_lock():
+            GPIO_state = _load_GPIO_state_unlocked()
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setup(pin, GPIO.IN, GPIO.PUD_OFF)
+            GPIO_state.pop(pin_key, None)
+            _save_GPIO_state_unlocked(GPIO_state)
+    except Exception:
+        raise ModuleException(f"couldn't release GPIO pin {pin}")
 
 def reset_GPIO():
     """
     Releases all GPIO pins.
     """
     try:
-        GPIO.setmode(GPIO.BCM)
-        GPIO_state = load_GPIO_state()
-
-        for pin in GPIO_state.keys():
-            release_pin(pin)
+        with _GPIO_state_lock():
+            GPIO_state = _load_GPIO_state_unlocked()
+            GPIO.setmode(GPIO.BCM)
+            for pin in GPIO_state:
+                GPIO.setup(int(pin), GPIO.IN, GPIO.PUD_OFF)
+            _save_GPIO_state_unlocked({})
     except Exception:
         raise ModuleException(f"couldn't reset GPIO setup")
 
@@ -2963,25 +3142,23 @@ def set_pin_mode(pin: int, mode, pud=GPIO.PUD_OFF):
     Mode: either GPIO.IN or GPIO.OUT
     Pud: for IN pins floating (PUD_OFF) if not specified, or either GPIO.PUD_UP or GPIO.PUD_DOWN. Do not specify for OUT pins.
     """
+    pin = int(pin)
     pin_key = str(pin)
-    if isinstance(pin,str):
-        pin = int(pin)
     try:
-        GPIO.setmode(GPIO.BCM) # Follows the pin naming convention written on the mother- and breadboard
-
-        GPIO_state = load_GPIO_state(pin)
-
-        GPIO_state[pin_key]['mode'] = "IN" if mode == GPIO.IN else "OUT"
         if mode == GPIO.OUT and pud != GPIO.PUD_OFF:
             report(f'Warning: trying to set PUD {"UP" if pud == GPIO.PUD_UP else "DOWN"} for OUT pin {pin}. Aborting operation.')
             return
-        
-        GPIO.setup(pin, mode, pud)
-        GPIO_state[pin_key]['pud'] = "OFF" if pud == GPIO.PUD_OFF else "UP" if pud == GPIO.PUD_UP else "DOWN"
-        if mode == GPIO.IN:
-            GPIO_state[pin_key].pop("state",None)
-        
-        save_GPIO_state(GPIO_state)
+
+        with _GPIO_state_lock():
+            GPIO_state = _load_GPIO_state_unlocked(pin)
+            GPIO.setmode(GPIO.BCM) # Follows the pin naming convention written on the mother- and breadboard
+            GPIO.setup(pin, mode, pud)
+
+            GPIO_state[pin_key]['mode'] = "IN" if mode == GPIO.IN else "OUT"
+            GPIO_state[pin_key]['pud'] = "OFF" if pud == GPIO.PUD_OFF else "UP" if pud == GPIO.PUD_UP else "DOWN"
+            if mode == GPIO.IN:
+                GPIO_state[pin_key].pop("state", None)
+            _save_GPIO_state_unlocked(GPIO_state)
     except Exception:
         raise ModuleException(f"couldn't set pin {pin} mode to {'IN' if mode == GPIO.IN else 'OUT'}")
 
@@ -2990,26 +3167,25 @@ def set_pin_state(pin:int, state:int):
     Sets the specified GPIO OUT pin to the given state (HIGH or LOW).
     Saves the setting externally.
     """
+    pin = int(pin)
     pin_key = str(pin)
-    if isinstance(pin,str):
-        pin = int(pin)
     success = False
     try:
-        GPIO.setmode(GPIO.BCM)
-        GPIO_state = load_GPIO_state(pin)        
+        with _GPIO_state_lock():
+            GPIO_state = _load_GPIO_state_unlocked(pin)
+            if 'mode' not in GPIO_state[pin_key]:
+                report(f"Trying to set uninitialized pin {pin} to {['LOW','HIGH'][state]}. Set mode first. Aborting operation.")
+                return
+            if GPIO_state[pin_key]['mode'] == 'IN':
+                report(f"Warning: trying to set state {state} for IN pin {pin}. Aborting operation.")
+                return
 
-        if 'mode' not in GPIO_state[pin_key].keys():
-            report(f"Trying to set uninitialized pin {pin} to {['LOW','HIGH'][state]}. Set mode first. Aborting operation.")
-            return
-        if GPIO_state[pin_key]['mode'] == 'IN':
-            report(f"Warning: trying to set state {state} for IN pin {pin}. Aborting operation.")
-            return
-        
-        GPIO.setup(pin, GPIO.OUT)
-        GPIO.output(pin, GPIO.HIGH if state == 1 else GPIO.LOW)
-        GPIO_state[pin_key]['state'] = "HIGH" if state == 1 else "LOW"
-        save_GPIO_state(GPIO_state)
-        success = True
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setup(pin, GPIO.OUT)
+            GPIO.output(pin, GPIO.HIGH if state == 1 else GPIO.LOW)
+            GPIO_state[pin_key]['state'] = "HIGH" if state == 1 else "LOW"
+            _save_GPIO_state_unlocked(GPIO_state)
+            success = True
     except Exception:
         raise ModuleException(f"couldn't set pin {pin} to {['LOW','HIGH'][state]}")
     return success
@@ -3018,27 +3194,29 @@ def read_pin_state(pin:int):
     """
     Reads the state of the specified GPIO pin.
     """
+    pin = int(pin)
     pin_key = str(pin)
-    if isinstance(pin,str):
-        pin = int(pin)
     try:
-        GPIO.setmode(GPIO.BCM)
-        
-        GPIO_state = load_GPIO_state(pin)
+        with _GPIO_state_lock():
+            GPIO_state = _load_GPIO_state_unlocked(pin)
+            pin_state = GPIO_state[pin_key]
+            if 'mode' not in pin_state:
+                return 0
 
-        if 'mode' not in GPIO_state[pin_key].keys():
-            return 0
-        set_pin_mode(
-            pin,
-            GPIO.OUT if GPIO_state[pin_key]['mode']=='OUT' else GPIO.IN,
-            GPIO.PUD_OFF if GPIO_state[pin_key]['pud'] == "OFF" else GPIO.PUD_UP if GPIO_state[pin_key]['pud'] == GPIO.PUD_UP else GPIO.PUD_DOWN
-            )
-        if GPIO_state[pin_key]["mode"] == "OUT":
-            stored = GPIO_state[pin_key].get("state")          # "HIGH" | "LOW" | None
-            if stored in ("HIGH", "LOW"):
-                GPIO.output(pin, GPIO.HIGH if stored == "HIGH" else GPIO.LOW)
-        state = GPIO.input(pin)
-        return state
+            GPIO.setmode(GPIO.BCM)
+            mode = GPIO.OUT if pin_state['mode'] == 'OUT' else GPIO.IN
+            pud = {
+                'OFF': GPIO.PUD_OFF,
+                'UP': GPIO.PUD_UP,
+                'DOWN': GPIO.PUD_DOWN,
+            }.get(pin_state.get('pud'), GPIO.PUD_OFF)
+            GPIO.setup(pin, mode, pud)
+
+            if mode == GPIO.OUT:
+                stored = pin_state.get("state")          # "HIGH" | "LOW" | None
+                if stored in ("HIGH", "LOW"):
+                    GPIO.output(pin, GPIO.HIGH if stored == "HIGH" else GPIO.LOW)
+            return GPIO.input(pin)
     except Exception:
         raise ModuleException(f"couldn't read state of GPIO pin {pin}")
 
@@ -3361,7 +3539,20 @@ def load_ndjson_to_json_list(relative_path: str):
     """
     try:
         with open(os.path.join(get_project_root(), relative_path), 'r', encoding='utf-8') as file:
-            loaded_json_list =  [json.loads(line) for line in file if line.strip()]
+            loaded_json_list = []
+            for line in file:
+                if not line.strip():
+                    continue
+                try:
+                    loaded_json_list.append(json.loads(line))
+                except json.JSONDecodeError:
+                    if line.endswith(('\n', '\r')):
+                        raise
+                    report(
+                        f"Ignoring interrupted final record in {relative_path}.",
+                        verbose=True,
+                    )
+
         return loaded_json_list
     except Exception:
         raise ModuleException(f"unexpected error while loading {relative_path} to array of JSONs")
@@ -3610,7 +3801,9 @@ def download_google_sheet_to_2D_array(spreadsheet_id, sheet = None):
             scopes=['https://www.googleapis.com/auth/spreadsheets.readonly']
             )
         service = build('sheets', 'v4', credentials=credentials)
-        spreadsheet_metadata = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+        spreadsheet_metadata = service.spreadsheets().get(
+            spreadsheetId=spreadsheet_id
+        ).execute(num_retries=2)
     except:
         raise ModuleException("failed to set up Google Sheets API")
     
@@ -3627,7 +3820,10 @@ def download_google_sheet_to_2D_array(spreadsheet_id, sheet = None):
         range_to_get = sheet +'!A1:Z10000'
 
         sheet = service.spreadsheets()
-        result = sheet.values().get(spreadsheetId=spreadsheet_id, range=range_to_get).execute()
+        result = sheet.values().get(
+            spreadsheetId=spreadsheet_id,
+            range=range_to_get,
+        ).execute(num_retries=2)
         values = result.get('values', [])
 
         return values
