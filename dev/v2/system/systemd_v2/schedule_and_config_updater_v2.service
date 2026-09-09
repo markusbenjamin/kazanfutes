@@ -1,0 +1,20 @@
+[Unit]
+Description=Kazanfutes resilient schedule and config updater V2
+Conflicts=schedule_and_config_updater.service
+After=network-online.target deconz.service media-pi-program_stick.mount
+Wants=network-online.target media-pi-program_stick.mount
+BindsTo=media-pi-program_stick.mount
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/media/pi/program_stick/kazanfutes/services
+Environment="HOME=/home/pi"
+Environment="PYTHONPATH=/media/pi/program_stick/kazanfutes"
+ExecStart=/home/pi/Kazanfutes_local/bin/python /media/pi/program_stick/kazanfutes/services/schedule_and_config_updater_v2.py
+Restart=always
+RestartSec=10
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

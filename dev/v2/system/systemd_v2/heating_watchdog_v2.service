@@ -1,0 +1,9 @@
+[Unit]
+Description=Kazanfutes independent stale-controller boiler watchdog V2
+After=local-fs.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/bin/python3 /usr/local/sbin/heating_watchdog_v2.py --heartbeat-path /run/kazanfutes/heating_control_v2.heartbeat --timeout-seconds 180 --gpio-pin 6 --gpio-state-path /media/pi/program_stick/kazanfutes/system/GPIO_state.json
+TimeoutStartSec=15

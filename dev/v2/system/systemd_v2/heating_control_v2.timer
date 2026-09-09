@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Kazanfutes heating control V2 every minute
+Conflicts=heating_control.timer
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=2s
+Persistent=true
+Unit=heating_control_v2.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,21 @@
+[Unit]
+Description=Kazanfutes local-first heating control V2
+Conflicts=heating_control.service
+After=network-online.target deconz.service media-pi-program_stick.mount
+Wants=network-online.target media-pi-program_stick.mount
+BindsTo=media-pi-program_stick.mount
+
+[Service]
+Type=oneshot
+User=pi
+WorkingDirectory=/media/pi/program_stick/kazanfutes/services
+Environment="HOME=/home/pi"
+Environment="PYTHONPATH=/media/pi/program_stick/kazanfutes"
+RuntimeDirectory=kazanfutes
+RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
+ExecStart=/home/pi/Kazanfutes_local/bin/python /media/pi/program_stick/kazanfutes/services/heating_control_v2.py
+TimeoutStartSec=90
+
+[Install]
+WantedBy=multi-user.target
