@@ -6906,5 +6906,49 @@
         "reported_timestamp": "2026-09-09-04-00-33",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Error while trying to log open/close events",
+        "severity": 1,
+        "origin": "open_close_logger.py:72",
+        "origin_timestamp": "2026-09-09-17-09-03",
+        "registration_timestamp": "2026-09-09-17-09-04",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error during thermostats management: failed to connect to Deconz API due to unexpected error: Error requesting data from 127.0.0.1: Cannot connect to host 127.0.0.1:80 ssl:default [Connect call failed ('127.0.0.1', 80)] (RequestError).",
+        "severity": 3,
+        "origin": "thermostats_manager.py:23 --> project.py/read_thermostats:1870 --> project.py/read_deconz_state:1685",
+        "origin_timestamp": "2026-09-09-17-09-05",
+        "registration_timestamp": "2026-09-09-17-09-05",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to acquire presence states: couldn't get rooms presence: couldn't read presence sensors: failed to connect to Deconz API due to unexpected error: Error requesting data from 127.0.0.1: Cannot connect to host 127.0.0.1:80 ssl:default [Connect call failed ('127.0.0.1', 80)] (RequestError) (ModuleException) (ModuleException).",
+        "severity": 2,
+        "origin": "presence_logger.py:10 --> project.py/get_presence_rooms:1417",
+        "origin_timestamp": "2026-09-09-17-09-05",
+        "registration_timestamp": "2026-09-09-17-09-05",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while acquiring measured temps and humidity: couldn't read temp and humidity due to: failed to connect to Deconz API due to unexpected error: Invalid content type: text/html (<ClientResponse(http://127.0.0.1:80/api/E22495BD8D) [404 Not Found]>\n<CIMultiDictProxy('Content-Type': 'text/html', 'Content-Length': '138')>\n) (ResponseError) (ModuleException).",
+        "severity": 3,
+        "origin": "heating_control.py/get_system_state:72 --> project.py/get_room_temps_and_humidity:1307",
+        "origin_timestamp": "2026-09-09-17-09-07",
+        "registration_timestamp": "2026-09-09-17-09-07",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
