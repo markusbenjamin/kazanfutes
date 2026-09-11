@@ -35,5 +35,12 @@
     "electricity/submeters.json": { "service": "electric_submeters_logger.service", "kind": "event_driven" },
     "pumps/power.json": { "service": "pump_powers_logger.service", "kind": "event_driven" }
   },
-  "excluded_streams": ["service_execution", "errors", "service_data_watchdog"]
+  "excluded_streams": [
+    "service_execution",
+    "errors",
+    "service_data_watchdog",
+    "electricity/pv_inverter_estimated_daily.json",
+    "presence/oktopusz_presence.json",
+    "presence/presence.json"
+  ]
 }
