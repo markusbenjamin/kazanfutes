@@ -5,6 +5,10 @@
   "confirmation_runs": 2,
   "timer_output_grace_minutes": 5,
   "default_output_max_age_minutes": 60,
+  "healthchecks": {
+    "secret_relative_path": "config/secrets_and_env/healthchecks_service_data_watchdog_url",
+    "timeout_seconds": 10
+  },
   "profiles": {
     "critical": { "notify_immediately": true },
     "revision": { "notify_immediately": true }
