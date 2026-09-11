@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "mode": "live",
+  "interval_minutes": 1,
+  "confirmation_runs": 2,
+  "timer_output_grace_minutes": 5,
+  "default_output_max_age_minutes": 60,
+  "profiles": {
+    "critical": { "notify_immediately": true },
+    "revision": { "notify_immediately": true }
+  },
+  "service_overrides": {
+    "heating_control.service": { "profile": "critical" }
+  },
+  "streams": {
+    "system/state.json": { "service": "heating_control.service", "kind": "periodic", "timestamp_field": "last_updated" },
+    "temperature_and_humidity/temperature_and_humidity.json": { "service": "temperature_and_humidity_logger.service", "kind": "periodic" },
+    "thermostats/thermostats_state.json": { "service": "thermostats_manager.service", "kind": "periodic" },
+    "electricity/main_meter.json": { "service": "electric_meter_logger.service", "kind": "periodic" },
+    "heat_delivery/heatmeters_state.json": { "service": "heatmeters_logger.service", "kind": "periodic" },
+    "radiator_temps/radiator_temps.json": { "service": "radiator_temps_logger.service", "kind": "periodic" },
+    "weather_station/weather_station.json": { "service": "weather_station_logger.service", "kind": "periodic" },
+    "external_temp/external_temp.json": { "service": "external_temp_scraper_and_logger.service", "kind": "periodic" },
+    "electricity/pv_inverter.json": { "service": "pv_logger.service", "kind": "periodic" },
+    "aqara_and_nous/aqara_and_nous.json": { "service": "aqara_and_nous_logger.service", "kind": "periodic" },
+    "presence/presence_all.json": { "service": "presence_logger.service", "kind": "periodic" },
+    "occupancy/occupancy.json": { "service": "occupancy_logger.service", "kind": "periodic" },
+    "config/scheduling/local_scheduling_files/occupancy.json": { "service": "presence_pattern_calculator.service", "kind": "periodic" },
+    "open_close/open_close_events.json": { "service": "open_close_logger.service", "kind": "event_driven" },
+    "gas_consumption/gas_relay_turns.json": { "service": "gasmeter_logger.service", "kind": "event_driven" },
+    "electricity/submeters.json": { "service": "electric_submeters_logger.service", "kind": "event_driven" },
+    "pumps/power.json": { "service": "pump_powers_logger.service", "kind": "event_driven" }
+  },
+  "excluded_streams": ["service_execution", "errors", "service_data_watchdog"]
+}
