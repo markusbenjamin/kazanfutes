@@ -12,6 +12,10 @@
     "secret_relative_path": "config/secrets_and_env/healthchecks_device_watchdog_url",
     "timeout_seconds": 10
   },
+  "heating_context": {
+    "source_relative_path": "system/control.json",
+    "stale_after_minutes": 15
+  },
   "battery_scales": {
     "default": "unknown",
     "by_model": {},
@@ -22,6 +26,7 @@
   "profiles": {
     "critical_pump": {
       "class": "critical",
+      "critical_when_heating_on": true,
       "open_after_runs": 2,
       "stale_after_minutes": 30,
       "battery_warning_percent": null,
@@ -29,6 +34,7 @@
     },
     "critical_danfoss_valve": {
       "class": "critical",
+      "critical_when_heating_on": true,
       "open_after_runs": 2,
       "stale_after_minutes": 240,
       "battery_warning_percent": 30,
@@ -36,6 +42,7 @@
     },
     "critical_dependency": {
       "class": "critical",
+      "critical_when_heating_on": true,
       "open_after_runs": 2,
       "stale_after_minutes": 30,
       "battery_warning_percent": null,
