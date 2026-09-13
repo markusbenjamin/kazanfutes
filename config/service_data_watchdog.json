@@ -3,6 +3,7 @@
   "mode": "live",
   "interval_minutes": 1,
   "confirmation_runs": 2,
+  "timer_job_failure_grace_minutes": 10,
   "timer_output_grace_minutes": 5,
   "default_output_max_age_minutes": 60,
   "healthchecks": {
@@ -14,7 +15,17 @@
     "revision": { "notify_immediately": true }
   },
   "service_overrides": {
-    "heating_control.service": { "profile": "critical" }
+    "heating_control.service": { "profile": "critical" },
+    "pv_logger.service": { "availability": "pv_generation" }
+  },
+  "availability_rules": {
+    "pv_generation": {
+      "type": "solar_elevation",
+      "latitude": 47.4984,
+      "longitude": 19.0405,
+      "minimum_elevation_degrees": 0,
+      "startup_grace_minutes": 15
+    }
   },
   "streams": {
     "system/state.json": { "service": "heating_control.service", "kind": "periodic", "timestamp_field": "last_updated" },
@@ -25,7 +36,7 @@
     "radiator_temps/radiator_temps.json": { "service": "radiator_temps_logger.service", "kind": "periodic" },
     "weather_station/weather_station.json": { "service": "weather_station_logger.service", "kind": "periodic" },
     "external_temp/external_temp.json": { "service": "external_temp_scraper_and_logger.service", "kind": "periodic" },
-    "electricity/pv_inverter.json": { "service": "pv_logger.service", "kind": "periodic" },
+    "electricity/pv_inverter.json": { "service": "pv_logger.service", "kind": "periodic", "availability": "pv_generation" },
     "aqara_and_nous/aqara_and_nous.json": { "service": "aqara_and_nous_logger.service", "kind": "periodic" },
     "presence/presence_all.json": { "service": "presence_logger.service", "kind": "periodic" },
     "occupancy/occupancy.json": { "service": "occupancy_logger.service", "kind": "periodic" },
