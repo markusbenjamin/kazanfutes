@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "mode": "live",
+  "interval_minutes": 5,
+  "digest": {
+    "frequency": "daily",
+    "hour": 8,
+    "minute_window": 15,
+    "send_when_empty": false
+  },
+  "healthchecks": {
+    "secret_relative_path": "config/secrets_and_env/healthchecks_device_watchdog_url",
+    "timeout_seconds": 10
+  },
+  "heating_context": {
+    "source_relative_path": "config/heating_switch.json",
+    "field": "system"
+  },
+  "battery_scales": {
+    "default": "unknown",
+    "by_model": {},
+    "by_device": {},
+    "learning_days": 7,
+    "learning_min_samples": 12
+  },
+  "profiles": {
+    "critical_pump": {
+      "class": "critical",
+      "critical_when_heating_on": true,
+      "open_after_runs": 2,
+      "stale_after_minutes": 30,
+      "battery_warning_percent": null,
+      "battery_critical_percent": null
+    },
+    "critical_danfoss_valve": {
+      "class": "critical",
+      "critical_when_heating_on": true,
+      "open_after_runs": 2,
+      "stale_after_minutes": 240,
+      "battery_warning_percent": 30,
+      "battery_critical_percent": 20
+    },
+    "critical_dependency": {
+      "class": "critical",
+      "critical_when_heating_on": true,
+      "open_after_runs": 2,
+      "stale_after_minutes": 30,
+      "battery_warning_percent": null,
+      "battery_critical_percent": null
+    },
+    "parasoll": {
+      "class": "revision",
+      "open_after_runs": 2,
+      "stale_after_minutes": 1440,
+      "battery_warning_percent": 50,
+      "battery_critical_percent": 40
+    },
+    "zigbee": {
+      "class": "revision",
+      "open_after_runs": 2,
+      "stale_after_minutes": 1440,
+      "battery_warning_percent": 20,
+      "battery_critical_percent": null
+    },
+    "infrastructure": {
+      "class": "revision",
+      "open_after_runs": 2,
+      "stale_after_minutes": 1440,
+      "battery_warning_percent": null,
+      "battery_critical_percent": null
+    },
+    "gas_meter": {
+      "class": "revision",
+      "open_after_runs": 1,
+      "stale_after_minutes": null,
+      "event_after_minutes": 2160,
+      "battery_warning_percent": null,
+      "battery_critical_percent": null
+    },
+    "reporter": {
+      "class": "revision",
+      "open_after_runs": 2,
+      "stale_after_minutes": 30,
+      "battery_warning_percent": null,
+      "battery_critical_percent": null
+    }
+  },
+  "overrides": {}
+}
