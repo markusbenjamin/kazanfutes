@@ -2589,7 +2589,7 @@ function drawMainGraph(graphData = null) {
                                 plotLabel: false,
                                 parentId: "graph",
                                 background: { show: false },
-                                smoothing: { bottom: 0, left: 10 },
+                                smoothing: { bottom: 0, left: 25 },
                                 domain: { bottom: [0, 24], left: [Math.floor(range[0]), Math.ceil(range[1])] },
                                 dataKeys: { bottom: "h_of_day_frac", left: "temp" },
                                 plotStyle: { joined: true, col: plotColor, thickness: "1.25", startCap: false, endCap: true, hoverableCurve: emphasis },
