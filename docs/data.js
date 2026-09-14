@@ -2536,7 +2536,7 @@ function drawMainGraph(graphData = null) {
                                     smoothing: { bottom: 0, left: 10 },
                                     domain: { bottom: [0, 24], left: [Math.floor(range[0]) - 1, Math.ceil(range[1]) + 1] },
                                     dataKeys: { bottom: "h_of_day_frac", left: "temp" },
-                                    plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2", startCap: false, endCap: true },
+                                    plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2", startCap: true, endCap: true },
                                     segment: { do: true, gap: 0.5, endCaps: true, startCaps: true },
                                     curveEndText: { show: true, fontSize: 6, text: ((roomMeasurementDisplayData.at(-1).temp).toFixed(1).replace(/\.0$/, '')) + "°C", col: "rgba(255,0,0,1)", xOffset: 3, yOffset: 1.75 }
                                 }
@@ -2566,7 +2566,7 @@ function drawMainGraph(graphData = null) {
                                     smoothing: { bottom: 0, left: 10 },
                                     domain: { bottom: [0, 24], left: [Math.floor(range[0]), Math.ceil(range[1])] },
                                     dataKeys: { bottom: "h_of_day_frac", left: "temp" },
-                                    plotStyle: { joined: true, col: "rgb(255, 0, 0)", thickness: "2", startCap: false, endCap: true },
+                                    plotStyle: { joined: true, col: "rgb(255, 0, 0)", thickness: "2", startCap: true, endCap: true },
                                     segment: { do: true, gap: 0.5, endCaps: true, startCaps: true },
                                     curveEndText: { show: true, fontSize: 6, text: ((roomMeasurementDisplayData.at(-1).temp).toFixed(1).replace(/\.0$/, '')) + "°C", col: "rgba(255,0,0,1)", xOffset: 3, yOffset: 1.75 }
                                 }
@@ -2653,7 +2653,7 @@ function drawMainGraph(graphData = null) {
                                 smoothing: { bottom: 0, left: 25 },
                                 domain: { bottom: [0, 24], left: [Math.floor(range[0]), Math.ceil(range[1])] },
                                 dataKeys: { bottom: "h_of_day_frac", left: "temp" },
-                                plotStyle: { joined: true, col: plotColor, thickness: "1.25", startCap: false, endCap: true, hoverableCurve: emphasis },
+                                plotStyle: { joined: true, col: plotColor, thickness: "1.25", startCap: true, endCap: true, hoverableCurve: emphasis },
                                 curveEndText: { show: showEndText, fontSize: 5, text: roomsDataAndState[roomNum].name, col: plotColor, xOffset: 2.5, yOffset: 1.5 },
                                 segment: { do: true, gap: roomNum == 10 ? 2 : 0.5, endCaps: true, startCaps: true }
                             }
