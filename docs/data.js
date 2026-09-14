@@ -696,28 +696,11 @@ const ROOM_TEMPERATURE_DISPLAY_STEP_HOURS = 5 / 60;
 const ROOM_TEMPERATURE_INTERPOLATION_MAX_GAP_HOURS = 2;
 const ROOM_TEMPERATURE_SPARSE_UPDATE_INTERVAL_HOURS = 0.5;
 
-function hasSparseRoomTemperatureUpdates(readings) {
-    if (!Array.isArray(readings)) return false;
-
-    const hours = readings
-        .filter(reading => reading?.h_of_day_frac != null && reading?.temp != null && Number.isFinite(Number(reading.h_of_day_frac)) && Number.isFinite(Number(reading.temp)))
-        .map(reading => Number(reading.h_of_day_frac))
-        .sort((a, b) => a - b);
-    const updateIntervals = hours
-        .slice(1)
-        .map((hour, index) => hour - hours[index])
-        .filter(interval => interval > 1e-9)
-        .sort((a, b) => a - b);
-
-    if (updateIntervals.length === 0) return false;
-    const medianInterval = updateIntervals[Math.floor(updateIntervals.length / 2)];
-    return medianInterval > ROOM_TEMPERATURE_SPARSE_UPDATE_INTERVAL_HOURS;
-}
-
 function resampleRoomTemperatureForDisplay(
     readings,
     stepHours = ROOM_TEMPERATURE_DISPLAY_STEP_HOURS,
-    maxGapHours = ROOM_TEMPERATURE_INTERPOLATION_MAX_GAP_HOURS
+    maxGapHours = ROOM_TEMPERATURE_INTERPOLATION_MAX_GAP_HOURS,
+    minGapHours = 0
 ) {
     if (!Array.isArray(readings)) return readings;
 
@@ -750,7 +733,7 @@ function resampleRoomTemperatureForDisplay(
 
         const previous = uniqueReadings[index - 1];
         const gapHours = reading.h_of_day_frac - previous.h_of_day_frac;
-        if (gapHours <= maxGapHours) {
+        if (gapHours > minGapHours && gapHours <= maxGapHours) {
             const firstGridIndex = Math.ceil((previous.h_of_day_frac + 1e-9) / stepHours);
             const lastGridIndex = Math.floor((reading.h_of_day_frac - 1e-9) / stepHours);
             for (let gridIndex = firstGridIndex; gridIndex <= lastGridIndex; gridIndex += 1) {
@@ -769,9 +752,12 @@ function resampleRoomTemperatureForDisplay(
 }
 
 function prepareRoomTemperatureForDisplay(readings) {
-    return hasSparseRoomTemperatureUpdates(readings)
-        ? resampleRoomTemperatureForDisplay(readings)
-        : readings;
+    return resampleRoomTemperatureForDisplay(
+        readings,
+        ROOM_TEMPERATURE_DISPLAY_STEP_HOURS,
+        ROOM_TEMPERATURE_INTERPOLATION_MAX_GAP_HOURS,
+        ROOM_TEMPERATURE_SPARSE_UPDATE_INTERVAL_HOURS
+    );
 }
 
 function drawPlot(plotData, userOptions) {
