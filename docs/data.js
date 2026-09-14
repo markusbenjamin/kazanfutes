@@ -688,6 +688,67 @@ function dataToCollectGenerator(startDate, endDate, dataTypes) {
     return result;
 }
 
+// Room sensors do not necessarily publish at the logger cadence.  Build a
+// regular display-only series between nearby observations so the moving
+// average is based on elapsed time rather than on how often one device happens
+// to report.  Do not bridge a longer missing-data interval.
+const ROOM_TEMPERATURE_DISPLAY_STEP_HOURS = 5 / 60;
+const ROOM_TEMPERATURE_INTERPOLATION_MAX_GAP_HOURS = 2;
+
+function resampleRoomTemperatureForDisplay(
+    readings,
+    stepHours = ROOM_TEMPERATURE_DISPLAY_STEP_HOURS,
+    maxGapHours = ROOM_TEMPERATURE_INTERPOLATION_MAX_GAP_HOURS
+) {
+    if (!Array.isArray(readings)) return readings;
+
+    const sortedReadings = readings
+        .filter(reading => reading?.h_of_day_frac != null && reading?.temp != null && Number.isFinite(Number(reading.h_of_day_frac)) && Number.isFinite(Number(reading.temp)))
+        .map(reading => ({
+            h_of_day_frac: Number(reading.h_of_day_frac),
+            temp: Number(reading.temp)
+        }))
+        .sort((a, b) => a.h_of_day_frac - b.h_of_day_frac);
+
+    const uniqueReadings = [];
+    sortedReadings.forEach(reading => {
+        const previous = uniqueReadings.at(-1);
+        if (previous && Math.abs(previous.h_of_day_frac - reading.h_of_day_frac) < 1e-9) {
+            previous.temp = (previous.temp * previous.count + reading.temp) / (previous.count + 1);
+            previous.count += 1;
+        }
+        else {
+            uniqueReadings.push({ ...reading, count: 1 });
+        }
+    });
+
+    const displayReadings = [];
+    uniqueReadings.forEach((reading, index) => {
+        if (index === 0) {
+            displayReadings.push(reading);
+            return;
+        }
+
+        const previous = uniqueReadings[index - 1];
+        const gapHours = reading.h_of_day_frac - previous.h_of_day_frac;
+        if (gapHours <= maxGapHours) {
+            const firstGridIndex = Math.ceil((previous.h_of_day_frac + 1e-9) / stepHours);
+            const lastGridIndex = Math.floor((reading.h_of_day_frac - 1e-9) / stepHours);
+            for (let gridIndex = firstGridIndex; gridIndex <= lastGridIndex; gridIndex += 1) {
+                const hour = gridIndex * stepHours;
+                const fraction = (hour - previous.h_of_day_frac) / gapHours;
+                displayReadings.push({
+                    h_of_day_frac: hour,
+                    temp: previous.temp + (reading.temp - previous.temp) * fraction
+                });
+            }
+        }
+        displayReadings.push(reading);
+    });
+
+    return displayReadings.map(({ count, ...reading }) => reading);
+}
+
 function drawPlot(plotData, userOptions) {
     //plotData instanceof Promise ? console.log("promise") : "";
     //plotData === undefined ? console.log("undefined") : "";
@@ -2358,7 +2419,7 @@ function drawMainGraph(graphData = null) {
                         }
                         let roomMeasurementPastNDaysAverageData = pastNDaysAverageRoomTemps[mainGraphSetting.roomNumToPlot];
                         let roomMeasurementData = graphData["room_" + mainGraphSetting.roomNumToPlot + "_measurements"];
-                        console.log(roomMeasurementData.length)
+                        let roomMeasurementDisplayData = resampleRoomTemperatureForDisplay(roomMeasurementData);
                         let roomCurrentTemp = systemNode['state']['measured_temps'][roomNum];
                         //roomMeasurementData.push({ 'temp': roomCurrentTemp, 'h_of_day_frac': getFractionalHourOfDay() })
 
@@ -2467,7 +2528,7 @@ function drawMainGraph(graphData = null) {
                                 );
                             }
                             drawPlot(
-                                roomMeasurementData,
+                                roomMeasurementDisplayData,
                                 {
                                     parentId: "graph",
                                     axes: { left: false, bottom: false },
@@ -2477,7 +2538,7 @@ function drawMainGraph(graphData = null) {
                                     dataKeys: { bottom: "h_of_day_frac", left: "temp" },
                                     plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2", startCap: false, endCap: true },
                                     segment: { do: true, gap: 0.5, endCaps: true, startCaps: true },
-                                    curveEndText: { show: true, fontSize: 6, text: ((roomMeasurementData.at(-1).temp).toFixed(1).replace(/\.0$/, '')) + "°C", col: "rgba(255,0,0,1)", xOffset: 3, yOffset: 1.75 }
+                                    curveEndText: { show: true, fontSize: 6, text: ((roomMeasurementDisplayData.at(-1).temp).toFixed(1).replace(/\.0$/, '')) + "°C", col: "rgba(255,0,0,1)", xOffset: 3, yOffset: 1.75 }
                                 }
                             );
                         }
@@ -2497,7 +2558,7 @@ function drawMainGraph(graphData = null) {
                                 }
                             );
                             drawPlot(
-                                roomMeasurementData,
+                                roomMeasurementDisplayData,
                                 {
                                     parentId: "graph",
                                     background: false,
@@ -2507,7 +2568,7 @@ function drawMainGraph(graphData = null) {
                                     dataKeys: { bottom: "h_of_day_frac", left: "temp" },
                                     plotStyle: { joined: true, col: "rgb(255, 0, 0)", thickness: "2", startCap: false, endCap: true },
                                     segment: { do: true, gap: 0.5, endCaps: true, startCaps: true },
-                                    curveEndText: { show: true, fontSize: 6, text: ((roomMeasurementData.at(-1).temp).toFixed(1).replace(/\.0$/, '')) + "°C", col: "rgba(255,0,0,1)", xOffset: 3, yOffset: 1.75 }
+                                    curveEndText: { show: true, fontSize: 6, text: ((roomMeasurementDisplayData.at(-1).temp).toFixed(1).replace(/\.0$/, '')) + "°C", col: "rgba(255,0,0,1)", xOffset: 3, yOffset: 1.75 }
                                 }
                             );
                         }
@@ -2582,7 +2643,7 @@ function drawMainGraph(graphData = null) {
                         }
                         plotColor = plotColor.toString();
                         drawPlot(
-                            graphData["room_" + roomNum + "_measurements"],
+                            resampleRoomTemperatureForDisplay(graphData["room_" + roomNum + "_measurements"]),
                             {
                                 axes: { left: false, bottom: false },
                                 axesLabel: { bottom: false, left: false },
