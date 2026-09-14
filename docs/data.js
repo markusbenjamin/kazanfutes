@@ -694,6 +694,25 @@ function dataToCollectGenerator(startDate, endDate, dataTypes) {
 // to report.  Do not bridge a longer missing-data interval.
 const ROOM_TEMPERATURE_DISPLAY_STEP_HOURS = 5 / 60;
 const ROOM_TEMPERATURE_INTERPOLATION_MAX_GAP_HOURS = 2;
+const ROOM_TEMPERATURE_SPARSE_UPDATE_INTERVAL_HOURS = 0.5;
+
+function hasSparseRoomTemperatureUpdates(readings) {
+    if (!Array.isArray(readings)) return false;
+
+    const hours = readings
+        .filter(reading => reading?.h_of_day_frac != null && reading?.temp != null && Number.isFinite(Number(reading.h_of_day_frac)) && Number.isFinite(Number(reading.temp)))
+        .map(reading => Number(reading.h_of_day_frac))
+        .sort((a, b) => a - b);
+    const updateIntervals = hours
+        .slice(1)
+        .map((hour, index) => hour - hours[index])
+        .filter(interval => interval > 1e-9)
+        .sort((a, b) => a - b);
+
+    if (updateIntervals.length === 0) return false;
+    const medianInterval = updateIntervals[Math.floor(updateIntervals.length / 2)];
+    return medianInterval > ROOM_TEMPERATURE_SPARSE_UPDATE_INTERVAL_HOURS;
+}
 
 function resampleRoomTemperatureForDisplay(
     readings,
@@ -747,6 +766,12 @@ function resampleRoomTemperatureForDisplay(
     });
 
     return displayReadings.map(({ count, ...reading }) => reading);
+}
+
+function prepareRoomTemperatureForDisplay(readings) {
+    return hasSparseRoomTemperatureUpdates(readings)
+        ? resampleRoomTemperatureForDisplay(readings)
+        : readings;
 }
 
 function drawPlot(plotData, userOptions) {
@@ -2419,7 +2444,8 @@ function drawMainGraph(graphData = null) {
                         }
                         let roomMeasurementPastNDaysAverageData = pastNDaysAverageRoomTemps[mainGraphSetting.roomNumToPlot];
                         let roomMeasurementData = graphData["room_" + mainGraphSetting.roomNumToPlot + "_measurements"];
-                        let roomMeasurementDisplayData = resampleRoomTemperatureForDisplay(roomMeasurementData);
+                        let roomMeasurementDisplayData = prepareRoomTemperatureForDisplay(roomMeasurementData);
+                        let roomMeasurementPastNDaysAverageDisplayData = resampleRoomTemperatureForDisplay(roomMeasurementPastNDaysAverageData);
                         let roomCurrentTemp = systemNode['state']['measured_temps'][roomNum];
                         //roomMeasurementData.push({ 'temp': roomCurrentTemp, 'h_of_day_frac': getFractionalHourOfDay() })
 
@@ -2544,10 +2570,10 @@ function drawMainGraph(graphData = null) {
                         }
                         else {
                             drawPlot(
-                                roomMeasurementPastNDaysAverageData,
+                                roomMeasurementPastNDaysAverageDisplayData,
                                 {
                                     parentId: "graph",
-                                    smoothing: { bottom: 0, left: 10 },
+                                    smoothing: { bottom: 0, left: 30 },
                                     domain: { bottom: [0, 24], left: [Math.floor(range[0]), Math.ceil(range[1])] },
                                     dataKeys: { bottom: "h_of_day_frac", left: "temp" },
                                     axesLabel: { bottom: "óra", left: "°C" },
@@ -2643,7 +2669,7 @@ function drawMainGraph(graphData = null) {
                         }
                         plotColor = plotColor.toString();
                         drawPlot(
-                            resampleRoomTemperatureForDisplay(graphData["room_" + roomNum + "_measurements"]),
+                            prepareRoomTemperatureForDisplay(graphData["room_" + roomNum + "_measurements"]),
                             {
                                 axes: { left: false, bottom: false },
                                 axesLabel: { bottom: false, left: false },
