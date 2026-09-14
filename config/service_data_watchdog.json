@@ -41,7 +41,7 @@
     "aqara_and_nous/aqara_and_nous.json": { "service": "aqara_and_nous_logger.service", "kind": "periodic" },
     "presence/presence_all.json": { "service": "presence_logger.service", "kind": "periodic" },
     "occupancy/occupancy.json": { "service": "occupancy_logger.service", "kind": "periodic" },
-    "config/scheduling/local_scheduling_files/occupancy.json": { "service": "presence_pattern_calculator.service", "kind": "periodic" },
+    "config/scheduling/local_scheduling_files/occupancy.json": { "service": "presence_pattern_calculator.service", "kind": "periodic", "max_age_minutes": 1500 },
     "open_close/open_close_events.json": { "service": "open_close_logger.service", "kind": "event_driven" },
     "gas_consumption/gas_relay_turns.json": { "service": "gasmeter_logger.service", "kind": "event_driven" },
     "electricity/submeters.json": { "service": "electric_submeters_logger.service", "kind": "event_driven" },
