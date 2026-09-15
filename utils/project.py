@@ -601,7 +601,7 @@ def _sync_paths_with_repo_unlocked(
     if outside_changes:
         preview = ", ".join(outside_changes[:10])
         remainder = len(outside_changes) - 10
-        if remainder:
+        if remainder > 0:
             preview += f", and {remainder} more"
         raise GitSyncBlocked(
             "tracked changes outside the selected sync paths are present: " + preview
