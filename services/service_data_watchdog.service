@@ -1,0 +1,13 @@
+[Unit]
+Description=Kazanfutes service and data watchdog
+After=network.target
+Wants=media-pi-program_stick.mount
+BindsTo=media-pi-program_stick.mount
+
+[Service]
+Type=oneshot
+User=pi
+WorkingDirectory=/media/pi/program_stick/kazanfutes
+Environment="HOME=/home/pi"
+Environment="PYTHONPATH=/media/pi/program_stick/kazanfutes"
+ExecStart=/home/pi/Kazanfutes_local/bin/python /media/pi/program_stick/kazanfutes/services/service_data_watchdog.py check
