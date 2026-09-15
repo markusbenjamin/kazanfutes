@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "mode": "live",
   "interval_minutes": 1,
   "confirmation_runs": 2,
@@ -16,16 +16,7 @@
   },
   "service_overrides": {
     "heating_control.service": { "profile": "critical" },
-    "pv_logger.service": { "availability": "pv_generation" }
-  },
-  "availability_rules": {
-    "pv_generation": {
-      "type": "solar_elevation",
-      "latitude": 47.4984,
-      "longitude": 19.0405,
-      "minimum_elevation_degrees": 0,
-      "startup_grace_minutes": 15
-    }
+    "pv_logger.service": { "profile": "critical", "state_monitor": "pv_inverter" }
   },
   "streams": {
     "system/state.json": { "service": "heating_control.service", "kind": "periodic", "timestamp_field": "last_updated" },
@@ -36,7 +27,20 @@
     "radiator_temps/radiator_temps.json": { "service": "radiator_temps_logger.service", "kind": "periodic" },
     "weather_station/weather_station.json": { "service": "weather_station_logger.service", "kind": "periodic" },
     "external_temp/external_temp.json": { "service": "external_temp_scraper_and_logger.service", "kind": "periodic" },
-    "electricity/pv_inverter.json": { "service": "pv_logger.service", "kind": "periodic", "availability": "pv_generation" },
+    "electricity/pv_inverter_status.json": {
+      "service": "pv_logger.service",
+      "kind": "pv_inverter",
+      "max_age_minutes": 15,
+      "source_max_age_minutes": 20,
+      "minimum_dc_voltage_fields": 8,
+      "illumination_evidence": {
+        "stream": "weather_station/weather_station.json",
+        "timestamp_field": "last_updated",
+        "max_age_minutes": 5,
+        "value_path": ["state", "illuminance_lux"],
+        "minimum_lux": 10000
+      }
+    },
     "zigbee/parasoll_batteries.json": { "service": "parasoll_battery_logger.service", "kind": "periodic" },
     "aqara_and_nous/aqara_and_nous.json": { "service": "aqara_and_nous_logger.service", "kind": "periodic" },
     "presence/presence_all.json": { "service": "presence_logger.service", "kind": "periodic" },
@@ -52,6 +56,7 @@
     "errors",
     "service_data_watchdog",
     "electricity/pv_inverter_estimated_daily.json",
+    "electricity/pv_inverter.json",
     "presence/oktopusz_presence.json",
     "presence/presence.json"
   ]
