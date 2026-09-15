@@ -6,6 +6,7 @@ from utils.project import *
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 import json
+import math
 import os
 import re
 import time
@@ -43,6 +44,17 @@ CHROMEDRIVER_BIN = "/usr/bin/chromedriver"
 
 HEADLESS = True
 SIGNAL_BATCH_SIZE = 8
+PV_STATUS_LOG_PATH = "electricity/pv_inverter_status.json"
+ZERO_VOLTAGE_THRESHOLD_VOLTS = 0.001
+
+
+class PVObservationError(RuntimeError):
+    """A FusionSolar observation failure with its observable scope."""
+
+    def __init__(self, stage, access_state, message):
+        super().__init__(message)
+        self.stage = stage
+        self.access_state = access_state
 
 
 def load_credentials():
@@ -61,6 +73,64 @@ def clean_counter_value(v):
     if isinstance(v, (int, float)) and abs(v) > 1e300:
         return None
     return v
+
+
+def finite_number(value):
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return None
+    return value if math.isfinite(value) else None
+
+
+def inverter_observation_status(row):
+    """Describe what the logger directly observed, without inferring sunlight."""
+    voltages = [
+        value
+        for key, raw_value in row.items()
+        if re.fullmatch(r"pv\d+_input_voltage_v", key)
+        for value in [finite_number(raw_value)]
+        if value is not None
+    ]
+    active_power = finite_number(row.get("active_power_kw"))
+    if not voltages:
+        voltage_state = "unknown"
+    elif all(abs(value) <= ZERO_VOLTAGE_THRESHOLD_VOLTS for value in voltages):
+        voltage_state = "all_zero"
+    elif any(abs(value) <= ZERO_VOLTAGE_THRESHOLD_VOLTS for value in voltages):
+        voltage_state = "partially_zero"
+    else:
+        voltage_state = "nonzero"
+
+    return {
+        "timestamp": timestamp(),
+        "access_state": "reachable",
+        "telemetry_state": "received",
+        "source_timestamp": row.get("source_timestamp"),
+        "dc_voltage_state": voltage_state,
+        "dc_voltage_field_count": len(voltages),
+        "active_power_state": (
+            "unknown" if active_power is None
+            else "zero" if abs(active_power) <= ZERO_VOLTAGE_THRESHOLD_VOLTS
+            else "nonzero"
+        ),
+    }
+
+
+def failed_observation_status(error):
+    access_state = getattr(error, "access_state", "unavailable")
+    telemetry_state = "missing" if access_state == "reachable" else "unknown"
+    return {
+        "timestamp": timestamp(),
+        "access_state": access_state,
+        "telemetry_state": telemetry_state,
+        "failure_stage": getattr(error, "stage", "unknown"),
+        "error_type": type(error).__name__,
+    }
+
+
+def log_observation_status(status):
+    log_data(status, PV_STATUS_LOG_PATH)
 
 
 def label_to_key(label):
@@ -270,7 +340,7 @@ def read_live_row():
         time.sleep(5)
 
         if driver.find_elements(By.ID, "username") and driver.find_elements(By.ID, "btn_outerverify"):
-            raise RuntimeError("Still on login page after submit")
+            raise PVObservationError("login", "unavailable", "Still on login page after submit")
 
         try:
             driver.get_log("performance")
@@ -287,7 +357,7 @@ def read_live_row():
             roarand = extract_roarand_from_performance_logs(driver)
 
         if not roarand:
-            raise RuntimeError("Did not capture roarand from browser traffic")
+            raise PVObservationError("session", "unavailable", "Did not capture roarand from browser traffic")
 
         signal_tree_result = fetch_json(
             driver=driver,
@@ -296,7 +366,7 @@ def read_live_row():
         )
 
         if signal_tree_result["status"] != 200 or not signal_tree_result["json"]:
-            raise RuntimeError(f"Could not fetch signal tree: {signal_tree_result}")
+            raise PVObservationError("signal_tree", "unavailable", "Could not fetch signal tree")
 
         signal_map = {}
 
@@ -342,7 +412,7 @@ def read_live_row():
             )
 
             if history_result["status"] != 200 or not history_result["json"]:
-                raise RuntimeError(f"History request failed: {history_result}")
+                raise PVObservationError("history", "unavailable", "History request failed")
 
             history_json = history_result["json"]
             tz = ZoneInfo(history_json.get("timeZone", "UTC"))
@@ -378,12 +448,18 @@ def read_live_row():
         ]
 
         if not usable_epochs:
-            raise RuntimeError("Live data contains only missing values")
+            raise PVObservationError("history", "reachable", "Live data contains only missing values")
 
         latest_epoch = max(usable_epochs)
         latest_row = rows_by_epoch[latest_epoch]
 
-        out = {"timestamp": timestamp()}
+        out = {
+            "timestamp": timestamp(),
+            "source_timestamp": datetime.fromtimestamp(
+                latest_epoch,
+                tz=timezone.utc,
+            ).astimezone(tz).isoformat(timespec="seconds"),
+        }
         for sid in signal_ids:
             label = signal_map[sid]["label"]
             out[label_to_key(label)] = latest_row.get(label)
@@ -394,30 +470,47 @@ def read_live_row():
         driver.quit()
 
 
+def main():
+    try:
+        out = read_live_row()
+    except Exception as error:
+        try:
+            log_observation_status(failed_observation_status(error))
+        except Exception:
+            pass
+        if isinstance(error, ModuleException):
+            ServiceException(
+                "Module error while trying to read FusionSolar inverter data",
+                original_exception=error,
+                severity=2,
+            )
+        else:
+            ServiceException(
+                "FusionSolar inverter is unavailable to the logger",
+                severity=2,
+            )
+        return False
+
+    try:
+        log_data(out, "electricity/pv_inverter.json")
+        log_observation_status(inverter_observation_status(out))
+    except Exception as error:
+        ServiceException(
+            "FusionSolar inverter data was read but could not be logged",
+            original_exception=error if isinstance(error, ModuleException) else None,
+            severity=2,
+        )
+        return False
+
+    report(json.dumps(out, ensure_ascii=False))
+    return True
+
+
 success = False
 
-if False:
-    settings["log"] = False
-    settings["dev"] = True
 
-try:
-    out = read_live_row()
-    print(out)
-    log_data(out, "electricity/pv_inverter.json")
-    report(json.dumps(out, ensure_ascii=False))
-    success = True
-
-except ModuleException as e:
-    ServiceException(
-        "Module error while trying to read and log FusionSolar inverter data",
-        original_exception=e,
-        severity=2
-    )
-
-except Exception:
-    ServiceException(
-        "Unexpected error while trying to read and log FusionSolar inverter data",
-        severity=2
-    )
-
-log({"success": success})
+if __name__ == "__main__":
+    success = main()
+    log({"success": success})
+    if not success:
+        raise SystemExit(1)

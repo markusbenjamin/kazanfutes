@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Kazanfutes service and data watchdog every minute
+
+[Timer]
+OnCalendar=*:*
+Persistent=true
+WakeSystem=false
+
+[Install]
+WantedBy=timers.target
