@@ -4,6 +4,8 @@ data_formatter.service
 data_formatter.timer
 error_manager.service
 error_manager.timer
+device_watchdog.service
+device_watchdog.timer
 service_data_watchdog.service
 service_data_watchdog.timer
 external_temp_scraper_and_logger.service
@@ -22,6 +24,8 @@ presence_pattern_calculator.service
 presence_pattern_calculator.timer
 occupancy_logger.service
 occupancy_logger.timer
+parasoll_battery_logger.service
+parasoll_battery_logger.timer
 schedule_and_config_updater.service
 temperature_and_humidity_logger.service
 temperature_and_humidity_logger.timer

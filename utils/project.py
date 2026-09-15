@@ -426,6 +426,10 @@ class GitSyncError(RuntimeError):
     """Base class for repository-sync failures."""
 
 
+class GitSyncBlocked(GitSyncError):
+    """A sync intentionally skipped to protect unrelated local work."""
+
+
 class GitCommandError(GitSyncError):
     """A failed or timed-out Git command, including Git's diagnostic output."""
 
@@ -593,6 +597,16 @@ def _sync_paths_with_repo_unlocked(
         raise ValueError("max_push_attempts must be at least 1")
 
     repo_root = os.path.abspath(repo_root)
+    outside_changes = _tracked_changes_outside_sync_paths(repo_root, git_paths)
+    if outside_changes:
+        preview = ", ".join(outside_changes[:10])
+        remainder = len(outside_changes) - 10
+        if remainder:
+            preview += f", and {remainder} more"
+        raise GitSyncBlocked(
+            "tracked changes outside the selected sync paths are present: " + preview
+        )
+
     _quit_orphaned_git_autostash(repo_root)
 
     report("Git sync: staging configured paths.")
@@ -656,6 +670,24 @@ def _normalize_git_paths(project_paths):
 
     return normalized_paths
 
+
+def _tracked_changes_outside_sync_paths(repo_root, git_paths):
+    """Return tracked worktree changes that a selected-path sync must not touch."""
+    changed_paths = [
+        path.strip()
+        for path in _git_output(repo_root, ["diff", "--name-only", "HEAD"]).splitlines()
+        if path.strip()
+    ]
+
+    def is_selected(path):
+        return any(
+            selected == "." or path == selected or path.startswith(selected + "/")
+            for selected in git_paths
+        )
+
+    return sorted(path for path in changed_paths if not is_selected(path))
+
+
 def sync_paths_with_repo(project_paths, commit_message, timeout_on_lock = 30):
     """
     Commits selected repository paths, merge-pulls remote changes, then pushes.
@@ -689,6 +721,9 @@ def sync_paths_with_repo(project_paths, commit_message, timeout_on_lock = 30):
         return True
     except filelock.Timeout:
         return False
+    except GitSyncBlocked as error:
+        report(f"Git sync skipped to protect local changes: {error}")
+        return True
     except GitSyncError as error:
         raise ModuleException(str(error), severity=2)
     except Exception as error:
