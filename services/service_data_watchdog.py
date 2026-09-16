@@ -379,8 +379,21 @@ def update(previous: dict[str, Any], candidates: list[dict[str, Any]], units: se
     return state, opened, solved
 
 
-def notify_opened(state: dict[str, Any], opened: list[dict[str, Any]], mode: str, *, bootstrap: bool = False) -> None:
-    if mode != "live": return
+def in_boot_notification_grace(config: dict[str, Any], uptime_seconds: float | None = None) -> bool:
+    """Defer new alerts while services recover from a reboot."""
+    grace_minutes = float(config.get("boot_notification_grace_minutes", 0))
+    if grace_minutes <= 0:
+        return False
+    if uptime_seconds is None:
+        try:
+            uptime_seconds = float(Path("/proc/uptime").read_text().split()[0])
+        except (OSError, ValueError, IndexError):
+            return False
+    return uptime_seconds < grace_minutes * 60
+
+
+def notify_opened(state: dict[str, Any], opened: list[dict[str, Any]], mode: str, *, bootstrap: bool = False, boot_grace: bool = False) -> None:
+    if mode != "live" or boot_grace: return
     # A failed mail attempt must not silently consume an incident.  Reconsider
     # every active incident until notify_admin accepts it, including ones that
     # were opened during an earlier watchdog pass.
@@ -438,7 +451,7 @@ def run(*, dry_run: bool = False) -> dict[str, Any]:
     state, opened, solved = update(previous, candidates, units, streams, config, now)
     snapshot = {"generated_at": now_iso(now), "active_incidents": list(state["active"].values()), "known_units": sorted(units), "known_streams": sorted(streams)}
     if not dry_run:
-        notify_opened(state, opened, config.get("mode", "shadow"), bootstrap=bootstrap)
+        notify_opened(state, opened, config.get("mode", "shadow"), bootstrap=bootstrap, boot_grace=in_boot_notification_grace(config))
         notify_solved(solved, config.get("mode", "shadow"))
         atomic_write_json(str(root / INCIDENTS_PATH), state); atomic_write_json(str(root / STATE_PATH), snapshot)
         for item in solved: append_ndjson(str(root / SOLVED_PATH), item)
