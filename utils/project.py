@@ -722,8 +722,9 @@ def sync_paths_with_repo(project_paths, commit_message, timeout_on_lock = 30):
     except filelock.Timeout:
         return False
     except GitSyncBlocked as error:
-        report(f"Git sync skipped to protect local changes: {error}")
-        return True
+        raise ModuleException(
+            f"Git sync blocked to protect local changes: {error}", severity=2
+        ) from error
     except GitSyncError as error:
         raise ModuleException(str(error), severity=2)
     except Exception as error:
