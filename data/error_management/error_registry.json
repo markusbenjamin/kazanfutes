@@ -7071,5 +7071,60 @@
         "reported_timestamp": "2026-09-15-00-20-34",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to set light state pult: light pult unreachable, cannot set state.",
+        "severity": 2,
+        "origin": "light_state_manager.py:43 --> project.py/set_light_state:1867",
+        "origin_timestamp": "2026-09-15-17-59-09",
+        "registration_timestamp": "2026-09-15-17-59-09",
+        "reported": true,
+        "reported_timestamp": "2026-09-15-18-00-34",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to acquire occupancy states: couldn't get rooms occupancy: unexpected error while loading data/logs/presence/presence_all.json.2026-09-15 to array of JSONs: [Errno 2] No such file or directory: '/media/pi/program_stick/kazanfutes/data/logs/presence/presence_all.json.2026-09-15' (FileNotFoundError) (ModuleException).",
+        "severity": 2,
+        "origin": "occupancy_logger.py:10 --> project.py/get_rooms_occupancy:1525",
+        "origin_timestamp": "2026-09-16-00-00-06",
+        "registration_timestamp": "2026-09-16-00-00-06",
+        "reported": true,
+        "reported_timestamp": "2026-09-16-00-00-35",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "FusionSolar inverter is unavailable to the logger: Live data contains only missing values.",
+        "severity": 2,
+        "origin": "pv_logger.py/main:475 --> pv_logger.py/read_live_row:451",
+        "origin_timestamp": "2026-09-16-00-00-37",
+        "registration_timestamp": "2026-09-16-00-00-37",
+        "reported": true,
+        "reported_timestamp": "2026-09-16-00-05-31",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while acquiring boiler state: couldn't read boiler state: couldn't read state of GPIO pin 6: Expecting value: line 1 column 1 (char 0) (JSONDecodeError) (ModuleException).",
+        "severity": 3,
+        "origin": "heating_control.py/get_system_state:270 --> project.py/get_boiler_state:1066",
+        "origin_timestamp": "2026-09-16-02-33-08",
+        "registration_timestamp": "2026-09-16-02-33-08",
+        "reported": true,
+        "reported_timestamp": "2026-09-16-02-35-35",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to set light state pult: light pult unreachable, cannot set state.",
+        "severity": 2,
+        "origin": "light_state_manager.py:43 --> project.py/set_light_state:1868",
+        "origin_timestamp": "2026-09-16-11-25-13",
+        "registration_timestamp": "2026-09-16-11-25-13",
+        "reported": true,
+        "reported_timestamp": "2026-09-16-11-25-27",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
