@@ -31271,5 +31271,16 @@
         "reported_timestamp": null,
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while acquiring valve states: failed to connect to Deconz API due to unexpected error: Invalid content type: text/html (<ClientResponse(http://127.0.0.1:80/api/E22495BD8D) [404 Not Found]>\n<CIMultiDictProxy('Content-Type': 'text/html', 'Content-Length': '138')>\n) (ResponseError).",
+        "severity": 3,
+        "origin": "heating_control.py/get_system_state:216 --> project.py/get_thermostat_state_by_id:1970 --> project.py/read_sensors:1757 --> project.py/read_deconz_state:1721",
+        "origin_timestamp": "2026-09-16-16-18-45",
+        "registration_timestamp": null,
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
