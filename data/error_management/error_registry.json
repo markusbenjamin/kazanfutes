@@ -7126,5 +7126,16 @@
         "reported_timestamp": "2026-09-16-11-25-27",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to sync data and config with repo: Git sync blocked to protect local changes: tracked changes outside the selected sync paths are present: services/service_manager.sh: tracked changes outside the selected sync paths are present: services/service_manager.sh (GitSyncBlocked).",
+        "severity": 2,
+        "origin": "data_and_config_uploader.py:13 --> project.py/sync_paths_with_repo:725",
+        "origin_timestamp": "2026-09-16-12-50-10",
+        "registration_timestamp": "2026-09-16-12-50-10",
+        "reported": true,
+        "reported_timestamp": "2026-09-16-12-50-34",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
