@@ -7137,5 +7137,115 @@
         "reported_timestamp": "2026-09-16-12-50-34",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error during thermostats management: failed to connect to Deconz API due to unexpected error: Error requesting data from 127.0.0.1: Cannot connect to host 127.0.0.1:80 ssl:default [Connect call failed ('127.0.0.1', 80)] (RequestError).",
+        "severity": 3,
+        "origin": "thermostats_manager.py:23 --> project.py/read_thermostats:1906 --> project.py/read_deconz_state:1721",
+        "origin_timestamp": "2026-09-16-13-50-28",
+        "registration_timestamp": "2026-09-16-13-50-28",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to acquire temperature and humidity data: couldn't read temp and humidity due to: failed to connect to Deconz API due to unexpected error: Error requesting data from 127.0.0.1: Cannot connect to host 127.0.0.1:80 ssl:default [Connect call failed ('127.0.0.1', 80)] (RequestError) (ModuleException).",
+        "severity": 3,
+        "origin": "temperature_and_humidity_logger.py:10 --> project.py/get_room_temps_and_humidity:1343",
+        "origin_timestamp": "2026-09-16-13-50-28",
+        "registration_timestamp": "2026-09-16-13-50-28",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Error while trying to log open/close events",
+        "severity": 1,
+        "origin": "open_close_logger.py:72",
+        "origin_timestamp": "2026-09-16-13-50-28",
+        "registration_timestamp": "2026-09-16-13-50-28",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Could not log Parasoll battery states: failed to connect to Deconz API due to unexpected error: Error requesting data from 127.0.0.1: Cannot connect to host 127.0.0.1:80 ssl:default [Connect call failed ('127.0.0.1', 80)] (RequestError).",
+        "severity": 3,
+        "origin": "parasoll_battery_logger.py/main:80 --> parasoll_battery_logger.py/collect_snapshot:73 --> project.py/read_deconz_state:1721",
+        "origin_timestamp": "2026-09-16-13-50-29",
+        "registration_timestamp": "2026-09-16-13-50-30",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while acquiring measured temps and humidity: couldn't read temp and humidity due to: failed to connect to Deconz API due to unexpected error: Error requesting data from 127.0.0.1: Cannot connect to host 127.0.0.1:80 ssl:default [Connect call failed ('127.0.0.1', 80)] (RequestError) (ModuleException).",
+        "severity": 3,
+        "origin": "heating_control.py/get_system_state:72 --> project.py/get_room_temps_and_humidity:1343",
+        "origin_timestamp": "2026-09-16-13-50-31",
+        "registration_timestamp": "2026-09-16-13-50-31",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to acquire presence states: couldn't get rooms presence: couldn't read presence sensors: failed to connect to Deconz API due to unexpected error: Error requesting data from 127.0.0.1: Cannot connect to host 127.0.0.1:80 ssl:default [Connect call failed ('127.0.0.1', 80)] (RequestError) (ModuleException) (ModuleException).",
+        "severity": 2,
+        "origin": "presence_logger.py:10 --> project.py/get_presence_rooms:1453",
+        "origin_timestamp": "2026-09-16-13-50-31",
+        "registration_timestamp": "2026-09-16-13-50-31",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while acquiring valve states: failed to connect to Deconz API due to unexpected error: Error requesting data from 127.0.0.1: Cannot connect to host 127.0.0.1:80 ssl:default [Connect call failed ('127.0.0.1', 80)] (RequestError).",
+        "severity": 3,
+        "origin": "heating_control.py/get_system_state:216 --> project.py/get_thermostat_state_by_id:1970 --> project.py/read_sensors:1757 --> project.py/read_deconz_state:1721",
+        "origin_timestamp": "2026-09-16-13-50-32",
+        "registration_timestamp": "2026-09-16-13-50-32",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while shutting down heating: couldn't shut down heating: couldn't shut down all thermostats: failed to connect to Deconz API due to unexpected error: Error requesting data from 127.0.0.1: Cannot connect to host 127.0.0.1:80 ssl:default [Connect call failed ('127.0.0.1', 80)] (RequestError) (ModuleException) (ModuleException).",
+        "severity": 3,
+        "origin": "heating_control.py:861 --> project.py/shutdown_heating:1241",
+        "origin_timestamp": "2026-09-16-13-50-33",
+        "registration_timestamp": "2026-09-16-13-50-34",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to update local heating control config: failed to set up Google Sheets API: ('invalid_grant: Invalid JWT: Token must be a short-lived token (60 minutes) and in a reasonable timeframe. Check your iat and exp values in the JWT claim.', {'error': 'invalid_grant', 'error_description': 'Invalid JWT: Token must be a short-lived token (60 minutes) and in a reasonable timeframe. Check your iat and exp values in the JWT claim.'}) (RefreshError).",
+        "severity": 2,
+        "origin": "schedule_and_config_updater.py/update_local_heating_control_config:92 --> project.py/download_google_sheet_to_2D_array:3844",
+        "origin_timestamp": "2026-09-16-13-50-34",
+        "registration_timestamp": "2026-09-16-13-50-34",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to update local copy of weekly_cycle/1: failed to set up Google Sheets API: ('invalid_grant: Invalid JWT: Token must be a short-lived token (60 minutes) and in a reasonable timeframe. Check your iat and exp values in the JWT claim.', {'error': 'invalid_grant', 'error_description': 'Invalid JWT: Token must be a short-lived token (60 minutes) and in a reasonable timeframe. Check your iat and exp values in the JWT claim.'}) (RefreshError).",
+        "severity": 3,
+        "origin": "schedule_and_config_updater.py/update_local_scheduling_files:181 --> project.py/download_google_sheet_to_2D_array:3844",
+        "origin_timestamp": "2026-09-16-13-50-36",
+        "registration_timestamp": "2026-09-16-13-50-36",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
