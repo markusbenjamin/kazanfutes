@@ -551,8 +551,10 @@ report_stop() {
 
     if $ok; then
         printf '%sall units stopped%s\n' "$RED" "$RESET"
+        return 0
     else
         printf '%ssome units still active or missing%s\n' "$GREEN" "$RESET"
+        return 1
     fi
 }
 
