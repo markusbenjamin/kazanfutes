@@ -6,6 +6,7 @@
   "timer_job_failure_grace_minutes": 10,
   "timer_output_grace_minutes": 5,
   "default_output_max_age_minutes": 60,
+  "git_push_monitor": { "service": "data_and_config_uploader.service", "profile": "critical", "max_age_minutes": 30 },
   "healthchecks": {
     "secret_relative_path": "config/secrets_and_env/healthchecks_service_data_watchdog_url",
     "timeout_seconds": 10

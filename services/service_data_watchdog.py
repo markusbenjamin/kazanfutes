@@ -236,6 +236,58 @@ def render_active_incidents(incidents: list[dict[str, Any]]) -> str:
     return "\n".join(rows)
 
 
+def last_confirmed_data_push(root: Path) -> datetime | None:
+    """Read the uploader's explicit receipt, never its generic success field."""
+    path = root / "data/logs/service_execution/data_and_config_uploader/data_and_config_uploader.json"
+    paths = [path, *sorted(path.parent.glob(path.name + ".*"), reverse=True)[:2]]
+    for log_path in paths:
+        try:
+            lines = log_path.read_text(encoding="utf-8").splitlines()
+        except OSError:
+            continue
+        for line in reversed(lines):
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(record, dict) and record.get("push_confirmed") is True:
+                observed = parse_observed_time(record.get("timestamp"))
+                if observed is not None:
+                    return observed
+    return None
+
+
+def newest_monitored_stream_mtime(root: Path, config: dict[str, Any]) -> float | None:
+    latest = None
+    for relative in config.get("streams", {}):
+        path = root / (relative if relative.startswith(("system/", "config/")) else "data/logs/" + relative)
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            continue
+        latest = mtime if latest is None else max(latest, mtime)
+    return latest
+
+
+def git_push_candidates(root: Path, config: dict[str, Any], now: datetime) -> list[dict[str, Any]]:
+    policy = config.get("git_push_monitor")
+    if not policy:
+        return []
+    latest_data = newest_monitored_stream_mtime(root, config)
+    if latest_data is None:
+        return []
+    pushed_at = last_confirmed_data_push(root)
+    maximum_age = float(policy.get("max_age_minutes", 30))
+    if pushed_at is not None:
+        age = age_minutes(pushed_at, now)
+        if age is None or age <= maximum_age or latest_data <= pushed_at.timestamp():
+            return []
+        detail = f"Last confirmed GitHub push was {age:.0f} minutes ago (limit {maximum_age:.0f}); local data changed afterward"
+    else:
+        detail = "No confirmed GitHub push recorded while local data is present"
+    return [candidate(policy.get("service", "data_and_config_uploader.service"), policy.get("profile", "critical"), "git_push_stale", detail)]
+
+
 def evaluate(root: Path, config: dict[str, Any], now: datetime) -> tuple[list[dict[str, Any]], set[str], set[str]]:
     units = unit_list(root)
     candidates: list[dict[str, Any]] = []
@@ -266,6 +318,8 @@ def evaluate(root: Path, config: dict[str, Any], now: datetime) -> tuple[list[di
                 candidates.append(candidate(unit, profile, "run_failed", f"Latest timer job result is {facts.get('Result')}"))
         elif facts.get("ActiveState") not in {"active", "activating", "reloading"}:
             candidates.append(candidate(unit, profile, "service_inactive", "Continuous service is not active"))
+
+    candidates.extend(git_push_candidates(root, config, now))
 
     streams = config.get("streams", {})
     default_age = float(config.get("default_output_max_age_minutes", 60))

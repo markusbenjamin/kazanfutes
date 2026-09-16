@@ -27,7 +27,7 @@ except Exception as error:
         severity=2,
     )
 
-log({"success": success})
+log({"success": success, "push_confirmed": success})
 
 if not success:
     raise SystemExit(1)
