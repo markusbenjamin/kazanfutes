@@ -7247,5 +7247,16 @@
         "reported_timestamp": "2026-09-17-00-00-30",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to sync data and config with repo: Git command failed with exit code -7: git -C /media/pi/program_stick/kazanfutes add -A -- data config system/state.json: Git command failed with exit code -7: git -C /media/pi/program_stick/kazanfutes add -A -- data config system/state.json (GitCommandError).",
+        "severity": 2,
+        "origin": "data_and_config_uploader.py:13 --> project.py/sync_paths_with_repo:729",
+        "origin_timestamp": "2026-09-17-20-20-14",
+        "registration_timestamp": "2026-09-17-20-20-14",
+        "reported": true,
+        "reported_timestamp": "2026-09-17-20-20-32",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
