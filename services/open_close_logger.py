@@ -4,6 +4,13 @@ Continuously runs and records open/close events from deCONZ sensors.
 
 from utils.project import *
 
+
+UNNAMED_PARASOLL_PREFIX = "PARASOLL Door/Window "
+
+
+def is_unrenamed_parasoll(name):
+    return name.startswith(UNNAMED_PARASOLL_PREFIX)
+
 # system_node = JSONNodeAtURL(node_relative_path='system')
 
 if __name__ == "__main__":
@@ -11,6 +18,9 @@ if __name__ == "__main__":
         state = get_open_close_states()
 
         for name, sensor_state in state.items():
+            if is_unrenamed_parasoll(name):
+                continue
+
             event = {
                 "sensor_name": name,
                 "event": "startup",
@@ -26,6 +36,9 @@ if __name__ == "__main__":
             new_state = get_open_close_states()
 
             for name, sensor_state in new_state.items():
+                if is_unrenamed_parasoll(name):
+                    continue
+
                 if name not in state:
                     event = {
                         "sensor_name": name,
