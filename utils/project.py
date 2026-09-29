@@ -2421,16 +2421,28 @@ def shelly_rpc(ip:str, method:str, params:dict = None, timeout:float = 5.0):
         raise ModuleException(f"couldn't call Shelly RPC {method} on {ip}: {e}")
 
 def _get_dynamic_components(ip:str, timeout:float = 5.0):
-    result = shelly_rpc(
-        ip,
-        "Shelly.GetComponents",
-        {
-            "dynamic_only": True,
-            "include": ["config", "status"],
-        },
-        timeout=timeout
-    )
-    return result.get("components", [])
+    components = []
+    offset = 0
+
+    while True:
+        result = shelly_rpc(
+            ip,
+            "Shelly.GetComponents",
+            {
+                "dynamic_only": True,
+                "include": ["config", "status"],
+                "offset": offset,
+            },
+            timeout=timeout
+        )
+        page = result.get("components", [])
+        components.extend(page)
+        offset += len(page)
+
+        if offset >= result.get("total", offset):
+            return components
+        if not page:
+            raise ModuleException("Shelly.GetComponents returned an empty page before all components were read")
 
 def get_weather_station_state(
     shelly_ip: str,
