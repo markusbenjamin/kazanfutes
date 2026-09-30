@@ -1,6 +1,17 @@
 {
-  "active_incidents": [],
-  "generated_at": "2026-09-30T13:48:01+02:00",
+  "active_incidents": [
+    {
+      "id": "data_and_config_uploader.service:git_push_stale",
+      "identifier": "data_and_config_uploader.service",
+      "kind": "git_push_stale",
+      "last_seen_at": "2026-09-30T15:13:01+02:00",
+      "message": "Last confirmed GitHub push was 92 minutes ago (limit 30); local data changed afterward",
+      "notified_at": "2026-09-30T14:12:07+02:00",
+      "opened_at": "2026-09-30T14:12:01+02:00",
+      "profile": "critical"
+    }
+  ],
+  "generated_at": "2026-09-30T15:13:01+02:00",
   "known_streams": [
     "aqara_and_nous/aqara_and_nous.json",
     "electricity/main_meter.json",
