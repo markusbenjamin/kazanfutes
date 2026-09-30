@@ -1,7 +1,7 @@
 """Run the physical-infrastructure watchdog once.
 
 This service is read-only with respect to devices.  It writes only watchdog
-state/history files and sends email for newly confirmed critical incidents.
+state/history files and sends email for critical incidents and resolutions.
 """
 
 from __future__ import annotations
@@ -33,10 +33,13 @@ from utils.device_watchdog import (
     initial_incident_state,
     digest_incident_inventory,
     last_ndjson_record,
+    mark_resolution_notifications_sent,
     now_iso,
     ping_healthchecks,
+    queue_resolution_notifications,
     read_json,
     render_grouped_report,
+    render_resolution_report,
     render_table,
     snapshot,
     update_incidents,
@@ -556,6 +559,19 @@ def _notify_critical(incidents: dict[str, Any], now: datetime) -> None:
         incidents["active"][entry["incident_id"]]["immediate_notification_sent_at"] = now_iso(now)
 
 
+def _notify_resolutions(incidents: dict[str, Any], now: datetime) -> None:
+    """Send pending resolved conditions now, retrying failed deliveries later."""
+    if not incidents.get("pending_resolution_notifications"):
+        return
+    body = render_resolution_report(incidents, now)
+    try:
+        notify_admin("Kazanfutes physical-infrastructure resolutions", body)
+    except Exception as error:
+        report(f"Device watchdog could not send resolution email: {error}")
+        return
+    mark_resolution_notifications_sent(incidents)
+
+
 def _recent_ndjson(path: str, limit: int = 50) -> list[dict[str, Any]]:
     try:
         with open(path, "r", encoding="utf-8") as handle:
@@ -595,6 +611,8 @@ def run(config: dict[str, Any], *, dry_run: bool = False) -> dict[str, Any]:
 
     if not dry_run:
         live = config.get("mode", "shadow") == "live"
+        if live:
+            queue_resolution_notifications(incidents, solved)
         atomic_write_json(incidents_path, incidents)
         atomic_write_json(os.path.join(root, STATE_RELATIVE_PATH), current_snapshot)
         atomic_write_json(inventory_path, device_inventory)
@@ -602,6 +620,8 @@ def run(config: dict[str, Any], *, dry_run: bool = False) -> dict[str, Any]:
             append_ndjson(os.path.join(root, SOLVED_RELATIVE_PATH), entry)
         if live:
             _notify_critical(incidents, now)
+            atomic_write_json(incidents_path, incidents)
+            _notify_resolutions(incidents, now)
         atomic_write_json(incidents_path, incidents)
         if live and digest_due(incidents, config, now):
             active = incidents.get("active", {})
@@ -609,8 +629,8 @@ def run(config: dict[str, Any], *, dry_run: bool = False) -> dict[str, Any]:
             frequency = digest_settings.get("frequency", "weekly")
             current_digest_inventory = digest_incident_inventory(incidents)
             previous_digest_inventory = incidents.get("digest_last_incident_inventory")
-            if digest_delivery_needed(incidents, config):
-                digest = build_digest(incidents, now, frequency)
+            if digest_delivery_needed(incidents, config, include_resolved=False):
+                digest = build_digest(incidents, now, frequency, include_resolved=False)
                 try:
                     notify_admin(f"Kazanfutes {frequency} physical-infrastructure changes", digest)
                 except Exception as error:

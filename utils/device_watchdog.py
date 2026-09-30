@@ -415,6 +415,7 @@ def initial_incident_state() -> dict[str, Any]:
         "pending": {},
         "known_devices": {},
         "battery_scale_learning": {},
+        "pending_resolution_notifications": {},
         "digest_sent_for": None,
         "digest_checked_for": None,
         "digest_last_incident_inventory": None,
@@ -588,6 +589,47 @@ def render_grouped_report(incidents: dict[str, Any], title: str = "ACTIVE DEVICE
     return "\n".join(lines)
 
 
+def queue_resolution_notifications(incidents: dict[str, Any], solved: list[dict[str, Any]]) -> None:
+    """Retain confirmed resolutions until their email has been delivered."""
+    pending = incidents.setdefault("pending_resolution_notifications", {})
+    for entry in solved:
+        pending[entry["incident_id"]] = copy.deepcopy(entry)
+
+
+def render_resolution_report(incidents: dict[str, Any], now: datetime) -> str:
+    """Describe pending resolutions, grouped so each device appears once."""
+    pending = incidents.get("pending_resolution_notifications", {})
+    title = f"Kazanfutes physical-infrastructure resolutions — {now.strftime('%Y-%m-%d %H:%M')}"
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for entry in pending.values():
+        grouped.setdefault(str(entry.get("device_id", "unknown")), []).append(entry)
+
+    lines = [title, "", "RESOLVED INCIDENTS"]
+    for group in sorted(grouped.values(), key=lambda items: str(items[0].get("device_name", "")).casefold()):
+        first = group[0]
+        name = first.get("device_name", first.get("device_id", "unknown"))
+        hardware_type = first.get("hardware_type", first.get("category", "unknown"))
+        lines.extend(["", str(name), f"Type: {hardware_type}", "Resolved conditions:"])
+        for entry in sorted(group, key=lambda item: str(item.get("kind", ""))):
+            kind = str(entry.get("kind", "issue")).replace("_", " ").capitalize()
+            solved_at = parse_time(entry.get("solved_at"))
+            when = solved_at.astimezone(now.tzinfo).strftime("%d %b, %H:%M") if solved_at else "time unknown"
+            lines.append(f"  - {kind} — {when}")
+    return "\n".join(lines)
+
+
+def mark_resolution_notifications_sent(incidents: dict[str, Any]) -> None:
+    """Clear delivered resolutions and prevent their later digest replay."""
+    pending = incidents.setdefault("pending_resolution_notifications", {})
+    previous_inventory = incidents.get("digest_last_incident_inventory")
+    if previous_inventory is not None:
+        incidents["digest_last_incident_inventory"] = [
+            entry for entry in previous_inventory
+            if str(entry.get("incident_id")) not in pending
+        ]
+    pending.clear()
+
+
 def digest_due(state: dict[str, Any], config: dict[str, Any], now: datetime) -> bool:
     """Return whether today's scheduled incident-list comparison is due."""
     digest = config.get("digest", config.get("weekly_digest", {}))
@@ -625,12 +667,16 @@ def digest_incident_inventory(incidents: dict[str, Any]) -> list[dict[str, str]]
     return sorted(inventory, key=lambda item: item["incident_id"])
 
 
-def digest_delivery_needed(incidents: dict[str, Any], config: dict[str, Any]) -> bool:
-    """Return whether an incident was added or resolved since the last email."""
-    return bool(digest_incident_changes(incidents))
+def digest_delivery_needed(
+    incidents: dict[str, Any], config: dict[str, Any], *, include_resolved: bool = True,
+) -> bool:
+    """Return whether the scheduled email has incident changes to report."""
+    return bool(digest_incident_changes(incidents, include_resolved=include_resolved))
 
 
-def digest_incident_changes(incidents: dict[str, Any]) -> list[dict[str, Any]]:
+def digest_incident_changes(
+    incidents: dict[str, Any], *, include_resolved: bool = True,
+) -> list[dict[str, Any]]:
     """Return added and resolved incidents relative to the last emailed list.
 
     Mutable messages, measurements, and severity do not make an incident new.
@@ -652,25 +698,28 @@ def digest_incident_changes(incidents: dict[str, Any]) -> list[dict[str, Any]]:
     for incident_id in sorted(active.keys() - previous.keys()):
         changes.append({**active[incident_id], "incident_id": incident_id, "change": "added"})
 
-    for incident_id in sorted(previous.keys() - active.keys()):
-        prior = previous[incident_id]
-        device_id = str(prior.get("device_id", ""))
-        known = known_devices.get(device_id, {})
-        changes.append({
-            **prior,
-            "incident_id": incident_id,
-            "device_id": device_id,
-            "device_name": prior.get("device_name", known.get("name", device_id or "unknown")),
-            "hardware_type": prior.get(
-                "hardware_type", known.get("hardware_type", known.get("category", "unknown"))
-            ),
-            "change": "resolved",
-        })
+    if include_resolved:
+        for incident_id in sorted(previous.keys() - active.keys()):
+            prior = previous[incident_id]
+            device_id = str(prior.get("device_id", ""))
+            known = known_devices.get(device_id, {})
+            changes.append({
+                **prior,
+                "incident_id": incident_id,
+                "device_id": device_id,
+                "device_name": prior.get("device_name", known.get("name", device_id or "unknown")),
+                "hardware_type": prior.get(
+                    "hardware_type", known.get("hardware_type", known.get("category", "unknown"))
+                ),
+                "change": "resolved",
+            })
     return changes
 
 
-def build_digest(incidents: dict[str, Any], now: datetime, frequency: str) -> str:
-    changes = digest_incident_changes(incidents)
+def build_digest(
+    incidents: dict[str, Any], now: datetime, frequency: str, *, include_resolved: bool = True,
+) -> str:
+    changes = digest_incident_changes(incidents, include_resolved=include_resolved)
     title = f"Kazanfutes {frequency} physical-infrastructure changes — {now.date().isoformat()}"
     if not changes:
         return title + "\n\nNo incident changes since the last email."
