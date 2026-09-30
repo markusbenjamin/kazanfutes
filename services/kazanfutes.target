@@ -1,0 +1,8 @@
+[Unit]
+Description=kazanfutes services and timers
+Requires=media-pi-program_stick.mount
+BindsTo=media-pi-program_stick.mount
+After=media-pi-program_stick.mount
+
+[Install]
+WantedBy=multi-user.target

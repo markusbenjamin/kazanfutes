@@ -1,6 +1,6 @@
-# /etc/systemd/system/%TIMER_NAME%.timer
+# /etc/systemd/system/error_manager.timer
 [Unit]
-Description=Run %TIMER_NAME% every 5 minutes
+Description=Run error_manager every 5 minutes
 
 [Timer]
 # run every 5 minutes past the hour

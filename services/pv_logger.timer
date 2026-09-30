@@ -1,6 +1,6 @@
-# /etc/systemd/system/%TIMER_NAME%.timer
+# /etc/systemd/system/pv_logger.timer
 [Unit]
-Description=Run %TIMER_NAME% every 5 minutes
+Description=Run pv_logger every 5 minutes
 
 [Timer]
 # run every 5 minutes past the hour

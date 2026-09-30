@@ -1,0 +1,6 @@
+[Unit]
+Description=Recover kazanfutes services after mount or service interruption
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'mountpoint -q /media/pi/program_stick && exec env KAZANFUTES_RECOVER_QUIET=1 /bin/bash /media/pi/program_stick/kazanfutes/services/service_manager.sh recover || exit 0'

@@ -1,10 +1,10 @@
-# /etc/systemd/system/%TIMER_NAME%.timer
+# /etc/systemd/system/data_and_config_uploader.timer
 [Unit]
-Description=Run %TIMER_NAME% every 5 minutes
+Description=Run data_and_config_uploader every 5 minutes
 
 [Timer]
 # run every 5 minutes past the hour
-OnCalendar=*:0/5
+OnCalendar=*:0/10
 # alternative: run at minute 0,15,30,45
 # OnCalendar=*:0,15,30,45
 # alternative: run every 5 minutes starting at 02 past the hour
