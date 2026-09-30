@@ -1,0 +1,258 @@
+{
+  "generated_at": "2026-07-27T18:31:37",
+  "log_files": [
+    "radiator_temps.json.2026-07-19",
+    "radiator_temps.json.2026-07-20",
+    "radiator_temps.json.2026-07-21",
+    "radiator_temps.json.2026-07-22",
+    "radiator_temps.json"
+  ],
+  "summary": [
+    {
+      "device": "golya_radiatorok_shelly",
+      "ip": "192.168.101.26",
+      "first_seen": "2026-04-09-12-24-27",
+      "last_good": "2026-07-11-06-44-06",
+      "first_empty_after_final_good": "2026-07-11-06-45-53",
+      "last_seen_in_logs": "2026-07-23-08-53-20",
+      "total_records": 140911,
+      "empty_records": 19896,
+      "last_payload": {
+        "gólya1": 23.2,
+        "gólya2": 22.6
+      },
+      "rpc_reachable": true,
+      "rpc_error": null,
+      "device_info": {
+        "id": 1,
+        "src": "shelly1g4-ccba97c9c69c",
+        "result": {
+          "name": "golya_radiatorok",
+          "id": "shelly1g4-ccba97c9c69c",
+          "mac": "CCBA97C9C69C",
+          "slot": 1,
+          "model": "S4SW-001X16EU",
+          "gen": 4,
+          "fw_id": "20250924-062804/1.7.1-gd336f31",
+          "ver": "1.7.1",
+          "app": "S1G4",
+          "auth_en": false,
+          "auth_domain": null,
+          "matter": true
+        }
+      },
+      "peripherals_rpc": {
+        "ok": true,
+        "body": {
+          "id": 1,
+          "src": "shelly1g4-ccba97c9c69c",
+          "result": {
+            "digital_in": {},
+            "analog_in": {},
+            "voltmeter": {},
+            "dht22": {},
+            "ds18b20": {
+              "temperature:100": {
+                "addr": "40:177:223:121:0:0:0:36"
+              },
+              "temperature:101": {
+                "addr": "40:223:108:113:0:0:0:233"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "device": "szgk_radiator_shelly",
+      "ip": "192.168.101.28",
+      "first_seen": "2026-04-09-12-24-27",
+      "last_good": "2026-07-23-08-53-20",
+      "first_empty_after_final_good": null,
+      "last_seen_in_logs": "2026-07-23-08-53-20",
+      "total_records": 140911,
+      "empty_records": 7060,
+      "last_payload": {
+        "temperature:100": 26.6
+      },
+      "rpc_reachable": false,
+      "rpc_error": "<urlopen error timed out>",
+      "device_info": null,
+      "peripherals_rpc": null
+    },
+    {
+      "device": "pk_radiatorok_shelly",
+      "ip": "192.168.101.29",
+      "first_seen": "2026-04-09-12-24-27",
+      "last_good": "2026-07-23-08-53-20",
+      "first_empty_after_final_good": null,
+      "last_seen_in_logs": "2026-07-23-08-53-20",
+      "total_records": 140911,
+      "empty_records": 7027,
+      "last_payload": {
+        "temperature:100": 26.3,
+        "temperature:101": 26.6
+      },
+      "rpc_reachable": false,
+      "rpc_error": "<urlopen error timed out>",
+      "device_info": null,
+      "peripherals_rpc": null
+    },
+    {
+      "device": "oktopusz_1_radiator_shelly",
+      "ip": "192.168.101.21",
+      "first_seen": "2026-04-09-12-24-27",
+      "last_good": "2026-07-14-16-58-17",
+      "first_empty_after_final_good": "2026-07-14-16-59-20",
+      "last_seen_in_logs": "2026-07-23-08-53-20",
+      "total_records": 140911,
+      "empty_records": 21590,
+      "last_payload": {
+        "temperature:100": 26.3
+      },
+      "rpc_reachable": false,
+      "rpc_error": "<urlopen error timed out>",
+      "device_info": null,
+      "peripherals_rpc": null
+    },
+    {
+      "device": "oktopusz_2_radiator_shelly",
+      "ip": "192.168.101.83",
+      "first_seen": "2026-04-09-12-24-27",
+      "last_good": null,
+      "first_empty_after_final_good": null,
+      "last_seen_in_logs": "2026-07-23-08-53-20",
+      "total_records": 140911,
+      "empty_records": 140911,
+      "last_payload": null,
+      "rpc_reachable": false,
+      "rpc_error": "<urlopen error timed out>",
+      "device_info": null,
+      "peripherals_rpc": null
+    },
+    {
+      "device": "gep_radiator_shelly",
+      "ip": "192.168.101.42",
+      "first_seen": "2026-04-09-12-24-27",
+      "last_good": "2026-07-23-08-53-20",
+      "first_empty_after_final_good": null,
+      "last_seen_in_logs": "2026-07-23-08-53-20",
+      "total_records": 140911,
+      "empty_records": 7039,
+      "last_payload": {
+        "temperature:100": 24.2
+      },
+      "rpc_reachable": true,
+      "rpc_error": null,
+      "device_info": {
+        "id": 1,
+        "src": "shelly1g4-a085e3c835c0",
+        "result": {
+          "name": "gep_radiator",
+          "id": "shelly1g4-a085e3c835c0",
+          "mac": "A085E3C835C0",
+          "slot": 1,
+          "model": "S4SW-001X16EU",
+          "gen": 4,
+          "fw_id": "20260311-095857/1.7.5-g9979d16",
+          "ver": "1.7.5",
+          "app": "S1G4ZB",
+          "auth_en": false,
+          "auth_domain": null,
+          "provision": "complete"
+        }
+      },
+      "peripherals_rpc": {
+        "ok": true,
+        "body": {
+          "id": 1,
+          "src": "shelly1g4-a085e3c835c0",
+          "result": {
+            "digital_in": {},
+            "analog_in": {},
+            "voltmeter": {},
+            "dht22": {},
+            "ds18b20": {
+              "temperature:100": {
+                "addr": "40:2:241:121:0:0:0:32"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "device": "merce_radiatorok_1_shelly",
+      "ip": "192.168.101.37",
+      "first_seen": "2026-04-09-12-24-27",
+      "last_good": "2026-07-23-08-53-20",
+      "first_empty_after_final_good": null,
+      "last_seen_in_logs": "2026-07-23-08-53-20",
+      "total_records": 140911,
+      "empty_records": 7149,
+      "last_payload": {
+        "temperature:100": 26.0
+      },
+      "rpc_reachable": false,
+      "rpc_error": "<urlopen error timed out>",
+      "device_info": null,
+      "peripherals_rpc": null
+    },
+    {
+      "device": "merce_radiatorok_2_shelly",
+      "ip": "192.168.101.94",
+      "first_seen": "2026-04-09-12-24-27",
+      "last_good": "2026-07-11-06-44-06",
+      "first_empty_after_final_good": "2026-07-11-06-45-53",
+      "last_seen_in_logs": "2026-07-23-08-53-20",
+      "total_records": 140911,
+      "empty_records": 52960,
+      "last_payload": {
+        "temperature:100": 25.7,
+        "temperature:101": 25.9,
+        "temperature:102": 25.9
+      },
+      "rpc_reachable": false,
+      "rpc_error": "<urlopen error timed out>",
+      "device_info": null,
+      "peripherals_rpc": null
+    },
+    {
+      "device": "ovi_radiatorok_shelly",
+      "ip": "192.168.101.47",
+      "first_seen": "2026-04-09-12-24-27",
+      "last_good": "2026-07-11-06-44-06",
+      "first_empty_after_final_good": "2026-07-11-06-45-53",
+      "last_seen_in_logs": "2026-07-23-08-53-20",
+      "total_records": 140911,
+      "empty_records": 20104,
+      "last_payload": {
+        "temperature:100": 26.9,
+        "temperature:101": 27.1,
+        "temperature:102": 27.1,
+        "temperature:103": 27.1
+      },
+      "rpc_reachable": false,
+      "rpc_error": "<urlopen error timed out>",
+      "device_info": null,
+      "peripherals_rpc": null
+    },
+    {
+      "device": "studio_radiator_shelly",
+      "ip": "192.168.101.74",
+      "first_seen": "2026-04-09-12-24-27",
+      "last_good": "2026-07-11-06-44-06",
+      "first_empty_after_final_good": "2026-07-11-06-45-53",
+      "last_seen_in_logs": "2026-07-23-08-53-20",
+      "total_records": 140911,
+      "empty_records": 19992,
+      "last_payload": {
+        "temperature:100": 25.2
+      },
+      "rpc_reachable": false,
+      "rpc_error": "<urlopen error timed out>",
+      "device_info": null,
+      "peripherals_rpc": null
+    }
+  ]
+}

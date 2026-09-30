@@ -19,9 +19,9 @@ from utils.project import get_project_root, get_rooms_info, notify_admin, report
 
 
 # Operational policy. Keep these here so the service has no private config file.
-HUMIDITY_THRESHOLD_PERCENT = 60.0
-LOOKBACK_HOURS = 24.0
-PERMITTED_HIGH_HUMIDITY_HOURS = 6.0
+HUMIDITY_THRESHOLD_PERCENT = 70.0
+LOOKBACK_HOURS = 48.0
+PERMITTED_HIGH_HUMIDITY_HOURS = 20.0
 
 # Sampling safeguards. A missing interval never counts as humid time.
 MAX_SAMPLE_GAP_MINUTES = 15.0

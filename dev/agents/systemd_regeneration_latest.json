@@ -1,0 +1,127 @@
+{
+  "generated_at": "2026-07-27T19:56:15",
+  "written": [
+    "data_and_config_uploader.service",
+    "data_and_config_uploader.timer",
+    "data_formatter.service",
+    "data_formatter.timer",
+    "error_manager.service",
+    "error_manager.timer",
+    "external_temp_scraper_and_logger.service",
+    "external_temp_scraper_and_logger.timer",
+    "gasmeter_logger.service",
+    "heating_control.service",
+    "heating_control.timer",
+    "heatmeters_logger.service",
+    "heatmeters_logger.timer",
+    "light_state_manager.service",
+    "light_state_manager.timer",
+    "pump_powers_logger.service",
+    "presence_logger.service",
+    "presence_logger.timer",
+    "presence_pattern_calculator.service",
+    "presence_pattern_calculator.timer",
+    "occupancy_logger.service",
+    "occupancy_logger.timer",
+    "schedule_and_config_updater.service",
+    "temperature_and_humidity_logger.service",
+    "temperature_and_humidity_logger.timer",
+    "thermostats_manager.service",
+    "thermostats_manager.timer",
+    "weather_station_logger.service",
+    "weather_station_logger.timer",
+    "radiator_temps_logger.service",
+    "radiator_temps_logger.timer",
+    "electric_submeters_logger.service",
+    "electric_meter_logger.service",
+    "electric_meter_logger.timer",
+    "pv_logger.service",
+    "pv_logger.timer",
+    "open_close_logger.service",
+    "aqara_and_nous_logger.service",
+    "aqara_and_nous_logger.timer"
+  ],
+  "enabled": [
+    "data_and_config_uploader.timer",
+    "data_formatter.timer",
+    "error_manager.timer",
+    "external_temp_scraper_and_logger.timer",
+    "gasmeter_logger.service",
+    "heating_control.timer",
+    "heatmeters_logger.timer",
+    "light_state_manager.timer",
+    "pump_powers_logger.service",
+    "presence_logger.timer",
+    "presence_pattern_calculator.timer",
+    "occupancy_logger.timer",
+    "schedule_and_config_updater.service",
+    "temperature_and_humidity_logger.timer",
+    "thermostats_manager.timer",
+    "weather_station_logger.timer",
+    "radiator_temps_logger.timer",
+    "electric_submeters_logger.service",
+    "electric_meter_logger.timer",
+    "pv_logger.timer",
+    "open_close_logger.service",
+    "aqara_and_nous_logger.timer"
+  ],
+  "commands": [
+    {
+      "cmd": "systemctl daemon-reload",
+      "returncode": 0,
+      "output": ""
+    },
+    {
+      "cmd": "systemctl disable --now oktopusz_presence_logger.timer",
+      "returncode": 0,
+      "output": "Removed \"/etc/systemd/system/timers.target.wants/oktopusz_presence_logger.timer\".\n"
+    },
+    {
+      "cmd": "systemctl disable --now oktopusz_presence_logger.service",
+      "returncode": 0,
+      "output": "Removed \"/etc/systemd/system/multi-user.target.wants/oktopusz_presence_logger.service\".\n"
+    },
+    {
+      "cmd": "systemctl disable --now oktopusz_temp.timer",
+      "returncode": 0,
+      "output": ""
+    },
+    {
+      "cmd": "systemctl disable --now oktopusz_temp.service",
+      "returncode": 0,
+      "output": "Removed \"/etc/systemd/system/multi-user.target.wants/oktopusz_temp.service\".\n"
+    },
+    {
+      "cmd": "systemctl disable --now data_uploader.timer",
+      "returncode": 1,
+      "output": "Failed to disable unit: Unit file data_uploader.timer does not exist.\n"
+    },
+    {
+      "cmd": "systemctl disable --now data_uploader.service",
+      "returncode": 1,
+      "output": "Failed to disable unit: Unit file data_uploader.service does not exist.\n"
+    },
+    {
+      "cmd": "systemctl enable --now data_and_config_uploader.timer data_formatter.timer error_manager.timer external_temp_scraper_and_logger.timer gasmeter_logger.service heating_control.timer heatmeters_logger.timer light_state_manager.timer pump_powers_logger.service presence_logger.timer presence_pattern_calculator.timer occupancy_logger.timer schedule_and_config_updater.service temperature_and_humidity_logger.timer thermostats_manager.timer weather_station_logger.timer radiator_temps_logger.timer electric_submeters_logger.service electric_meter_logger.timer pv_logger.timer open_close_logger.service aqara_and_nous_logger.timer",
+      "returncode": 0,
+      "output": "Created symlink /etc/systemd/system/multi-user.target.wants/pump_powers_logger.service \u2192 /etc/systemd/system/pump_powers_logger.service.\nCreated symlink /etc/systemd/system/timers.target.wants/presence_pattern_calculator.timer \u2192 /etc/systemd/system/presence_pattern_calculator.timer.\nCreated symlink /etc/systemd/system/timers.target.wants/occupancy_logger.timer \u2192 /etc/systemd/system/occupancy_logger.timer.\nCreated symlink /etc/systemd/system/timers.target.wants/thermostats_manager.timer \u2192 /etc/systemd/system/thermostats_manager.timer.\nCreated symlink /etc/systemd/system/multi-user.target.wants/electric_submeters_logger.service \u2192 /etc/systemd/system/electric_submeters_logger.service.\nCreated symlink /etc/systemd/system/timers.target.wants/electric_meter_logger.timer \u2192 /etc/systemd/system/electric_meter_logger.timer.\nCreated symlink /etc/systemd/system/timers.target.wants/pv_logger.timer \u2192 /etc/systemd/system/pv_logger.timer.\nCreated symlink /etc/systemd/system/multi-user.target.wants/open_close_logger.service \u2192 /etc/systemd/system/open_close_logger.service.\nCreated symlink /etc/systemd/system/timers.target.wants/aqara_and_nous_logger.timer \u2192 /etc/systemd/system/aqara_and_nous_logger.timer.\n"
+    },
+    {
+      "cmd": "bash /media/pi/program_stick/kazanfutes/services/service_manager.sh rebuild",
+      "returncode": 0,
+      "output": "\u001b[33mskipped\u001b[0m data_and_config_uploader.service (timer-backed; target uses data_and_config_uploader.timer)\n\u001b[32mlinked\u001b[0m data_and_config_uploader.timer\n\u001b[33mskipped\u001b[0m data_formatter.service (timer-backed; target uses data_formatter.timer)\n\u001b[32mlinked\u001b[0m data_formatter.timer\n\u001b[33mskipped\u001b[0m error_manager.service (timer-backed; target uses error_manager.timer)\n\u001b[32mlinked\u001b[0m error_manager.timer\n\u001b[33mskipped\u001b[0m external_temp_scraper_and_logger.service (timer-backed; target uses external_temp_scraper_and_logger.timer)\n\u001b[32mlinked\u001b[0m external_temp_scraper_and_logger.timer\n\u001b[32mlinked\u001b[0m gasmeter_logger.service\n\u001b[33mskipped\u001b[0m heating_control.service (timer-backed; target uses heating_control.timer)\n\u001b[32mlinked\u001b[0m heating_control.timer\n\u001b[33mskipped\u001b[0m heatmeters_logger.service (timer-backed; target uses heatmeters_logger.timer)\n\u001b[32mlinked\u001b[0m heatmeters_logger.timer\n\u001b[33mskipped\u001b[0m light_state_manager.service (timer-backed; target uses light_state_manager.timer)\n\u001b[32mlinked\u001b[0m light_state_manager.timer\n\u001b[32mlinked\u001b[0m pump_powers_logger.service\n\u001b[33mskipped\u001b[0m presence_logger.service (timer-backed; target uses presence_logger.timer)\n\u001b[32mlinked\u001b[0m presence_logger.timer\n\u001b[33mskipped\u001b[0m presence_pattern_calculator.service (timer-backed; target uses presence_pattern_calculator.timer)\n\u001b[32mlinked\u001b[0m presence_pattern_calculator.timer\n\u001b[33mskipped\u001b[0m occupancy_logger.service (timer-backed; target uses occupancy_logger.timer)\n\u001b[32mlinked\u001b[0m occupancy_logger.timer\n\u001b[32mlinked\u001b[0m schedule_and_config_updater.service\n\u001b[33mskipped\u001b[0m temperature_and_humidity_logger.service (timer-backed; target uses temperature_and_humidity_logger.timer)\n\u001b[32mlinked\u001b[0m temperature_and_humidity_logger.timer\n\u001b[33mskipped\u001b[0m thermostats_manager.service (timer-backed; target uses thermostats_manager.timer)\n\u001b[32mlinked\u001b[0m thermostats_manager.timer\n\u001b[33mskipped\u001b[0m weather_station_logger.service (timer-backed; target uses weather_station_logger.timer)\n\u001b[32mlinked\u001b[0m weather_station_logger.timer\n\u001b[33mskipped\u001b[0m radiator_temps_logger.service (timer-backed; target uses radiator_temps_logger.timer)\n\u001b[32mlinked\u001b[0m radiator_temps_logger.timer\n\u001b[32mlinked\u001b[0m electric_submeters_logger.service\n\u001b[33mskipped\u001b[0m electric_meter_logger.service (timer-backed; target uses electric_meter_logger.timer)\n\u001b[32mlinked\u001b[0m electric_meter_logger.timer\n\u001b[33mskipped\u001b[0m pv_logger.service (timer-backed; target uses pv_logger.timer)\n\u001b[32mlinked\u001b[0m pv_logger.timer\n\u001b[32mlinked\u001b[0m open_close_logger.service\n\u001b[33mskipped\u001b[0m aqara_and_nous_logger.service (timer-backed; target uses aqara_and_nous_logger.timer)\n\u001b[32mlinked\u001b[0m aqara_and_nous_logger.timer\n"
+    },
+    {
+      "cmd": "bash /media/pi/program_stick/kazanfutes/services/service_manager.sh recover",
+      "returncode": 0,
+      "output": "\u001b[32malready active\u001b[0m data_and_config_uploader.timer\n\u001b[32malready active\u001b[0m data_formatter.timer\n\u001b[32malready active\u001b[0m error_manager.timer\n\u001b[32malready active\u001b[0m external_temp_scraper_and_logger.timer\n\u001b[32malready active\u001b[0m heating_control.timer\n\u001b[32malready active\u001b[0m heatmeters_logger.timer\n\u001b[32malready active\u001b[0m light_state_manager.timer\n\u001b[32malready active\u001b[0m presence_logger.timer\n\u001b[32malready active\u001b[0m presence_pattern_calculator.timer\n\u001b[32malready active\u001b[0m occupancy_logger.timer\n\u001b[32malready active\u001b[0m temperature_and_humidity_logger.timer\n\u001b[32malready active\u001b[0m thermostats_manager.timer\n\u001b[32malready active\u001b[0m weather_station_logger.timer\n\u001b[32malready active\u001b[0m radiator_temps_logger.timer\n\u001b[32malready active\u001b[0m electric_meter_logger.timer\n\u001b[32malready active\u001b[0m pv_logger.timer\n\u001b[32malready active\u001b[0m aqara_and_nous_logger.timer\n\u001b[32malready activating\u001b[0m gasmeter_logger.service\n\u001b[32malready active\u001b[0m pump_powers_logger.service\n\u001b[32malready active\u001b[0m schedule_and_config_updater.service\n\u001b[32malready active\u001b[0m electric_submeters_logger.service\n\u001b[32malready active\u001b[0m open_close_logger.service\n"
+    },
+    {
+      "cmd": "bash /media/pi/program_stick/kazanfutes/services/service_manager.sh validate",
+      "returncode": 0,
+      "output": "\u001b[32mok\u001b[0m data_and_config_uploader.service\n\u001b[32mok\u001b[0m data_and_config_uploader.timer\n\u001b[32mok\u001b[0m data_formatter.service\n\u001b[32mok\u001b[0m data_formatter.timer\n\u001b[32mok\u001b[0m error_manager.service\n\u001b[32mok\u001b[0m error_manager.timer\n\u001b[32mok\u001b[0m external_temp_scraper_and_logger.service\n\u001b[32mok\u001b[0m external_temp_scraper_and_logger.timer\n\u001b[32mok\u001b[0m gasmeter_logger.service\n\u001b[32mok\u001b[0m heating_control.service\n\u001b[32mok\u001b[0m heating_control.timer\n\u001b[32mok\u001b[0m heatmeters_logger.service\n\u001b[32mok\u001b[0m heatmeters_logger.timer\n\u001b[32mok\u001b[0m light_state_manager.service\n\u001b[32mok\u001b[0m light_state_manager.timer\n\u001b[32mok\u001b[0m pump_powers_logger.service\n\u001b[32mok\u001b[0m presence_logger.service\n\u001b[32mok\u001b[0m presence_logger.timer\n\u001b[32mok\u001b[0m presence_pattern_calculator.service\n\u001b[32mok\u001b[0m presence_pattern_calculator.timer\n\u001b[32mok\u001b[0m occupancy_logger.service\n\u001b[32mok\u001b[0m occupancy_logger.timer\n\u001b[32mok\u001b[0m schedule_and_config_updater.service\n\u001b[32mok\u001b[0m temperature_and_humidity_logger.service\n\u001b[32mok\u001b[0m temperature_and_humidity_logger.timer\n\u001b[32mok\u001b[0m thermostats_manager.service\n\u001b[32mok\u001b[0m thermostats_manager.timer\n\u001b[32mok\u001b[0m weather_station_logger.service\n\u001b[32mok\u001b[0m weather_station_logger.timer\n\u001b[32mok\u001b[0m radiator_temps_logger.service\n\u001b[32mok\u001b[0m radiator_temps_logger.timer\n\u001b[32mok\u001b[0m electric_submeters_logger.service\n\u001b[32mok\u001b[0m electric_meter_logger.service\n\u001b[32mok\u001b[0m electric_meter_logger.timer\n\u001b[32mok\u001b[0m pv_logger.service\n\u001b[32mok\u001b[0m pv_logger.timer\n\u001b[32mok\u001b[0m open_close_logger.service\n\u001b[32mok\u001b[0m aqara_and_nous_logger.service\n\u001b[32mok\u001b[0m aqara_and_nous_logger.timer\n"
+    }
+  ],
+  "timer_summary": "Mon 2026-07-27 19:56:24 CEST 9s left       Mon 2026-07-27 19:56:09 CEST 5s ago        heating_control.timer                  heating_control.service\nMon 2026-07-27 19:57:00 CEST 44s left      Mon 2026-07-27 19:56:00 CEST 15s ago       aqara_and_nous_logger.timer            aqara_and_nous_logger.service\nMon 2026-07-27 19:57:00 CEST 44s left      Mon 2026-07-27 19:56:00 CEST 15s ago       electric_meter_logger.timer            electric_meter_logger.service\nMon 2026-07-27 19:57:00 CEST 44s left      Mon 2026-07-27 19:56:00 CEST 15s ago       heatmeters_logger.timer                heatmeters_logger.service\nMon 2026-07-27 19:57:00 CEST 44s left      Mon 2026-07-27 19:56:00 CEST 15s ago       occupancy_logger.timer                 occupancy_logger.service\nMon 2026-07-27 19:57:00 CEST 44s left      Mon 2026-07-27 19:56:00 CEST 15s ago       presence_logger.timer                  presence_logger.service\nMon 2026-07-27 19:57:00 CEST 44s left      Mon 2026-07-27 19:56:00 CEST 15s ago       thermostats_manager.timer              thermostats_manager.service\nMon 2026-07-27 19:57:00 CEST 44s left      Mon 2026-07-27 19:56:00 CEST 15s ago       weather_station_logger.timer           weather_station_logger.service\nMon 2026-07-27 19:57:08 CEST 52s left      Mon 2026-07-27 19:56:08 CEST 7s ago        light_state_manager.timer              light_state_manager.service\nMon 2026-07-27 20:00:00 CEST 3min 44s left Mon 2026-07-27 19:50:00 CEST 6min ago      data_and_config_uploader.timer         data_and_config_uploader.service\nMon 2026-07-27 20:00:00 CEST 3min 44s left Mon 2026-07-27 19:55:01 CEST 1min 14s ago  data_formatter.timer                   data_formatter.service\nMon 2026-07-27 20:00:00 CEST 3min 44s left Mon 2026-07-27 19:55:01 CEST 1min 14s ago  error_manager.timer                    error_manager.service\nMon 2026-07-27 20:00:00 CEST 3min 44s left Mon 2026-07-27 19:55:01 CEST 1min 14s ago  external_temp_scraper_and_logger.timer external_temp_scraper_and_logger.service\nMon 2026-07-27 20:00:00 CEST 3min 44s left -                            -             pv_logger.timer                        pv_logger.service\nMon 2026-07-27 20:00:00 CEST 3min 44s left Mon 2026-07-27 19:55:01 CEST 1min 14s ago  temperature_and_humidity_logger.timer  temperature_and_humidity_logger.service\nTue 2026-07-28 00:07:00 CEST 4h 10min left -                            -             presence_pattern_calculator.timer      presence_pattern_calculator.service\n-                            -             Mon 2026-07-27 19:56:00 CEST 15s ago       radiator_temps_logger.timer            radiator_temps_logger.service\n",
+  "service_summary": "\u25cf auditd.service                                                                            not-found inactive   dead               auditd.service\n\u25cf connman.service                                                                           not-found inactive   dead               connman.service\n\u25cf console-screen.service                                                                    not-found inactive   dead               console-screen.service\n\u25cf data_uploader.service                                                                     not-found inactive   dead               data_uploader.service\n  electric_submeters_logger.service                                                         loaded    active     running            Continuously log electric submeter pulses\n  gasmeter_logger.service                                                                   loaded    activating auto-restart       Continuously log gas meter relay changes\n\u25cf gssproxy.service                                                                          not-found inactive   dead               gssproxy.service\n\u25cf kbd.service                                                                               not-found inactive   dead               kbd.service\n\u25cf mountkernfs.service                                                                       not-found inactive   dead               mountkernfs.service\n\u25cf nfs-server.service                                                                        not-found inactive   dead               nfs-server.service\n\u25cf nslcd.service                                                                             not-found inactive   dead               nslcd.service\n\u25cf oktopusz_presence_logger.service                                                          loaded    failed     failed             Log Oktopusz szita presence.\n\u25cf oktopusz_temp.service                                                                     loaded    failed     failed             Run heatmeter logging.\n  open_close_logger.service                                                                 loaded    active     running            Continuously log open/close sensor changes\n  pump_powers_logger.service                                                                loaded    active     running            Continuously log pump power changes\n  schedule_and_config_updater.service                                                       loaded    active     running            Continuously update schedule and config\n\u25cf syslog.service                                                                            not-found inactive   dead               syslog.service\n\u25cf systemd-hwdb-update.service                                                               not-found inactive   dead               systemd-hwdb-update.service\n\u25cf systemd-oomd.service                                                                      not-found inactive   dead               systemd-oomd.service\n\u25cf systemd-resolved.service                                                                  not-found inactive   dead               systemd-resolved.service\n\u25cf systemd-update-done.service                                                               not-found inactive   dead               systemd-update-done.service\n\u25cf systemd-vconsole-setup.service                                                            not-found inactive   dead               systemd-vconsole-setup.service\n\u25cf x2goserver.service                                                                        not-found inactive   dead               x2goserver.service\n"
+}

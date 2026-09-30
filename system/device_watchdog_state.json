@@ -1,0 +1,5487 @@
+{
+  "devices": [
+    {
+      "active_incidents": [],
+      "category": "collector",
+      "device_id": "collector:tuya_pumps",
+      "facts": {
+        "collection_error": null,
+        "heating_context_status": "available",
+        "heating_on": false,
+        "heating_switch_value": 0,
+        "last_seen_at": "2026-09-30T13:45:03+02:00",
+        "reachable": true
+      },
+      "hardware_type": "Infrastructure collector",
+      "name": "Tuya pump collector",
+      "profile": "critical_pump",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "danfoss_valve",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:14:2d:41:ff:fe:67:44:83",
+          "device_name": "GEP_muhely",
+          "evidence": {
+            "battery_invalid": false,
+            "battery_percent": 18.5,
+            "battery_raw": 37.0,
+            "battery_scale": "conservative_half_percent_200",
+            "battery_scale_confidence": "conservative_after_learning_window",
+            "battery_scale_learning": {
+              "first_observed_at": "2026-09-10T16:36:39+02:00",
+              "max_raw": 38.0,
+              "min_raw": 32.0,
+              "samples": 5513
+            },
+            "battery_uninitialized": false,
+            "battery_zero_is_unknown": true,
+            "low_battery": false
+          },
+          "first_seen_at": "2026-09-17T16:40:02+02:00",
+          "hardware_type": "Danfoss eTRV0103",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:14:2d:41:ff:fe:67:44:83:low_battery",
+          "kind": "low_battery",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Battery is 18.5%",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-17T16:45:02+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "danfoss_valve",
+      "device_id": "zigbee:14:2d:41:ff:fe:67:44:83",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 18.5,
+          "battery_raw": 37.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 38.0,
+            "min_raw": 32.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Danfoss eTRV0103",
+        "heating_context_status": "available",
+        "heating_on": false,
+        "heating_switch_value": 0,
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {
+          "temperature_c": 21.64
+        },
+        "model_key": "Danfoss|eTRV0103",
+        "reachable": true
+      },
+      "hardware_type": "Danfoss eTRV0103",
+      "name": "GEP_muhely",
+      "profile": "critical_danfoss_valve",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "danfoss_valve",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:14:2d:41:ff:fe:68:90:3e",
+          "device_name": "Golyafeszek_1",
+          "evidence": {
+            "battery_invalid": false,
+            "battery_percent": 19.0,
+            "battery_raw": 38.0,
+            "battery_scale": "conservative_half_percent_200",
+            "battery_scale_confidence": "conservative_after_learning_window",
+            "battery_scale_learning": {
+              "first_observed_at": "2026-09-10T16:36:39+02:00",
+              "max_raw": 39.0,
+              "min_raw": 35.0,
+              "samples": 5513
+            },
+            "battery_uninitialized": false,
+            "battery_zero_is_unknown": true,
+            "low_battery": false
+          },
+          "first_seen_at": "2026-09-17T16:40:02+02:00",
+          "hardware_type": "Danfoss eTRV0103",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:14:2d:41:ff:fe:68:90:3e:low_battery",
+          "kind": "low_battery",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Battery is 19%",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-17T16:45:02+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "danfoss_valve",
+      "device_id": "zigbee:14:2d:41:ff:fe:68:90:3e",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 19.0,
+          "battery_raw": 38.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 39.0,
+            "min_raw": 35.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Danfoss eTRV0103",
+        "heating_context_status": "available",
+        "heating_on": false,
+        "heating_switch_value": 0,
+        "last_seen_at": "2026-09-30T11:42Z",
+        "measurements": {
+          "temperature_c": 21.77
+        },
+        "model_key": "Danfoss|eTRV0103",
+        "reachable": true
+      },
+      "hardware_type": "Danfoss eTRV0103",
+      "name": "Golyafeszek_1",
+      "profile": "critical_danfoss_valve",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "danfoss_valve",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:04:cd:15:ff:fe:3b:b9:dc",
+          "device_name": "Golyafeszek_2",
+          "evidence": {
+            "battery_invalid": false,
+            "battery_percent": 16.0,
+            "battery_raw": 32.0,
+            "battery_scale": "conservative_half_percent_200",
+            "battery_scale_confidence": "conservative_after_learning_window",
+            "battery_scale_learning": {
+              "first_observed_at": "2026-09-10T16:36:39+02:00",
+              "max_raw": 34.0,
+              "min_raw": 29.0,
+              "samples": 5513
+            },
+            "battery_uninitialized": false,
+            "battery_zero_is_unknown": true,
+            "low_battery": false
+          },
+          "first_seen_at": "2026-09-17T16:40:02+02:00",
+          "hardware_type": "Danfoss eTRV0100",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:04:cd:15:ff:fe:3b:b9:dc:low_battery",
+          "kind": "low_battery",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Battery is 16%",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-17T16:45:02+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "danfoss_valve",
+      "device_id": "zigbee:04:cd:15:ff:fe:3b:b9:dc",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 16.0,
+          "battery_raw": 32.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 34.0,
+            "min_raw": 29.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Danfoss eTRV0100",
+        "heating_context_status": "available",
+        "heating_on": false,
+        "heating_switch_value": 0,
+        "last_seen_at": "2026-09-30T11:42Z",
+        "measurements": {
+          "temperature_c": 21.86
+        },
+        "model_key": "Danfoss|eTRV0100",
+        "reachable": true
+      },
+      "hardware_type": "Danfoss eTRV0100",
+      "name": "Golyafeszek_2",
+      "profile": "critical_danfoss_valve",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "danfoss_valve",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:14:2d:41:ff:fe:67:9b:a5",
+          "device_name": "Golyairoda",
+          "evidence": {
+            "battery_invalid": false,
+            "battery_percent": 19.0,
+            "battery_raw": 38.0,
+            "battery_scale": "conservative_half_percent_200",
+            "battery_scale_confidence": "conservative_after_learning_window",
+            "battery_scale_learning": {
+              "first_observed_at": "2026-09-10T16:36:39+02:00",
+              "max_raw": 39.0,
+              "min_raw": 35.0,
+              "samples": 5513
+            },
+            "battery_uninitialized": false,
+            "battery_zero_is_unknown": true,
+            "low_battery": false
+          },
+          "first_seen_at": "2026-09-17T16:40:02+02:00",
+          "hardware_type": "Danfoss eTRV0103",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:14:2d:41:ff:fe:67:9b:a5:low_battery",
+          "kind": "low_battery",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Battery is 19%",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-17T16:45:02+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "danfoss_valve",
+      "device_id": "zigbee:14:2d:41:ff:fe:67:9b:a5",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 19.0,
+          "battery_raw": 38.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 39.0,
+            "min_raw": 35.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Danfoss eTRV0103",
+        "heating_context_status": "available",
+        "heating_on": false,
+        "heating_switch_value": 0,
+        "last_seen_at": "2026-09-30T11:30Z",
+        "measurements": {
+          "temperature_c": 21.34
+        },
+        "model_key": "Danfoss|eTRV0103",
+        "reachable": true
+      },
+      "hardware_type": "Danfoss eTRV0103",
+      "name": "Golyairoda",
+      "profile": "critical_danfoss_valve",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "danfoss_valve",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:04:cd:15:ff:fe:34:21:fc",
+          "device_name": "Lahmacun",
+          "evidence": {
+            "battery_invalid": false,
+            "battery_percent": 17.0,
+            "battery_raw": 34.0,
+            "battery_scale": "conservative_half_percent_200",
+            "battery_scale_confidence": "conservative_after_learning_window",
+            "battery_scale_learning": {
+              "first_observed_at": "2026-09-10T16:36:39+02:00",
+              "max_raw": 37.0,
+              "min_raw": 33.0,
+              "samples": 5513
+            },
+            "battery_uninitialized": false,
+            "battery_zero_is_unknown": true,
+            "low_battery": false
+          },
+          "first_seen_at": "2026-09-17T16:40:02+02:00",
+          "hardware_type": "Danfoss eTRV0100",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:04:cd:15:ff:fe:34:21:fc:low_battery",
+          "kind": "low_battery",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Battery is 17%",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-17T16:45:02+02:00",
+          "status": "active"
+        },
+        {
+          "category": "danfoss_valve",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:04:cd:15:ff:fe:34:21:fc",
+          "device_name": "Lahmacun",
+          "evidence": {
+            "age_minutes": 10999.0,
+            "last_seen_at": "2026-09-22T20:26Z"
+          },
+          "first_seen_at": "2026-09-23T02:30:01+02:00",
+          "hardware_type": "Danfoss eTRV0100",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:04:cd:15:ff:fe:34:21:fc:stale",
+          "kind": "stale",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Last seen 10999 minutes ago",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-23T02:35:01+02:00",
+          "status": "active"
+        },
+        {
+          "category": "danfoss_valve",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:04:cd:15:ff:fe:34:21:fc",
+          "device_name": "Lahmacun",
+          "evidence": {},
+          "first_seen_at": "2026-09-24T00:45:01+02:00",
+          "hardware_type": "Danfoss eTRV0100",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:04:cd:15:ff:fe:34:21:fc:unreachable",
+          "kind": "unreachable",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Device reports unreachable",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-24T00:50:03+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "danfoss_valve",
+      "device_id": "zigbee:04:cd:15:ff:fe:34:21:fc",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 17.0,
+          "battery_raw": 34.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 37.0,
+            "min_raw": 33.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Danfoss eTRV0100",
+        "heating_context_status": "available",
+        "heating_on": false,
+        "heating_switch_value": 0,
+        "last_seen_at": "2026-09-22T20:26Z",
+        "measurements": {
+          "temperature_c": 31.94
+        },
+        "model_key": "Danfoss|eTRV0100",
+        "reachable": false
+      },
+      "hardware_type": "Danfoss eTRV0100",
+      "name": "Lahmacun",
+      "profile": "critical_danfoss_valve",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "danfoss_valve",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:14:2d:41:ff:fe:67:66:3d",
+          "device_name": "Merce",
+          "evidence": {
+            "battery_invalid": false,
+            "battery_percent": 5.5,
+            "battery_raw": 11.0,
+            "battery_scale": "conservative_half_percent_200",
+            "battery_scale_confidence": "conservative_after_learning_window",
+            "battery_scale_learning": {
+              "first_observed_at": "2026-09-10T16:36:39+02:00",
+              "max_raw": 11.0,
+              "min_raw": 11.0,
+              "samples": 5513
+            },
+            "battery_uninitialized": false,
+            "battery_zero_is_unknown": true,
+            "low_battery": false
+          },
+          "first_seen_at": "2026-09-17T16:40:02+02:00",
+          "hardware_type": "Danfoss eTRV0103",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:14:2d:41:ff:fe:67:66:3d:low_battery",
+          "kind": "low_battery",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Battery is 5.5%",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-17T16:45:02+02:00",
+          "status": "active"
+        },
+        {
+          "category": "danfoss_valve",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:14:2d:41:ff:fe:67:66:3d",
+          "device_name": "Merce",
+          "evidence": {
+            "age_minutes": 77360.0,
+            "last_seen_at": "2026-08-07T18:25Z"
+          },
+          "first_seen_at": "2026-09-10T16:36:39+02:00",
+          "hardware_type": "Danfoss eTRV0103",
+          "immediate_notification_sent_at": "2026-09-10T16:43:01+02:00",
+          "incident_id": "zigbee:14:2d:41:ff:fe:67:66:3d:stale",
+          "kind": "stale",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Last seen 77360 minutes ago",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-10T16:38:25+02:00",
+          "status": "active"
+        },
+        {
+          "category": "danfoss_valve",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:14:2d:41:ff:fe:67:66:3d",
+          "device_name": "Merce",
+          "evidence": {},
+          "first_seen_at": "2026-09-19T22:30:01+02:00",
+          "hardware_type": "Danfoss eTRV0103",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:14:2d:41:ff:fe:67:66:3d:unreachable",
+          "kind": "unreachable",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Device reports unreachable",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-19T22:35:01+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "danfoss_valve",
+      "device_id": "zigbee:14:2d:41:ff:fe:67:66:3d",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 5.5,
+          "battery_raw": 11.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 11.0,
+            "min_raw": 11.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Danfoss eTRV0103",
+        "heating_context_status": "available",
+        "heating_on": false,
+        "heating_switch_value": 0,
+        "last_seen_at": "2026-08-07T18:25Z",
+        "measurements": {
+          "temperature_c": 20.88
+        },
+        "model_key": "Danfoss|eTRV0103",
+        "reachable": false
+      },
+      "hardware_type": "Danfoss eTRV0103",
+      "name": "Merce",
+      "profile": "critical_danfoss_valve",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "danfoss_valve",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:14:2d:41:ff:fe:68:02:c5",
+          "device_name": "Merce_targyalo",
+          "evidence": {
+            "battery_invalid": false,
+            "battery_percent": 20.0,
+            "battery_raw": 40.0,
+            "battery_scale": "conservative_half_percent_200",
+            "battery_scale_confidence": "conservative_after_learning_window",
+            "battery_scale_learning": {
+              "first_observed_at": "2026-09-10T16:36:39+02:00",
+              "max_raw": 41.0,
+              "min_raw": 37.0,
+              "samples": 5513
+            },
+            "battery_uninitialized": false,
+            "battery_zero_is_unknown": true,
+            "low_battery": false
+          },
+          "first_seen_at": "2026-09-17T16:40:02+02:00",
+          "hardware_type": "Danfoss eTRV0103",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:14:2d:41:ff:fe:68:02:c5:low_battery",
+          "kind": "low_battery",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Battery is 20%",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-17T16:45:02+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "danfoss_valve",
+      "device_id": "zigbee:14:2d:41:ff:fe:68:02:c5",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 20.0,
+          "battery_raw": 40.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 41.0,
+            "min_raw": 37.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Danfoss eTRV0103",
+        "heating_context_status": "available",
+        "heating_on": false,
+        "heating_switch_value": 0,
+        "last_seen_at": "2026-09-30T11:42Z",
+        "measurements": {
+          "temperature_c": 20.46
+        },
+        "model_key": "Danfoss|eTRV0103",
+        "reachable": true
+      },
+      "hardware_type": "Danfoss eTRV0103",
+      "name": "Merce_targyalo",
+      "profile": "critical_danfoss_valve",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "danfoss_valve",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:14:2d:41:ff:fe:68:8e:8b",
+          "device_name": "Oktopusz_szita_1",
+          "evidence": {
+            "battery_invalid": false,
+            "battery_percent": 19.0,
+            "battery_raw": 38.0,
+            "battery_scale": "conservative_half_percent_200",
+            "battery_scale_confidence": "conservative_after_learning_window",
+            "battery_scale_learning": {
+              "first_observed_at": "2026-09-10T16:36:39+02:00",
+              "max_raw": 39.0,
+              "min_raw": 33.0,
+              "samples": 5513
+            },
+            "battery_uninitialized": false,
+            "battery_zero_is_unknown": true,
+            "low_battery": false
+          },
+          "first_seen_at": "2026-09-17T16:40:02+02:00",
+          "hardware_type": "Danfoss eTRV0103",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:14:2d:41:ff:fe:68:8e:8b:low_battery",
+          "kind": "low_battery",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Battery is 19%",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-17T16:45:02+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "danfoss_valve",
+      "device_id": "zigbee:14:2d:41:ff:fe:68:8e:8b",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 19.0,
+          "battery_raw": 38.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 39.0,
+            "min_raw": 33.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Danfoss eTRV0103",
+        "heating_context_status": "available",
+        "heating_on": false,
+        "heating_switch_value": 0,
+        "last_seen_at": "2026-09-30T11:40Z",
+        "measurements": {
+          "temperature_c": 20.98
+        },
+        "model_key": "Danfoss|eTRV0103",
+        "reachable": true
+      },
+      "hardware_type": "Danfoss eTRV0103",
+      "name": "Oktopusz_szita_1",
+      "profile": "critical_danfoss_valve",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "danfoss_valve",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:14:2d:41:ff:fe:68:67:1e",
+          "device_name": "Oktopusz_szita_2",
+          "evidence": {
+            "age_minutes": 506958.0,
+            "last_seen_at": "2025-10-13T10:27Z"
+          },
+          "first_seen_at": "2026-09-10T16:36:39+02:00",
+          "hardware_type": "Danfoss eTRV0103",
+          "immediate_notification_sent_at": "2026-09-10T16:43:01+02:00",
+          "incident_id": "zigbee:14:2d:41:ff:fe:68:67:1e:stale",
+          "kind": "stale",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Last seen 506958 minutes ago",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-10T16:38:25+02:00",
+          "status": "active"
+        },
+        {
+          "category": "danfoss_valve",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:14:2d:41:ff:fe:68:67:1e",
+          "device_name": "Oktopusz_szita_2",
+          "evidence": {},
+          "first_seen_at": "2026-09-19T22:30:01+02:00",
+          "hardware_type": "Danfoss eTRV0103",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:14:2d:41:ff:fe:68:67:1e:unreachable",
+          "kind": "unreachable",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Device reports unreachable",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-19T22:35:01+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "danfoss_valve",
+      "device_id": "zigbee:14:2d:41:ff:fe:68:67:1e",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 45.5,
+          "battery_raw": 91.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 91.0,
+            "min_raw": 91.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Danfoss eTRV0103",
+        "heating_context_status": "available",
+        "heating_on": false,
+        "heating_switch_value": 0,
+        "last_seen_at": "2025-10-13T10:27Z",
+        "measurements": {
+          "temperature_c": 19.19
+        },
+        "model_key": "Danfoss|eTRV0103",
+        "reachable": false
+      },
+      "hardware_type": "Danfoss eTRV0103",
+      "name": "Oktopusz_szita_2",
+      "profile": "critical_danfoss_valve",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "danfoss_valve",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:14:2d:41:ff:fe:68:7c:03",
+          "device_name": "PK",
+          "evidence": {
+            "battery_invalid": false,
+            "battery_percent": 19.5,
+            "battery_raw": 39.0,
+            "battery_scale": "conservative_half_percent_200",
+            "battery_scale_confidence": "conservative_after_learning_window",
+            "battery_scale_learning": {
+              "first_observed_at": "2026-09-10T16:36:39+02:00",
+              "max_raw": 41.0,
+              "min_raw": 37.0,
+              "samples": 5513
+            },
+            "battery_uninitialized": false,
+            "battery_zero_is_unknown": true,
+            "low_battery": false
+          },
+          "first_seen_at": "2026-09-17T16:40:02+02:00",
+          "hardware_type": "Danfoss eTRV0103",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:14:2d:41:ff:fe:68:7c:03:low_battery",
+          "kind": "low_battery",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Battery is 19.5%",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-17T16:45:02+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "danfoss_valve",
+      "device_id": "zigbee:14:2d:41:ff:fe:68:7c:03",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 19.5,
+          "battery_raw": 39.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 41.0,
+            "min_raw": 37.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Danfoss eTRV0103",
+        "heating_context_status": "available",
+        "heating_on": false,
+        "heating_switch_value": 0,
+        "last_seen_at": "2026-09-30T11:42Z",
+        "measurements": {
+          "temperature_c": 21.37
+        },
+        "model_key": "Danfoss|eTRV0103",
+        "reachable": true
+      },
+      "hardware_type": "Danfoss eTRV0103",
+      "name": "PK",
+      "profile": "critical_danfoss_valve",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "danfoss_valve",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:14:2d:41:ff:fe:68:0f:b4",
+          "device_name": "SZGK",
+          "evidence": {
+            "battery_invalid": false,
+            "battery_percent": 19.5,
+            "battery_raw": 39.0,
+            "battery_scale": "conservative_half_percent_200",
+            "battery_scale_confidence": "conservative_after_learning_window",
+            "battery_scale_learning": {
+              "first_observed_at": "2026-09-10T16:36:39+02:00",
+              "max_raw": 41.0,
+              "min_raw": 34.0,
+              "samples": 5513
+            },
+            "battery_uninitialized": false,
+            "battery_zero_is_unknown": true,
+            "low_battery": false
+          },
+          "first_seen_at": "2026-09-17T16:40:02+02:00",
+          "hardware_type": "Danfoss eTRV0103",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:14:2d:41:ff:fe:68:0f:b4:low_battery",
+          "kind": "low_battery",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Battery is 19.5%",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-17T16:45:02+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "danfoss_valve",
+      "device_id": "zigbee:14:2d:41:ff:fe:68:0f:b4",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 19.5,
+          "battery_raw": 39.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 41.0,
+            "min_raw": 34.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Danfoss eTRV0103",
+        "heating_context_status": "available",
+        "heating_on": false,
+        "heating_switch_value": 0,
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {
+          "temperature_c": 22.71
+        },
+        "model_key": "Danfoss|eTRV0103",
+        "reachable": true
+      },
+      "hardware_type": "Danfoss eTRV0103",
+      "name": "SZGK",
+      "profile": "critical_danfoss_valve",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [],
+      "category": "electricity_meter",
+      "device_id": "homewizard:p1",
+      "facts": {
+        "collection_error": null,
+        "last_seen_at": "2026-09-30T13:45:27+02:00",
+        "measurements": {
+          "voltage_v": 235.6
+        },
+        "reachable": true
+      },
+      "hardware_type": "HomeWizard Energy P1",
+      "name": "HomeWizard P1",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "heatmeter",
+      "device_id": "modbus:heatmeter:1",
+      "facts": {
+        "collection_error": null,
+        "last_seen_at": "2026-09-30T13:45:04+02:00",
+        "measurements": {
+          "energy_kwh": 53043000.0,
+          "flow_temperature_c": 0.0,
+          "power_w": 7116.15576171875,
+          "return_temperature_c": 36.0,
+          "volume_flow_m3h": 0.0,
+          "volume_m3": 58342000.0
+        },
+        "reachable": true
+      },
+      "hardware_type": "Modbus heat meter",
+      "name": "Heatmeter 1",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "heatmeter",
+      "device_id": "modbus:heatmeter:2",
+      "facts": {
+        "collection_error": null,
+        "last_seen_at": "2026-09-30T13:45:12+02:00",
+        "measurements": {
+          "energy_kwh": 53043000.0,
+          "flow_temperature_c": 36.0,
+          "power_w": 0.0,
+          "return_temperature_c": 38.0,
+          "volume_flow_m3h": 0.0,
+          "volume_m3": 4507.26123046875
+        },
+        "reachable": true
+      },
+      "hardware_type": "Modbus heat meter",
+      "name": "Heatmeter 2",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "heatmeter",
+      "device_id": "modbus:heatmeter:3",
+      "facts": {
+        "collection_error": null,
+        "last_seen_at": "2026-09-30T13:45:14+02:00",
+        "measurements": {
+          "energy_kwh": 33391000.0,
+          "flow_temperature_c": 33.0,
+          "power_w": 2129.35107421875,
+          "return_temperature_c": 35.0,
+          "volume_flow_m3h": 0.0,
+          "volume_m3": 4507.26123046875
+        },
+        "reachable": true
+      },
+      "hardware_type": "Modbus heat meter",
+      "name": "Heatmeter 3",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "heatmeter",
+      "device_id": "modbus:heatmeter:4",
+      "facts": {
+        "collection_error": null,
+        "last_seen_at": "2026-09-30T13:45:16+02:00",
+        "measurements": {
+          "energy_kwh": 6188000.0,
+          "flow_temperature_c": 35.0,
+          "power_w": 0.0,
+          "return_temperature_c": 39.0,
+          "volume_flow_m3h": 0.0,
+          "volume_m3": 2129.35107421875
+        },
+        "reachable": true
+      },
+      "hardware_type": "Modbus heat meter",
+      "name": "Heatmeter 4",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "log_backed_infrastructure",
+      "device_id": "gas:meter",
+      "facts": {
+        "last_event_at": "2026-09-30-13-23-31",
+        "last_seen_at": "2026-09-30-13-23-31",
+        "measurements": {},
+        "reachable": true,
+        "service_active": true
+      },
+      "hardware_type": "Physical-infrastructure reporter",
+      "name": "Gas meter",
+      "profile": "gas_meter",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "log_backed_infrastructure",
+      "device_id": "pipeline:occupancy",
+      "facts": {
+        "last_seen_at": "2026-09-30-13-45-05",
+        "measurements": {},
+        "reachable": true
+      },
+      "hardware_type": "Physical-infrastructure reporter",
+      "name": "Occupancy pipeline",
+      "profile": "reporter",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "log_backed_infrastructure",
+      "device_id": "pv:inverter",
+      "facts": {
+        "last_seen_at": "2026-09-30T13:40:00+02:00",
+        "measurements": {
+          "frequency_hz": 50.02,
+          "voltage_v": 236.5
+        },
+        "reachable": true
+      },
+      "hardware_type": "Physical-infrastructure reporter",
+      "name": "PV inverter",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "log_backed_infrastructure",
+      "device_id": "pipeline:presence",
+      "facts": {
+        "last_seen_at": "2026-09-30-13-45-05",
+        "measurements": {},
+        "reachable": true
+      },
+      "hardware_type": "Physical-infrastructure reporter",
+      "name": "Presence acquisition",
+      "profile": "reporter",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "log_backed_infrastructure",
+      "device_id": "pipeline:room_sensors",
+      "facts": {
+        "last_seen_at": "2026-09-30-13-45-06",
+        "measurements": {},
+        "reachable": true
+      },
+      "hardware_type": "Physical-infrastructure reporter",
+      "name": "Room temperature/humidity acquisition",
+      "profile": "reporter",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "nous_sensor",
+      "device_id": "zigbee:a4:c1:38:cc:e0:d3:fe:8b",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZE284_xpvamyfz TS0601",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {
+          "humidity_percent": 45.0,
+          "temperature_c": 20.0
+        },
+        "model_key": "_TZE284_xpvamyfz|TS0601",
+        "reachable": true
+      },
+      "hardware_type": "_TZE284_xpvamyfz TS0601",
+      "name": "Nous1",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "nous_sensor",
+      "device_id": "zigbee:a4:c1:38:4a:74:e6:e7:b0",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZE284_xpvamyfz TS0601",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {
+          "humidity_percent": 39.0,
+          "temperature_c": 25.0
+        },
+        "model_key": "_TZE284_xpvamyfz|TS0601",
+        "reachable": true
+      },
+      "hardware_type": "_TZE284_xpvamyfz TS0601",
+      "name": "Nous10",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "nous_sensor",
+      "device_id": "zigbee:a4:c1:38:ae:c2:ad:2a:db",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZE284_xpvamyfz TS0601",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {
+          "humidity_percent": 44.0,
+          "temperature_c": 21.0
+        },
+        "model_key": "_TZE284_xpvamyfz|TS0601",
+        "reachable": true
+      },
+      "hardware_type": "_TZE284_xpvamyfz TS0601",
+      "name": "Nous2",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "nous_sensor",
+      "device_id": "zigbee:a4:c1:38:82:46:9a:c9:d8",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZE284_xpvamyfz TS0601",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {
+          "humidity_percent": 45.0,
+          "temperature_c": 22.0
+        },
+        "model_key": "_TZE284_xpvamyfz|TS0601",
+        "reachable": true
+      },
+      "hardware_type": "_TZE284_xpvamyfz TS0601",
+      "name": "Nous3",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "nous_sensor",
+      "device_id": "zigbee:a4:c1:38:7a:d2:48:27:ac",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZE284_xpvamyfz TS0601",
+        "last_seen_at": "2026-09-30T11:42Z",
+        "measurements": {
+          "humidity_percent": 46.0,
+          "temperature_c": 22.0
+        },
+        "model_key": "_TZE284_xpvamyfz|TS0601",
+        "reachable": true
+      },
+      "hardware_type": "_TZE284_xpvamyfz TS0601",
+      "name": "Nous4",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "nous_sensor",
+      "device_id": "zigbee:a4:c1:38:ea:29:ab:9e:fe",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZE284_xpvamyfz TS0601",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {
+          "humidity_percent": 45.0,
+          "temperature_c": 21.0
+        },
+        "model_key": "_TZE284_xpvamyfz|TS0601",
+        "reachable": true
+      },
+      "hardware_type": "_TZE284_xpvamyfz TS0601",
+      "name": "Nous5",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "nous_sensor",
+      "device_id": "zigbee:a4:c1:38:ce:b7:63:09:5d",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZE284_xpvamyfz TS0601",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {
+          "humidity_percent": 45.0,
+          "temperature_c": 20.0
+        },
+        "model_key": "_TZE284_xpvamyfz|TS0601",
+        "reachable": true
+      },
+      "hardware_type": "_TZE284_xpvamyfz TS0601",
+      "name": "Nous6",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "nous_sensor",
+      "device_id": "zigbee:a4:c1:38:0a:e5:b2:47:4e",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZE284_xpvamyfz TS0601",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {
+          "humidity_percent": 48.0,
+          "temperature_c": 22.0
+        },
+        "model_key": "_TZE284_xpvamyfz|TS0601",
+        "reachable": true
+      },
+      "hardware_type": "_TZE284_xpvamyfz TS0601",
+      "name": "Nous7",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "nous_sensor",
+      "device_id": "zigbee:a4:c1:38:5e:ff:27:1e:93",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZE284_xpvamyfz TS0601",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {
+          "humidity_percent": 54.0,
+          "temperature_c": 20.0
+        },
+        "model_key": "_TZE284_xpvamyfz|TS0601",
+        "reachable": true
+      },
+      "hardware_type": "_TZE284_xpvamyfz TS0601",
+      "name": "Nous8",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "nous_sensor",
+      "device_id": "zigbee:a4:c1:38:85:33:57:da:fa",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZE284_xpvamyfz TS0601",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {
+          "humidity_percent": 48.0,
+          "temperature_c": 21.0
+        },
+        "model_key": "_TZE284_xpvamyfz|TS0601",
+        "reachable": true
+      },
+      "hardware_type": "_TZE284_xpvamyfz TS0601",
+      "name": "Nous9",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:54:dc:e9:ff:fe:fa:ba:7f",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 91.0,
+          "battery_raw": 91.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T23:55:01+02:00",
+            "max_raw": 99.0,
+            "min_raw": 0.0,
+            "samples": 5204
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T07:10Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "gep_muhely_ablak",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:20:a7:16:ff:fe:33:5a:f4",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 93.0,
+          "battery_raw": 93.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T23:55:01+02:00",
+            "max_raw": 100.0,
+            "min_raw": 0.0,
+            "samples": 5489
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T11:42Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "gep_muhely_ajto",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:54:dc:e9:ff:fe:fa:9d:9c",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 100.0,
+          "battery_raw": 100.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T23:55:01+02:00",
+            "max_raw": 100.0,
+            "min_raw": 0.0,
+            "samples": 5493
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T10:14Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "golyairoda_ablak_2",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:54:dc:e9:ff:fe:fa:7b:db",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 93.0,
+          "battery_raw": 93.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T23:55:01+02:00",
+            "max_raw": 100.0,
+            "min_raw": 0.0,
+            "samples": 5205
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T08:48Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "golyairoda_ajto",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:f0:fd:45:ff:fe:7a:fb:57",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 82.0,
+          "battery_raw": 82.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 0.0,
+            "samples": 5220
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T11:32Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "kisudvar_ajto",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:54:dc:e9:ff:fe:fa:a3:9a",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 91.0,
+          "battery_raw": 91.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T22:30:01+02:00",
+            "max_raw": 97.0,
+            "min_raw": 0.0,
+            "samples": 5496
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T01:09Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "merce_ablak_1",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:f0:fd:45:ff:fe:f7:d7:e6",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 91.0,
+          "battery_raw": 91.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T22:25:01+02:00",
+            "max_raw": 97.0,
+            "min_raw": 0.0,
+            "samples": 5497
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T07:07Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "merce_ablak_2",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:f0:fd:45:ff:fe:62:78:85",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 91.0,
+          "battery_raw": 91.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T22:35:02+02:00",
+            "max_raw": 97.0,
+            "min_raw": 0.0,
+            "samples": 5495
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T10:09Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "merce_ablak_3",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:20:a7:16:ff:fe:34:22:a5",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 91.0,
+          "battery_raw": 91.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T22:30:01+02:00",
+            "max_raw": 100.0,
+            "min_raw": 0.0,
+            "samples": 5203
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T11:19Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "merce_ablak_4",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:20:a7:16:ff:fe:33:60:0a",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 91.0,
+          "battery_raw": 91.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T22:40:01+02:00",
+            "max_raw": 99.0,
+            "min_raw": 0.0,
+            "samples": 5205
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T02:21Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "merce_ablak_5",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:20:a7:16:ff:fe:33:3b:2b",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 91.0,
+          "battery_raw": 91.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T23:55:01+02:00",
+            "max_raw": 97.0,
+            "min_raw": 0.0,
+            "samples": 5493
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T11:06Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "merce_ablak_6",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:54:dc:e9:ff:fe:fa:a3:7d",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 91.0,
+          "battery_raw": 91.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T23:55:01+02:00",
+            "max_raw": 97.0,
+            "min_raw": 0.0,
+            "samples": 5493
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T06:27Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "merce_ablak_7",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:58:26:3a:ff:fe:01:90:92",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 91.0,
+          "battery_raw": 91.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T22:30:01+02:00",
+            "max_raw": 98.0,
+            "min_raw": 0.0,
+            "samples": 5496
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T09:45Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "merce_ablak_8",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:20:a7:16:ff:fe:33:58:14",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 83.0,
+          "battery_raw": 83.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T23:55:01+02:00",
+            "max_raw": 97.0,
+            "min_raw": 0.0,
+            "samples": 5489
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T08:06Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "merce_ajto",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:04:e3:e5:ff:fe:ce:e9:08",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 42.0,
+          "battery_raw": 42.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T22:15:02+02:00",
+            "max_raw": 98.0,
+            "min_raw": 0.0,
+            "samples": 5493
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T08:44Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "merce_targyalo_ajto",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:04:e3:e5:ff:fe:cb:e0:a0",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 90.0,
+          "battery_raw": 90.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-13T22:40:02+02:00",
+            "max_raw": 99.0,
+            "min_raw": 0.0,
+            "samples": 4765
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T01:56Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "oktopusz_szita_ablak",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:20:a7:16:ff:fe:33:2a:e2",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 90.0,
+          "battery_raw": 90.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-13T22:40:02+02:00",
+            "max_raw": 99.0,
+            "min_raw": 0.0,
+            "samples": 4729
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T07:12Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "oktopusz_szita_ajto",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:f0:fd:45:ff:fe:f8:09:0e",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 91.0,
+          "battery_raw": 91.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-13T22:05:02+02:00",
+            "max_raw": 99.0,
+            "min_raw": 0.0,
+            "samples": 4772
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T09:44Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "ovi_ablak_1",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:20:a7:16:ff:fe:33:3b:33",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 91.0,
+          "battery_raw": 91.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-13T22:10:01+02:00",
+            "max_raw": 99.0,
+            "min_raw": 0.0,
+            "samples": 4705
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T05:51Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "ovi_ablak_2",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:f0:fd:45:ff:fe:7b:03:a2",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 90.0,
+          "battery_raw": 90.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-13T22:10:01+02:00",
+            "max_raw": 98.0,
+            "min_raw": 0.0,
+            "samples": 4771
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T04:53Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "ovi_ablak_3",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:20:a7:16:ff:fe:33:33:07",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 91.0,
+          "battery_raw": 91.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-13T22:00:02+02:00",
+            "max_raw": 99.0,
+            "min_raw": 0.0,
+            "samples": 4773
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T08:57Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "ovi_ablak_4",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:20:a7:16:ff:fe:34:29:d3",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 91.0,
+          "battery_raw": 91.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-13T22:00:02+02:00",
+            "max_raw": 94.0,
+            "min_raw": 0.0,
+            "samples": 4773
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T10:38Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "ovi_ablak_5",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:20:a7:16:ff:fe:33:88:35",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 91.0,
+          "battery_raw": 91.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-13T22:05:02+02:00",
+            "max_raw": 99.0,
+            "min_raw": 0.0,
+            "samples": 4772
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T07:39Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "ovi_ablak_6",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:54:dc:e9:ff:fe:fa:c9:e3",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 91.0,
+          "battery_raw": 91.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-13T22:00:02+02:00",
+            "max_raw": 99.0,
+            "min_raw": 0.0,
+            "samples": 4773
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T05:25Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "ovi_ablak_7",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:f0:fd:45:ff:fe:7a:b8:8d",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 91.0,
+          "battery_raw": 91.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-13T22:05:02+02:00",
+            "max_raw": 100.0,
+            "min_raw": 0.0,
+            "samples": 4772
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T09:34Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "ovi_ablak_8",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:20:a7:16:ff:fe:33:30:1f",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 83.0,
+          "battery_raw": 83.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-13T22:40:02+02:00",
+            "max_raw": 100.0,
+            "min_raw": 0.0,
+            "samples": 4756
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T11:15Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "ovi_ajto_1",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:20:a7:16:ff:fe:33:60:1a",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 90.0,
+          "battery_raw": 90.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-13T22:35:02+02:00",
+            "max_raw": 99.0,
+            "min_raw": 0.0,
+            "samples": 4474
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T11:35Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "ovi_ajto_2",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:20:a7:16:ff:fe:33:5a:f9",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 48.0,
+          "battery_raw": 48.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 53.0,
+            "min_raw": 0.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T10:13Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "pk_ablak_1",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:f0:fd:45:ff:fe:f7:1e:c9",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 50.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 53.0,
+            "min_raw": 0.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T09:34Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "pk_ablak_2",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:20:a7:16:ff:fe:33:83:11",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 47.0,
+          "battery_raw": 47.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 51.0,
+            "min_raw": 0.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T10:26Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "pk_ablak_3",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:f0:fd:45:ff:fe:7b:03:84",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 92.0,
+          "battery_raw": 92.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 99.0,
+            "min_raw": 0.0,
+            "samples": 5226
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T03:29Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "pk_ablak_4",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:20:a7:16:ff:fe:33:5d:9f",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 95.0,
+          "battery_raw": 95.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 0.0,
+            "samples": 5220
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T11:27Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "pk_ajto",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:54:dc:e9:ff:fe:fa:c9:d7",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 83.0,
+          "battery_raw": 83.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T22:10:03+02:00",
+            "max_raw": 99.0,
+            "min_raw": 0.0,
+            "samples": 5496
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T11:17Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "studio_ajto",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:54:dc:e9:ff:fe:fa:a0:d2",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 47.0,
+          "battery_raw": 47.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 50.0,
+            "min_raw": 0.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T09:49Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "szgk_ablak_1",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:54:dc:e9:ff:fe:f8:37:ab",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 92.0,
+          "battery_raw": 92.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 99.0,
+            "min_raw": 0.0,
+            "samples": 5221
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T11:30Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "szgk_ablak_2",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:20:a7:16:ff:fe:33:51:eb",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 92.0,
+          "battery_raw": 92.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 99.0,
+            "min_raw": 0.0,
+            "samples": 5220
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T10:56Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "szgk_ablak_3",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:54:dc:e9:ff:fe:f5:b1:bc",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 48.0,
+          "battery_raw": 48.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 52.0,
+            "min_raw": 0.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T09:50Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "szgk_ablak_4",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:20:a7:16:ff:fe:33:42:5f",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 91.0,
+          "battery_raw": 91.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 99.0,
+            "min_raw": 0.0,
+            "samples": 5222
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T11:21Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "szgk_ajto",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:20:a7:16:ff:fe:33:3b:21",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 83.0,
+          "battery_raw": 83.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T22:10:03+02:00",
+            "max_raw": 99.0,
+            "min_raw": 0.0,
+            "samples": 5499
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T07:24Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "tuzzaro_ajto",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "parasoll",
+      "device_id": "zigbee:f0:fd:45:ff:fe:62:84:9a",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 100.0,
+          "battery_raw": 100.0,
+          "battery_scale": "percent_100",
+          "battery_scale_confidence": "configured",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-13T22:30:02+02:00",
+            "max_raw": 100.0,
+            "min_raw": 0.0,
+            "samples": 4767
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {},
+        "model_key": "IKEA of Sweden|PARASOLL Door/Window Sensor",
+        "reachable": true
+      },
+      "hardware_type": "IKEA of Sweden PARASOLL Door/Window Sensor",
+      "name": "zsilipajto",
+      "profile": "parasoll",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:54:ef:44:10:01:59:c3:fa",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T17:05:01+02:00",
+            "max_raw": 100.0,
+            "min_raw": 94.0,
+            "samples": 5504
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+        "last_seen_at": "2026-09-30T11:42Z",
+        "measurements": {
+          "humidity_percent": 54.29,
+          "temperature_c": 21.82
+        },
+        "model_key": "Aqara|lumi.sensor_occupy.agl8",
+        "reachable": true
+      },
+      "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+      "name": "Aqara1",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:54:ef:44:10:01:59:d8:7f",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 98.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {
+          "humidity_percent": 53.44,
+          "temperature_c": 22.97
+        },
+        "model_key": "Aqara|lumi.sensor_occupy.agl8",
+        "reachable": true
+      },
+      "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+      "name": "Aqara10",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:54:ef:44:10:01:59:d1:81",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {
+          "humidity_percent": 54.06,
+          "temperature_c": 20.66
+        },
+        "model_key": "Aqara|lumi.sensor_occupy.agl8",
+        "reachable": true
+      },
+      "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+      "name": "Aqara11",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:54:ef:44:10:01:59:d4:e0",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 95.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {
+          "humidity_percent": 60.28,
+          "temperature_c": 22.1
+        },
+        "model_key": "Aqara|lumi.sensor_occupy.agl8",
+        "reachable": true
+      },
+      "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+      "name": "Aqara12",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:54:ef:44:10:01:59:c1:6e",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 87.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+        "last_seen_at": "2026-09-30T11:42Z",
+        "measurements": {
+          "humidity_percent": 52.13,
+          "temperature_c": 21.69
+        },
+        "model_key": "Aqara|lumi.sensor_occupy.agl8",
+        "reachable": true
+      },
+      "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+      "name": "Aqara13",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:54:ef:44:10:01:59:d7:7a",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 94.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+        "last_seen_at": "2026-09-30T11:42Z",
+        "measurements": {
+          "humidity_percent": 53.19,
+          "temperature_c": 21.92
+        },
+        "model_key": "Aqara|lumi.sensor_occupy.agl8",
+        "reachable": true
+      },
+      "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+      "name": "Aqara14",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:54:ef:44:10:01:59:b9:2e",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 99.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {
+          "humidity_percent": 55.4,
+          "temperature_c": 21.83
+        },
+        "model_key": "Aqara|lumi.sensor_occupy.agl8",
+        "reachable": true
+      },
+      "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+      "name": "Aqara15",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:54:ef:44:10:01:59:c2:91",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 94.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+        "last_seen_at": "2026-09-30T11:29Z",
+        "measurements": {
+          "humidity_percent": 52.12,
+          "temperature_c": 22.14
+        },
+        "model_key": "Aqara|lumi.sensor_occupy.agl8",
+        "reachable": true
+      },
+      "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+      "name": "Aqara16",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:54:ef:44:10:01:59:c3:72",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 97.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {
+          "humidity_percent": 54.17,
+          "temperature_c": 22.27
+        },
+        "model_key": "Aqara|lumi.sensor_occupy.agl8",
+        "reachable": true
+      },
+      "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+      "name": "Aqara17",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:54:ef:44:10:01:59:c2:cd",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 86.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+        "last_seen_at": "2026-09-30T11:40Z",
+        "measurements": {
+          "humidity_percent": 52.72,
+          "temperature_c": 22.61
+        },
+        "model_key": "Aqara|lumi.sensor_occupy.agl8",
+        "reachable": true
+      },
+      "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+      "name": "Aqara18",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:54:ef:44:10:01:46:c5:ae",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 89.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+        "last_seen_at": "2026-09-30T11:39Z",
+        "measurements": {
+          "humidity_percent": 50.58,
+          "temperature_c": 23.24
+        },
+        "model_key": "Aqara|lumi.sensor_occupy.agl8",
+        "reachable": true
+      },
+      "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+      "name": "Aqara2",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:54:ef:44:10:01:59:bb:d1",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 93.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+        "last_seen_at": "2026-09-30T11:40Z",
+        "measurements": {
+          "humidity_percent": 53.71,
+          "temperature_c": 20.7
+        },
+        "model_key": "Aqara|lumi.sensor_occupy.agl8",
+        "reachable": true
+      },
+      "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+      "name": "Aqara3",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:54:ef:44:10:01:59:c2:a1",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 98.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+        "last_seen_at": "2026-09-30T11:32Z",
+        "measurements": {
+          "humidity_percent": 51.17,
+          "temperature_c": 21.34
+        },
+        "model_key": "Aqara|lumi.sensor_occupy.agl8",
+        "reachable": true
+      },
+      "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+      "name": "Aqara4",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:54:ef:44:10:01:59:d1:d7",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+        "last_seen_at": "2026-09-30T11:39Z",
+        "measurements": {
+          "humidity_percent": 51.46,
+          "temperature_c": 22.53
+        },
+        "model_key": "Aqara|lumi.sensor_occupy.agl8",
+        "reachable": true
+      },
+      "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+      "name": "Aqara5",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:54:ef:44:10:01:59:c3:a5",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 98.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {
+          "humidity_percent": 47.89,
+          "temperature_c": 22.19
+        },
+        "model_key": "Aqara|lumi.sensor_occupy.agl8",
+        "reachable": true
+      },
+      "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+      "name": "Aqara6",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:54:ef:44:10:01:59:d2:74",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": 0.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 0.0,
+            "min_raw": 0.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": true,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {
+          "humidity_percent": 57.57,
+          "temperature_c": 22.89
+        },
+        "model_key": "Aqara|lumi.sensor_occupy.agl8",
+        "reachable": true
+      },
+      "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+      "name": "Aqara7",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:54:ef:44:10:01:59:d1:1c",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 93.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+        "last_seen_at": "2026-09-30T11:38Z",
+        "measurements": {
+          "humidity_percent": 59.34,
+          "temperature_c": 21.24
+        },
+        "model_key": "Aqara|lumi.sensor_occupy.agl8",
+        "reachable": true
+      },
+      "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+      "name": "Aqara8",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:54:ef:44:10:01:59:c4:1d",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+        "last_seen_at": "2026-09-30T11:32Z",
+        "measurements": {
+          "humidity_percent": 61.38,
+          "temperature_c": 21.06
+        },
+        "model_key": "Aqara|lumi.sensor_occupy.agl8",
+        "reachable": true
+      },
+      "hardware_type": "Aqara lumi.sensor_occupy.agl8",
+      "name": "Aqara9",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:00:12:4b:00:25:13:a2:58",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 48.0,
+          "battery_raw": 96.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 96.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "eWeLink MS01",
+        "last_seen_at": "2026-09-30T11:00Z",
+        "measurements": {},
+        "model_key": "eWeLink|MS01",
+        "reachable": true
+      },
+      "hardware_type": "eWeLink MS01",
+      "name": "Pres1",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:d4:48:67:ff:fe:0d:b6:04",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "eWeLink SNZB-03P",
+        "last_seen_at": "2026-09-30T11:41Z",
+        "measurements": {},
+        "model_key": "eWeLink|SNZB-03P",
+        "reachable": true
+      },
+      "hardware_type": "eWeLink SNZB-03P",
+      "name": "Pres10",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:d4:48:67:ff:fe:0d:95:be",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "eWeLink SNZB-03P",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {},
+        "model_key": "eWeLink|SNZB-03P",
+        "reachable": true
+      },
+      "hardware_type": "eWeLink SNZB-03P",
+      "name": "Pres11",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:e4:06:bf:ff:fe:db:25:73",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "eWeLink SNZB-03P",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {},
+        "model_key": "eWeLink|SNZB-03P",
+        "reachable": true
+      },
+      "hardware_type": "eWeLink SNZB-03P",
+      "name": "Pres2",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:d4:48:67:ff:fe:0d:84:db",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "eWeLink SNZB-03P",
+        "last_seen_at": "2026-09-30T11:41Z",
+        "measurements": {},
+        "model_key": "eWeLink|SNZB-03P",
+        "reachable": true
+      },
+      "hardware_type": "eWeLink SNZB-03P",
+      "name": "Pres3",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:d4:48:67:ff:fe:0d:87:89",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "eWeLink SNZB-03P",
+        "last_seen_at": "2026-09-30T11:41Z",
+        "measurements": {},
+        "model_key": "eWeLink|SNZB-03P",
+        "reachable": true
+      },
+      "hardware_type": "eWeLink SNZB-03P",
+      "name": "Pres4",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:d4:48:67:ff:fe:0d:7b:03",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "eWeLink SNZB-03P",
+        "last_seen_at": "2026-09-30T11:42Z",
+        "measurements": {},
+        "model_key": "eWeLink|SNZB-03P",
+        "reachable": true
+      },
+      "hardware_type": "eWeLink SNZB-03P",
+      "name": "Pres5",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "presence_sensor",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:e4:06:bf:ff:fe:db:1d:f1",
+          "device_name": "Pres7",
+          "evidence": {
+            "age_minutes": 506961.0,
+            "last_seen_at": "2025-10-13T10:24Z"
+          },
+          "first_seen_at": "2026-09-10T16:36:39+02:00",
+          "hardware_type": "eWeLink SNZB-03P",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:e4:06:bf:ff:fe:db:1d:f1:stale",
+          "kind": "stale",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Last seen 506961 minutes ago",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-10T16:38:25+02:00",
+          "status": "active"
+        },
+        {
+          "category": "presence_sensor",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:e4:06:bf:ff:fe:db:1d:f1",
+          "device_name": "Pres7",
+          "evidence": {},
+          "first_seen_at": "2026-09-19T22:30:01+02:00",
+          "hardware_type": "eWeLink SNZB-03P",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:e4:06:bf:ff:fe:db:1d:f1:unreachable",
+          "kind": "unreachable",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Device reports unreachable",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-19T22:35:01+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "presence_sensor",
+      "device_id": "zigbee:e4:06:bf:ff:fe:db:1d:f1",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "eWeLink SNZB-03P",
+        "last_seen_at": "2025-10-13T10:24Z",
+        "measurements": {},
+        "model_key": "eWeLink|SNZB-03P",
+        "reachable": false
+      },
+      "hardware_type": "eWeLink SNZB-03P",
+      "name": "Pres7",
+      "profile": "zigbee",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [],
+      "category": "presence_sensor",
+      "device_id": "zigbee:d4:48:67:ff:fe:0d:c0:c9",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "eWeLink SNZB-03P",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {},
+        "model_key": "eWeLink|SNZB-03P",
+        "reachable": true
+      },
+      "hardware_type": "eWeLink SNZB-03P",
+      "name": "Pres8",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "radiator_temperature",
+      "device_id": "shelly:a0:85:e3:c8:35:c0:temperature:40:2:241:121:0:0:0:32",
+      "facts": {
+        "collection_error": null,
+        "last_seen_at": "2026-09-30T13:45:27+02:00",
+        "measurements": {
+          "temperature_c": 20.7
+        },
+        "reachable": true
+      },
+      "hardware_type": "DS18B20 via Shelly",
+      "name": "gep_radiator_shelly / temperature:100",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "radiator_temperature",
+      "device_id": "shelly:cc:ba:97:c9:c6:9c:temperature:40:177:223:121:0:0:0:36",
+      "facts": {
+        "collection_error": null,
+        "last_seen_at": "2026-09-30T13:45:27+02:00",
+        "measurements": {
+          "temperature_c": 20.8
+        },
+        "reachable": true
+      },
+      "hardware_type": "DS18B20 via Shelly",
+      "name": "golya_radiatorok_shelly / gólya1",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "radiator_temperature",
+      "device_id": "shelly:cc:ba:97:c9:c6:9c:temperature:40:223:108:113:0:0:0:233",
+      "facts": {
+        "collection_error": null,
+        "last_seen_at": "2026-09-30T13:45:27+02:00",
+        "measurements": {
+          "temperature_c": 20.6
+        },
+        "reachable": true
+      },
+      "hardware_type": "DS18B20 via Shelly",
+      "name": "golya_radiatorok_shelly / gólya2",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "radiator_temperature",
+      "device_id": "shelly:a0:85:e3:c8:a1:48:temperature:40:221:243:120:0:0:0:204",
+      "facts": {
+        "collection_error": null,
+        "last_seen_at": "2026-09-30T13:45:27+02:00",
+        "measurements": {
+          "temperature_c": 21.4
+        },
+        "reachable": true
+      },
+      "hardware_type": "DS18B20 via Shelly",
+      "name": "merce_radiatorok_1_shelly / temperature:100",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "radiator_temperature",
+      "device_id": "shelly:a0:85:e3:c9:b6:d4:temperature:40:202:196:122:0:0:0:192",
+      "facts": {
+        "collection_error": null,
+        "last_seen_at": "2026-09-30T13:45:27+02:00",
+        "measurements": {
+          "temperature_c": 21.3
+        },
+        "reachable": true
+      },
+      "hardware_type": "DS18B20 via Shelly",
+      "name": "merce_radiatorok_2_shelly / temperature:100",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "radiator_temperature",
+      "device_id": "shelly:a0:85:e3:c9:b6:d4:temperature:40:37:68:120:0:0:0:1",
+      "facts": {
+        "collection_error": null,
+        "last_seen_at": "2026-09-30T13:45:27+02:00",
+        "measurements": {
+          "temperature_c": 23.4
+        },
+        "reachable": true
+      },
+      "hardware_type": "DS18B20 via Shelly",
+      "name": "merce_radiatorok_2_shelly / temperature:101",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "radiator_temperature",
+      "device_id": "shelly:a0:85:e3:c9:b6:d4:temperature:40:86:130:124:0:0:0:112",
+      "facts": {
+        "collection_error": null,
+        "last_seen_at": "2026-09-30T13:45:27+02:00",
+        "measurements": {
+          "temperature_c": 21.6
+        },
+        "reachable": true
+      },
+      "hardware_type": "DS18B20 via Shelly",
+      "name": "merce_radiatorok_2_shelly / temperature:102",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "radiator_temperature",
+      "device_id": "shelly:cc:ba:97:c9:d9:34:temperature:40:121:10:122:0:0:0:30",
+      "facts": {
+        "collection_error": null,
+        "last_seen_at": "2026-09-30T13:45:27+02:00",
+        "measurements": {
+          "temperature_c": 20.6
+        },
+        "reachable": true
+      },
+      "hardware_type": "DS18B20 via Shelly",
+      "name": "oktopusz_1_radiator_shelly / temperature:100",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "radiator_temperature",
+      "device_id": "shelly:a0:85:e3:c9:65:c0:temperature:40:107:250:119:0:0:0:16",
+      "facts": {
+        "collection_error": null,
+        "last_seen_at": "2026-09-30T13:45:27+02:00",
+        "measurements": {
+          "temperature_c": 21.1
+        },
+        "reachable": true
+      },
+      "hardware_type": "DS18B20 via Shelly",
+      "name": "pk_radiatorok_shelly / temperature:100",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "radiator_temperature",
+      "device_id": "shelly:a0:85:e3:c9:65:c0:temperature:40:61:231:110:0:0:0:183",
+      "facts": {
+        "collection_error": null,
+        "last_seen_at": "2026-09-30T13:45:27+02:00",
+        "measurements": {
+          "temperature_c": 21.3
+        },
+        "reachable": true
+      },
+      "hardware_type": "DS18B20 via Shelly",
+      "name": "pk_radiatorok_shelly / temperature:101",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "radiator_temperature",
+      "device_id": "shelly:a0:85:e3:c9:99:88:temperature:40:232:177:121:0:0:0:47",
+      "facts": {
+        "collection_error": null,
+        "last_seen_at": "2026-09-30T13:45:27+02:00",
+        "measurements": {
+          "temperature_c": 20.3
+        },
+        "reachable": true
+      },
+      "hardware_type": "DS18B20 via Shelly",
+      "name": "studio_radiator_shelly / temperature:100",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "radiator_temperature",
+      "device_id": "shelly:cc:ba:97:c9:ba:a4:temperature:40:10:74:120:0:0:0:49",
+      "facts": {
+        "collection_error": null,
+        "last_seen_at": "2026-09-30T13:45:27+02:00",
+        "measurements": {
+          "temperature_c": 22.2
+        },
+        "reachable": true
+      },
+      "hardware_type": "DS18B20 via Shelly",
+      "name": "szgk_radiator_shelly / temperature:100",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "shelly",
+      "device_id": "shelly:84:1f:e8:f9:b4:08",
+      "facts": {
+        "last_seen_at": "2026-09-30T11:45:19.540505+00:00",
+        "measurements": {},
+        "reachable": true
+      },
+      "hardware_type": "Shelly device",
+      "name": "almero1",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "shelly",
+      "device_id": "shelly:80:f3:da:e4:23:80",
+      "facts": {
+        "last_seen_at": "2026-09-30T11:45:19.569238+00:00",
+        "measurements": {},
+        "reachable": true
+      },
+      "hardware_type": "Shelly device",
+      "name": "almero2",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "shelly",
+      "device_id": "shelly:a0:85:e3:c8:35:c0",
+      "facts": {
+        "last_seen_at": "2026-09-30T11:45:18.497412+00:00",
+        "measurements": {},
+        "reachable": true
+      },
+      "hardware_type": "Shelly device",
+      "name": "gep_radiator_shelly",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "shelly",
+      "device_id": "shelly:cc:ba:97:c9:c6:9c",
+      "facts": {
+        "last_seen_at": "2026-09-30T11:45:18.204964+00:00",
+        "measurements": {},
+        "reachable": true
+      },
+      "hardware_type": "Shelly device",
+      "name": "golya_radiatorok_shelly",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "shelly",
+      "device_id": "shelly:a0:85:e3:c8:a1:48",
+      "facts": {
+        "last_seen_at": "2026-09-30T11:45:18.571315+00:00",
+        "measurements": {},
+        "reachable": true
+      },
+      "hardware_type": "Shelly device",
+      "name": "merce_radiatorok_1_shelly",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "shelly",
+      "device_id": "shelly:a0:85:e3:c9:b6:d4",
+      "facts": {
+        "last_seen_at": "2026-09-30T11:45:18.603379+00:00",
+        "measurements": {},
+        "reachable": true
+      },
+      "hardware_type": "Shelly device",
+      "name": "merce_radiatorok_2_shelly",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "shelly",
+      "device_id": "shelly:cc:ba:97:c9:d9:34",
+      "facts": {
+        "last_seen_at": "2026-09-30T11:45:18.479809+00:00",
+        "measurements": {},
+        "reachable": true
+      },
+      "hardware_type": "Shelly device",
+      "name": "oktopusz_1_radiator_shelly",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "shelly",
+          "class": "revision",
+          "dependencies": [],
+          "device_id": "shelly:oktopusz_2_radiator_shelly",
+          "device_name": "oktopusz_2_radiator_shelly",
+          "evidence": {},
+          "first_seen_at": "2026-09-10T16:36:39+02:00",
+          "hardware_type": "Shelly device",
+          "immediate_notification_sent_at": null,
+          "incident_id": "shelly:oktopusz_2_radiator_shelly:unreachable",
+          "kind": "unreachable",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "could not find 'oktopusz_2_radiator_shelly' by configured Shelly device name on 10.10.120.0/24",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-10T16:38:25+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "shelly",
+      "device_id": "shelly:oktopusz_2_radiator_shelly",
+      "facts": {
+        "collection_error": "could not find 'oktopusz_2_radiator_shelly' by configured Shelly device name on 10.10.120.0/24"
+      },
+      "hardware_type": "Shelly device",
+      "name": "oktopusz_2_radiator_shelly",
+      "profile": "infrastructure",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "shelly",
+          "class": "revision",
+          "dependencies": [],
+          "device_id": "shelly:ovi_radiatorok_shelly",
+          "device_name": "ovi_radiatorok_shelly",
+          "evidence": {},
+          "first_seen_at": "2026-09-28T22:05:01+02:00",
+          "hardware_type": "Shelly device",
+          "immediate_notification_sent_at": null,
+          "incident_id": "shelly:ovi_radiatorok_shelly:unreachable",
+          "kind": "unreachable",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "could not find 'ovi_radiatorok_shelly' by configured DS18B20 address on 10.10.120.0/24",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-28T22:10:00+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "shelly",
+      "device_id": "shelly:ovi_radiatorok_shelly",
+      "facts": {
+        "collection_error": "could not find 'ovi_radiatorok_shelly' by configured DS18B20 address on 10.10.120.0/24"
+      },
+      "hardware_type": "Shelly device",
+      "name": "ovi_radiatorok_shelly",
+      "profile": "infrastructure",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [],
+      "category": "shelly",
+      "device_id": "shelly:a0:85:e3:c9:65:c0",
+      "facts": {
+        "last_seen_at": "2026-09-30T11:45:18.399639+00:00",
+        "measurements": {},
+        "reachable": true
+      },
+      "hardware_type": "Shelly device",
+      "name": "pk_radiatorok_shelly",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "shelly",
+      "device_id": "shelly:a0:85:e3:c9:99:88",
+      "facts": {
+        "last_seen_at": "2026-09-30T11:45:19.504324+00:00",
+        "measurements": {},
+        "reachable": true
+      },
+      "hardware_type": "Shelly device",
+      "name": "studio_radiator_shelly",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "shelly",
+      "device_id": "shelly:cc:ba:97:c9:ba:a4",
+      "facts": {
+        "last_seen_at": "2026-09-30T11:45:18.292735+00:00",
+        "measurements": {},
+        "reachable": true
+      },
+      "hardware_type": "Shelly device",
+      "name": "szgk_radiator_shelly",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "tuya_pump",
+      "device_id": "tuya:pump:1",
+      "facts": {
+        "collection_error": null,
+        "heating_context_status": "available",
+        "heating_on": false,
+        "heating_switch_value": 0,
+        "last_seen_at": "2026-09-30T13:45:04+02:00",
+        "measurements": {
+          "power_w": 0.0,
+          "switch_state": 0
+        },
+        "reachable": true
+      },
+      "hardware_type": "Tuya smart plug",
+      "name": "Heating pump 1",
+      "profile": "critical_pump",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "tuya_pump",
+      "device_id": "tuya:pump:2",
+      "facts": {
+        "collection_error": null,
+        "heating_context_status": "available",
+        "heating_on": false,
+        "heating_switch_value": 0,
+        "last_seen_at": "2026-09-30T13:45:04+02:00",
+        "measurements": {
+          "power_w": 0.0,
+          "switch_state": 0
+        },
+        "reachable": true
+      },
+      "hardware_type": "Tuya smart plug",
+      "name": "Heating pump 2",
+      "profile": "critical_pump",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "tuya_pump",
+      "device_id": "tuya:pump:3",
+      "facts": {
+        "collection_error": null,
+        "heating_context_status": "available",
+        "heating_on": false,
+        "heating_switch_value": 0,
+        "last_seen_at": "2026-09-30T13:45:04+02:00",
+        "measurements": {
+          "power_w": 0.0,
+          "switch_state": 0
+        },
+        "reachable": true
+      },
+      "hardware_type": "Tuya smart plug",
+      "name": "Heating pump 3",
+      "profile": "critical_pump",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "tuya_pump",
+      "device_id": "tuya:pump:4",
+      "facts": {
+        "collection_error": null,
+        "heating_context_status": "available",
+        "heating_on": false,
+        "heating_switch_value": 0,
+        "last_seen_at": "2026-09-30T13:45:04+02:00",
+        "measurements": {
+          "power_w": 0.0,
+          "switch_state": 0
+        },
+        "reachable": true
+      },
+      "hardware_type": "Tuya smart plug",
+      "name": "Heating pump 4",
+      "profile": "critical_pump",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "weather_station",
+      "device_id": "ws90:fc:4d:6a:24:64:c7",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 42.5,
+          "battery_raw": 85.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 86.0,
+            "min_raw": 84.0,
+            "samples": 5514
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": false,
+          "low_battery": false
+        },
+        "collection_error": null,
+        "last_seen_at": "2026-09-30-13-45-20",
+        "measurements": {
+          "humidity_percent": 30,
+          "temperature_c": 26.8
+        },
+        "reachable": true
+      },
+      "hardware_type": "WS90 weather station",
+      "name": "WS90 weather station",
+      "profile": "infrastructure",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:00:21:2e:ff:ff:08:6a:33",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Philips PHDL00",
+        "last_seen_at": null,
+        "measurements": {},
+        "model_key": "Philips|PHDL00",
+        "reachable": null
+      },
+      "hardware_type": "Philips PHDL00",
+      "name": "Daylight",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:08:b9:5f:ff:fe:c7:1d:49",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "SONOFF DONGLE-E_R",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {},
+        "model_key": "SONOFF|DONGLE-E_R",
+        "reachable": true
+      },
+      "hardware_type": "SONOFF DONGLE-E_R",
+      "name": "Dimmable light 13",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:1c:c0:89:ff:fe:df:ee:57",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "SONOFF DONGLE-E_R",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {},
+        "model_key": "SONOFF|DONGLE-E_R",
+        "reachable": true
+      },
+      "hardware_type": "SONOFF DONGLE-E_R",
+      "name": "Dimmable light 15",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:08:b9:5f:ff:fe:c6:91:1d",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "SONOFF DONGLE-E_R",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {},
+        "model_key": "SONOFF|DONGLE-E_R",
+        "reachable": true
+      },
+      "hardware_type": "SONOFF DONGLE-E_R",
+      "name": "Dimmable light 17",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:84:2e:14:ff:fe:25:f7:0e",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZ3000_keabpigv TS0505A",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {},
+        "model_key": "_TZ3000_keabpigv|TS0505A",
+        "reachable": true
+      },
+      "hardware_type": "_TZ3000_keabpigv TS0505A",
+      "name": "PK_elott",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:00:12:4b:00:29:20:2d:d7",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "eWeLink TH01",
+        "last_seen_at": "2026-09-30T11:40Z",
+        "measurements": {
+          "humidity_percent": 58.03,
+          "temperature_c": 21.02
+        },
+        "model_key": "eWeLink|TH01",
+        "reachable": true
+      },
+      "hardware_type": "eWeLink TH01",
+      "name": "Sonoff1",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:84:27:12:ff:fe:56:1f:fd",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 30.0,
+          "battery_raw": 60.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 60.0,
+            "min_raw": 60.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "SONOFF SNZB-02D",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {
+          "humidity_percent": 51.5,
+          "temperature_c": 21.2
+        },
+        "model_key": "SONOFF|SNZB-02D",
+        "reachable": true
+      },
+      "hardware_type": "SONOFF SNZB-02D",
+      "name": "Sonoff10",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:84:27:12:ff:fe:56:00:00",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 30.0,
+          "battery_raw": 60.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 80.0,
+            "min_raw": 60.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "SONOFF SNZB-02D",
+        "last_seen_at": "2026-09-30T11:40Z",
+        "measurements": {
+          "humidity_percent": 51.9,
+          "temperature_c": 21.6
+        },
+        "model_key": "SONOFF|SNZB-02D",
+        "reachable": true
+      },
+      "hardware_type": "SONOFF SNZB-02D",
+      "name": "Sonoff11",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:84:27:12:ff:fe:35:0c:da",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 30.0,
+          "battery_raw": 60.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 80.0,
+            "min_raw": 60.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "SONOFF SNZB-02D",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {
+          "humidity_percent": 51.3,
+          "temperature_c": 23.0
+        },
+        "model_key": "SONOFF|SNZB-02D",
+        "reachable": true
+      },
+      "hardware_type": "SONOFF SNZB-02D",
+      "name": "Sonoff12",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:84:27:12:ff:fe:55:71:41",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "SONOFF SNZB-02D",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {
+          "humidity_percent": 52.8,
+          "temperature_c": 21.9
+        },
+        "model_key": "SONOFF|SNZB-02D",
+        "reachable": true
+      },
+      "hardware_type": "SONOFF SNZB-02D",
+      "name": "Sonoff13",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:0c:ae:5f:ff:fe:d1:23:8b",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "SONOFF SNZB-02D",
+        "last_seen_at": "2026-09-30T11:42Z",
+        "measurements": {
+          "humidity_percent": 56.5,
+          "temperature_c": 21.4
+        },
+        "model_key": "SONOFF|SNZB-02D",
+        "reachable": true
+      },
+      "hardware_type": "SONOFF SNZB-02D",
+      "name": "Sonoff14",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "zigbee_device",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:00:12:4b:00:25:12:fd:9e",
+          "device_name": "Sonoff2",
+          "evidence": {
+            "age_minutes": 29851.0,
+            "last_seen_at": "2026-09-09T18:14Z"
+          },
+          "first_seen_at": "2026-09-10T22:10:03+02:00",
+          "hardware_type": "eWeLink TH01",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:00:12:4b:00:25:12:fd:9e:stale",
+          "kind": "stale",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Last seen 29851 minutes ago",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-10T22:15:02+02:00",
+          "status": "active"
+        },
+        {
+          "category": "zigbee_device",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:00:12:4b:00:25:12:fd:9e",
+          "device_name": "Sonoff2",
+          "evidence": {},
+          "first_seen_at": "2026-09-19T22:30:01+02:00",
+          "hardware_type": "eWeLink TH01",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:00:12:4b:00:25:12:fd:9e:unreachable",
+          "kind": "unreachable",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Device reports unreachable",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-19T22:35:01+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "zigbee_device",
+      "device_id": "zigbee:00:12:4b:00:25:12:fd:9e",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "eWeLink TH01",
+        "last_seen_at": "2026-09-09T18:14Z",
+        "measurements": {
+          "humidity_percent": 52.63,
+          "temperature_c": 26.4
+        },
+        "model_key": "eWeLink|TH01",
+        "reachable": false
+      },
+      "hardware_type": "eWeLink TH01",
+      "name": "Sonoff2",
+      "profile": "zigbee",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:00:12:4b:00:29:20:33:73",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "eWeLink TH01",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {
+          "humidity_percent": 62.43,
+          "temperature_c": 22.19
+        },
+        "model_key": "eWeLink|TH01",
+        "reachable": true
+      },
+      "hardware_type": "eWeLink TH01",
+      "name": "Sonoff3",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:00:12:4b:00:29:20:30:59",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "eWeLink TH01",
+        "last_seen_at": "2026-09-30T11:39Z",
+        "measurements": {
+          "humidity_percent": 59.15,
+          "temperature_c": 21.54
+        },
+        "model_key": "eWeLink|TH01",
+        "reachable": true
+      },
+      "hardware_type": "eWeLink TH01",
+      "name": "Sonoff4",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "zigbee_device",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:00:12:4b:00:25:12:fd:82",
+          "device_name": "Sonoff5",
+          "evidence": {
+            "age_minutes": 78577.0,
+            "last_seen_at": "2026-08-06T22:08Z"
+          },
+          "first_seen_at": "2026-09-10T16:36:39+02:00",
+          "hardware_type": "eWeLink TH01",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:00:12:4b:00:25:12:fd:82:stale",
+          "kind": "stale",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Last seen 78577 minutes ago",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-10T16:38:25+02:00",
+          "status": "active"
+        },
+        {
+          "category": "zigbee_device",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:00:12:4b:00:25:12:fd:82",
+          "device_name": "Sonoff5",
+          "evidence": {},
+          "first_seen_at": "2026-09-19T22:30:01+02:00",
+          "hardware_type": "eWeLink TH01",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:00:12:4b:00:25:12:fd:82:unreachable",
+          "kind": "unreachable",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Device reports unreachable",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-19T22:35:01+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "zigbee_device",
+      "device_id": "zigbee:00:12:4b:00:25:12:fd:82",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "eWeLink TH01",
+        "last_seen_at": "2026-08-06T22:08Z",
+        "measurements": {
+          "humidity_percent": 69.81,
+          "temperature_c": 28.02
+        },
+        "model_key": "eWeLink|TH01",
+        "reachable": false
+      },
+      "hardware_type": "eWeLink TH01",
+      "name": "Sonoff5",
+      "profile": "zigbee",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:00:12:4b:00:25:13:04:d0",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "eWeLink TH01",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {
+          "humidity_percent": 53.34,
+          "temperature_c": 22.53
+        },
+        "model_key": "eWeLink|TH01",
+        "reachable": true
+      },
+      "hardware_type": "eWeLink TH01",
+      "name": "Sonoff6",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "zigbee_device",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:00:12:4b:00:29:20:2c:4a",
+          "device_name": "Sonoff7",
+          "evidence": {
+            "age_minutes": 20662.0,
+            "last_seen_at": "2026-09-16T03:23Z"
+          },
+          "first_seen_at": "2026-09-17T05:25:01+02:00",
+          "hardware_type": "eWeLink TH01",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:00:12:4b:00:29:20:2c:4a:stale",
+          "kind": "stale",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Last seen 20662 minutes ago",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-17T05:30:01+02:00",
+          "status": "active"
+        },
+        {
+          "category": "zigbee_device",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:00:12:4b:00:29:20:2c:4a",
+          "device_name": "Sonoff7",
+          "evidence": {},
+          "first_seen_at": "2026-09-19T22:30:01+02:00",
+          "hardware_type": "eWeLink TH01",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:00:12:4b:00:29:20:2c:4a:unreachable",
+          "kind": "unreachable",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Device reports unreachable",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-19T22:35:01+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "zigbee_device",
+      "device_id": "zigbee:00:12:4b:00:29:20:2c:4a",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 50.0,
+          "battery_raw": 100.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 100.0,
+            "min_raw": 100.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "eWeLink TH01",
+        "last_seen_at": "2026-09-16T03:23Z",
+        "measurements": {
+          "humidity_percent": 72.3,
+          "temperature_c": 17.06
+        },
+        "model_key": "eWeLink|TH01",
+        "reachable": false
+      },
+      "hardware_type": "eWeLink TH01",
+      "name": "Sonoff7",
+      "profile": "zigbee",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:00:12:4b:00:29:20:48:66",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": 45.5,
+          "battery_raw": 91.0,
+          "battery_scale": "conservative_half_percent_200",
+          "battery_scale_confidence": "conservative_after_learning_window",
+          "battery_scale_learning": {
+            "first_observed_at": "2026-09-10T16:36:39+02:00",
+            "max_raw": 91.0,
+            "min_raw": 50.0,
+            "samples": 5513
+          },
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "eWeLink TH01",
+        "last_seen_at": "2026-09-30T11:41Z",
+        "measurements": {
+          "humidity_percent": 64.95,
+          "temperature_c": 21.28
+        },
+        "model_key": "eWeLink|TH01",
+        "reachable": true
+      },
+      "hardware_type": "eWeLink TH01",
+      "name": "Sonoff8",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:a0:85:e3:ff:fe:c8:35:c0",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Shelly 1",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {},
+        "model_key": "Shelly|1",
+        "reachable": true
+      },
+      "hardware_type": "Shelly 1",
+      "name": "gep_radiator_shelly",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:58:8e:81:ff:fe:d1:98:fe",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZ3000_keabpigv TS0505A",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {},
+        "model_key": "_TZ3000_keabpigv|TS0505A",
+        "reachable": true
+      },
+      "hardware_type": "_TZ3000_keabpigv TS0505A",
+      "name": "golyairoda_elott",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:58:8e:81:ff:fe:d1:98:ce",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZ3000_keabpigv TS0505A",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {},
+        "model_key": "_TZ3000_keabpigv|TS0505A",
+        "reachable": true
+      },
+      "hardware_type": "_TZ3000_keabpigv TS0505A",
+      "name": "keramia_elott",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:58:8e:81:ff:fe:d1:a1:5d",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZ3000_keabpigv TS0505A",
+        "last_seen_at": "2026-09-30T11:42Z",
+        "measurements": {},
+        "model_key": "_TZ3000_keabpigv|TS0505A",
+        "reachable": true
+      },
+      "hardware_type": "_TZ3000_keabpigv TS0505A",
+      "name": "lahma_elott",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "zigbee_device",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:58:8e:81:ff:fe:d3:d3:ae",
+          "device_name": "merce_elott",
+          "evidence": {
+            "age_minutes": 507219.0,
+            "last_seen_at": "2025-10-13T06:06Z"
+          },
+          "first_seen_at": "2026-09-10T16:36:39+02:00",
+          "hardware_type": "_TZ3000_keabpigv TS0505A",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:58:8e:81:ff:fe:d3:d3:ae:stale",
+          "kind": "stale",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Last seen 507219 minutes ago",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-10T16:38:25+02:00",
+          "status": "active"
+        },
+        {
+          "category": "zigbee_device",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:58:8e:81:ff:fe:d3:d3:ae",
+          "device_name": "merce_elott",
+          "evidence": {},
+          "first_seen_at": "2026-09-10T16:36:39+02:00",
+          "hardware_type": "_TZ3000_keabpigv TS0505A",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:58:8e:81:ff:fe:d3:d3:ae:unreachable",
+          "kind": "unreachable",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Device reports unreachable",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-10T16:38:25+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "zigbee_device",
+      "device_id": "zigbee:58:8e:81:ff:fe:d3:d3:ae",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZ3000_keabpigv TS0505A",
+        "last_seen_at": "2025-10-13T06:06Z",
+        "measurements": {},
+        "model_key": "_TZ3000_keabpigv|TS0505A",
+        "reachable": false
+      },
+      "hardware_type": "_TZ3000_keabpigv TS0505A",
+      "name": "merce_elott",
+      "profile": "zigbee",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:a0:85:e3:ff:fe:c8:a1:48",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Shelly 1",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {},
+        "model_key": "Shelly|1",
+        "reachable": true
+      },
+      "hardware_type": "Shelly 1",
+      "name": "merce_radiatorok_1_shelly",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:a0:85:e3:ff:fe:c9:b6:d4",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Shelly 1",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {},
+        "model_key": "Shelly|1",
+        "reachable": true
+      },
+      "hardware_type": "Shelly 1",
+      "name": "merce_radiatorok_2_shelly",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:84:2e:14:ff:fe:0f:c9:7a",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZ3000_keabpigv TS0505A",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {},
+        "model_key": "_TZ3000_keabpigv|TS0505A",
+        "reachable": true
+      },
+      "hardware_type": "_TZ3000_keabpigv TS0505A",
+      "name": "oktopusz",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:a0:85:e3:ff:fe:c8:04:90",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Shelly 1",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {},
+        "model_key": "Shelly|1",
+        "reachable": true
+      },
+      "hardware_type": "Shelly 1",
+      "name": "oktopusz_2_radiator_shelly",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:58:8e:81:ff:fe:de:35:a7",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZ3000_keabpigv TS0505A",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {},
+        "model_key": "_TZ3000_keabpigv|TS0505A",
+        "reachable": true
+      },
+      "hardware_type": "_TZ3000_keabpigv TS0505A",
+      "name": "ovi_elott",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "zigbee_device",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:a0:85:e3:ff:fe:c8:0f:e0",
+          "device_name": "ovi_radiatorok_shelly",
+          "evidence": {
+            "age_minutes": 2383.0,
+            "last_seen_at": "2026-09-28T20:02Z"
+          },
+          "first_seen_at": "2026-09-29T22:05:01+02:00",
+          "hardware_type": "Shelly 1",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:a0:85:e3:ff:fe:c8:0f:e0:stale",
+          "kind": "stale",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Last seen 2383 minutes ago",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-29T22:10:01+02:00",
+          "status": "active"
+        },
+        {
+          "category": "zigbee_device",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:a0:85:e3:ff:fe:c8:0f:e0",
+          "device_name": "ovi_radiatorok_shelly",
+          "evidence": {},
+          "first_seen_at": "2026-09-28T22:10:00+02:00",
+          "hardware_type": "Shelly 1",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:a0:85:e3:ff:fe:c8:0f:e0:unreachable",
+          "kind": "unreachable",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Device reports unreachable",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-28T22:15:01+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "zigbee_device",
+      "device_id": "zigbee:a0:85:e3:ff:fe:c8:0f:e0",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Shelly 1",
+        "last_seen_at": "2026-09-28T20:02Z",
+        "measurements": {},
+        "model_key": "Shelly|1",
+        "reachable": false
+      },
+      "hardware_type": "Shelly 1",
+      "name": "ovi_radiatorok_shelly",
+      "profile": "zigbee",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:a0:85:e3:ff:fe:c9:65:c0",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Shelly 1",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {},
+        "model_key": "Shelly|1",
+        "reachable": true
+      },
+      "hardware_type": "Shelly 1",
+      "name": "pk_radiatorok_shelly",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [
+        {
+          "category": "zigbee_device",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:84:2e:14:ff:fe:25:f6:d3",
+          "device_name": "pult",
+          "evidence": {
+            "age_minutes": 30376.0,
+            "last_seen_at": "2026-09-09T09:29Z"
+          },
+          "first_seen_at": "2026-09-10T16:36:39+02:00",
+          "hardware_type": "_TZ3000_keabpigv TS0505A",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:84:2e:14:ff:fe:25:f6:d3:stale",
+          "kind": "stale",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Last seen 30376 minutes ago",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-10T16:38:25+02:00",
+          "status": "active"
+        },
+        {
+          "category": "zigbee_device",
+          "class": "revision",
+          "dependencies": [
+            "gateway:deconz"
+          ],
+          "device_id": "zigbee:84:2e:14:ff:fe:25:f6:d3",
+          "device_name": "pult",
+          "evidence": {},
+          "first_seen_at": "2026-09-10T16:36:39+02:00",
+          "hardware_type": "_TZ3000_keabpigv TS0505A",
+          "immediate_notification_sent_at": null,
+          "incident_id": "zigbee:84:2e:14:ff:fe:25:f6:d3:unreachable",
+          "kind": "unreachable",
+          "last_seen_at": "2026-09-30T13:45:02+02:00",
+          "message": "Device reports unreachable",
+          "open_after_runs": 2,
+          "opened_at": "2026-09-10T16:38:25+02:00",
+          "status": "active"
+        }
+      ],
+      "category": "zigbee_device",
+      "device_id": "zigbee:84:2e:14:ff:fe:25:f6:d3",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZ3000_keabpigv TS0505A",
+        "last_seen_at": "2026-09-09T09:29Z",
+        "measurements": {},
+        "model_key": "_TZ3000_keabpigv|TS0505A",
+        "reachable": false
+      },
+      "hardware_type": "_TZ3000_keabpigv TS0505A",
+      "name": "pult",
+      "profile": "zigbee",
+      "status": "attention"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:a0:85:e3:ff:fe:c9:99:88",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Shelly 1",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {},
+        "model_key": "Shelly|1",
+        "reachable": true
+      },
+      "hardware_type": "Shelly 1",
+      "name": "studio_radiator_shelly",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:cc:ba:97:ff:fe:c9:ba:a4",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "Shelly 1",
+        "last_seen_at": "2026-09-30T11:44Z",
+        "measurements": {},
+        "model_key": "Shelly|1",
+        "reachable": true
+      },
+      "hardware_type": "Shelly 1",
+      "name": "szgk_radiator_shelly",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:84:2e:14:ff:fe:0f:c5:f1",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZ3000_keabpigv TS0505A",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {},
+        "model_key": "_TZ3000_keabpigv|TS0505A",
+        "reachable": true
+      },
+      "hardware_type": "_TZ3000_keabpigv TS0505A",
+      "name": "teakonyha",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:84:2e:14:ff:fe:0e:33:84",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZ3000_keabpigv TS0505A",
+        "last_seen_at": "2026-09-30T11:41Z",
+        "measurements": {},
+        "model_key": "_TZ3000_keabpigv|TS0505A",
+        "reachable": true
+      },
+      "hardware_type": "_TZ3000_keabpigv TS0505A",
+      "name": "trafohaz",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:84:2e:14:ff:fe:0f:c1:5f",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZ3000_keabpigv TS0505A",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {},
+        "model_key": "_TZ3000_keabpigv|TS0505A",
+        "reachable": true
+      },
+      "hardware_type": "_TZ3000_keabpigv TS0505A",
+      "name": "tuzzaro_ajtonal",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_device",
+      "device_id": "zigbee:58:8e:81:ff:fe:d1:9c:1d",
+      "facts": {
+        "battery": {
+          "battery_invalid": false,
+          "battery_percent": null,
+          "battery_raw": null,
+          "battery_scale": "unknown",
+          "battery_uninitialized": false,
+          "battery_zero_is_unknown": true,
+          "low_battery": false
+        },
+        "hardware_type": "_TZ3000_keabpigv TS0505A",
+        "last_seen_at": "2026-09-30T11:43Z",
+        "measurements": {},
+        "model_key": "_TZ3000_keabpigv|TS0505A",
+        "reachable": true
+      },
+      "hardware_type": "_TZ3000_keabpigv TS0505A",
+      "name": "tuzzaro_es_merce_kozott",
+      "profile": "zigbee",
+      "status": "ok"
+    },
+    {
+      "active_incidents": [],
+      "category": "zigbee_gateway",
+      "device_id": "gateway:deconz",
+      "facts": {
+        "heating_context_status": "available",
+        "heating_on": false,
+        "heating_switch_value": 0,
+        "last_seen_at": "2026-09-30T13:45:03+02:00",
+        "reachable": true
+      },
+      "hardware_type": "deCONZ Zigbee gateway",
+      "name": "deCONZ gateway",
+      "profile": "critical_dependency",
+      "status": "ok"
+    }
+  ],
+  "generated_at": "2026-09-30T13:45:02+02:00",
+  "schema_version": 1,
+  "summary": {
+    "active_incidents": 41,
+    "critical_incidents": 0,
+    "devices_observed": 166,
+    "revision_incidents": 41
+  }
+}

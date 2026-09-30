@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Parasoll battery logger every five minutes
+
+[Timer]
+OnCalendar=*:0/5
+Persistent=true
+WakeSystem=false
+
+[Install]
+WantedBy=timers.target

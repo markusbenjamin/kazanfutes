@@ -1,0 +1,236 @@
+{
+  "generated_at": "2026-07-27T21:34:46",
+  "known_ip_check": [
+    {
+      "name": "golya_radiatorok_shelly",
+      "expected_ip": "192.168.101.26",
+      "expected_mac": "cc:ba:97:c9:c6:9c",
+      "reachable": true,
+      "error": null,
+      "info": {
+        "id": 1,
+        "src": "shelly1g4-ccba97c9c69c",
+        "result": {
+          "name": "golya_radiatorok",
+          "id": "shelly1g4-ccba97c9c69c",
+          "mac": "CCBA97C9C69C",
+          "slot": 1,
+          "model": "S4SW-001X16EU",
+          "gen": 4,
+          "fw_id": "20250924-062804/1.7.1-gd336f31",
+          "ver": "1.7.1",
+          "app": "S1G4",
+          "auth_en": false,
+          "auth_domain": null,
+          "matter": true
+        }
+      },
+      "peripherals": {
+        "ok": true,
+        "body": {
+          "id": 1,
+          "src": "shelly1g4-ccba97c9c69c",
+          "result": {
+            "digital_in": {},
+            "analog_in": {},
+            "voltmeter": {},
+            "dht22": {},
+            "ds18b20": {
+              "temperature:100": {
+                "addr": "40:177:223:121:0:0:0:36"
+              },
+              "temperature:101": {
+                "addr": "40:223:108:113:0:0:0:233"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "szgk_radiator_shelly",
+      "expected_ip": "192.168.101.28",
+      "expected_mac": "cc:ba:97:c9:ba:a4",
+      "reachable": false,
+      "error": "<urlopen error timed out>",
+      "info": null,
+      "peripherals": null
+    },
+    {
+      "name": "pk_radiatorok_shelly",
+      "expected_ip": "192.168.101.29",
+      "expected_mac": "a0:85:e3:c9:65:c0",
+      "reachable": false,
+      "error": "<urlopen error timed out>",
+      "info": null,
+      "peripherals": null
+    },
+    {
+      "name": "oktopusz_1_radiator_shelly",
+      "expected_ip": "192.168.101.21",
+      "expected_mac": "cc:ba:97:c9:d9:34",
+      "reachable": false,
+      "error": "<urlopen error timed out>",
+      "info": null,
+      "peripherals": null
+    },
+    {
+      "name": "oktopusz_2_radiator_shelly",
+      "expected_ip": "192.168.101.83",
+      "expected_mac": "a0:85:e3:c8:04:90",
+      "reachable": false,
+      "error": "<urlopen error timed out>",
+      "info": null,
+      "peripherals": null
+    },
+    {
+      "name": "gep_radiator_shelly",
+      "expected_ip": "192.168.101.42",
+      "expected_mac": "a0:85:e3:c8:35:c0",
+      "reachable": true,
+      "error": null,
+      "info": {
+        "id": 1,
+        "src": "shelly1g4-a085e3c835c0",
+        "result": {
+          "name": "gep_radiator",
+          "id": "shelly1g4-a085e3c835c0",
+          "mac": "A085E3C835C0",
+          "slot": 1,
+          "model": "S4SW-001X16EU",
+          "gen": 4,
+          "fw_id": "20260311-095857/1.7.5-g9979d16",
+          "ver": "1.7.5",
+          "app": "S1G4ZB",
+          "auth_en": false,
+          "auth_domain": null,
+          "provision": "complete"
+        }
+      },
+      "peripherals": {
+        "ok": true,
+        "body": {
+          "id": 1,
+          "src": "shelly1g4-a085e3c835c0",
+          "result": {
+            "digital_in": {},
+            "analog_in": {},
+            "voltmeter": {},
+            "dht22": {},
+            "ds18b20": {
+              "temperature:100": {
+                "addr": "40:2:241:121:0:0:0:32"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "merce_radiatorok_1_shelly",
+      "expected_ip": "192.168.101.37",
+      "expected_mac": "a0:85:e3:c8:a1:48",
+      "reachable": false,
+      "error": "<urlopen error timed out>",
+      "info": null,
+      "peripherals": null
+    },
+    {
+      "name": "merce_radiatorok_2_shelly",
+      "expected_ip": "192.168.101.94",
+      "expected_mac": "a0:85:e3:c9:b6:d4",
+      "reachable": false,
+      "error": "<urlopen error timed out>",
+      "info": null,
+      "peripherals": null
+    },
+    {
+      "name": "ovi_radiatorok_shelly",
+      "expected_ip": "192.168.101.47",
+      "expected_mac": "a0:85:e3:c8:0f:e0",
+      "reachable": false,
+      "error": "<urlopen error timed out>",
+      "info": null,
+      "peripherals": null
+    },
+    {
+      "name": "studio_radiator_shelly",
+      "expected_ip": "192.168.101.74",
+      "expected_mac": "a0:85:e3:c9:99:88",
+      "reachable": false,
+      "error": "<urlopen error timed out>",
+      "info": null,
+      "peripherals": null
+    }
+  ],
+  "scan_found": [
+    [
+      "192.168.101.26",
+      {
+        "name": "golya_radiatorok",
+        "id": "shelly1g4-ccba97c9c69c",
+        "mac": "CCBA97C9C69C",
+        "slot": 1,
+        "model": "S4SW-001X16EU",
+        "gen": 4,
+        "fw_id": "20250924-062804/1.7.1-gd336f31",
+        "ver": "1.7.1",
+        "app": "S1G4",
+        "auth_en": false,
+        "auth_domain": null,
+        "matter": true
+      }
+    ],
+    [
+      "192.168.101.42",
+      {
+        "name": "gep_radiator",
+        "id": "shelly1g4-a085e3c835c0",
+        "mac": "A085E3C835C0",
+        "slot": 1,
+        "model": "S4SW-001X16EU",
+        "gen": 4,
+        "fw_id": "20260311-095857/1.7.5-g9979d16",
+        "ver": "1.7.5",
+        "app": "S1G4ZB",
+        "auth_en": false,
+        "auth_domain": null,
+        "provision": "complete"
+      }
+    ],
+    [
+      "192.168.101.76",
+      {
+        "name": "almero2",
+        "id": "shellyplusi4-80f3dae42380",
+        "mac": "80F3DAE42380",
+        "slot": 0,
+        "model": "SNSN-0D24X",
+        "gen": 2,
+        "fw_id": "20260311-095904/1.7.5-g9979d16",
+        "ver": "1.7.5",
+        "app": "PlusI4",
+        "auth_en": false,
+        "auth_domain": null,
+        "provision": "complete"
+      }
+    ],
+    [
+      "192.168.101.85",
+      {
+        "name": "almero1",
+        "id": "shellyplusi4-841fe8f9b408",
+        "mac": "841FE8F9B408",
+        "slot": 1,
+        "model": "SNSN-0D24X",
+        "gen": 2,
+        "fw_id": "20260311-095904/1.7.5-g9979d16",
+        "ver": "1.7.5",
+        "app": "PlusI4",
+        "auth_en": false,
+        "auth_domain": null,
+        "provision": "complete"
+      }
+    ]
+  ]
+}
