@@ -1454,6 +1454,36 @@ def get_presence_rooms():
     except Exception as e:
         raise ModuleException(f"unexpected error while getting rooms presence: {e}", severity=2)
     
+def load_recent_presence_log(now=None):
+    """Load presence data across the current midnight log boundary.
+
+    TimedRotatingFileHandler rotates lazily on the first write after midnight.
+    Until that write, yesterday's records still live in the unsuffixed file and
+    the expected dated file does not exist.  Accept either layout so readers
+    running concurrently with the logger do not report a false failure.
+    """
+    reference_time = now or datetime.now()
+    relative_paths = [
+        f"data/logs/presence/presence_all.json.{(reference_time - timedelta(days=1)).strftime('%Y-%m-%d')}",
+        "data/logs/presence/presence_all.json",
+    ]
+    presence_log = []
+    loaded_any = False
+    errors = []
+    for relative_path in relative_paths:
+        try:
+            presence_log.extend(load_ndjson_to_json_list(relative_path))
+            loaded_any = True
+        except ModuleException as error:
+            errors.append(str(error))
+    if not loaded_any:
+        raise ModuleException(
+            "couldn't load either current or previous-day presence log: " + "; ".join(errors),
+            severity=2,
+        )
+    return presence_log
+
+
 def get_rooms_occupancy(log = None, threshold = None, minutes = [0], timestamps = None):
     """
     Returns the occupancy state for all rooms either for list of minutes or list of timestamps.
@@ -1471,8 +1501,8 @@ def get_rooms_occupancy(log = None, threshold = None, minutes = [0], timestamps 
         for room, info in rooms.items():
             room_all_movements[room] = []
 
-        if not log:
-            presence_log = load_ndjson_to_json_list(f"data/logs/presence/presence_all.json.{(datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')}") + load_ndjson_to_json_list("data/logs/presence/presence_all.json")
+        if log is None:
+            presence_log = load_recent_presence_log()
         else:
             presence_log = log
 
