@@ -4,17 +4,10 @@ from utils.project import *
 #print(get_thermostat_state_by_name("SZGK",["valve","battery","heatsetpoint","temperature","externalsensortemp","lastseen"]))
 #exit()
 
-for id in ["77", "79", "71", "75", "42", "59", "63", "69", "65", "53", "57"]:
-    calibrate_thermostat_by_id(int(id))
-    #set_thermostat_state_by_id(int(id),heatsetpoint = 5)
-    time.sleep(5)
-    #print(get_thermostat_state_by_id(int(id),fields=["name","valve","temperature","heatsetpoint"]))
-exit()
-
 for _ in range(50):
     if True:
         for name in ["SZGK","Merce","Merce_targyalo","Lahmacun","Golyairoda","PK","GEP_muhely","Golyafeszek_1","Golyafeszek_2","Oktopusz_szita_1","Oktopusz_szita_2"]:
-            set_thermostat_state_by_name(name,heatsetpoint = 22,loadbalancing=False,windowopendetectionenabled=False,externalwindowopen=False)
+            set_thermostat_state_by_name(name,heatsetpoint = 30,loadbalancing=False,windowopendetectionenabled=False,externalwindowopen=False)
             print(get_thermostat_state_by_name(name,fields=["name","valve","temperature","heatsetpoint"]))
         #exit()
     else:
@@ -23,6 +16,15 @@ for _ in range(50):
             set_thermostat_state(sensor_id=id,heatsetpoint = 16,loadbalancing=False,windowopendetectionenabled=False,externalwindowopen=False)
     time.sleep(90)
 exit()
+
+for id in ["77", "79", "71", "75", "42", "59", "63", "69", "65", "53", "57"]:
+    calibrate_thermostat_by_id(int(id))
+    #set_thermostat_state_by_id(int(id),heatsetpoint = 5)
+    time.sleep(5)
+    #print(get_thermostat_state_by_id(int(id),fields=["name","valve","temperature","heatsetpoint"]))
+exit()
+
+
 
 
 if True:
