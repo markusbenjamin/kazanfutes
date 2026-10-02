@@ -591,26 +591,40 @@ def _sync_paths_with_repo_unlocked(
     branch="main",
     max_push_attempts=2,
     retry_delay_seconds=GIT_PUSH_RACE_RETRY_DELAY_SECONDS,
+    confirm_extra_changes=None,
 ):
     """Stage, commit, merge-pull, and push after the caller acquires locks."""
     if max_push_attempts < 1:
         raise ValueError("max_push_attempts must be at least 1")
 
     repo_root = os.path.abspath(repo_root)
-    outside_changes = _tracked_changes_outside_sync_paths(repo_root, git_paths)
-    if outside_changes:
-        preview = ", ".join(outside_changes[:10])
-        remainder = len(outside_changes) - 10
-        if remainder > 0:
-            preview += f", and {remainder} more"
-        raise GitSyncBlocked(
-            "tracked changes outside the selected sync paths are present: " + preview
-        )
-
     _quit_orphaned_git_autostash(repo_root)
+    for marker in ("MERGE_HEAD", "rebase-merge", "rebase-apply", "CHERRY_PICK_HEAD", "REVERT_HEAD"):
+        if _git_marker_exists(repo_root, marker):
+            raise GitSyncBlocked(f"unfinished Git operation ({marker}); resolve it before syncing")
+    if _git_output(repo_root, ["diff", "--name-only", "--diff-filter=U"]):
+        raise GitSyncBlocked("unresolved merge conflicts; resolve them before syncing")
+    if _git_output(repo_root, ["branch", "--show-current"]) != branch:
+        raise GitSyncBlocked(f"checkout must be on {branch} before syncing")
 
-    report("Git sync: staging configured paths.")
-    _run_git_command(repo_root, ["add", "-A", "--"] + git_paths)
+    outside_changes = _changes_outside_sync_paths(
+        repo_root, git_paths, include_untracked=confirm_extra_changes is not None,
+    )
+    if outside_changes:
+        details = "\n".join(f"  {status} {path!r}" for status, path in outside_changes)
+        if confirm_extra_changes is None or not confirm_extra_changes(tuple(outside_changes)):
+            raise GitSyncBlocked(
+                "changes outside the selected sync paths were not approved:\n" + details
+            )
+        # The repository lock is held across the prompt. Recheck for edits from
+        # other tools before staging, and never widen approval to an entire folder.
+        if outside_changes != _changes_outside_sync_paths(repo_root, git_paths, include_untracked=True):
+            raise GitSyncBlocked("the change list changed during confirmation; run again to review it")
+        git_paths = list(git_paths) + [path for _, path in outside_changes]
+        commit_message += " Includes explicitly approved local changes."
+
+    report("Git sync: staging selected paths.")
+    _run_git_command(repo_root, ["add", "-A", "--"] + [":(literal)" + path for path in git_paths])
 
     committed = _git_has_cached_changes(repo_root)
     if committed:
@@ -673,11 +687,15 @@ def _normalize_git_paths(project_paths):
 
 def _tracked_changes_outside_sync_paths(repo_root, git_paths):
     """Return tracked worktree changes that a selected-path sync must not touch."""
-    changed_paths = [
-        path.strip()
-        for path in _git_output(repo_root, ["diff", "--name-only", "HEAD"]).splitlines()
-        if path.strip()
-    ]
+    return [path for _, path in _changes_outside_sync_paths(repo_root, git_paths)]
+
+
+def _changes_outside_sync_paths(repo_root, git_paths, *, include_untracked=False):
+    """Read staged/unstaged paths without quoting, rename or whitespace ambiguity."""
+    output = _run_git_command(repo_root, [
+        "status", "--porcelain=v1", "-z", "--no-renames",
+        "--untracked-files=all" if include_untracked else "--untracked-files=no",
+    ]).stdout
 
     def is_selected(path):
         return any(
@@ -685,15 +703,20 @@ def _tracked_changes_outside_sync_paths(repo_root, git_paths):
             for selected in git_paths
         )
 
-    return sorted(path for path in changed_paths if not is_selected(path))
+    return sorted(
+        (entry[:2], entry[3:]) for entry in output.split("\0")
+        if entry and not is_selected(entry[3:])
+    )
 
 
-def sync_paths_with_repo(project_paths, commit_message, timeout_on_lock = 30):
+def sync_paths_with_repo(project_paths, commit_message, timeout_on_lock = 30, *, confirm_extra_changes=None):
     """
     Commits selected repository paths, merge-pulls remote changes, then pushes.
 
     Git commands are bounded by a timeout, preserve their diagnostic output,
     and retry once if the push loses a race with another remote update.
+    An optional interactive callback may approve the exact extra paths listed
+    under the repository lock. Without it, unrelated tracked changes block sync.
     """
     git_paths = _normalize_git_paths(project_paths)
 
@@ -711,6 +734,7 @@ def sync_paths_with_repo(project_paths, commit_message, timeout_on_lock = 30):
                 get_project_root(),
                 git_paths,
                 commit_message,
+                confirm_extra_changes=confirm_extra_changes,
             )
             report(
                 "Git sync complete: "
