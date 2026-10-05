@@ -7364,8 +7364,8 @@
         "origin": "weather_station_logger.py:19 --> shelly_discovery.py/resolve_one:448",
         "origin_timestamp": "2026-10-05-12-29-09",
         "registration_timestamp": "2026-10-05-12-29-09",
-        "reported": false,
-        "reported_timestamp": null,
+        "reported": true,
+        "reported_timestamp": "2026-10-05-12-30-31",
         "checked": false,
         "checked_timestamp": null
     },
@@ -7375,8 +7375,8 @@
         "origin": "heatmeters_logger.py:42 --> project.py/__init__:316 --> project.py/read:350 --> project.py/interact:344",
         "origin_timestamp": "2026-10-05-12-29-51",
         "registration_timestamp": "2026-10-05-12-29-51",
-        "reported": false,
-        "reported_timestamp": null,
+        "reported": true,
+        "reported_timestamp": "2026-10-05-12-30-31",
         "checked": false,
         "checked_timestamp": null
     },
@@ -7386,8 +7386,8 @@
         "origin": "schedule_and_config_updater.py/update_condensed_schedule_on_firebase:524 --> project.py/write:364 --> project.py/interact:344",
         "origin_timestamp": "2026-10-05-12-29-58",
         "registration_timestamp": "2026-10-05-12-29-58",
-        "reported": false,
-        "reported_timestamp": null,
+        "reported": true,
+        "reported_timestamp": "2026-10-05-12-30-31",
         "checked": false,
         "checked_timestamp": null
     },
@@ -7397,8 +7397,8 @@
         "origin": "schedule_and_config_updater.py/update_valid_requests_on_firebase:588 --> project.py/write:364 --> project.py/interact:344",
         "origin_timestamp": "2026-10-05-12-30-08",
         "registration_timestamp": "2026-10-05-12-30-09",
-        "reported": false,
-        "reported_timestamp": null,
+        "reported": true,
+        "reported_timestamp": "2026-10-05-12-30-31",
         "checked": false,
         "checked_timestamp": null
     },
@@ -7408,8 +7408,8 @@
         "origin": "external_temp_scraper_and_logger.py:9 --> project.py/scrape_external_temperature:1053",
         "origin_timestamp": "2026-10-05-12-30-09",
         "registration_timestamp": "2026-10-05-12-30-09",
-        "reported": false,
-        "reported_timestamp": null,
+        "reported": true,
+        "reported_timestamp": "2026-10-05-12-30-31",
         "checked": false,
         "checked_timestamp": null
     },
@@ -7419,8 +7419,19 @@
         "origin": "pv_logger.py/main:475 --> pv_logger.py/read_live_row:306 --> webdriver.py/get:512 --> webdriver.py/execute:492 --> errorhandler.py/check_response:232",
         "origin_timestamp": "2026-10-05-12-30-13",
         "registration_timestamp": "2026-10-05-12-30-13",
-        "reported": false,
-        "reported_timestamp": null,
+        "reported": true,
+        "reported_timestamp": "2026-10-05-12-30-31",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to sync data and config with repo: Git command failed with exit code 1: git -C /media/pi/program_stick/kazanfutes -c merge.autoStash=false -c rebase.autoStash=false pull --no-rebase --no-edit origin main\nssh: Could not resolve hostname github.com: No address associated with hostname\nfatal: Could not read from remote repository.\n\nPlease make sure you have the correct access rights\nand the repository exists.: Git command failed with exit code 1: git -C /media/pi/program_stick/kazanfutes -c merge.autoStash=false -c rebase.autoStash=false pull --no-rebase --no-edit origin main\nssh: Could not resolve hostname github.com: No address associated with hostname\nfatal: Could not read from remote repository.\n\nPlease make sure you have the correct access rights\nand the repository exists. (GitCommandError).",
+        "severity": 2,
+        "origin": "data_and_config_uploader.py:32 --> project.py/sync_paths_with_repo:753",
+        "origin_timestamp": "2026-10-05-12-30-22",
+        "registration_timestamp": "2026-10-05-12-30-22",
+        "reported": true,
+        "reported_timestamp": "2026-10-05-12-30-31",
         "checked": false,
         "checked_timestamp": null
     }
