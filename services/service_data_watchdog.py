@@ -17,7 +17,7 @@ from utils.device_watchdog import (
 
 
 CONFIG_PATH = "config/service_data_watchdog.json"
-UNIT_LIST_PATH = "services/services_and_timers.list"
+UNIT_LIST_PATH = "services/systemd/services_and_timers.list"
 STATE_PATH = "system/service_data_watchdog_state.json"
 INCIDENTS_PATH = "system/service_data_watchdog_incidents.json"
 SOLVED_PATH = "data/logs/service_data_watchdog/solved_incidents.jsonl"

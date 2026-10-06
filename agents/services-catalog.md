@@ -4,7 +4,7 @@ This catalog is based on the source of executable scripts in `services/`. It sup
 
 ## How to use this catalog
 
-- **Lifecycle** means what the script itself does. A service can be timer-backed, continuous, or manual; check `services/services_and_timers.list` and installed unit files for the actual launcher.
+- **Lifecycle** means what the script itself does. A service can be timer-backed, continuous, or manual; check `services/systemd/services_and_timers.list` and installed unit files for the actual launcher.
 - **Outputs** are explicit logs, exported files, or remote writes in the source. They are candidates for monitoring.
 - A missing event in an event-driven log is not automatically a service failure.
 - This catalog deliberately does not assign `critical` or `revision`; those are operational decisions.
@@ -87,7 +87,7 @@ Discovers the configured Shelly gateway, reads the configured WS90 weather stati
 ### service_data_watchdog.py
 
 Runs the unified service/data watchdog. It discovers every unit in
-services/services_and_timers.list, checks timer state, continuous-service state, and
+services/systemd/services_and_timers.list, checks timer state, continuous-service state, and
 the last result of timer-backed jobs, and evaluates declared periodic data
 streams against the interval derived from their systemd timers plus a global
 grace. Event-driven streams are service-monitored without a stale-data rule.

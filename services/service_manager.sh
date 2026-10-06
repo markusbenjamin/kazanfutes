@@ -19,16 +19,16 @@
 #   sudo service_manager -usage
 #   sudo service_manager --usage
 #
-# list of units: /media/pi/program_stick/kazanfutes/services/services_and_timers.list
+# list of units: /media/pi/program_stick/kazanfutes/services/systemd/services_and_timers.list
 # one unit per line, blanks and # comments ignored
 
 set -u
 
 MOUNT_POINT=/media/pi/program_stick
 MANAGER_PATH=$MOUNT_POINT/kazanfutes/services/service_manager.sh
-SERVICES_DIR=$MOUNT_POINT/kazanfutes/services
+UNIT_SOURCE_DIR=$MOUNT_POINT/kazanfutes/services/systemd
 SYSTEMD_DIR=/etc/systemd/system
-LIST=$MOUNT_POINT/kazanfutes/services/services_and_timers.list
+LIST=$UNIT_SOURCE_DIR/services_and_timers.list
 STATE_DIR=/var/lib/kazanfutes
 DESIRED_STATE_FILE=$STATE_DIR/desired_state
 MONITOR_DIR=$STATE_DIR/unit_monitor
@@ -102,7 +102,7 @@ unit_lines() {
 
 install_unit_file() {
     local unit="$1"
-    local source="$SERVICES_DIR/$unit"
+    local source="$UNIT_SOURCE_DIR/$unit"
     local target="$SYSTEMD_DIR/$unit"
 
     if [ ! -f "$source" ]; then
@@ -636,7 +636,7 @@ validate_units() {
     local missing=0
 
     while IFS= read -r unit; do
-        local source="$SERVICES_DIR/$unit"
+        local source="$UNIT_SOURCE_DIR/$unit"
         local target="$SYSTEMD_DIR/$unit"
         [ -z "$unit" ] && continue
 
@@ -656,7 +656,7 @@ validate_units() {
 
     local extra
     for extra in "$TARGET_NAME" "$RECOVERY_SERVICE" "$RECOVERY_TIMER"; do
-        local source="$SERVICES_DIR/$extra"
+        local source="$UNIT_SOURCE_DIR/$extra"
         local target="$SYSTEMD_DIR/$extra"
 
         if [ ! -f "$source" ]; then
