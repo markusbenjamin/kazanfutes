@@ -50,8 +50,9 @@ class ServiceDataWatchdogTests(unittest.TestCase):
         config = {"streams": {relative: {"kind": "periodic", "max_age_minutes": 1500}}}
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            (root / "services").mkdir()
-            (root / "services" / "services_and_timers.list").write_text("", encoding="utf-8")
+            unit_directory = root / "services" / "systemd"
+            unit_directory.mkdir(parents=True)
+            (unit_directory / "services_and_timers.list").write_text("", encoding="utf-8")
             artifact = root / relative
             artifact.parent.mkdir(parents=True)
             artifact.write_text("{}", encoding="utf-8")
@@ -152,9 +153,9 @@ class ServiceDataWatchdogTests(unittest.TestCase):
         now = datetime(2026, 9, 15, 12, 0, tzinfo=timezone.utc)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            services = root / "services"
-            services.mkdir()
-            (services / "services_and_timers.list").write_text(
+            unit_directory = root / "services" / "systemd"
+            unit_directory.mkdir(parents=True)
+            (unit_directory / "services_and_timers.list").write_text(
                 "pv_logger.service\npv_logger.timer\n", encoding="utf-8"
             )
             config = {
