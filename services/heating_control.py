@@ -161,7 +161,7 @@ def get_system_state():
                 future_hour = (hour_of_day + h) % 24
                 future_day  = unix_day + (hour_of_day + h) // 24
 
-                if future_day not in schedule_for_days:
+                if str(future_day) not in schedule_for_days:
                     break
 
                 candidate = schedule_for_days[str(future_day)][str(future_hour)]
