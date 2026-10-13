@@ -3463,6 +3463,15 @@ def check_lock(relative_path: str, stale_threshold: int = 300) -> bool:
       • or just returns True.
     Else: returns False.
     """
+    if relative_path == GPIO_STATE_RELATIVE_PATH:
+        # FileLock leaves this file behind after release; test the OS lock.
+        # Never remove it as a stale sentinel while another writer may use it.
+        try:
+            with _GPIO_state_lock().acquire(timeout=0):
+                return False
+        except filelock.Timeout:
+            return True
+
     lock_file = os.path.join(get_project_root(), relative_path) + ".lock"
     if os.path.isfile(lock_file):
         age = time.time() - os.path.getmtime(lock_file)

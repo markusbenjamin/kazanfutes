@@ -4,7 +4,14 @@ from utils.project import *
 import sys
 
 
-SYNC_PATHS = ['data/', 'config/', 'system/state.json']
+SYNC_PATHS = [
+    'data/',
+    'config/',
+    'system/state.json',
+    'system/GPIO_state.json',
+    'system/PID_state.json',
+    'system/control.json',
+]
 COMMIT_MESSAGE = 'Automatic data and config push.'
 
 
