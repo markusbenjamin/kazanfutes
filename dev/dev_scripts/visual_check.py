@@ -12,15 +12,23 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OUTPUT_DIRECTORY = PROJECT_ROOT / "data" / "logs" / "visual"
 CAMERA_DEVICES = ("/dev/video0", "/dev/video2")
 RESOLUTION = "1280x720"
+PRE_CAPTURE_DELAY_SECONDS = 2
+SKIPPED_FRAMES = 30
 
 
 def capture_image(device: str, destination: Path) -> None:
-    """Capture one JPEG from a specified V4L2 device using fswebcam."""
+    """Capture one settled JPEG from a specified V4L2 device using fswebcam."""
     subprocess.run(
         [
             "fswebcam",
             "-d",
             device,
+            "--set",
+            "power_line_frequency=1",
+            "--delay",
+            str(PRE_CAPTURE_DELAY_SECONDS),
+            "--skip",
+            str(SKIPPED_FRAMES),
             "-r",
             RESOLUTION,
             "--no-banner",
