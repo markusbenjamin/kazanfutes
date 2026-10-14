@@ -25,6 +25,7 @@
     "temperature_and_humidity/temperature_and_humidity.json": { "service": "temperature_and_humidity_logger.service", "kind": "periodic" },
     "thermostats/thermostats_state.json": { "service": "thermostats_manager.service", "kind": "periodic" },
     "electricity/main_meter.json": { "service": "electric_meter_logger.service", "kind": "periodic" },
+    "boilers_power/boiler_plugs.json": { "service": "boiler_power_monitor.service", "kind": "periodic", "max_age_minutes": 5 },
     "heat_delivery/heatmeters_state.json": { "service": "heatmeters_logger.service", "kind": "periodic" },
     "radiator_temps/radiator_temps.json": { "service": "radiator_temps_logger.service", "kind": "periodic" },
     "weather_station/weather_station.json": { "service": "weather_station_logger.service", "kind": "periodic" },

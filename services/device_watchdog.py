@@ -14,8 +14,10 @@ from datetime import datetime
 from typing import Any
 
 import requests
+from filelock import FileLock
 
 from utils.project import *  # noqa: F401,F403 - shared project transport helpers
+from utils.boiler_power import collect_boiler_plugs, boiler_device_ids
 from utils.shelly_discovery import build_shelly_resolver, load_shelly_config
 from utils.device_watchdog import (
     INCIDENTS_RELATIVE_PATH,
@@ -24,6 +26,7 @@ from utils.device_watchdog import (
     STATE_RELATIVE_PATH,
     DIGEST_RELATIVE_PATH,
     append_ndjson,
+    arm_boiler_plugs,
     apply_battery_scale_learning,
     atomic_write_json,
     battery_observation,
@@ -581,16 +584,61 @@ def _recent_ndjson(path: str, limit: int = 50) -> list[dict[str, Any]]:
     return [record for record in records[-limit:] if isinstance(record, dict)]
 
 
-def run(config: dict[str, Any], *, dry_run: bool = False) -> dict[str, Any]:
+def run(
+    config: dict[str, Any], *, dry_run: bool = False,
+    boiler_only: bool = False,
+) -> dict[str, Any]:
+    root = get_project_root()
+    lock_path = os.path.join(root, "system", "device_watchdog.lock")
+    with FileLock(lock_path, timeout=55):
+        return _run_locked(config, dry_run=dry_run, boiler_only=boiler_only)
+
+
+def _run_locked(
+    config: dict[str, Any], *, dry_run: bool, boiler_only: bool,
+) -> dict[str, Any]:
     root = get_project_root()
     now = datetime.now().astimezone()
     incidents_path = os.path.join(root, INCIDENTS_RELATIVE_PATH)
     previous = read_json(incidents_path, initial_incident_state())
+    if boiler_only:
+        devices = collect_boiler_plugs(root, now)
+        arm_boiler_plugs(devices, previous, now)
+        incidents, opened, solved = update_incidents(
+            previous, devices, config, now,
+            scope_device_ids=boiler_device_ids(root),
+        )
+        if not dry_run:
+            for device in devices:
+                facts = device["facts"]
+                log_data({
+                    "device_id": device["device_id"],
+                    "name": device["name"],
+                    "reachable": facts.get("reachable"),
+                    "output_on": facts.get("output_on"),
+                    "switch_source": facts.get("switch_source"),
+                    "collection_error": facts.get("collection_error"),
+                    "measurements": facts.get("measurements", {}),
+                }, "boilers_power/boiler_plugs.json")
+            live = config.get("mode", "shadow") == "live"
+            if live:
+                queue_resolution_notifications(incidents, solved)
+            atomic_write_json(incidents_path, incidents)
+            for entry in solved:
+                append_ndjson(os.path.join(root, SOLVED_RELATIVE_PATH), entry)
+            if live:
+                _notify_critical(incidents, now)
+                _notify_resolutions(incidents, now)
+                atomic_write_json(incidents_path, incidents)
+        return {"devices": devices, "incidents": incidents,
+                "opened": opened, "solved": solved}
     devices = collect_all(config)
+    devices.extend(collect_boiler_plugs(root, now))
     manual_state = read_json(os.path.join(root, MANUAL_STATE_RELATIVE_PATH), initial_manual_state())
     apply_manual_state(devices, manual_state, previous)
     apply_heating_context(devices, config)
     apply_battery_scale_learning(devices, previous, config, now)
+    arm_boiler_plugs(devices, previous, now)
     incidents, opened, solved = update_incidents(previous, devices, config, now)
     current_snapshot = snapshot(devices, incidents, now)
     inventory_path = os.path.join(root, INVENTORY_RELATIVE_PATH)

@@ -292,6 +292,7 @@ def hardware_type_for(device: dict[str, Any]) -> str:
         "zigbee_gateway": "deCONZ Zigbee gateway",
         "heatmeter": "Modbus heat meter",
         "shelly": "Shelly device",
+        "boiler_power_plug": "Shelly Plug M Gen3",
         "radiator_temperature": "DS18B20 via Shelly",
         "weather_station": "WS90 weather station",
         "electricity_meter": "HomeWizard Energy P1",
@@ -334,6 +335,30 @@ def candidates_for(device: dict[str, Any], config: dict[str, Any], now: datetime
     policy = policy_for(device, config)
     facts = device.get("facts", {})
     candidates: list[dict[str, Any]] = []
+    if device.get("profile") == "boiler_power_plug":
+        if not facts.get("armed"):
+            return []
+        if facts.get("collection_error") or facts.get("reachable") is False or facts.get("output_on") is None:
+            candidate = issue(
+                device, "state_unknown",
+                f"Cannot verify relay state: {facts.get('collection_error') or 'no valid output state'}",
+                policy,
+                evidence={"last_seen_at": facts.get("last_seen_at")},
+            )
+            candidate["open_after_runs"] = 2
+            return [candidate]
+        if facts["output_on"] is False:
+            source = facts.get("switch_source") or "unknown"
+            return [issue(
+                device, "output_off", f"Relay output is OFF (last source: {source})",
+                policy,
+                evidence={
+                    "source": source,
+                    "errors": facts.get("switch_errors") or [],
+                    "measurements": facts.get("measurements") or {},
+                },
+            )]
+        return []
     if facts.get("incomplete_interview"):
         candidates.append(issue(
             device,
@@ -414,6 +439,7 @@ def initial_incident_state() -> dict[str, Any]:
         "active": {},
         "pending": {},
         "known_devices": {},
+        "boiler_plug_armed": {},
         "battery_scale_learning": {},
         "pending_resolution_notifications": {},
         "digest_sent_for": None,
@@ -422,11 +448,28 @@ def initial_incident_state() -> dict[str, Any]:
     }
 
 
+def arm_boiler_plugs(
+    devices: list[dict[str, Any]], state: dict[str, Any], now: datetime
+) -> None:
+    """Latch monitoring after the first confirmed ON observation, across restarts."""
+    armed = state.setdefault("boiler_plug_armed", {})
+    for device in devices:
+        if device.get("profile") != "boiler_power_plug":
+            continue
+        device_id = device["device_id"]
+        facts = device.setdefault("facts", {})
+        if facts.get("output_on") is True and device_id not in armed:
+            armed[device_id] = now_iso(now)
+        facts["armed"] = device_id in armed
+
+
 def update_incidents(
     previous: dict[str, Any],
     devices: list[dict[str, Any]],
     config: dict[str, Any],
     now: datetime,
+    *,
+    scope_device_ids: set[str] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
     """Advance persistent incident state and return opened/solved transitions."""
     state = copy.deepcopy(previous or initial_incident_state())
@@ -456,6 +499,8 @@ def update_incidents(
         if candidate["kind"] == "unreachable"
     }
     for device_id, known in state["known_devices"].items():
+        if scope_device_ids is not None and device_id not in scope_device_ids:
+            continue
         if device_id in current_device_ids:
             continue
         if set(known.get("dependencies") or []).intersection(gateway_down):
@@ -496,11 +541,22 @@ def update_incidents(
             pending[incident_id] = tracker
 
     solved: list[dict[str, Any]] = []
+    unknown_device_ids = {
+        candidate["device_id"] for candidate in current_candidates.values()
+        if candidate["kind"] == "state_unknown"
+    }
     for incident_id in list(pending):
+        pending_device_id = pending[incident_id].get("candidate", {}).get("device_id")
+        if scope_device_ids is not None and pending_device_id not in scope_device_ids:
+            continue
         if incident_id not in current_candidates:
             pending.pop(incident_id, None)
     for incident_id, incident in list(active.items()):
+        if scope_device_ids is not None and incident["device_id"] not in scope_device_ids:
+            continue
         if incident_id in current_candidates:
+            continue
+        if incident.get("kind") == "output_off" and incident["device_id"] in unknown_device_ids:
             continue
         if set(incident.get("dependencies") or []).intersection(gateway_down):
             continue

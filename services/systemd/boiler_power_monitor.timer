@@ -1,0 +1,10 @@
+[Unit]
+Description=Read boiler plug power and relay state every minute
+
+[Timer]
+OnCalendar=*:0/1
+Persistent=true
+WakeSystem=false
+
+[Install]
+WantedBy=timers.target

@@ -11,6 +11,12 @@
     "reconnect_delay_seconds": 10
   },
   "devices": {
+    "boiler_1_plug": {
+      "mac": "08:92:72:59:0e:b4"
+    },
+    "boiler_2_plug": {
+      "mac": "90:70:69:4f:1b:d0"
+    },
     "almero1": {
       "mac": "84:1f:e8:f9:b4:08",
       "device_names": [
@@ -132,6 +138,10 @@
       }
     }
   },
+  "boiler_power_devices": [
+    "boiler_1_plug",
+    "boiler_2_plug"
+  ],
   "radiator_devices": [
     "golya_radiatorok_shelly",
     "szgk_radiator_shelly",
