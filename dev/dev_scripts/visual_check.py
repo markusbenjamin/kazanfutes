@@ -35,10 +35,10 @@ CAMERAS = (
         "delay_seconds": 2,
         "skip_frames": 30,
         "controls": {
-            "Gain": 0,
+            "Gain": 255,
             "Power Line Frequency": "50 Hz",
             "Auto Exposure": "Manual Mode",
-            "Exposure Time, Absolute": 100,
+            "Exposure Time, Absolute": 2000,
         },
     },
 )
