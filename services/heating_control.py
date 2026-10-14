@@ -1,8 +1,174 @@
 """
-Main heating control script.
+Heating control with the existing schedule, interpolation and pump voting logic.
+PID history is bounded and advances only after confirmed thermostat commands.
 """
 
 from utils.project import *
+
+#region PID calculation
+PID_STATE_VERSION = 2
+PID_MAX_GAP_SECONDS = 300.0  # A minute-based loop must not integrate an outage.
+PID_MAX_LAG = 5.0
+PID_MAX_BRAKING = 0.2
+# Preserve the two existing thresholds; a vote threshold is not a bias limit.
+PID_OVERSHOOT_VOTE_THRESHOLD = 0.2
+PID_OVERSHOOT_DEADBAND = 0.5
+
+
+def read_pid_gains(config):
+    gains = {key: float(config[key]) for key in
+             ('gain_P_lag', 'gain_I', 'gain_P_overshoot', 'gain_D')}
+    if any(not math.isfinite(value) or value < 0 for value in gains.values()):
+        raise ValueError('PID gains must be finite and non-negative')
+    return gains
+
+
+def calculate_pid_overlay(set_temp, measured_temp, sensor_timestamp,
+                          valve_percent, valve_threshold, previous, gains, now):
+    """Calculate one TRV's existing PI/PD overlay without I/O.
+
+    Integral state is a non-negative heating bias, limited to 5 K. Negative
+    error unwinds it to zero instead of accumulating a future heating deficit.
+    The caller must save next_state only after the TRV command is confirmed.
+    Legacy state is deliberately discarded, not merely clipped to the limit.
+    """
+    if any(not math.isfinite(float(value)) for value in
+           (set_temp, measured_temp, valve_percent, valve_threshold)):
+        raise ValueError('PID inputs must be finite')
+    gains = read_pid_gains(gains)
+    fmt = settings['timestamp_format']
+    # Timestamp trouble must not stop the room/pump control loop. With a valid
+    # temperature, retain proportional control and reset uncertain I/D history.
+    try:
+        sample_time = datetime.strptime(sensor_timestamp, fmt)
+        sample_invalid = sample_time > now
+    except (TypeError, ValueError):
+        sample_invalid = True
+    if sample_invalid:
+        sample_time = now
+    signature = [gains[key] for key in
+                 ('gain_P_lag', 'gain_I', 'gain_P_overshoot', 'gain_D')]
+    reset_reason = None
+    dt_PID = 0.0
+    bias_I_prev = 0.0
+    temp_prev = measured_temp
+    previous_sample_time = sample_time
+
+    if sample_invalid:
+        reset_reason = 'invalid_sensor_timestamp'
+    elif not isinstance(previous, dict) or previous.get('version') != PID_STATE_VERSION:
+        reset_reason = 'new_or_legacy_state'
+    else:
+        try:
+            elapsed = (now - datetime.strptime(previous['timestamp'], fmt)).total_seconds()
+            integral = float(previous['bias_I'])
+            previous_temp = float(previous['temp'])
+            previous_target = float(previous['set_temp'])
+            old_sample = datetime.strptime(previous['sensor_timestamp'], fmt)
+            if (not all(math.isfinite(v) for v in (integral, previous_temp, previous_target))
+                    or not 0 <= integral <= PID_MAX_LAG):
+                reset_reason = 'invalid_state'
+            elif previous.get('gains') != signature:
+                reset_reason = 'gains_changed'
+            elif elapsed < 0 or elapsed > PID_MAX_GAP_SECONDS:
+                reset_reason = 'clock_change_or_gap'
+            elif sample_time < old_sample:
+                reset_reason = 'sensor_clock_change'
+            elif set_temp < previous_target:
+                reset_reason = 'target_reduced'
+            else:
+                dt_PID = elapsed
+                bias_I_prev = integral
+                temp_prev = previous_temp
+                previous_sample_time = old_sample
+        except (KeyError, TypeError, ValueError, OverflowError):
+            reset_reason = 'invalid_state'
+
+    error_raw = set_temp - measured_temp
+    error_pos = max(0.0, error_raw)
+    bias_P_lag = gains['gain_P_lag'] * error_pos
+    bias_I = bias_I_prev
+    if gains['gain_I'] == 0:
+        bias_I = 0.0
+    elif error_raw > 0:
+        # Limit the increment itself, not only the final output. If P already
+        # saturates the output, retain I without accumulating more of it.
+        headroom = max(0.0, PID_MAX_LAG - bias_P_lag - bias_I_prev)
+        bias_I += min(gains['gain_I'] * error_raw * dt_PID, headroom)
+    else:
+        bias_I = max(0.0, bias_I_prev + gains['gain_I'] * error_raw * dt_PID)
+    bias_I = min(PID_MAX_LAG, max(0.0, bias_I))
+    weight_lag = logistic_sigmoid(error_pos, 0.25, 20, 0, 1) if error_raw > 0 else 0.0
+    bias_lag = weight_lag * min(PID_MAX_LAG, max(0.0, bias_P_lag + bias_I))
+
+    # Use the measurement interval, not the control-loop interval. An unchanged
+    # sample contributes no derivative; a missing history contributes no kick.
+    dT = measured_temp - temp_prev
+    sample_dt = (sample_time - previous_sample_time).total_seconds()
+    heat_rate = dT / sample_dt if sample_dt > 0 and reset_reason is None else 0.0
+    valve_active = valve_percent > valve_threshold
+    overshoot = max(0.0, measured_temp - (set_temp + PID_OVERSHOOT_DEADBAND))
+    weight_overshoot = int(error_raw < -PID_OVERSHOOT_VOTE_THRESHOLD and valve_active)
+    bias_P_overshoot = -gains['gain_P_overshoot'] * overshoot
+    bias_D = -gains['gain_D'] * max(0.0, heat_rate)
+    bias_overshoot = weight_overshoot * max(-PID_MAX_BRAKING,
+                                           min(0.0, bias_P_overshoot + bias_D))
+    net_bias = bias_lag + bias_overshoot
+    set_PID = set_temp + net_bias
+    regime = 'lag' if weight_lag > 0 else 'overshoot' if weight_overshoot else 'neutral'
+    next_state = {
+        'version': PID_STATE_VERSION, 'bias_I': bias_I, 'temp': measured_temp,
+        'timestamp': now.strftime(fmt),
+        'sensor_timestamp': None if sample_invalid else sensor_timestamp,
+        'set_temp': set_temp, 'gains': signature,
+    }
+    return {
+        'next_state': next_state, 'setpoint': set_PID,
+        'room_overshoot': bool(weight_overshoot),
+        'log': {
+            'config': dict(gains, bias_max_lag=PID_MAX_LAG,
+                           bias_max_overshoot=PID_MAX_BRAKING,
+                           overshoot_vote_threshold=PID_OVERSHOOT_VOTE_THRESHOLD,
+                           overshoot_bias_hysteresis=PID_OVERSHOOT_DEADBAND,
+                           valve_active_threshold=valve_threshold,
+                           max_gap_seconds=PID_MAX_GAP_SECONDS),
+            'state': {'bias_I_prev': bias_I_prev, 'bias_I': bias_I,
+                      'temp_prev': temp_prev, 'temp': measured_temp,
+                      'dt_PID': dt_PID, 'sample_dt': sample_dt,
+                      'reset_reason': reset_reason},
+            'signals': {'error_raw': error_raw, 'error_pos': error_pos,
+                        'overshoot': overshoot, 'dT': dT, 'heat_rate': heat_rate,
+                        'valve_active': valve_active},
+            'outputs': {'bias_lag': bias_lag, 'weight_lag': weight_lag,
+                        'bias_overshoot': bias_overshoot,
+                        'weight_overshoot': weight_overshoot, 'net_bias': net_bias,
+                        'set_temp_nominal': set_temp, 'set_temp_requested': set_PID},
+            'regime': regime,
+        },
+    }
+
+
+def apply_pid_overlay(thermostat, result, measured_temp, PID_state):
+    """Confirm a write before advancing state; isolate individual TRV failures."""
+    confirmed = False
+    try:
+        confirmed = bool(set_thermostat_state_by_id(
+            thermostat, heatsetpoint=result['setpoint'],
+            externalsensortemp=measured_temp))
+        if not confirmed:
+            ServiceException(f'TRV {thermostat} PID command was not confirmed', severity=2)
+    except Exception as error:
+        ServiceException(f'TRV {thermostat} PID command failed: {error}', severity=2)
+    result['log']['command_confirmed'] = confirmed
+    result['log']['outputs']['set_temp_effective'] = result['setpoint'] if confirmed else None
+    if confirmed:
+        PID_state[thermostat] = result['next_state']
+    else:
+        # A retry starts clean, rather than integrating time against an
+        # unconfirmed command. Other rooms can still be controlled this cycle.
+        PID_state.pop(thermostat, None)
+    return confirmed
+#endregion
 
 if True:
     settings["log"] = True
@@ -113,10 +279,10 @@ def get_system_state():
         ServiceException(f"Unexpected error while acquiring measured temps and humidity", severity = 3)
 
     log({f"success_acquire_measured_temps_and_humidity":success})
-    
+
     success = False
     try:
-        report("Acquiring occupancy.",verbose=True)       
+        report("Acquiring occupancy.",verbose=True)
         occupancy = get_rooms_occupancy()
 
         system_state['occupancy'] = occupancy
@@ -207,7 +373,7 @@ def get_system_state():
 
     success = False
     try:
-        report("Acquiring valve states.",verbose=True)       
+        report("Acquiring valve states.",verbose=True)
         valve_states = {}
         for room, info in rooms.items():
             valve_states_for_room = []
@@ -250,7 +416,7 @@ def get_system_state():
 
     success = False
     try:
-        report("Acquiring pump states.",verbose=True)       
+        report("Acquiring pump states.",verbose=True)
         system_state['pump_states'] = get_pump_states()
 
         report("Successfully acquired pump states.")
@@ -266,7 +432,7 @@ def get_system_state():
 
     success = False
     try:
-        report("Acquiring boiler state.",verbose=True)       
+        report("Acquiring boiler state.",verbose=True)
         system_state['boiler_state'] = get_boiler_state()
 
         report("Successfully acquired boiler state.")
@@ -290,16 +456,16 @@ def compare_and_command(heating_switch:dict, system_state:dict):
         1       1       1       aNorm
         1       0       1       aPSD
         0       1       1       aTSD
-        0       0       1       aPTSD          
-        1       0       0       bNorm          
+        0       0       1       aPTSD
+        1       0       0       bNorm
         0       0       0       bTSD
-    
+
     Logic: https://docs.google.com/presentation/d/1JVkR888i549N9s0fq-km47kBXYoeGFToBFRARagczR4/edit?slide=id.g7309d6401d1e61ac_185#slide=id.g7309d6401d1e61ac_185
         Core:
             Give heat to room based on learned presence patterns, actual presence and measured temp.
             If possible, turn on room only, if not, entire cycle.
             Preparatory heating based on warming characteristics.
-    
+
         Elements: for each controlled room
             > sheet - manually set presence probabilities
             > override - override request, from:
@@ -342,7 +508,7 @@ def compare_and_command(heating_switch:dict, system_state:dict):
                         - if differs from pump state issue command and log decision
                         - unless cycle-wise off is set
                 Boiler: if differs from boiler state issue command and log decision
-            
+
         Cases:
             aNorm: normal control flow for rooms with a valve
                 - flow above
@@ -362,7 +528,7 @@ def compare_and_command(heating_switch:dict, system_state:dict):
                     - no valve interaction at the end
             bTSD: degraded control flow with no current temp data for rooms without a valve
                 - turn pumps and boiler based on presence with override
-                - log degradation error 
+                - log degradation error
     """
     report('\nCOMPARING SET TEMPS TO ACTUAL TEMPS TO DETERMINE VOTES')
     success = False
@@ -373,11 +539,16 @@ def compare_and_command(heating_switch:dict, system_state:dict):
         cycle_votes = {'1':0,'2':0,'3':0,'4':0}
         report('Room votes:',verbose=True)
         control['rooms'] = {}
-        PID_state = load_json_to_dict("system/PID_state.json")
-        gain_P_lag   = float(heating_config['gain_P_lag'])     # P for heating (lag) regime
-        gain_I   = float(heating_config['gain_P_lag'])   # [1/s] I for heating regime
-        gain_P_overshoot  = float(heating_config['gain_P_overshoot'])      # P for braking (overshoot) regime
-        gain_D  = float(heating_config['gain_D'])    # [s] D for braking regime
+        try:
+            PID_state = load_json_to_dict("system/PID_state.json")
+        except ModuleException:
+            report("PID state unavailable; initializing bounded state.", verbose=True)
+            PID_state = {}
+        if not isinstance(PID_state, dict):
+            PID_state = {}
+        gains = read_pid_gains(heating_config)
+        active_PID_thermostats = set()
+        pid_commands_confirmed = True
         PID_log = {}
 
         for room in rooms_info:
@@ -394,7 +565,7 @@ def compare_and_command(heating_switch:dict, system_state:dict):
             demand_close = int(heating_config['demand_hysteresis_close'])
             error_max = float(heating_config['error_max'])
             error_min = float(heating_config['error_min'])
-            
+
             thermostats = rooms_info[room]["thermostats"].split(";") if isinstance(rooms_info[room]["thermostats"], str) else False
             room_vote = 0
             reason = 'None given'
@@ -440,127 +611,32 @@ def compare_and_command(heating_switch:dict, system_state:dict):
                             bias_report = []
                             thermostat_i = 0
                             for thermostat in thermostats:
-                                bias_max_lag  = 5.0      # max +K overlay [K]
-                                bias_max_overshoot = 0.2      # max -K overlay
-
-                                overshoot_bias_hysteresis = 0.5     # [K] small deadband above set
-                                valve_active_threshold = demand_open # [%] valve opening percent
-                                valve_open_percent = system_state["valve_states"][room][thermostat_i]
-                                valve_active = valve_active_threshold < valve_open_percent
-
-                                # Init PID
-                                bias_I_prev = 0.0
-                                temp_prev   = measured_temp
-                                dt_PID      = 1.0
-
-                                if thermostat in PID_state:
-                                    bias_I_prev = PID_state[thermostat]['bias_I']
-                                    temp_prev   = PID_state[thermostat]['temp']
-                                    dt_PID = max(
-                                        (datetime.now() - timestamp_to_datetime(PID_state[thermostat]['timestamp'])).total_seconds(),
-                                        1.0
-                                    )
-                                
-                                dT        = measured_temp - temp_prev
-                                heat_rate = dT / dt_PID
-                                overshoot = max(0.0, measured_temp - (set_temp + overshoot_bias_hysteresis))
-
-                                # Calculate lag PI bias
-                                bias_P_lag = gain_P_lag * error_pos
-                                u_unsat_prev = bias_P_lag + bias_I_prev
-
-                                if error_raw > 0: # below setpoint: grow I only if not saturated high
-                                    if u_unsat_prev < bias_max_lag:
-                                        bias_I = bias_I_prev + gain_I * error_raw * dt_PID
-                                    else:
-                                        bias_I = bias_I_prev
-                                else: # at/above setpoint: allow I to unwind regardless of saturation
-                                    bias_I = bias_I_prev + gain_I * error_raw * dt_PID
-                                weight_lag = logistic_sigmoid(error_pos, 0.25, 20, 0, 1) if error_raw > 0 else 0
-                                bias_lag     = weight_lag * max(0.0, min(bias_P_lag + bias_I, bias_max_lag))   # ≥ 0
-
-                                # Calculate overshoot PD bias
-                                bias_P_overshoot = -gain_P_overshoot * overshoot
-                                bias_D = -gain_D * max(0.0, heat_rate)
-                                weight_overshoot = 1 if error_raw < -bias_max_overshoot and valve_active else 0
-                                bias_overshoot     = weight_overshoot * min(bias_P_overshoot + bias_D, 0.0)
-
-                                regime = "internal" # In range, Ally TRV internal PI(D?)
-                                if weight_lag > 0:
-                                    regime = "lag" # Lagging, PI overlay
-                                elif weight_overshoot > 0:
-                                    regime = "overshoot" # Overshooting, PD overlay
-                                    room_overshoot = True
-                                else:
-                                    regime = "neutral" # TRV is asleep, no control
-
-                                # Persistence
-                                PID_state[thermostat] = {
-                                    'bias_I':   bias_I,
-                                    'temp':     measured_temp,
-                                    'timestamp': timestamp(),
-                                }
-
-                                # Net bias
-                                net_bias = bias_lag + bias_overshoot
-                                bias_report.append(net_bias)
-                                set_PID = set_temp + net_bias
-
-                                set_thermostat_state_by_id(
-                                    thermostat,
-                                    heatsetpoint      = set_PID,
-                                    externalsensortemp= measured_temp,
-                                )
-                                
-                                PID_log[room][thermostat] = {
-                                    "config": {
-                                        "gain_P_lag":            gain_P_lag,
-                                        "gain_I":                gain_I,
-                                        "gain_P_overshoot":      gain_P_overshoot,
-                                        "gain_D":                gain_D,
-                                        "bias_max_lag":          bias_max_lag,
-                                        "bias_max_overshoot":    bias_max_overshoot,
-                                        "overshoot_bias_hysteresis":   overshoot_bias_hysteresis,
-                                        "valve_active_threshold": valve_active_threshold,
-                                    },
-                                    "state": {
-                                        "bias_I_prev":  bias_I_prev,
-                                        "bias_I":       bias_I,
-                                        "temp_prev":    temp_prev,
-                                        "temp":         measured_temp,
-                                        "dt_PID":       dt_PID,
-                                    },
-                                    "signals": {
-                                        "error_raw":    error_raw,
-                                        "error_pos":    error_pos,
-                                        "overshoot":    overshoot,
-                                        "dT":           dT,
-                                        "heat_rate":    heat_rate,
-                                        "valve_active": valve_active,
-                                    },
-                                    "outputs": {
-                                        "bias_lag":          bias_lag,
-                                        "weight_lag":        weight_lag,
-                                        "bias_overshoot":    bias_overshoot,
-                                        "weight_overshoot":  weight_overshoot,
-                                        "net_bias":          net_bias,
-                                        "set_temp_nominal":  set_temp,
-                                        "set_temp_effective": set_PID,
-                                    },
-                                    "regime": regime,
-                                }
+                                active_PID_thermostats.add(thermostat)
+                                result = calculate_pid_overlay(
+                                    set_temp, measured_temp, sensor_last_updated,
+                                    system_state['valve_states'][room][thermostat_i],
+                                    demand_open, PID_state.get(thermostat), gains,
+                                    datetime.now())
+                                set_PID = result['setpoint']
+                                regime = result['log']['regime']
+                                room_overshoot = room_overshoot or result['room_overshoot']
+                                bias_report.append(result['log']['outputs']['net_bias'])
+                                confirmed = apply_pid_overlay(
+                                    thermostat, result, measured_temp, PID_state)
+                                pid_commands_confirmed = confirmed and pid_commands_confirmed
+                                PID_log[room][thermostat] = result['log']
 
                                 thermostat_i += 1
 
                             PID_report = f", (error: {format_to_decimals(error_raw, 2)}, {regime}, bias: {[format_to_decimals(bias, 2) for bias in bias_report]})"
-                            
+
                             if  demand < demand_open:
                                 room_vote = 0 # Does nothing in current vote-additive logic just included for completeness
                                 reason = 'Closed valves'
                                 reason_control = 'd_low'
                                 relation = f"{demand} < {demand_open} %{PID_report}"
                             elif demand_open < demand:
-                                room_vote = 1 
+                                room_vote = 1
                                 reason = 'Open valves'
                                 reason_control = 'd_high'
                                 relation = f"{demand_open} < {demand} %{PID_report}"
@@ -573,7 +649,7 @@ def compare_and_command(heating_switch:dict, system_state:dict):
                                 room_vote = 0 # Does nothing in current vote-additive logic just included for completeness
                                 reason = 'Above set temp'
                                 reason_control = 'above'
-                                relation = f"{set_temp + 0.5} < {measured_temp} {PID_report} °C" #DEV: + 0.5 helyett overshoot hysteresis val
+                                relation = f"{set_temp + PID_OVERSHOOT_VOTE_THRESHOLD} < {measured_temp} {PID_report} °C"
                         else:
                             if  measured_temp < set_low:
                                 room_vote = 1
@@ -610,13 +686,17 @@ def compare_and_command(heating_switch:dict, system_state:dict):
                 room_vote = 0
                 reason = f"Cycle {cycle} master OFF"
                 reason_control = 'c_m_off'
-            
+
             report(f"\t{reason} ({relation}): {'['+rooms_info[room]['name']+']' if system_state['occupancy'][room] else rooms_info[room]['name']} voting {['OFF','ON'][room_vote]} for cycle {cycle}.",verbose=True)
             control['rooms'][room] = {'vote':room_vote,'reason':reason_control}
             room_votes[room] = room_vote
             system_state['room_states'][room] = room_vote
             cycle_votes[cycle] += room_vote
-        
+
+        # Drop history for disabled/degraded rooms so re-enabling cannot reuse
+        # an old integral or integrate the time spent outside PID control.
+        PID_state = {th: state for th, state in PID_state.items()
+                     if th in active_PID_thermostats}
         export_dict_as_json(PID_state, "system/PID_state.json")
 
         control['cycles'] = {}
@@ -635,32 +715,33 @@ def compare_and_command(heating_switch:dict, system_state:dict):
         log({'boiler_vote':boiler_vote})
 
         cycles_info = get_cycles_info()
-        report(f"Cycle votes:\n\t" + 
+        report(f"Cycle votes:\n\t" +
             '\n\t'.join([
                 cycles_info[cycle]['name'] + ': ' + str(vote) + ' room wants heating.'
-                for 
-                cycle, vote 
+                for
+                cycle, vote
                 in cycle_votes.items()
             ]), verbose=True)
-        report(f"Pump votes: " + 
+        report(f"Pump votes: " +
             ', '.join([
                 f"{pump}: {['OFF', 'ON'][vote]}"
-                for pump, vote 
+                for pump, vote
                 in pump_votes.items()
             ]) + ".", verbose=True)
-        report(f"Pump states: " + 
+        report(f"Pump states: " +
             ', '.join([
                 f"{pump}: {['OFF', 'ON'][state]}"
-                for pump, state 
+                for pump, state
                 in system_state['pump_states'].items()
             ]) + ".", verbose=True)
         report(f"Boiler vote: {['OFF','ON'][boiler_vote]}",verbose=True)
         report(f"Boiler state: {['OFF','ON'][system_state['boiler_state']]}",verbose=True)
 
+        control['pid_commands_confirmed'] = pid_commands_confirmed
         control['last_updated'] = timestamp()
         system_node.write(control,'control')
         export_dict_as_json(control,'system/control.json')
-        success = True
+        success = pid_commands_confirmed
     except ModuleException as e:
         system_node.write({'last_updated':timestamp(),'error':True,'where':'voting'},'control/error')
         ServiceException(f"Module error while voting", original_exception=e, severity = 3)
@@ -692,8 +773,8 @@ def compare_and_command(heating_switch:dict, system_state:dict):
             report(f"Issuing command to turn '{device}' {['OFF','ON'][setting]} in {delay} minutes.",verbose=True)
             return command
         else:
-            report(f"Command ('{device}': {['OFF','ON'][setting]}) already issued.",verbose=True)  
-    
+            report(f"Command ('{device}': {['OFF','ON'][setting]}) already issued.",verbose=True)
+
     success = False
     try:
         existing_commands = load_commands(COMMANDS_PATH)
@@ -706,7 +787,7 @@ def compare_and_command(heating_switch:dict, system_state:dict):
                 append_valid_command(issue_command(existing_commands, f'pump_{cycle}', delay, pump_votes[cycle]))
         if system_state['boiler_state'] != boiler_vote:
             append_valid_command(issue_command(existing_commands,'boiler',0,boiler_vote))
-        
+
         refresh_commands(existing_commands + new_commands)
         success = True
     except ModuleException as e:
@@ -773,7 +854,7 @@ def execute_commands():
             try:
                 latest_unexecuted_command_past_due = sorted(
                     list(filter(
-                    lambda command: 
+                    lambda command:
                     not command['executed'] and # As of yet unexecuted commands
                     command['device'] == device and # For this device
                     timestamp_to_datetime(command['due_timestamp'])<datetime.now(), # That are past due
@@ -845,7 +926,7 @@ if __name__ == '__main__':
     #settings['dev'] = True
     if settings['dev']:
         settings['log'] = False
-    
+
     settings['verbosity'] = True
 
     heating_switch = acquire_heating_switch()
@@ -859,6 +940,7 @@ if __name__ == '__main__':
         if settings['on_raspi']:
             try:
                 shutdown_heating()
+                export_dict_as_json({}, "system/PID_state.json")
             except ModuleException as e:
                 system_node.write({'last_updated':timestamp(),'error':True,'where':'shutdown_heating'},'control/error')
                 ServiceException(f"Module error while shutting down heating", original_exception=e, severity = 3)
