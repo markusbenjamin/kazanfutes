@@ -1,4 +1,4 @@
-"""Capture one timestamped JPEG from each connected visual-check webcam."""
+"""Capture one timestamped JPEG from each configured visual-check webcam."""
 
 from __future__ import annotations
 
@@ -10,58 +10,80 @@ import sys
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OUTPUT_DIRECTORY = PROJECT_ROOT / "data" / "logs" / "visual"
-CAMERA_DEVICES = ("/dev/video0", "/dev/video2")
 RESOLUTION = "1280x720"
-PRE_CAPTURE_DELAY_SECONDS = 2
-SKIPPED_FRAMES = 30
-EXPOSURE_TIME_ABSOLUTE = 100
-GAIN = 0
+
+# Each control name must match the name reported by:
+# fswebcam -d /dev/videoN --list-controls
+#
+# For example, a fixed-focus camera can use:
+# "Focus, Automatic Continuous": "False",
+# "Focus, Absolute": 100,
+CAMERAS = (
+    {
+        "device": "/dev/video0",
+        "delay_seconds": 2,
+        "skip_frames": 30,
+        "controls": {
+            "Gain": 0,
+            "Power Line Frequency": "50 Hz",
+            "Auto Exposure": "Manual Mode",
+            "Exposure Time, Absolute": 100,
+        },
+    },
+    {
+        "device": "/dev/video2",
+        "delay_seconds": 2,
+        "skip_frames": 30,
+        "controls": {
+            "Gain": 0,
+            "Power Line Frequency": "50 Hz",
+            "Auto Exposure": "Manual Mode",
+            "Exposure Time, Absolute": 100,
+        },
+    },
+)
 
 
-def capture_image(device: str, destination: Path) -> None:
-    """Capture one focused, deliberately underexposed V4L2 image using fswebcam."""
-    subprocess.run(
+def capture_image(camera: dict, destination: Path) -> None:
+    """Capture one image with the settings configured for this camera."""
+    command = [
+        "fswebcam",
+        "-d",
+        camera["device"],
+    ]
+    for control_name, value in camera["controls"].items():
+        command.extend(["--set", f"{control_name}={value}"])
+    command.extend(
         [
-            "fswebcam",
-            "-d",
-            device,
-            "--set",
-            f"Gain={GAIN}",
-            "--set",
-            "Power Line Frequency=50 Hz",
-            "--set",
-            "Auto Exposure=Manual Mode",
-            "--set",
-            f"Exposure Time, Absolute={EXPOSURE_TIME_ABSOLUTE}",
             "--delay",
-            str(PRE_CAPTURE_DELAY_SECONDS),
+            str(camera["delay_seconds"]),
             "--skip",
-            str(SKIPPED_FRAMES),
+            str(camera["skip_frames"]),
             "-r",
             RESOLUTION,
             "--no-banner",
             str(destination),
-        ],
-        check=True,
+        ]
     )
+    subprocess.run(command, check=True)
 
 
 def main() -> int:
     timestamp = datetime.now().astimezone().strftime("%Y-%m-%d_%H-%M-%S_%f")[:-3]
     captures = [
         (
-            device,
-            OUTPUT_DIRECTORY / f"{timestamp}_{Path(device).name}.jpg",
-            OUTPUT_DIRECTORY / f".{timestamp}_{Path(device).name}.tmp.jpg",
+            camera,
+            OUTPUT_DIRECTORY / f"{timestamp}_{Path(camera['device']).name}.jpg",
+            OUTPUT_DIRECTORY / f".{timestamp}_{Path(camera['device']).name}.tmp.jpg",
         )
-        for device in CAMERA_DEVICES
+        for camera in CAMERAS
     ]
 
     OUTPUT_DIRECTORY.mkdir(parents=True, exist_ok=True)
 
     try:
-        for device, _, temporary_image in captures:
-            capture_image(device, temporary_image)
+        for camera, _, temporary_image in captures:
+            capture_image(camera, temporary_image)
 
         for _, image, temporary_image in captures:
             temporary_image.replace(image)
@@ -72,8 +94,8 @@ def main() -> int:
         for _, _, temporary_image in captures:
             temporary_image.unlink(missing_ok=True)
 
-    for device, image, _ in captures:
-        print(f"Captured {device}: {image.relative_to(PROJECT_ROOT)}")
+    for camera, image, _ in captures:
+        print(f"Captured {camera['device']}: {image.relative_to(PROJECT_ROOT)}")
     return 0
 
 
