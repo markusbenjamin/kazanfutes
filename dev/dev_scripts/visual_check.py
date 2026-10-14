@@ -14,17 +14,25 @@ CAMERA_DEVICES = ("/dev/video0", "/dev/video2")
 RESOLUTION = "1280x720"
 PRE_CAPTURE_DELAY_SECONDS = 2
 SKIPPED_FRAMES = 30
+EXPOSURE_TIME_ABSOLUTE = 100
+GAIN = 0
 
 
 def capture_image(device: str, destination: Path) -> None:
-    """Capture one settled JPEG from a specified V4L2 device using fswebcam."""
+    """Capture one focused, deliberately underexposed V4L2 image using fswebcam."""
     subprocess.run(
         [
             "fswebcam",
             "-d",
             device,
             "--set",
-            "power_line_frequency=1",
+            f"Gain={GAIN}",
+            "--set",
+            "Power Line Frequency=50 Hz",
+            "--set",
+            "Auto Exposure=Manual Mode",
+            "--set",
+            f"Exposure Time, Absolute={EXPOSURE_TIME_ABSOLUTE}",
             "--delay",
             str(PRE_CAPTURE_DELAY_SECONDS),
             "--skip",
