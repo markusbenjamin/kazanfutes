@@ -10,7 +10,6 @@ import sys
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OUTPUT_DIRECTORY = PROJECT_ROOT / "data" / "logs" / "visual"
-RESOLUTION = "1280x720"
 
 # Each control name must match the name reported by:
 # fswebcam -d /dev/videoN --list-controls
@@ -21,6 +20,7 @@ RESOLUTION = "1280x720"
 CAMERAS = (
     {
         "device": "/dev/video0",
+        "resolution": "1920x1080",
         "delay_seconds": 2,
         "skip_frames": 30,
         "controls": {
@@ -32,13 +32,14 @@ CAMERAS = (
     },
     {
         "device": "/dev/video2",
+        "resolution": "1920x1080",
         "delay_seconds": 2,
         "skip_frames": 30,
         "controls": {
-            "Gain": 255,
+            "Gain": 100,
             "Power Line Frequency": "50 Hz",
             "Auto Exposure": "Manual Mode",
-            "Exposure Time, Absolute": 2000,
+            "Exposure Time, Absolute": 1000,
         },
     },
 )
@@ -60,7 +61,7 @@ def capture_image(camera: dict, destination: Path) -> None:
             "--skip",
             str(camera["skip_frames"]),
             "-r",
-            RESOLUTION,
+            camera["resolution"],
             "--no-banner",
             str(destination),
         ]
