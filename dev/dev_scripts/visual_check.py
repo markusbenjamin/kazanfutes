@@ -20,6 +20,7 @@ OUTPUT_DIRECTORY = PROJECT_ROOT / "data" / "logs" / "visual"
 CAMERAS = (
     {
         "device": "/dev/video0",
+        "save_name": "pressure",
         "resolution": "1920x1080",
         "delay_seconds": 2,
         "skip_frames": 30,
@@ -32,6 +33,7 @@ CAMERAS = (
     },
     {
         "device": "/dev/video2",
+        "save_name": "boiler_display",
         "resolution": "1920x1080",
         "delay_seconds": 2,
         "skip_frames": 30,
@@ -39,7 +41,7 @@ CAMERAS = (
             "Gain": 100,
             "Power Line Frequency": "50 Hz",
             "Auto Exposure": "Manual Mode",
-            "Exposure Time, Absolute": 1000,
+            "Exposure Time, Absolute": 1750,
         },
     },
 )
@@ -74,8 +76,8 @@ def main() -> int:
     captures = [
         (
             camera,
-            OUTPUT_DIRECTORY / f"{timestamp}_{Path(camera['device']).name}.jpg",
-            OUTPUT_DIRECTORY / f".{timestamp}_{Path(camera['device']).name}.tmp.jpg",
+            OUTPUT_DIRECTORY / f"{timestamp}_{camera['save_name']}.jpg",
+            OUTPUT_DIRECTORY / f".{timestamp}_{camera['save_name']}.tmp.jpg",
         )
         for camera in CAMERAS
     ]
