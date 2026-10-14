@@ -1,0 +1,19 @@
+[Unit]
+Description=Fresh heating measurements and fault notifications
+After=network-online.target
+Wants=network-online.target
+RequiresMountsFor=/media/pi/program_stick
+
+[Service]
+Type=oneshot
+User=pi
+Group=pi
+WorkingDirectory=/media/pi/program_stick/kazanfutes
+Environment=PYTHONPATH=/media/pi/program_stick/kazanfutes
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/home/pi/Kazanfutes_local/bin/python -B /media/pi/program_stick/kazanfutes/services/heating_monitor.py
+StateDirectory=kazanfutes/heating_monitor
+StateDirectoryMode=0750
+TimeoutStartSec=150
+KillMode=control-group
+Nice=10

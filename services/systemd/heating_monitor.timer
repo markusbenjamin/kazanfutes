@@ -1,0 +1,11 @@
+[Unit]
+Description=Check heating operation every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:35
+AccuracySec=1s
+Persistent=true
+Unit=heating_monitor.service
+
+[Install]
+WantedBy=timers.target

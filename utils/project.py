@@ -114,7 +114,7 @@ def notify_admin(subject='Kazanfutes notification', body=''):
     """Send an email notification to the configured admin address."""
     return send_email(to=settings['admin_email'], subject=subject, body=body)
 
-def send_email(to, subject='', body=''):
+def send_email(to, subject='', body='', attachments=None, timeout=20):
     """
     Sends an email using Gmail's SMTP server. Login credentials are loaded from 
     project_root/config/secrets_and_env/gmail_login.
@@ -123,7 +123,8 @@ def send_email(to, subject='', body=''):
         to (str): The recipient's email address.
         subject (str): The subject of the email.
         body (str): The body of the email.
-        **kwargs: Additional email headers (optional).
+        attachments: Optional paths to files attached to the message.
+        timeout: Socket timeout in seconds for SMTP operations.
     
     Raises:
         Exception: If sending the email fails for any reason.
@@ -131,6 +132,9 @@ def send_email(to, subject='', body=''):
     import smtplib
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
+    from email.mime.base import MIMEBase
+    from email import encoders
+    import mimetypes
     # Path to the login file
     login_file_path = os.path.join(get_project_root(), 'config','secrets_and_env', 'gmail_login')
 
@@ -150,17 +154,30 @@ def send_email(to, subject='', body=''):
 
     # Attach the body as a plain text message
     msg.attach(MIMEText(body, 'plain'))
+    for attachment in attachments or ():
+        path = os.fspath(attachment)
+        content_type = mimetypes.guess_type(path)[0] or 'application/octet-stream'
+        part = MIMEBase(*content_type.split('/', 1))
+        with open(path, 'rb') as handle:
+            part.set_payload(handle.read())
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', 'attachment', filename=os.path.basename(path))
+        msg.attach(part)
 
     success = False
 
     try:
         # Connect to Gmail's SMTP server
-        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=timeout)
         server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
         server.login(email_address, password)  # Log in to the email account
         text = msg.as_string()  # Convert message to a string
         server.sendmail(email_address, to, text)  # Send the email
-        server.quit()
+        # Once SMTP accepted the message, a failed QUIT must not cause a retry.
+        try:
+            server.quit()
+        except Exception:
+            server.close()
         report(f"Email sent successfully to {to}.",verbose=True)
         success = True
     except (smtplib.SMTPAuthenticationError, smtplib.SMTPNotSupportedError):

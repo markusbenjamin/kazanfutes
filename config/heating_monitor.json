@@ -1,0 +1,54 @@
+{
+  "mode": "shadow",
+  "max_sample_gap_seconds": 180,
+  "command_max_age_seconds": 180,
+  "reading_max_age_seconds": 90,
+  "pump_fault_seconds": 120,
+  "flow_grace_seconds": 120,
+  "flow_fault_seconds": 180,
+  "warmup_seconds": 600,
+  "thermal_fault_seconds": 120,
+  "thermal_bad_checks": 3,
+  "missing_seconds": 300,
+  "recovery_seconds": 300,
+  "reminder_seconds": 3600,
+  "retry_seconds": 300,
+  "collector_timeout_seconds": 35,
+  "camera_timeout_seconds": 45,
+  "email_timeout_seconds": 25,
+  "notes": "Meter mapping 1:1 confirmed by owner. Conservative provisional limits; validate against fresh active-heating observations before tuning. Electrical boiler power is diagnostic, not a heat-output threshold.",
+  "cycles": {
+    "1": {
+      "meter": 1,
+      "min_pump_w": 1,
+      "min_flow_m3h": 0.005,
+      "min_supply_c": 30,
+      "min_heat_w": 100,
+      "warming_rise_c": 1
+    },
+    "2": {
+      "meter": 2,
+      "min_pump_w": 1,
+      "min_flow_m3h": 0.005,
+      "min_supply_c": 30,
+      "min_heat_w": 100,
+      "warming_rise_c": 1
+    },
+    "3": {
+      "meter": 3,
+      "min_pump_w": 1,
+      "min_flow_m3h": 0.005,
+      "min_supply_c": 30,
+      "min_heat_w": 100,
+      "warming_rise_c": 1
+    },
+    "4": {
+      "meter": 4,
+      "min_pump_w": 1,
+      "min_flow_m3h": 0.005,
+      "min_supply_c": 30,
+      "min_heat_w": 100,
+      "warming_rise_c": 1
+    }
+  }
+}
