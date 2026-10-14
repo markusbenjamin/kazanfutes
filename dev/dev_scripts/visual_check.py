@@ -41,7 +41,7 @@ CAMERAS = (
             "Gain": 100,
             "Power Line Frequency": "50 Hz",
             "Auto Exposure": "Manual Mode",
-            "Exposure Time, Absolute": 1750,
+            "Exposure Time, Absolute": 1500,
         },
     },
 )
