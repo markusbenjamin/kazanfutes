@@ -1981,43 +1981,41 @@ function updateCycleInfobox(cycle, info) {
     addLineToBox("cycle" + cycle + "_infobox", ["ki", "be"][info.state], xOffset + (isMobile ? cycleName.length * 0.065 : 0.7), yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize * 1.1, false);
     lineNum++;
 
-    if (false) {
-        //Draw lines
-        lineNumShift += 0.2;
-        if (!isMobile) {
-            addLineToBox("cycle" + cycle + "_infobox", cycle < 4 ? "Átlagos eltérés:" : "Eltérés:", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
-            lineNum++;
-            lineNumShift += 0.05;
-            if (isValidNumber(info.totalControlDiff)) {
-                let reportedControlDiff = roundTo(info.totalControlDiff / info.rooms.length, 0.1)
-                let reportedeControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
-                addLineToBox("cycle" + cycle + "_infobox", reportedeControlDiffPre + reportedControlDiff + " K", xOffset + 0.2, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered)
-            }
-            else {
-                addLineToBox("cycle" + cycle + "_infobox", "?", xOffset + 0.2, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered)
-            }
-        }
-
-        lineNumShift = isMobile ? 0.25 : 1.5;
-        let xOffsetShift = isMobile ? 0.04 : 0;
-        if (cycle < 4) {
-            if (info.wantHeating) {
-                if (info.wantHeating.length > 0) {
-                    addLineToBox("cycle" + cycle + "_infobox", "Fűtést kér:", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
-                    lineNum++;
-                    info.wantHeating.forEach(roomInfo => {
-                        addLineToBox("cycle" + cycle + "_infobox", "- " + roomInfo.name, xOffset + xOffsetShift, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
-                        lineNum++;
-                        lineNumShift += 0.05;
-                    });
-                } else {
-                    addLineToBox("cycle" + cycle + "_infobox", "Nem kér fűtést.", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
-                }
-            }
+    // Draw cycle details
+    lineNumShift += 0.2;
+    if (!isMobile) {
+        addLineToBox("cycle" + cycle + "_infobox", cycle < 4 ? "Átlagos eltérés:" : "Eltérés:", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
+        lineNum++;
+        lineNumShift += 0.05;
+        if (isValidNumber(info.totalControlDiff)) {
+            let reportedControlDiff = roundTo(info.totalControlDiff / info.rooms.length, 0.1)
+            let reportedeControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
+            addLineToBox("cycle" + cycle + "_infobox", reportedeControlDiffPre + reportedControlDiff + " K", xOffset + 0.2, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered)
         }
         else {
-            addLineToBox("cycle" + cycle + "_infobox", ["Nem kér fűtést.", "Fűtést kér."][info.set], xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
+            addLineToBox("cycle" + cycle + "_infobox", "?", xOffset + 0.2, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered)
         }
+    }
+
+    lineNumShift = isMobile ? 0.25 : 1.5;
+    let xOffsetShift = isMobile ? 0.04 : 0;
+    if (cycle < 4) {
+        if (info.wantHeating) {
+            if (info.wantHeating.length > 0) {
+                addLineToBox("cycle" + cycle + "_infobox", "Fűtést kér:", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
+                lineNum++;
+                info.wantHeating.forEach(roomInfo => {
+                    addLineToBox("cycle" + cycle + "_infobox", "- " + roomInfo.name, xOffset + xOffsetShift, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
+                    lineNum++;
+                    lineNumShift += 0.05;
+                });
+            } else {
+                addLineToBox("cycle" + cycle + "_infobox", "Nem kér fűtést.", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
+            }
+        }
+    }
+    else {
+        addLineToBox("cycle" + cycle + "_infobox", ["Nem kér fűtést.", "Fűtést kér."][info.set], xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
     }
 }
 
