@@ -15,7 +15,12 @@ def minutes(value, now):
     if not value:
         return None
     try:
-        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        try:
+            parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        except ValueError:
+            # Physical log-backed reporters still use the project's original
+            # timestamp format. Never interpret an old valid log as fresh.
+            parsed = datetime.strptime(str(value), "%Y-%m-%d-%H-%M-%S")
         if parsed.tzinfo is None:
             from datetime import timezone
             parsed = parsed.replace(tzinfo=timezone.utc)

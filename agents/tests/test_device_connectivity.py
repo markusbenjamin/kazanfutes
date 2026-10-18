@@ -119,6 +119,13 @@ class ConnectivityTests(unittest.TestCase):
         state, opened, _ = self.advance(state, source, 30)
         self.assertEqual([item["device_id"] for item in opened], ["collector:source"])
 
+    def test_legacy_reporter_timestamp_is_not_mistaken_for_recent_data(self):
+        device = {"device_id": "reporter:old", "name": "old", "profile": "infrastructure", "facts": {"reachable": True, "last_seen_at": "2026-10-01-09-00-00"}}
+        state, opened, _ = self.advance({}, device)
+        self.assertEqual([item["kind"] for item in opened], ["connectivity"])
+        state, _, solved = self.advance(state, device, 30)
+        self.assertFalse(solved)
+
     def test_parasoll_soft_flags_wait_for_silence_not_battery(self):
         device = trv(age=60)
         device["profile"] = "parasoll"
