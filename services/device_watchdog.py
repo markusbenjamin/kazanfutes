@@ -18,7 +18,7 @@ from filelock import FileLock
 
 from utils.project import *  # noqa: F401,F403 - shared project transport helpers
 from utils.boiler_power import collect_boiler_plugs, boiler_device_ids
-from utils.shelly_discovery import build_shelly_resolver, load_shelly_config
+from utils.shelly_discovery import build_shelly_resolver, load_shelly_config, normalize_mac
 from utils.device_watchdog import (
     INCIDENTS_RELATIVE_PATH,
     MANUAL_STATE_RELATIVE_PATH,
@@ -42,6 +42,7 @@ from utils.device_watchdog import (
     queue_resolution_notifications,
     read_json,
     render_grouped_report,
+    render_connectivity_observations,
     render_resolution_report,
     render_table,
     snapshot,
@@ -303,6 +304,11 @@ def collect_deconz(config: dict[str, Any]) -> list[dict[str, Any]]:
             "facts": {"collection_error": inventory_error},
         })
     else:
+        devices.append({
+            "device_id": "collector:deconz_device_inventory", "name": "deCONZ device inventory",
+            "category": "collector", "profile": "infrastructure", "dependencies": ["gateway:deconz"],
+            "facts": {"reachable": True, "last_seen_at": now_iso()},
+        })
         raw_device_ids, bridge_id = raw_inventory
         devices[0]["inventory"] = {
             "source": "deconz",
@@ -324,7 +330,7 @@ def collect_deconz(config: dict[str, Any]) -> list[dict[str, Any]]:
                 "category": "incomplete_zigbee_device",
                 "hardware_type": "Incomplete deCONZ Zigbee device",
                 "profile": "zigbee",
-                "dependencies": ["gateway:deconz"],
+                "dependencies": ["gateway:deconz", "collector:deconz_device_inventory"],
                 "facts": {
                     "incomplete_interview": True,
                     "ieee_address": physical_id,
@@ -359,6 +365,7 @@ def collect_deconz(config: dict[str, Any]) -> list[dict[str, Any]]:
         reachable_values = []
         batteries, low_batteries, last_seen_values = [], [], []
         measurements: dict[str, Any] = {}
+        measurement_updated_at: dict[str, Any] = {}
         for raw in raws:
             state = raw.get("state") or {}
             device_config = raw.get("config") or {}
@@ -373,8 +380,12 @@ def collect_deconz(config: dict[str, Any]) -> list[dict[str, Any]]:
                 last_seen_values.append(_deconz_time(raw.get("lastseen")))
             if "temperature" in state:
                 measurements["temperature_c"] = _scaled(state.get("temperature"))
+                if state.get("lastupdated") and raw.get("type") == "ZHATemperature":
+                    measurement_updated_at["temperature_c"] = _deconz_time(state["lastupdated"])
             if "humidity" in state:
                 measurements["humidity_percent"] = _scaled(state.get("humidity"))
+                if state.get("lastupdated") and raw.get("type") == "ZHAHumidity":
+                    measurement_updated_at["humidity_percent"] = _deconz_time(state["lastupdated"])
         raw_battery = min(batteries) if batteries else None
         facts = {
             "reachable": True if any(reachable_values) else (False if reachable_values else None),
@@ -386,6 +397,8 @@ def collect_deconz(config: dict[str, Any]) -> list[dict[str, Any]]:
                 zero_is_unknown=True,
             ),
             "measurements": measurements,
+            "measurement_updated_at": measurement_updated_at,
+            "quiet_mains": not any(str(raw.get("type", "")).startswith("ZHA") for raw in raws),
             "model_key": model_key,
             "hardware_type": hardware_type,
         }
@@ -464,14 +477,27 @@ def collect_shelly() -> list[dict[str, Any]]:
     if resolution_error:
         return [{"device_id": "collector:shelly", "name": "Shelly collector", "category": "collector", "profile": "infrastructure", "facts": {"collection_error": resolution_error}}]
     resolved, resolution_errors = resolved
-    devices = []
+    cache = read_json(os.path.join(root, shelly_config["discovery"]["cache_relative_path"]), {})
+    known = read_json(os.path.join(root, INCIDENTS_RELATIVE_PATH), {}).get("known_devices", {})
+    identities = {}
+    for name in names:
+        raw_mac = (resolved.get(name) or {}).get("mac") or specs[name].get("mac") or cache.get("aliases", {}).get(name)
+        try:
+            identities[name] = f"shelly:{normalize_mac(raw_mac)}" if raw_mac else next(
+                (key for key, item in known.items() if item.get("name") == name and key.startswith("shelly:") and key.count(":") >= 6),
+                f"shelly:{name}",
+            )
+        except ValueError:
+            identities[name] = f"shelly:{name}"
+    devices = [{"device_id": "collector:shelly", "name": "Shelly collector", "category": "collector", "profile": "infrastructure", "facts": {"reachable": True, "last_seen_at": now_iso()}}]
     for name in names:
         if name not in resolved:
-            devices.append({"device_id": f"shelly:{name}", "name": name, "category": "shelly", "profile": "infrastructure", "facts": {"collection_error": resolution_errors.get(name, "not found")}})
+            devices.append({"device_id": identities[name], "name": name, "category": "shelly", "profile": "infrastructure", "dependencies": ["collector:shelly"], "facts": {"collection_error": resolution_errors.get(name, "not found")}})
             continue
         record = resolved[name]
         devices.append({
-            "device_id": f"shelly:{record['mac']}", "name": name, "category": "shelly",
+            "device_id": identities[name], "name": name, "category": "shelly",
+            "dependencies": ["collector:shelly"],
             "profile": "infrastructure", "facts": {"reachable": True, "last_seen_at": record.get("seen_at") or now_iso(), "measurements": {}},
         })
     radiator_names = [name for name in shelly_config.get("radiator_devices", []) if name in resolved]
@@ -480,6 +506,8 @@ def collect_shelly() -> list[dict[str, Any]]:
         for name in radiator_names:
             record = resolved[name]
             item = (details.get("devices", {}) or {}).get(name, {}) if details else {}
+            parent = next(device for device in devices if device["device_id"] == identities[name])
+            parent["facts"]["inventory_complete"] = detail_error is None and bool(item) and not item.get("errors")
             for peripheral_name, peripheral in (item.get("peripherals", {}) or {}).items():
                 devices.append({
                     "device_id": f"shelly:{record['mac']}:temperature:{peripheral.get('addr') or peripheral_name}",
@@ -553,6 +581,9 @@ def _notify_critical(incidents: dict[str, Any], now: datetime) -> None:
         return
     due_by_id = {entry["incident_id"]: entry for entry in due}
     body = render_grouped_report({"active": due_by_id}, "CRITICAL DEVICE INCIDENTS")
+    connectivity_count = sum(entry.get("kind") == "connectivity" for entry in due)
+    if connectivity_count >= 3:
+        body = f"Several devices have confirmed connectivity problems in this scan. A shared network fault is possible; the cause is not proven.\n\n{body}"
     try:
         notify_admin("Critical physical-infrastructure issue", body)
     except Exception as error:
@@ -637,6 +668,7 @@ def _run_locked(
     manual_state = read_json(os.path.join(root, MANUAL_STATE_RELATIVE_PATH), initial_manual_state())
     apply_manual_state(devices, manual_state, previous)
     apply_heating_context(devices, config)
+    apply_heating_context(list(previous.get("known_devices", {}).values()), config)
     apply_battery_scale_learning(devices, previous, config, now)
     arm_boiler_plugs(devices, previous, now)
     incidents, opened, solved = update_incidents(previous, devices, config, now)
@@ -661,6 +693,21 @@ def _run_locked(
         live = config.get("mode", "shadow") == "live"
         if live:
             queue_resolution_notifications(incidents, solved)
+        if config.get("connectivity", {}).get("record_observations"):
+            # Compact changed observations, rotated by the normal project logger.
+            # Do not confuse log-write cadence with the device radio timestamps.
+            old_snapshot = read_json(os.path.join(root, STATE_RELATIVE_PATH), {})
+            def observation(row):
+                facts = row.get("facts", {})
+                return {key: facts.get(key) for key in (
+                    "reachable", "last_seen_at", "collection_error", "connectivity_status",
+                    "measurement_updated_at", "inventory_complete",
+                )}
+            old_observations = {row["device_id"]: observation(row) for row in old_snapshot.get("devices", [])}
+            changes = {row["device_id"]: observation(row) for row in current_snapshot["devices"]
+                       if old_observations.get(row["device_id"]) != observation(row)}
+            if changes:
+                log_data({"devices": changes}, "device_watchdog/connectivity_observations.json")
         atomic_write_json(incidents_path, incidents)
         atomic_write_json(os.path.join(root, STATE_RELATIVE_PATH), current_snapshot)
         atomic_write_json(inventory_path, device_inventory)
@@ -756,6 +803,7 @@ def main() -> int:
     if args.show_state:
         incidents = read_json(os.path.join(project_root, INCIDENTS_RELATIVE_PATH), initial_incident_state())
         print(render(incidents))
+        print(render_connectivity_observations(incidents))
         return 0
     if args.show_solved:
         solved = _recent_ndjson(os.path.join(project_root, SOLVED_RELATIVE_PATH))
@@ -764,6 +812,7 @@ def main() -> int:
     result = run(config, dry_run=args.dry_run)
     if args.table or args.dry_run:
         print(render(result["incidents"]))
+        print(render_connectivity_observations(result["incidents"]))
     return 0
 
 

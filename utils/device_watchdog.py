@@ -16,6 +16,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Iterable
 
 import requests
+from utils.device_connectivity import KINDS as CONNECTIVITY_KINDS, migrate as migrate_connectivity, evaluate as evaluate_connectivity
 
 
 STATE_RELATIVE_PATH = "system/device_watchdog_state.json"
@@ -401,6 +402,16 @@ def candidates_for(device: dict[str, Any], config: dict[str, Any], now: datetime
             ))
 
     battery = facts.get("battery", {})
+    if config.get("connectivity", {}).get("enabled"):
+        measurement_limit = policy.get("measurement_stale_after_minutes", policy.get("stale_after_minutes"))
+        for field, measured_at in facts.get("measurement_updated_at", {}).items():
+            measured_age = age_minutes(measured_at, now)
+            if measurement_limit is not None and measured_age is not None and measured_age >= float(measurement_limit):
+                candidates.append(issue(
+                    device, f"measurement_stale_{field}",
+                    f"{field} last reported {measured_age:.0f} minutes ago (limit {measurement_limit})",
+                    policy, severity="revision", evidence={"measurement": field, "last_updated_at": measured_at},
+                ))
     if battery.get("battery_invalid"):
         candidates.append(issue(device, "invalid_battery", "Battery value is outside its configured raw range", policy, evidence=battery))
     battery_percent = battery.get("battery_percent")
@@ -476,6 +487,10 @@ def update_incidents(
     state.setdefault("active", {})
     state.setdefault("pending", {})
     state.setdefault("known_devices", {})
+    connectivity_enabled = config.get("connectivity", {}).get("enabled", False)
+    state["resolution_only_if_notified"] = config.get("connectivity", {}).get("resolution_only_if_notified", False)
+    if connectivity_enabled and scope_device_ids is None:
+        migrate_connectivity(state, devices, now)
     active = state["active"]
     pending = state["pending"]
     current_candidates: dict[str, dict[str, Any]] = {}
@@ -483,6 +498,45 @@ def update_incidents(
         device["device_id"] for device in devices
         if not (device.get("facts", {}) or {}).get("manual_only")
     }
+    by_id = {device["device_id"]: device for device in devices}
+    unavailable = {
+        device["device_id"] for device in devices
+        if device.get("facts", {}).get("collection_error")
+        or device.get("facts", {}).get("inventory_complete") is False
+    }
+    # Collector -> host -> peripheral dependencies must preserve uncertainty
+    # transitively, not manufacture missing peripherals during a source outage.
+    dependency_devices = list(state["known_devices"].values()) + devices
+    while True:
+        blocked_ids = {
+            device["device_id"] for device in dependency_devices
+            if set(device.get("dependencies") or []).intersection(unavailable)
+        }
+        if blocked_ids.issubset(unavailable):
+            break
+        unavailable.update(blocked_ids)
+    may_resolve_connectivity = set()
+
+    def connectivity_candidate(device, absent=False):
+        existing = active.get(f"{device['device_id']}:connectivity")
+        if existing:
+            existing["class"] = policy_for(device, config).get("class", "revision")
+        blocked = bool(set(device.get("dependencies") or []).intersection(unavailable))
+        candidate, may_resolve = evaluate_connectivity(
+            state, device, policy_for(device, config), now,
+            absent=absent, blocked=blocked,
+        )
+        tracking = state["connectivity_tracking"][device["device_id"]]
+        tracking["status"] = device["facts"].get("connectivity_status", "unknown")
+        tracking["name"] = device.get("name", device["device_id"])
+        tracking["hardware_type"] = hardware_type_for(device)
+        tracking["last_seen_at"] = device["facts"].get("last_seen_at")
+        if may_resolve:
+            may_resolve_connectivity.add(device["device_id"])
+        if candidate:
+            entry = issue(device, "connectivity", candidate["message"], policy_for(device, config), evidence=candidate["evidence"])
+            entry["open_after_runs"] = 1
+            current_candidates[entry["incident_id"]] = entry
 
     for device in devices:
         if not (device.get("facts", {}) or {}).get("manual_only"):
@@ -490,7 +544,21 @@ def update_incidents(
                 key: copy.deepcopy(device.get(key))
                 for key in ("device_id", "name", "category", "profile", "hardware_type", "dependencies")
             }
+            state["known_devices"][device["device_id"]]["facts"] = {
+                "heating_on": device.get("facts", {}).get("heating_on"),
+            }
+        managed = connectivity_enabled and device.get("profile") != "boiler_power_plug" and not device.get("facts", {}).get("manual_only")
+        if managed:
+            connectivity_candidate(device)
         for candidate in candidates_for(device, config, now):
+            if connectivity_enabled and candidate["kind"] != "temporary_battery" and set(device.get("dependencies") or []).intersection(unavailable):
+                continue
+            if managed and candidate["kind"] in CONNECTIVITY_KINDS:
+                continue
+            if managed and candidate["kind"].startswith("measurement_stale_"):
+                if f"{device['device_id']}:connectivity" in current_candidates or f"{device['device_id']}:connectivity" in active:
+                    continue
+                candidate["open_after_runs"] = 1
             current_candidates[candidate["incident_id"]] = candidate
 
     # A known device absent from a successful collection is a disappearance.
@@ -502,6 +570,9 @@ def update_incidents(
         if scope_device_ids is not None and device_id not in scope_device_ids:
             continue
         if device_id in current_device_ids:
+            continue
+        if connectivity_enabled and known.get("profile") != "boiler_power_plug":
+            connectivity_candidate(known, absent=True)
             continue
         if set(known.get("dependencies") or []).intersection(gateway_down):
             continue
@@ -556,6 +627,28 @@ def update_incidents(
             continue
         if incident_id in current_candidates:
             continue
+        if connectivity_enabled and incident.get("kind") == "connectivity" and incident["device_id"] not in may_resolve_connectivity:
+            incident["connectivity_status"] = by_id.get(incident["device_id"], {}).get("facts", {}).get("connectivity_status", "unknown")
+            continue
+        # An unsuccessful source read cannot prove that any previous condition
+        # (including low battery or stale measurements) has recovered.
+        if connectivity_enabled and incident.get("kind") != "temporary_battery":
+            device = by_id.get(incident["device_id"])
+            if device is None or device.get("facts", {}).get("collection_error") or set(incident.get("dependencies") or []).intersection(unavailable):
+                continue
+            if incident.get("kind", "").startswith("measurement_stale_"):
+                field = incident["kind"][len("measurement_stale_"):]
+                if not device.get("facts", {}).get("measurement_updated_at", {}).get(field):
+                    continue
+                measured_age = age_minutes(device["facts"]["measurement_updated_at"][field], now)
+                policy = policy_for(device, config)
+                limit = policy.get("measurement_stale_after_minutes", policy.get("stale_after_minutes"))
+                if measured_age is None or (limit is not None and measured_age >= float(limit)):
+                    continue
+            if incident.get("kind") == "low_battery":
+                battery = device.get("facts", {}).get("battery", {})
+                if battery.get("battery_percent") is None and not battery.get("low_battery"):
+                    continue
         if incident.get("kind") == "output_off" and incident["device_id"] in unknown_device_ids:
             continue
         if set(incident.get("dependencies") or []).intersection(gateway_down):
@@ -565,6 +658,11 @@ def update_incidents(
         solved.append(solved_incident)
         active.pop(incident_id, None)
 
+    # A delayed recovery delivery must never claim that a currently open
+    # episode is resolved (for example after an SMTP outage).
+    resolution_queue = state.get("pending_resolution_notifications", {})
+    for incident_id in active:
+        resolution_queue.pop(incident_id, None)
     state["last_updated_at"] = now_iso(now)
     return state, opened, solved
 
@@ -583,7 +681,7 @@ def snapshot(devices: list[dict[str, Any]], incidents: dict[str, Any], now: date
             "profile": device.get("profile"),
             "facts": device.get("facts", {}),
             "active_incidents": active_by_device.get(device["device_id"], []),
-            "status": "attention" if device["device_id"] in active_by_device else "ok",
+            "status": "attention" if device["device_id"] in active_by_device else device.get("facts", {}).get("connectivity_status", "ok"),
         })
     return {
         "schema_version": 1,
@@ -649,7 +747,26 @@ def queue_resolution_notifications(incidents: dict[str, Any], solved: list[dict[
     """Retain confirmed resolutions until their email has been delivered."""
     pending = incidents.setdefault("pending_resolution_notifications", {})
     for entry in solved:
+        notified_in_digest = any(
+            item.get("incident_id") == entry["incident_id"]
+            for item in (incidents.get("digest_last_incident_inventory") or [])
+        )
+        if incidents.get("resolution_only_if_notified") and not entry.get("immediate_notification_sent_at") and not notified_in_digest:
+            continue
         pending[entry["incident_id"]] = copy.deepcopy(entry)
+
+
+def render_connectivity_observations(incidents: dict[str, Any]) -> str:
+    """Show unconfirmed/recovering observations in CLI, never in alert emails."""
+    rows = [entry for entry in incidents.get("connectivity_tracking", {}).values()
+            if entry.get("status") not in {None, "ok", "failed"}]
+    if not rows:
+        return ""
+    lines = ["", "CONNECTIVITY OBSERVATIONS (not new confirmed incidents)",
+             "DEVICE                         TYPE                           STATE                    LAST CONTACT"]
+    for entry in sorted(rows, key=lambda item: item.get("name", "").casefold()):
+        lines.append(f"{entry.get('name', ''):30} {entry.get('hardware_type', ''):30} {entry.get('status', ''):24} {entry.get('last_seen_at') or 'unknown'}")
+    return "\n".join(lines)
 
 
 def render_resolution_report(incidents: dict[str, Any], now: datetime) -> str:
