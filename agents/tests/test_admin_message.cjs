@@ -45,6 +45,14 @@ async function run() {
         const message = '# Kedves fűtőközösség!\n\n**Fontos üzenet:**\nA beállítások frissültek.\n\n- Első teendő\n- *Második* teendő\n\n[Leírás](https://example.com/help)';
         await update(message);
         assert.equal(await box.isVisible(), true);
+        const ok = box.getByRole('button', { name: 'Ok', exact: true });
+        assert.equal(await page.evaluate(() => document.activeElement.id), 'admin-message');
+        assert.equal(await ok.evaluate(element => getComputedStyle(element).backgroundColor), 'rgba(0, 0, 0, 0)', 'no highlight on initial display');
+        await ok.hover();
+        assert.notEqual(await ok.evaluate(element => getComputedStyle(element).backgroundColor), 'rgba(0, 0, 0, 0)', 'hover highlights Ok');
+        await page.mouse.move(0, 0);
+        await ok.focus();
+        assert.equal(await ok.evaluate(element => getComputedStyle(element).backgroundColor), 'rgba(0, 0, 0, 0)', 'focus alone must not highlight Ok');
         assert.equal(await content.locator('h3').textContent(), 'Kedves fűtőközösség!');
         assert.equal(await content.locator('strong').textContent(), 'Fontos üzenet:');
         assert.equal(await content.locator('ul li').count(), 2);
@@ -71,7 +79,7 @@ async function run() {
         assert.equal(await box.isVisible(), false, 'polling must not reopen an acknowledged message');
         await page.reload();
         await update(message);
-        assert.equal(await box.isVisible(), false, 'acknowledgement survives reload within the tab');
+        assert.equal(await box.isVisible(), true, 'reload brings the message back in the same tab');
         await update('Új üzenet');
         assert.equal(await box.isVisible(), true, 'changed message must appear');
         await box.getByRole('button', { name: 'Üzenet bezárása' }).click();
@@ -117,7 +125,7 @@ async function run() {
         await blockedStoragePage.locator('#admin-message-ok').click();
         await blockedStoragePage.evaluate(() => updateAdminMessage('Üzenet tárhely nélkül'));
         assert.equal(await blockedStoragePage.locator('#admin-message').isVisible(), false);
-        console.log('Dashboard message browser checks passed (desktop, mobile, formatting, dismissal, storage, safe rendering).');
+        console.log('Dashboard message browser checks passed (desktop, mobile, formatting, hover-only highlight, dismissal, reload, safe rendering).');
     } finally {
         await browser.close();
     }

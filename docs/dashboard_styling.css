@@ -44,6 +44,7 @@ html, body {
     flex-direction: column;
     padding: clamp(20px, 3vw, 40px);
     border: none;
+    outline: none;
     /* Opaque equivalent of the existing rgb(255, 154, 154, 0.5) over white. */
     background: rgb(255, 205, 205);
     color: black;
@@ -144,7 +145,7 @@ html, body {
 
 #admin-message-ok:focus-visible {
     outline: none;
-    background: rgb(255, 154, 154, 0.5);
+    text-decoration: underline;
 }
 
 @media (max-width: 600px) {
