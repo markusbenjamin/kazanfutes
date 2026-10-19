@@ -216,6 +216,7 @@ function getDataFromFirebase() {
 
             systemOn = systemJSON['switch']['system'] == 1 ? true : false;
             systemNode = systemJSON;
+            updateBoilerPowerMarkers(systemJSON.state.boiler_plugs);
 
             condensedSchedule = scheduleJSON.condensed_schedule;
             requestLists = scheduleJSON.request_lists;
@@ -2090,6 +2091,8 @@ for (let cycle = 1; cycle <= 4; cycle++) {
     }
 }
 
+registerBoilerPowerPlots(elementToMainGraphSettingMapping);
+
 let mainGraphContentLocked = false;
 const mainGraphDefaultSetting = elementToMainGraphSettingMapping["background"]; // Save so it can be reset
 let mainGraphSetting = mainGraphDefaultSetting;
@@ -2392,6 +2395,9 @@ function drawMainGraph(graphData = null) {
                         }
                     );
                     latestPowerDataForCycle.pop();
+                    break;
+                case "boiler_power":
+                    drawBoilerPowerPlot(graphData, mainGraphSetting);
                     break;
                 case "heating_state":
                     for (let cycle = 1; cycle < 5; cycle++) {
@@ -2920,6 +2926,7 @@ d3.xml(isMobile ? "canvas_mobile.svg" : "canvas.svg").then(fileData => {
     setupTooltip();
     initializeExternalThermometer();
     initializeCycleMarkers();
+    initializeBoilerPowerMarkers();
     initializeInfoboxes();
     initializeMainGraphArea();
     setInfoboxHovers();
