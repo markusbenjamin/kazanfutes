@@ -40,9 +40,9 @@ function updateBoilerPowerMarkers(readings = {}) {
                 .attr('x', box.x + box.w * part.x).attr('y', box.y + box.h * 0.8)
                 .style('font-family', dashboardFont).style('font-size', part.size + 'px')
                 .text(part.text);
-            if (part.x === 0.42) {
+            if (part.x === 0.05 || part.x === 0.42) {
                 const width = text.node().getComputedTextLength();
-                const available = box.w * 0.4;
+                const available = box.w * (part.x === 0.05 ? 0.32 : 0.4);
                 if (width > available) text.style('font-size', part.size * available / width + 'px');
             }
         });
