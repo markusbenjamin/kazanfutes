@@ -31,6 +31,11 @@ html, body {
     pointer-events: none
   }
 
+/* Pipes are hover targets; radiator groups retain their existing behavior. */
+#cycle1, #cycle1_2, #cycle2, #cycle3, #cycle4 {
+    pointer-events: stroke;
+}
+
 #admin-message {
     position: fixed;
     z-index: 1000;

@@ -398,6 +398,7 @@ function getDataFromFirebase() {
                     cycleNum,
                     {
                         state: cyclesDataAndState[cycleNum].state,
+                        waterTemp: systemJSON.state.heatmeters?.[cycleNum]?.temp,
                         set: systemJSON.control.cycles[cycleNum],
                         rooms: roomsOnCycle,
                         wantHeating: roomsThatWantHeating,
@@ -1980,7 +1981,18 @@ function updateCycleInfobox(cycle, info) {
     else {
         titleLine.style("text-decoration", "underline");
     }
-    addLineToBox("cycle" + cycle + "_infobox", ["ki", "be"][info.state], xOffset + (isMobile ? cycleName.length * 0.065 : 0.7), yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize * 1.1, false);
+    const waterTempText = Number.isFinite(info.waterTemp) ? Math.round(info.waterTemp) + "°C" : "?°C";
+    const statusLine = addLineToBox("cycle" + cycle + "_infobox", ["ki", "be"][info.state] + " " + waterTempText,
+        1 - xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize * 1.1, false)
+        .style("text-anchor", "end");
+    // Keep the temperature beside the status without overlapping the title.
+    const headerWidth = titleLine.node().getComputedTextLength() + statusLine.node().getComputedTextLength();
+    const availableHeaderWidth = boxDims.w * (1 - 2 * xOffset) - (isMobile ? 8 : 2);
+    if (headerWidth > availableHeaderWidth) {
+        const headerFontSize = lineFontSize * 1.1 * availableHeaderWidth / headerWidth;
+        titleLine.style("font-size", headerFontSize + "px");
+        statusLine.style("font-size", headerFontSize + "px");
+    }
     lineNum++;
 
     // Draw cycle details
@@ -2063,6 +2075,20 @@ const elementToMainGraphSettingMapping = {
         conditionals: []
     }
 };
+
+for (let cycle = 1; cycle <= 4; cycle++) {
+    const waterTemperatureSetting = {
+        title: "cycle_water_temp",
+        types: ["cycle_" + cycle + "_water_temps"],
+        day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime),
+        cycleNum: cycle,
+        conditionals: []
+    };
+    elementToMainGraphSettingMapping["cycle" + cycle] = waterTemperatureSetting;
+    if (cycle === 1) {
+        elementToMainGraphSettingMapping["cycle1_2"] = waterTemperatureSetting;
+    }
+}
 
 let mainGraphContentLocked = false;
 const mainGraphDefaultSetting = elementToMainGraphSettingMapping["background"]; // Save so it can be reset
@@ -2250,12 +2276,16 @@ function drawRoomInfo(roomNum) {//IN DEVELOPMENT
 
 function drawMainGraph(graphData = null) {
     if (graphData == null) {
+        const requestedSetting = mainGraphSetting;
         collectDataFromGitHub(
-            mainGraphSetting.types.map(type => ({
-                day: mainGraphSetting.day,
+            requestedSetting.types.map(type => ({
+                day: requestedSetting.day,
                 type: type
             })),
-            drawMainGraph,
+            data => {
+                // A slower response for a previous hover must not replace the current cycle.
+                if (mainGraphSetting === requestedSetting) drawMainGraph(data);
+            },
         );
     }
     else {
@@ -2672,6 +2702,36 @@ function drawMainGraph(graphData = null) {
                         );
                     });
                     break;
+                case "cycle_water_temp": {
+                    const waterCycle = mainGraphSetting.cycleNum;
+                    const waterReadings = graphData["cycle_" + waterCycle + "_water_temps"]
+                        .filter(reading => Number.isFinite(reading.water_temp) && Number.isFinite(reading.h_of_day_frac));
+                    const waterRange = d3.extent(waterReadings, reading => reading.water_temp);
+                    range = waterReadings.length
+                        ? [Math.floor(waterRange[0] / 5) * 5 - 5, Math.ceil(waterRange[1] / 5) * 5 + 5]
+                        : [0, 80];
+                    drawPlot(
+                        waterReadings,
+                        {
+                            parentId: "graph",
+                            smoothing: { bottom: 0, left: 0 },
+                            domain: { bottom: [0, 24], left: range },
+                            dataKeys: { bottom: "h_of_day_frac", left: "water_temp" },
+                            axesLabel: { bottom: "óra", left: "°C" },
+                            tickVals: { left: d3.range(range[0], range[1] + 1, 5) },
+                            plotStyle: { joined: true, col: "rgb(200, 0, 0)", thickness: "2", startCap: false, endCap: true },
+                            segment: { do: false },
+                            plotLabel: waterCycle + ". kör mai fűtővíz-hőmérséklete" + (waterReadings.length ? "" : " (nincs adat)"),
+                            curveEndText: {
+                                show: waterReadings.length > 0,
+                                fontSize: 6,
+                                text: waterReadings.length ? Math.round(waterReadings.at(-1).water_temp) + "°C" : "",
+                                col: "rgb(200, 0, 0)", xOffset: 3, yOffset: 1.75
+                            }
+                        }
+                    );
+                    break;
+                }
                 case "external_temp":
                     let tempRange = d3.extent(graphData['external_temp'].map(elem => elem['external_temp']));
                     drawPlot(
