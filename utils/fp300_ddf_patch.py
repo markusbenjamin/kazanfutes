@@ -74,6 +74,33 @@ def patch_document(document: dict) -> dict:
     return result
 
 
+def inline_scripts(document: dict, directory: Path) -> dict:
+    """Keep unchanged helper behavior when moving the DDF to the user directory.
+
+    deCONZ resolves JavaScript relative to the DDF, without a system fallback.
+    Embedding the original helper text avoids dangling battery/lux references
+    and avoids overwriting any other user-local helper files.
+    """
+    result = copy.deepcopy(document)
+    root = directory.parent.resolve()
+    for sub in result.get("subdevices", []):
+        for item in sub.get("items", []):
+            for kind in ("parse", "read", "write"):
+                parameters = item.get(kind, {})
+                if "script" not in parameters:
+                    continue
+                relative = Path(parameters["script"])
+                path = (directory / relative).resolve()
+                if relative.is_absolute() or not path.is_relative_to(root) or path.suffix != ".js":
+                    raise ValueError("Unexpected helper-script path; review before installing")
+                text = path.read_text(encoding="utf-8")
+                if not text.strip():
+                    raise ValueError(f"Empty helper script: {path}")
+                parameters["eval"] = text
+                del parameters["script"]
+    return result
+
+
 def install(source: Path, destination: Path) -> tuple[bool, Path | None]:
     """Preserve an existing override, then atomically install the corrected DDF."""
     if source.resolve() == destination.resolve():
@@ -82,7 +109,7 @@ def install(source: Path, destination: Path) -> tuple[bool, Path | None]:
         raise ValueError("Refusing to replace a symlink")
     original_path = destination if destination.exists() else source
     original = json.loads(original_path.read_text(encoding="utf-8"))
-    corrected = patch_document(original)
+    corrected = inline_scripts(patch_document(original), original_path.parent)
     if corrected == original:
         return False, None
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -115,12 +142,13 @@ def main() -> int:
     args = parser.parse_args()
     candidate = args.destination if args.destination.exists() else args.source
     original = json.loads(candidate.read_text(encoding="utf-8"))
-    corrected = patch_document(original)
+    corrected = inline_scripts(patch_document(original), candidate.parent)
     print(f"Source: {candidate}")
     print(f"Destination: {args.destination}")
     print("Scope: all FP300 units using this DDF; other device models are untouched.")
     print("Presence: 0x0142 in combined/mmwave mode; 0x014D in PIR-only mode.")
     print("Refresh: read the authoritative presence attribute when the device wakes/is due.")
+    print("Battery/lux helpers: embedded unchanged so relative paths remain functional.")
     if not args.install:
         print("Preview only: " + ("fix needed" if corrected != original else "already corrected"))
         return 0

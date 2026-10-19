@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import unittest
 
-from utils.fp300_ddf_patch import MODEL, OLD_EVAL, PRESENCE_EVAL, PRESENCE_READ, install, patch_document
+from utils.fp300_ddf_patch import MODEL, OLD_EVAL, PRESENCE_EVAL, PRESENCE_READ, inline_scripts, install, patch_document
 
 
 def fixture():
@@ -87,6 +87,34 @@ class PatchTests(unittest.TestCase):
 
     def test_source_cannot_be_destination(self):
         with self.assertRaises(ValueError): install(Path("same.json"), Path("same.json"))
+
+    def test_helpers_embedded_unchanged_without_mutating_input(self):
+        with tempfile.TemporaryDirectory() as folder:
+            directory = Path(folder)/"xiaomi"; directory.mkdir()
+            text = "Item.val = Attr.val / 100;\n"
+            (directory/"battery.js").write_text(text, encoding="utf-8")
+            value = fixture(); value["subdevices"][0]["items"][0]["parse"] = {"script": "battery.js", "at": "0x00F7"}
+            original = copy.deepcopy(value)
+            result = inline_scripts(value, directory)
+            self.assertEqual(result["subdevices"][0]["items"][0]["parse"], {"eval": text, "at": "0x00F7"})
+            self.assertEqual(value, original)
+
+    def test_missing_helper_does_not_create_override_or_backup(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder)/"system.json"; destination = Path(folder)/"user"/"override.json"
+            value = fixture(); value["subdevices"][0]["items"][0]["parse"] = {"script": "missing.js"}
+            source.write_text(json.dumps(value), encoding="utf-8")
+            with self.assertRaises(FileNotFoundError): install(source, destination)
+            self.assertFalse(destination.parent.exists())
+
+    def test_relative_generic_helper_is_preserved(self):
+        with tempfile.TemporaryDirectory() as folder:
+            directory = Path(folder)/"xiaomi"; directory.mkdir()
+            generic = Path(folder)/"generic"; generic.mkdir()
+            (generic/"lux.js").write_text("Item.val = 12;", encoding="utf-8")
+            value = fixture(); value["subdevices"][0]["items"][0]["parse"] = {"script": "../generic/lux.js"}
+            result = inline_scripts(value, directory)
+            self.assertEqual(result["subdevices"][0]["items"][0]["parse"], {"eval": "Item.val = 12;"})
 
 
 @unittest.skipUnless(shutil.which("node"), "Node.js is needed to execute the actual deCONZ JavaScript parser")
