@@ -1982,7 +1982,7 @@ function updateCycleInfobox(cycle, info) {
         titleLine.style("text-decoration", "underline");
     }
     const waterTempText = Number.isFinite(info.waterTemp) ? Math.round(info.waterTemp) + "°C" : "?°C";
-    const statusLine = addLineToBox("cycle" + cycle + "_infobox", ["ki", "be"][info.state] + " " + waterTempText,
+    const statusLine = addLineToBox("cycle" + cycle + "_infobox", ["ki", "be"][info.state] + ", " + waterTempText,
         1 - xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize * 1.1, false)
         .style("text-anchor", "end");
     // Keep the temperature beside the status without overlapping the title.
