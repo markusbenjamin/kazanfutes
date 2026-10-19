@@ -1,18 +1,11 @@
 // The config updater publishes only the Sheet's admin_message to Firebase.
-// Keep acknowledgement per tab, so five-second polling does not reopen it.
+// Keep acknowledgement only until reload, so polling does not reopen it.
 const adminMessageBox = document.getElementById("admin-message");
 const adminMessageContent = document.getElementById("admin-message-content");
 const adminMessageOk = document.getElementById("admin-message-ok");
-const adminMessageStorageKey = "dashboard-dismissed-admin-message";
 let currentAdminMessage = "";
 let dismissedAdminMessage = "";
 let adminMessagePreviousFocus;
-
-try {
-    dismissedAdminMessage = sessionStorage.getItem(adminMessageStorageKey) || "";
-} catch (error) {
-    // Acknowledgement still works in memory when browser storage is disabled.
-}
 
 function appendAdminMessageInline(parent, text) {
     // Build DOM nodes, never HTML: Sheet content cannot run scripts or handlers.
@@ -82,11 +75,6 @@ function hideAdminMessage() {
 
 function dismissAdminMessage() {
     dismissedAdminMessage = currentAdminMessage;
-    try {
-        sessionStorage.setItem(adminMessageStorageKey, dismissedAdminMessage);
-    } catch (error) {
-        // Do not require storage permission to close the message.
-    }
     hideAdminMessage();
 }
 
@@ -95,11 +83,6 @@ function updateAdminMessage(value) {
     if (!message) {
         currentAdminMessage = "";
         dismissedAdminMessage = "";
-        try {
-            sessionStorage.removeItem(adminMessageStorageKey);
-        } catch (error) {
-            // Storage is optional.
-        }
         hideAdminMessage();
         return;
     }
@@ -115,7 +98,7 @@ function updateAdminMessage(value) {
         adminMessageBox.hidden = false;
         if (wasHidden) {
             adminMessagePreviousFocus = document.activeElement;
-            adminMessageOk.focus({ preventScroll: true });
+            adminMessageBox.focus({ preventScroll: true });
         }
     }
 }
