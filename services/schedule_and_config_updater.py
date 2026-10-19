@@ -260,7 +260,11 @@ def get_presence_patterns_with_weekly_cycle_weighted_average(room, day, hour):
         set_presence = float(weekly_cycle[int(day)-1][int(hour)])
         in_threshold = float(heating_config[f"room_{room}_in_threshold"])
         weekly_cycle_weight = float(heating_config[f"room_{room}_weekly_cycle_weight"])
-        presence_prob = max(0, min(1, weekly_cycle_weight * set_presence + (1 - weekly_cycle_weight) * math.floor((presence_pattern[str(day)][str(hour)]/in_threshold))))
+        observed_presence = presence_pattern.get(str(day), {}).get(str(hour))
+        # Unknown sensor history is not evidence of absence. Fall back to the
+        # configured weekly cycle when no trustworthy observations exist.
+        if observed_presence is not None:
+            presence_prob = max(0, min(1, weekly_cycle_weight * set_presence + (1 - weekly_cycle_weight) * math.floor((observed_presence/in_threshold))))
     return presence_prob
         
 def generate_condensed_schedule(already_existing_presence_with_override = None, already_existing_schedule = None, for_how_many_days:int = 7):
