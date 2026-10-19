@@ -10,6 +10,7 @@ Data types:
 - daily gas consumption
 - daily heating state (boiler, pumps, rooms)
 - daily pump powers
+- daily boiler plug power and executed boiler commands
 - daily supply-water temperature for each cycle
 - daily valve opening state for each room
 """
@@ -18,6 +19,7 @@ Data types:
 
 from utils.project import *
 from utils.water_temperature_formatter import format_cycle_water_temperatures
+from utils.boiler_power_formatter import format_boiler_power, format_boiler_commands
 
 parse_old_logs = False
 settings['dev'] = False
@@ -56,7 +58,7 @@ else:
         digestion_days = [datetime.now()]
 
 if not data_types_to_digest:
-    data_types_to_digest = ['room_measurements','room_set_temps','room_overrides','external_temp','gas_consumption','heating_state','room_valve_states','room_kpis','pumps_power','cycle_water_temps']
+    data_types_to_digest = ['room_measurements','room_set_temps','room_overrides','external_temp','gas_consumption','heating_state','room_valve_states','room_kpis','pumps_power','cycle_water_temps','boilers_power']
 
 #endregion
 
@@ -319,6 +321,31 @@ for digestion_day in digestion_days:
         # Log execution
         log({f"success {action_string}":success})
 
+    #endregion
+
+    #region Boiler plug power and executed heating commands
+    if 'boilers_power' in data_types_to_digest:
+        success = False
+        action_string = f'formatting boiler plug power for {digestion_daystamp}'
+        try:
+            log_file_path = f'data/logs/boilers_power/boiler_plugs.json{log_file_suffix}'
+            loaded_log = load_ndjson_to_json_list(log_file_path) if os.path.exists(os.path.join(get_project_root(), log_file_path)) else []
+            formatted_plugs = format_boiler_power(loaded_log, digestion_daystamp)
+            for plug, readings in formatted_plugs.items():
+                export_json_list_to_json_file(readings, f'{export_path_prefix}data/formatted/{digestion_daystamp}/{plug}_power.json')
+            commands_path = 'data/heating_control/commands_archive.json'
+            commands = load_json_to_dict(commands_path) if os.path.exists(os.path.join(get_project_root(), commands_path)) else []
+            export_json_list_to_json_file(
+                format_boiler_commands(commands, digestion_daystamp),
+                f'{export_path_prefix}data/formatted/{digestion_daystamp}/boiler_commands.json'
+            )
+            report(f'Done: {action_string}.', verbose=True)
+            success = True
+        except ModuleException as e:
+            ServiceException(f'Module error while {action_string}.', original_exception=e, severity=2)
+        except Exception:
+            ServiceException(f'Unexpected error while {action_string}.', severity=2)
+        log({f'success {action_string}': success})
     #endregion
 
     #region Cycle water temperatures
