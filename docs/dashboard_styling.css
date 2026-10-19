@@ -30,3 +30,127 @@ html, body {
 .clickthrough {
     pointer-events: none
   }
+
+#admin-message {
+    position: fixed;
+    z-index: 1000;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 76vw;
+    max-height: 68vh;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(20px, 3vw, 40px);
+    border: none;
+    /* Opaque equivalent of the existing rgb(255, 154, 154, 0.5) over white. */
+    background: rgb(255, 205, 205);
+    color: black;
+    font-size: clamp(18px, 1.8vw, 24px);
+    line-height: 1.5;
+}
+
+#admin-message[hidden] {
+    display: none;
+}
+
+#admin-message-content {
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+    min-height: 0;
+    padding-right: 24px;
+}
+
+#admin-message-content p,
+#admin-message-content ul,
+#admin-message-content ol,
+#admin-message-content h3 {
+    margin: 0 0 1em;
+}
+
+#admin-message-content p {
+    white-space: pre-wrap;
+}
+
+#admin-message-content ul,
+#admin-message-content ol {
+    padding-left: 1.5em;
+    list-style-position: outside;
+}
+
+#admin-message-content ul {
+    list-style-type: disc;
+}
+
+#admin-message-content li {
+    margin: 0.25em 0;
+}
+
+#admin-message-content h3 {
+    font-size: 1.05em;
+}
+
+#admin-message a,
+#admin-message button {
+    color: black;
+    font: inherit;
+}
+
+#admin-message a {
+    text-decoration: underline;
+}
+
+#admin-message button {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+#admin-message-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 44px;
+    height: 44px;
+    font-size: 30px !important;
+    line-height: 1;
+}
+
+.admin-message-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px 24px;
+    padding-top: 20px;
+}
+
+.admin-message-actions button,
+.admin-message-actions a {
+    padding: 8px 12px;
+}
+
+#admin-message button:hover,
+.admin-message-actions a:hover {
+    background: rgb(255, 154, 154, 0.5);
+}
+
+#admin-message :focus-visible {
+    outline: 2px solid black;
+    outline-offset: 2px;
+}
+
+#admin-message-ok:focus-visible {
+    outline: none;
+    background: rgb(255, 154, 154, 0.5);
+}
+
+@media (max-width: 600px) {
+    #admin-message {
+        width: 92vw;
+        max-height: 84vh;
+        max-height: 84dvh;
+    }
+}

@@ -212,6 +212,8 @@ function getDataFromFirebase() {
             const scheduleJSON = fullFirebaseDataJSON.schedule;
             const updateJSON = fullFirebaseDataJSON.update;
 
+            updateAdminMessage(systemJSON.dashboard?.admin_message);
+
             systemOn = systemJSON['switch']['system'] == 1 ? true : false;
             systemNode = systemJSON;
 

@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Kazán-Gólya fűtés: rendszerállapot</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" type="text/css" href="styles.css">
@@ -20,6 +21,15 @@
     <div id="tooltip"
         style="position: absolute; visibility: hidden; background-color: white; border: 1px solid black; padding: 5px; pointer-events: none;">
     </div>
+    <section id="admin-message" role="dialog" aria-label="Adminisztrátori üzenet" hidden>
+        <button id="admin-message-close" type="button" aria-label="Üzenet bezárása">×</button>
+        <div id="admin-message-content"></div>
+        <div class="admin-message-actions">
+            <button id="admin-message-ok" type="button">Ok</button>
+            <a href="mailto:markus.benjamin@gmail.com">Kérdésem van</a>
+        </div>
+    </section>
+    <script src="admin_message.js"></script>
     <script src="data.js"></script>
     <script src="draw.js"></script>
 </body>

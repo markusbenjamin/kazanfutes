@@ -89,9 +89,14 @@ def update_local_heating_control_config():
         try:
             old_no_presence_offset =  heating_config['no_presence_offset']
             old_heating_window = heating_config['heating_window']
-            heating_control_config_online_version = transpose_2D_array(select_subtable_from_table(download_google_sheet_to_2D_array(heating_config['heating_control_config_id']),[1,-0],[0,-1]))
-            updated_heating_config = dict(zip(heating_control_config_online_version[0], heating_control_config_online_version[1]))
+            heating_control_config_online_version = download_google_sheet_to_2D_array(heating_config['heating_control_config_id'])
+            # Sheets omits trailing empty cells; a blank value must not truncate all config columns.
+            updated_heating_config = {
+                row[0]: row[1] if len(row) > 1 else ''
+                for row in heating_control_config_online_version[1:] if row and row[0]
+            }
             export_dict_as_json(updated_heating_config,f'{export_path_prefix}config/heating_control_config.json')
+            system_node.write({'admin_message': updated_heating_config.get('admin_message', '') or ''}, 'dashboard')
             new_no_presence_offset =  heating_config['no_presence_offset']
             new_heating_window = heating_config['heating_window']
             if old_no_presence_offset != new_no_presence_offset or old_heating_window != new_heating_window:
