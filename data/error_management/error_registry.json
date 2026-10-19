@@ -7643,5 +7643,38 @@
         "reported_timestamp": "2026-10-19-01-00-41",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to set light state pult: light pult unreachable, cannot set state.",
+        "severity": 2,
+        "origin": "light_state_manager.py:43 --> project.py/set_light_state:1872",
+        "origin_timestamp": "2026-10-19-12-06-09",
+        "registration_timestamp": "2026-10-19-12-06-09",
+        "reported": true,
+        "reported_timestamp": "2026-10-19-12-10-46",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while trying to update local heating control config: list index out of range.",
+        "severity": 2,
+        "origin": "schedule_and_config_updater.py/update_local_heating_control_config:93",
+        "origin_timestamp": "2026-10-19-13-10-51",
+        "registration_timestamp": "2026-10-19-13-10-51",
+        "reported": true,
+        "reported_timestamp": "2026-10-19-13-15-35",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to sync data and config with repo: Git command failed with exit code 1: git -C /media/pi/program_stick/kazanfutes push -u origin main\nTo github.com:markusbenjamin/kazanfutes.git\n ! [remote rejected]         main -> main (cannot lock ref 'refs/heads/main': is at 78ff56f272b6311e10973f42479d63ea1d1f646d but expected aa2fc9784887fdf328a19ad24683a86ab9a1f8c6)\nerror: failed to push some refs to 'github.com:markusbenjamin/kazanfutes.git': Git command failed with exit code 1: git -C /media/pi/program_stick/kazanfutes push -u origin main\nTo github.com:markusbenjamin/kazanfutes.git\n ! [remote rejected]         main -> main (cannot lock ref 'refs/heads/main': is at 78ff56f272b6311e10973f42479d63ea1d1f646d but expected aa2fc9784887fdf328a19ad24683a86ab9a1f8c6)\nerror: failed to push some refs to 'github.com:markusbenjamin/kazanfutes.git' (GitCommandError).",
+        "severity": 2,
+        "origin": "data_and_config_uploader.py:39 --> project.py/sync_paths_with_repo:771",
+        "origin_timestamp": "2026-10-19-15-51-01",
+        "registration_timestamp": "2026-10-19-15-51-01",
+        "reported": true,
+        "reported_timestamp": "2026-10-19-15-55-31",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]

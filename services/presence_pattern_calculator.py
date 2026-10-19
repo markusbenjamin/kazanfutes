@@ -45,16 +45,14 @@ try:
                     occupancy_patterns[room][day_of_week] = {}
                 if h not in occupancy_patterns[room][day_of_week]:
                     occupancy_patterns[room][day_of_week][h] = []
-                rf = rel_freq(occ_for_hour[room])
-                if True in rf:
-                    occupancy_patterns[room][day_of_week][h].append(rf[True])
-                else:
-                    occupancy_patterns[room][day_of_week][h].append(0)
+                occupancy_patterns[room][day_of_week][h].append(
+                    known_presence_fraction(occ_for_hour[room])
+                )
 
     for room, days in occupancy_patterns.items():
         for day, hours in days.items():
             for hour in hours:
-                occupancy_patterns[room][day][hour] = mean_without_none(occupancy_patterns[room][day][hour], 0)
+                occupancy_patterns[room][day][hour] = mean_without_none(occupancy_patterns[room][day][hour], None)
 
     occupancy_export_path = os.path.join(
         export_path_prefix,

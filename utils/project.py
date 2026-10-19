@@ -63,6 +63,7 @@ import filelock
 import requests
 import pytz
 from PIL import Image
+from utils.occupancy import normalize_presence, calculate_occupancy, known_presence_fraction
 
 if on_raspi:
     from pymodbus.client import ModbusTcpClient
@@ -1409,20 +1410,11 @@ def get_presence():
 
 def get_presence_all(names: list[str] | None = None) -> dict:
     """
-    Return a snapshot of every ZHAPresence sensor (or the ones listed in *names*).
+    Return named, versioned observations for ZHAPresence resources.
 
-    Output
-    ------
-    {
-      'timestamp': <now-local>,
-      'states': {
-          'sensor_name': {
-              'reachable'   : <True/False/-1>,
-              'last_updated': <local-fmt-or-None>,
-              'state'       : <True/False>
-          }, ...
-      }
-    }
+    ``state`` and ``last_updated`` retain the real source values. Each entry
+    also records the source identity, motion/presence semantics, radio contact,
+    receipt time and health verdict. Polling never fabricates a source event.
     """
     try:
         sensors_state = list(read_sensors())
@@ -1431,41 +1423,15 @@ def get_presence_all(names: list[str] | None = None) -> dict:
         if names is None:
             names = [s.name for _, s in sensors_state if s.type == 'ZHAPresence']
 
-        # helper to make lastupdated human-friendly
-        def _fmt(ts):
-            if not ts or ts == 'none':
-                return None
-            dt = datetime.strptime(ts.split('.')[0], "%Y-%m-%dT%H:%M:%S") \
-                   .replace(tzinfo=pytz.UTC) \
-                   .astimezone(tzlocal.get_localzone())
-            return dt.strftime(settings['timestamp_format'])
-
         states = {}
+        observed_at = datetime.now().astimezone()
         for _, s in sensors_state:
             if s.type != 'ZHAPresence' or s.name not in names:
                 continue
 
-            raw_state  = s.raw['state']
-            raw_config = s.raw.get('config', {})
-
-            states[s.name] = {
-                'reachable'   : raw_config.get('reachable', -1),
-                'last_updated': _fmt(raw_state.get('lastupdated')),
-                'state'       : bool(raw_state.get('presence', 0))
-            }
-            if s.name == "Pres1": # Masking a not delta driven sensor
-                if states[s.name]['reachable']:
-                    states[s.name] = {
-                        'reachable'   : True,
-                        'last_updated': timestamp(),
-                        'state'       : states[s.name]['state']
-                    }
-                else:
-                    states[s.name] = {
-                        'reachable'   : False,
-                        'last_updated': states[s.name]['last_updated'],
-                        'state'       : states[s.name]['state']
-                    }
+            states[s.name] = normalize_presence(
+                s.raw, observed_at, local_tz=tzlocal.get_localzone(),
+            )
 
         return states
 
@@ -1527,32 +1493,16 @@ def load_recent_presence_log(now=None):
 
 def get_rooms_occupancy(log = None, threshold = None, minutes = [0], timestamps = None):
     """
-    Returns the occupancy state for all rooms either for list of minutes or list of timestamps.
+    Return True/False/None occupancy for live or historical room observations.
 
-    Get the list of detected movements for all rooms.
-    If both less than presence window minutes ago from <minute>, flip occupancy state for room to 1, else 0.
-
-    Return result.
+    Radar presence is a sustained level; PIR motion requires repeated distinct
+    source reports. Unknown health is not vacancy. Existing return shapes and
+    the separate schedule-enforcer heating lookback remain unchanged.
     """
     try:
-        # 1) Get last two movements
         config = load_json_to_dict('config/heating_control_config.json')
-        room_all_movements = {}
         rooms = get_rooms_info(False)
-        for room, info in rooms.items():
-            room_all_movements[room] = []
-
-        if log is None:
-            presence_log = load_recent_presence_log()
-        else:
-            presence_log = log
-
-        for log_entry in sorted(presence_log, key=lambda d: d["timestamp"]):
-            for room, state in log_entry['states'].items():
-                if state['reachable'] and state['state'] and state['last_updated'] not in room_all_movements[room]:
-                        room_all_movements[room].append(state['last_updated'])
-                        room_all_movements[room] = sorted(room_all_movements[room])
-        
+        presence_log = load_recent_presence_log() if log is None else log
         timestamps_to_check = []
         if timestamps:
             timestamps_to_check = copy.deepcopy(timestamps)
@@ -1560,35 +1510,18 @@ def get_rooms_occupancy(log = None, threshold = None, minutes = [0], timestamps 
             for minute in minutes:
                 timestamps_to_check.append((datetime.now() + timedelta(minutes=minute)).strftime(settings['timestamp_format']))
         
-        occupancy = {}
-        for ts_to_check in timestamps_to_check:
-            occupancy[ts_to_check] = {}
-            room_last_two_movements = {}
-            room_all_movements_before_minute = {}
-            for room, info in rooms.items():
-                room_all_movements_before_minute[room] = [
-                    ts for ts in room_all_movements[room]
-                    if 
-                    datetime.strptime(ts, settings['timestamp_format']) <= datetime.strptime(ts_to_check, settings['timestamp_format'])
-                ]
-                #room_last_two_movements[room] = room_all_movements_before_minute[room][-2:]
-                room_all_movements_before_minute_within_presence_window = [
-                    ts for ts in room_all_movements_before_minute[room]
-                    if 
-                    datetime.strptime(ts_to_check, settings['timestamp_format']) - timedelta(minutes=float(config['presence_window'])) <= datetime.strptime(ts, settings['timestamp_format'])
-                ]
-
-                #report(room_all_movements_before_minute_within_presence_window,verbose = True)        
-
-                # 2) Determine state
-                if len(room_all_movements_before_minute_within_presence_window) >= 2:
-                    time_diff = minutes_since(
-                        room_all_movements_before_minute_within_presence_window[0],
-                        room_all_movements_before_minute_within_presence_window[-1]
-                    )
-                    occupancy[ts_to_check][room] = time_diff >= (threshold if threshold else float(config["presence_min_sep"]))
-                else:
-                    occupancy[ts_to_check][room] = False
+        local_tz = tzlocal.get_localzone()
+        targets = [datetime.strptime(ts, settings['timestamp_format']).replace(tzinfo=local_tz)
+                   for ts in timestamps_to_check]
+        evaluated = calculate_occupancy(
+            presence_log, rooms, targets,
+            presence_window=float(config['presence_window']),
+            minimum_separation=float(config['presence_min_sep']) if threshold is None else float(threshold),
+            allow_legacy=log is not None,
+        )
+        occupancy = dict(zip(timestamps_to_check, evaluated))
+        if not timestamps_to_check:
+            return {}
         if len(timestamps_to_check)>1:
             return occupancy
         else:
