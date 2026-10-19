@@ -58,7 +58,10 @@ async function run() {
         assert.equal(await content.locator('ul li').count(), 2);
         assert.equal(await content.locator('em').textContent(), 'Második');
         assert.match(await content.locator('p').first().textContent(), /\nA beállítások/);
-        assert.equal(await box.getByRole('link', { name: 'Kérdésem van' }).getAttribute('href'), 'mailto:markus.benjamin@gmail.com');
+        const emailLink = new URL(await box.getByRole('link', { name: 'Kérdésem van' }).getAttribute('href'));
+        assert.equal(emailLink.protocol, 'mailto:');
+        assert.equal(emailLink.pathname, 'markus.benjamin@gmail.com');
+        assert.equal(emailLink.searchParams.get('subject'), 'fűtés kérdés');
         const style = await box.evaluate(element => ({
             background: getComputedStyle(element).backgroundColor,
             border: getComputedStyle(element).borderTopWidth,
