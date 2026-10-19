@@ -1,5 +1,5 @@
 """
-Scrapes and logs external temperature.
+Scrapes and logs legacy web temperature; does not publish dashboard values.
 """
 
 from utils.project import *
@@ -7,8 +7,7 @@ from utils.project import *
 success = False
 try:
     external_temp = scrape_external_temperature()
-    system_node = JSONNodeAtURL(node_relative_path='system')
-    system_node.write({"external_temp":external_temp},"state")
+    # Firebase external_temp belongs exclusively to weather_station_logger (WS90).
     log_data({"external_temp":external_temp},'external_temp/external_temp.json')
     success = True
 except ModuleException as e:

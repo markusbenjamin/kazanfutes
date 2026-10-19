@@ -6,7 +6,7 @@ Data types:
 - daily set temps for each room
 - daily list of overrides for given day (not by issuance)
 - daily KPIs for rooms
-- daily external temp
+- daily external temp from WS90 observations
 - daily gas consumption
 - daily heating state (boiler, pumps, rooms)
 - daily pump powers
@@ -20,6 +20,7 @@ Data types:
 from utils.project import *
 from utils.water_temperature_formatter import format_cycle_water_temperatures
 from utils.boiler_power_formatter import format_boiler_power, format_boiler_commands
+from utils.external_temperature_formatter import format_ws90_external_temperatures
 
 parse_old_logs = False
 settings['dev'] = False
@@ -191,21 +192,13 @@ for digestion_day in digestion_days:
     #region External temp
     if 'external_temp' in data_types_to_digest:
         success = False
-        log_file_path = r"data/logs/external_temp/external_temp.json"
+        log_file_path = r"data/logs/weather_station/weather_station.json"
         action_string = f'formatting external temp for {digestion_daystamp}'
 
         try:
-            loaded_log = load_ndjson_to_json_list(f"{log_file_path}{log_file_suffix}")
-
-            formatted_data = []
-            
-            for raw_entry in loaded_log:
-                formatted_entry = {
-                    'timestamp': raw_entry['timestamp'],
-                    'external_temp': raw_entry['external_temp']
-                }
-                if formatted_entry not in formatted_data:
-                    formatted_data.append(formatted_entry)
+            source_path = f"{log_file_path}{log_file_suffix}"
+            loaded_log = load_ndjson_to_json_list(source_path) if os.path.exists(os.path.join(get_project_root(), source_path)) else []
+            formatted_data = format_ws90_external_temperatures(loaded_log, digestion_daystamp)
             
             export_json_list_to_json_file(formatted_data,f"{export_path_prefix}data/formatted/{digestion_daystamp}/external_temp.json")
 

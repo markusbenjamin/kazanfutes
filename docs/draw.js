@@ -23,7 +23,7 @@ function draw() {
 }
 
 function drawExternalThermometer() {
-    if (externalTemp) {
+    if (Number.isFinite(externalTemp)) {
         const boxDims = getBBoxP5jsDimensions("external_thermometer");
         let x = boxDims.cx;
         let y = boxDims.cy;

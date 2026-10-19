@@ -3,6 +3,7 @@ Reads and logs weather station state.
 """
 
 from utils.project import *
+from utils.external_temperature_formatter import ws90_external_temperature
 from utils.shelly_discovery import (
     build_shelly_resolver,
     load_shelly_config,
@@ -25,10 +26,12 @@ try:
         ws90_bt_addr=WEATHER_STATION["ws90_bt_addr"],
     )
 
-    #system_node = JSONNodeAtURL(node_relative_path='system')
-    #system_node.write({"weather_station": weather_station_state}, "state")
-
     log_data(weather_station_state, "weather_station/weather_station.json")
+
+    # Sole publisher of the dashboard's live outdoor temperature. Invalid or
+    # stale WS90 observations clear the value; never fall back to web scraping.
+    system_node = JSONNodeAtURL(node_relative_path='system')
+    system_node.write({"external_temp": ws90_external_temperature(weather_station_state)}, "state")
 
     success = True
 

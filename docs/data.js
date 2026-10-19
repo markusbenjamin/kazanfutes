@@ -354,7 +354,7 @@ function getDataFromFirebase() {
 
             let lastRequestHourStamp = hourStamp(requestOrigin == "QR" ? dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp) : dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp));
 
-            externalTemp = systemJSON.state.external_temp;
+            externalTemp = Number.isFinite(systemJSON.state.external_temp) ? systemJSON.state.external_temp : null;
 
             let controlError = systemJSON['control']['error']['error'];
             let secondsSinceControlError = timePassedSince(dateFromTimestamp(systemJSON['control']['last_updated']), 'seconds')
@@ -1900,7 +1900,7 @@ function updateGeneralInfobox(info) {
                 }
             );
 
-            let externalTempLine = "Külső hőmérséklet: " + externalTemp + " °C.";
+            let externalTempLine = "Külső hőmérséklet: " + (externalTemp ?? "—") + " °C.";
             lines.push(
                 {
                     lineXOffset: 0,
@@ -2738,10 +2738,11 @@ function drawMainGraph(graphData = null) {
                     );
                     break;
                 }
-                case "external_temp":
-                    let tempRange = d3.extent(graphData['external_temp'].map(elem => elem['external_temp']));
+                case "external_temp": {
+                    const externalReadings = (graphData.external_temp || []).filter(elem => Number.isFinite(elem.external_temp));
+                    let tempRange = externalReadings.length ? d3.extent(externalReadings.map(elem => elem.external_temp)) : [0, 1];
                     drawPlot(
-                        graphData['external_temp'],
+                        externalReadings,
                         {
                             parentId: "graph",
                             smoothing: { bottom: 0, left: 10 },
@@ -2751,10 +2752,11 @@ function drawMainGraph(graphData = null) {
                             tickVals: { left: d3.range(Math.floor(tempRange[0]) - 1, Math.ceil(tempRange[1]) + 2, 1) },
                             plotStyle: { joined: true, col: "rgba(28, 3, 252, 0.92)", thickness: "3", startCap: false, endCap: true, smoothCurve: true },
                             plotLabel: "mai külső hőmérséklet",
-                            curveEndText: { show: true, fontSize: 6.5, text: ((graphData['external_temp'].at(-1).external_temp).toFixed(1).replace(/\.0$/, '')) + "°C", col: "rgba(28, 3, 252, 0.92)", xOffset: 5, yOffset: 1.4 }
+                            curveEndText: { show: externalReadings.length > 0, fontSize: 6.5, text: externalReadings.length ? externalReadings.at(-1).external_temp.toFixed(1).replace(/\.0$/, '') + "°C" : "", col: "rgba(28, 3, 252, 0.92)", xOffset: 5, yOffset: 1.4 }
                         }
                     );
-                    break
+                    break;
+                }
             }
         }
     }
