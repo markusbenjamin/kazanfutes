@@ -14,6 +14,11 @@ Generated text is click-through. Each display shows its own latest instantaneous
 electrical power in watts and selects only its own history when hovered. The
 existing click-to-lock plot behavior also applies.
 
+The displays can be moved freely in the SVG; text follows their bounding boxes.
+Keep their Inkscape labels unchanged. An optional `boiler_cord` label receives a
+green (`#00cc00`), fully opaque stroke on dashboard load. This applies
+to the group and its descendants, overriding individual paths' exported colors.
+
 The existing `boiler_power_monitor` observation is published to
 `system/state/boiler_plugs/<plug_source>` on Firebase. It contains `timestamp`,
 `reachable`, and `power_w`. Missing, invalid, unreachable, or older-than-three-

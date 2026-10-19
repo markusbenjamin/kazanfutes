@@ -14,6 +14,8 @@ function freshBoilerPower(reading, now = new Date()) {
 }
 
 function initializeBoilerPowerMarkers() {
+    // SVG child paths can override the group's stroke with their own inline styles.
+    d3.selectAll('#boiler_cord, #boiler_cord *').style('stroke', '#00cc00').style('stroke-opacity', '1');
     BOILER_POWER_DISPLAYS.forEach(display => {
         if (d3.select('#' + display.marker).empty()) return;
         d3.select('#' + display.marker).style('pointer-events', 'all');
@@ -102,7 +104,7 @@ function drawBoilerPowerPlot(data, setting) {
         axesLabel: { bottom: 'óra', left: 'teljesítmény (W)' },
         tickVals: { left: d3.range(0, upper + step / 2, step) },
         plotStyle: { joined: true, col: 'rgb(40,40,40)', thickness: '1.5', smoothCurve: false, startCap: false, endCap: true },
-        plotLabel: setting.boilerNumber + '. kazán mai villamos teljesítménye' + (measured.length ? '' : ' (nincs mért adat)')
+        plotLabel: setting.boilerNumber + '. kazán mai villamos teljesítménye'
     };
     drawPlot([], { ...common, rects: { when: 'before', list: boilerCommandPeriods(data.boiler_commands || [], 0, upper) } });
     segments.forEach((segment, index) => {
