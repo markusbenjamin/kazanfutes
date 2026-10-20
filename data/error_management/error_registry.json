@@ -7687,5 +7687,16 @@
         "reported_timestamp": "2026-10-19-18-10-45",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to sync data and config with repo: Git sync blocked to protect local changes: changes outside the selected sync paths were not approved:\n   M 'dev/dev_scripts/visual_check.py': changes outside the selected sync paths were not approved:\n   M 'dev/dev_scripts/visual_check.py' (GitSyncBlocked).",
+        "severity": 2,
+        "origin": "data_and_config_uploader.py:39 --> project.py/sync_paths_with_repo:767",
+        "origin_timestamp": "2026-10-20-00-00-16",
+        "registration_timestamp": "2026-10-20-00-00-16",
+        "reported": true,
+        "reported_timestamp": "2026-10-20-00-00-42",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
