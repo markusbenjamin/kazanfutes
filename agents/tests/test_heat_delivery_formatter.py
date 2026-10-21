@@ -20,7 +20,9 @@ class HeatDeliveryFormatterTests(unittest.TestCase):
         rows = format_cycle_heat_delivery([row(0), row(1), row(2, power=0)], DAY, {'1': 1})['1']
         self.assertEqual([r['power_kw'] for r in rows], [6, 6, 0])
         self.assertEqual([r['flow_m3h'] for r in rows], [0.5]*3)
-        self.assertTrue(all(set(r) == {'timestamp', 'power_kw', 'flow_m3h'} for r in rows))
+        self.assertTrue(all(set(r) == {'timestamp', 'power_kw', 'flow_m3h', 'energy_kwh', 'energy_partial'} for r in rows))
+        self.assertEqual([r['energy_kwh'] for r in rows], [0, .1, .15])
+        self.assertFalse(any(r['energy_partial'] for r in rows))
 
     def test_uses_explicit_meter_mapping_and_separates_cycles(self):
         result = format_cycle_heat_delivery([row(0, meter='2'), row(1, meter='2')], DAY, {'1': 2, '2': 1})
@@ -56,6 +58,21 @@ class HeatDeliveryFormatterTests(unittest.TestCase):
     def test_late_first_observation_keeps_actual_power_without_accumulation(self):
         result = format_cycle_heat_delivery([row(10, power=16672)], DAY, {'1': 1})['1'][0]
         self.assertEqual(result['power_kw'], 16.672)
+        self.assertEqual(result['energy_kwh'], 0)
+        self.assertTrue(result['energy_partial'])
+
+    def test_energy_skips_missing_and_long_intervals_without_resetting_total(self):
+        rows = format_cycle_heat_delivery([row(0), row(1), row(5), row(6)], DAY, {'1': 1})['1']
+        self.assertEqual([r['energy_kwh'] for r in rows], [0, .1, .1, .2])
+        self.assertTrue(rows[-1]['energy_partial'])
+        rows = format_cycle_heat_delivery([row(0), row(1), row(2, power=None), row(3), row(4)], DAY, {'1': 1})['1']
+        self.assertEqual([r['energy_kwh'] for r in rows], [0, .1, .1, .1, .2])
+        self.assertTrue(rows[-1]['energy_partial'])
+
+    def test_no_power_is_unknown_not_zero_energy(self):
+        row_out = format_cycle_heat_delivery([row(0, power=None)], DAY, {'1': 1})['1'][0]
+        self.assertIsNone(row_out['energy_kwh'])
+        self.assertTrue(row_out['energy_partial'])
 
     def test_formatter_writes_all_four_files_without_device_io(self):
         tree = ast.parse(Path('services/data_formatter.py').read_text(encoding='utf-8'))
