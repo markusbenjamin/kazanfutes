@@ -366,11 +366,11 @@ for digestion_day in digestion_days:
         log({f"success {action_string}": success})
     #endregion
 
-    #region Cycle delivered heat and flow
+    #region Cycle thermal power and flow
     if 'cycle_heat_delivery' in data_types_to_digest:
         success = False
         source_path = f"data/logs/heat_delivery/heatmeters_state.json{log_file_suffix}"
-        action_string = f'formatting daily cycle delivered heat and flow for {digestion_daystamp}'
+        action_string = f'formatting daily cycle thermal power and flow for {digestion_daystamp}'
         try:
             loaded_log = load_ndjson_to_json_list(source_path) if os.path.exists(os.path.join(get_project_root(), source_path)) else []
             meter_config = load_json_to_dict('config/heating_monitor.json')['cycles']
