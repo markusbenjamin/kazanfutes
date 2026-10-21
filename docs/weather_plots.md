@@ -20,8 +20,9 @@ interpolation within each valid segment; missing intervals still break them.
 Precipitation is the device's cumulative millimetre counter, not a calculated
 daily rainfall total.
 
-Wind direction uses a 16-sector circular histogram, centred within the plot
-area (not the surrounding dashboard or title). Sector area represents the
+Wind direction uses a 16-sector circular histogram, horizontally centred in
+the plot area and nudged slightly down to balance the negative space below
+the selector. Sector area represents the
 number of observations, with west at the top to match the building diagram
 (north right, east bottom, south left). Calm observations and unknown
 wind speed/direction are excluded; an empty day keeps the compass and shows

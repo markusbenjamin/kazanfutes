@@ -57,7 +57,7 @@ function drawWindDirectionHistogram(plotElement, plotDims, readings) {
     const total = bins.reduce((sum, bin) => sum + bin.count, 0);
     const radius = Math.max(1, Math.min(plotDims.w, plotDims.h) * .36);
     const centre = plotElement.append('g').attr('class', 'wind-direction-histogram')
-        .attr('transform', `translate(${plotDims.w / 2},${plotDims.h / 2})`);
+        .attr('transform', `translate(${plotDims.w / 2},${plotDims.h * .56})`);
     const max = Math.max(1, ...bins.map(bin => bin.count));
     const scale = d3.scaleSqrt().domain([0, max]).range([0, radius]);
     [.25, .5, .75, 1].forEach(fraction => {
