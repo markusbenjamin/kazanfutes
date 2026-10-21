@@ -15,6 +15,7 @@ const context = vm.createContext({
     drawMainGraph: data => requests.push(data)
 });
 vm.runInContext(fs.readFileSync(path.join(root, 'docs/room_metric_plots.js'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(root, 'docs/cycle_heat_plots.js'), 'utf8'), context);
 vm.runInContext(source.slice(source.indexOf('const ROOM_TEMPERATURE_DISPLAY_STEP_HOURS'), source.indexOf('function drawPlot(')), context);
 const evaluate = code => JSON.parse(JSON.stringify(vm.runInContext(code, context)));
 context.prevented = 0;
@@ -91,6 +92,8 @@ assert.equal(calls[0].options.rects.list[0].fill, 'rgba(180,180,180,0.3)');
 assert.equal(calls[0].options.rects.list[0].y2, 100);
 assert.equal(calls[1].options.plotStyle.col, 'rgb(0, 0, 0)');
 assert.equal(calls[1].options.curveEndText.show, false);
+assert.equal(calls[0].options.axesLabel.left, 'átlagos szerdai jelenlét (%)');
+assert.equal(calls[0].options.plotLabelTabs.day, '2026-10-21');
 calls.length = 0;
 context.data = {};
 vm.runInContext('drawRoomMetricPlot(data, setting)', context);
@@ -108,11 +111,14 @@ assert.equal(calls[1].options.smoothing.left, 10);
 assert.equal(calls[1].options.plotStyle.smoothCurve, true);
 assert.equal(calls[1].options.plotStyle.monotone, false);
 const click = source.slice(source.indexOf('.on("click.maingraph"'), source.indexOf('d3.select("body")', source.indexOf('.on("click.maingraph"')));
-assert.match(click, /event.stopPropagation\(\);\s*if \(openCycleHeatPlot\(event, this.id\)\) return;\s*if \(openRoomMetricPlot\(event, this.id\)\) return;/);
+assert.match(click, /event.stopPropagation\(\);\s*if \(openWeatherMetricPlot\(event, this.id\)\) return;\s*if \(openCycleHeatPlot\(event, this.id\)\) return;\s*if \(openRoomMetricPlot\(event, this.id\)\) return;/);
 const hover = source.slice(source.indexOf('function joinMainGrapDataSourceToElements'), source.indexOf('.on("click.maingraph"'));
 assert.match(hover, /mainGraphSetting = elementToMainGraphSettingMapping\[this.id\]/);
 assert.doesNotMatch(hover, /room_metrics|roomMetricSelections/);
 assert.match(source, /case "room_metrics":\s*drawRoomMetricPlot\(graphData, mainGraphSetting\)/);
 assert.match(source, /ops.plotStyle.stepAfter \? d3.curveStepAfter/);
 assert.match(source, /ops.plotStyle.monotone \? d3.curveMonotoneX/);
+assert.match(source, /period.fill = "rgba\(255,0,0,0\.08\)";/); // Room heating periods remain visible without borders.
+assert.match(source, /Keringetett körök: /);
+assert.doesNotMatch(source, /Bekapcsolt körök:/);
 console.log('Room metric plots passed: unchanged hover, same temperature series and smoothing as main plot, labels/colors, selector/pinning, learned occupancy and gray actual periods.');

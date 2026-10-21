@@ -8,12 +8,15 @@ electrical pump power black. Ordinary click keeps its usual pin/unpin action.
 Selecting a metric keeps the chart pinned; the existing outside-click unlock
 still applies. Detailed choices are remembered per cycle for the current page
 session only, shared by its dial and piping. They never change ordinary hover.
-Other dashboard hover targets and plots are unchanged.
+Detailed selectors also show the date with previous/next-day controls. The
+metric and cycle stay selected while navigating; future days are disabled.
+The ordinary hover title is `<n>. kör mai fűtőteljesítménye`.
 
 All four views retain the selected cycle's pump-on shading and thin curves.
 Period rectangles show their fill only, with no borders.
 Pump power joins known observations even across time gaps; explicit unknown
-values still break it. Heatmeter curves retain their missing-interval breaks.
+values still break it. Its black curve is rectangular (step-after), with no
+smoothing. Heatmeter curves retain their missing-interval breaks.
 Metric selection replaces the setting object so a late response for the old
 metric cannot overwrite the newly selected chart. Heading clicks/keyboard
 activation do not bubble into the dashboard's outside-click unlock handler.
@@ -46,7 +49,7 @@ of electrical pump watts. Energy is a trapezoidal integral of logged thermal
 `power_w` over observed intervals no longer than three minutes. Missing or
 long intervals are not filled. Late starts or missing coverage set
 `energy_partial`; absent power stays unknown, not zero. Totals reset with each
-day's formatted file. They are marked **≈** because they are estimates rather
-than a trusted cumulative meter counter. Their tooltip notes missing coverage.
+day's formatted file. Dials show whole kWh without an approximation prefix or
+tooltip.
 The raw energy counter is deliberately ignored because of observed unit/jump
 inconsistencies. Heating-power plots remain instantaneous kW, not kWh.

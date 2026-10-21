@@ -644,7 +644,7 @@ function collectDataFromGitHub(dataToCollect, drawFunction) {
         } else {
             // Not fresh (or doesn't exist) -> fetch from GitHub
             // Keep the new power/flow stream separate from cached pre-power trial responses.
-            const newMetricStream = type.endsWith('_heat_delivery') || type.endsWith('_environment');
+            const newMetricStream = type.endsWith('_heat_delivery') || type.endsWith('_environment') || type === 'weather_station';
             const dataRef = newMetricStream ? 'main' : 'refs/heads/main';
             const url = "https://raw.githubusercontent.com/markusbenjamin/kazanfutes/" + dataRef + "/data/formatted/"
                 + day + "/" + type + ".json"
@@ -1318,6 +1318,7 @@ function drawPlot(plotData, userOptions) {
                 .attr("stroke-dasharray", "1 2");
         }
     }
+    return { plotElement, plotDims };
 }
 
 function clearMainGraphs() {
@@ -1791,7 +1792,7 @@ function updateGeneralInfobox(info) {
                     }
                 );
             }
-            let cyclesOnLine = info.cyclesOn.length > 0 ? "Bekapcsolt körök: " + info.cyclesOn.join(", ") + "." : "Senki nem kér fűtést.";
+            let cyclesOnLine = info.cyclesOn.length > 0 ? "Keringetett körök: " + info.cyclesOn.join(", ") + "." : "Senki nem kér fűtést.";
             lines.push(
                 {
                     lineXOffset: 0,
@@ -2146,6 +2147,7 @@ function joinMainGrapDataSourceToElements() {
         })
         .on("click.maingraph", function (event) {
             event.stopPropagation();
+            if (openWeatherMetricPlot(event, this.id)) return;
             if (openCycleHeatPlot(event, this.id)) return;
             if (openRoomMetricPlot(event, this.id)) return;
             mainGraphContentLocked = !mainGraphContentLocked;
@@ -2328,7 +2330,7 @@ function drawMainGraph(graphData = null) {
     }
     else {
         graphData = graphData[mainGraphSetting.day];
-        if (mainGraphSetting.title === 'cycle_water_temp' || mainGraphSetting.title === 'room_metrics' || mainGraphSetting.types.length == Object.keys(graphData).length) {
+        if (mainGraphSetting.title === 'cycle_water_temp' || mainGraphSetting.title === 'room_metrics' || mainGraphSetting.title === 'weather_metrics' || mainGraphSetting.types.length == Object.keys(graphData).length) {
             clearMainGraphs();
             let range;
             switch (mainGraphSetting.title) {
@@ -2487,6 +2489,9 @@ function drawMainGraph(graphData = null) {
                         );
                     }
                     break;
+                case "weather_metrics":
+                    drawWeatherMetricPlot(graphData, mainGraphSetting);
+                    break;
                 case "room_metrics":
                     drawRoomMetricPlot(graphData, mainGraphSetting);
                     break;
@@ -2540,7 +2545,7 @@ function drawMainGraph(graphData = null) {
                         heatingPeriods.forEach(period => {
                             period.y1 = Math.floor(range[0]) - 1;
                             period.y2 = Math.ceil(range[1]) + 1;
-                            period.fill = "rgba(255,0,0,0.025)";
+                            period.fill = "rgba(255,0,0,0.08)";
                             period.stroke = "none";
                             period.strokeWeight = 0;
                             period.dashed = false;

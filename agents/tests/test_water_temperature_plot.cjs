@@ -119,7 +119,7 @@ vm.runInContext('drawCycleHeatPlot(graphData, mainGraphSetting)', context);
 assert.equal(calls[0].options.dataKeys.left, 'power_kw');
 assert.equal(calls[0].options.axesLabel.left, 'fűtőteljesítmény (kW)');
 assert.equal(calls[0].options.plotLabelTabs, false);
-assert.equal(calls[0].options.plotLabel, '2. kör — fűtőteljesítmény');
+assert.equal(calls[0].options.plotLabel, '2. kör mai fűtőteljesítménye');
 assert.equal(calls[1].options.plotLabel, '');
 assert.equal(calls[1].options.curveEndText.text, '16.67 kW');
 assert.equal(calls[1].options.plotStyle.col, 'rgb(230, 130, 0)');
@@ -134,14 +134,17 @@ vm.runInContext('drawCycleHeatPlot(graphData, mainGraphSetting)', context);
 assert.equal(calls[0].options.dataKeys.left, 'pump_2_power');
 assert.equal(calls[1].options.curveEndText.text, '0 W');
 assert.equal(calls[1].options.plotStyle.col, 'rgb(0, 0, 0)');
+assert.equal(calls[1].options.plotStyle.smoothCurve, false);
+assert.equal(calls[1].options.plotStyle.stepAfter, true);
 assert.equal(calls[1].data.length, 3); // Logging time gaps must not split the pump curve.
 assert.equal(calls.length, 2);
 assert.deepEqual(evaluate("createCycleHeatPlotSetting(2, 'cycle2_marker', 'pump').types"), ['pumps_power','heating_state']);
 assert.equal(evaluate('formatCycleEnergyDisplay([]).text'), '—');
 assert.equal(evaluate('formatCycleEnergyDisplay([{energy_kwh: null}]).text'), '—');
-assert.equal(evaluate('formatCycleEnergyDisplay([{energy_kwh: 0}]).text'), '≈0');
-assert.equal(evaluate('formatCycleEnergyDisplay([{energy_kwh: 12.34}]).text'), '≈12.3');
-assert.match(evaluate('formatCycleEnergyDisplay([{energy_kwh: 12, energy_partial: true}]).description'), /Hiányos/);
+assert.equal(evaluate('formatCycleEnergyDisplay([{energy_kwh: 0}]).text'), '0');
+assert.equal(evaluate('formatCycleEnergyDisplay([{energy_kwh: 12.34}]).text'), '12');
+assert.equal(evaluate('formatCycleEnergyDisplay([{energy_kwh: 12.6}]).text'), '13');
+assert.deepEqual(evaluate('formatCycleEnergyDisplay([{energy_kwh: 12, energy_partial: true}])'), {text: '12'});
 const markerTexts = [];
 const selection = () => ({
     attr() { return this; }, style() { return this; }, remove() { return this; },
@@ -156,8 +159,8 @@ context.energyData = {'2026-10-21': {cycle_1_heat_delivery: [{energy_kwh: 12.34}
     cycle_2_heat_delivery: [], cycle_3_heat_delivery: [{energy_kwh: 0}], cycle_4_heat_delivery: [{energy_kwh: 3.5}]}};
 vm.runInContext('writeCycleEnergyToMarkers(energyData)', context);
 assert.equal(markerTexts.filter(text => text === 'kWh').length, 4);
-assert.ok(markerTexts.includes('≈12.3'));
-assert.ok(markerTexts.includes('≈0'));
+assert.ok(markerTexts.includes('12'));
+assert.ok(markerTexts.includes('0'));
 assert.ok(markerTexts.includes('—'));
 assert.equal(markerTexts.includes(' W'), false);
 let dialRequests;

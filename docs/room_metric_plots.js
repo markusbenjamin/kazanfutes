@@ -94,9 +94,10 @@ function drawRoomMetricPlot(data, setting) {
     else range = [0, values.length ? Math.max(1, Math.max(...values) * 1.1) : metricName === 'co2' ? 2000 : 100];
     const common = {
         parentId: 'graph', smoothing: { bottom: 0, left: isTemperature ? 10 : 0 },
+        margins: { top: .18, right: .03, bottom: .15, left: .1 },
         domain: { bottom: [0, 24], left: range },
         dataKeys: { bottom: 'h_of_day_frac', left: metric.key },
-        axesLabel: { bottom: 'óra', left: isOccupancy ? 'átlagos jelenlét (%)' : metric.unit },
+        axesLabel: { bottom: 'óra', left: isOccupancy ? 'átlagos ' + selectorWeekday(setting.day, true) + ' jelenlét (%)' : metric.unit },
         plotStyle: { joined: true, col: metric.color, thickness: '2', startCap: false, endCap: !isOccupancy,
             smoothCurve: isTemperature, monotone: !isTemperature },
         segment: { do: false }, plotLabel: '', curveEndText: { show: false }
@@ -107,7 +108,7 @@ function drawRoomMetricPlot(data, setting) {
         .map(period => ({ ...period, y1: 0, y2: 100, fill: 'rgba(180,180,180,0.3)' })) : [];
     drawPlot([], { ...common, rects: { when: 'before', list: periods },
         emptyMessage: isOccupancy && !segments.length ? 'Átlagos jelenlét nem elérhető.' : '', plotLabelTabs: {
-        prefix: roomName + ' — ', selected: metricName,
+        prefix: roomName + ' — ', selected: metricName, day: setting.day, onDayChange: navigateSelectorPlotDay,
         choices: Object.entries(ROOM_PLOT_METRICS).map(([key, value]) => ({ key, label: value.label, color: value.color })),
         onSelect: selectRoomMetricPlot
     }});

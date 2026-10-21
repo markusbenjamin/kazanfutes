@@ -41,15 +41,61 @@ function selectCycleHeatPlot(metric) {
     drawMainGraph();
 }
 
+function selectorWeekday(day, adjective = false) {
+    const parts = day.split('-').map(Number);
+    const index = new Date(parts[0], parts[1] - 1, parts[2], 12).getDay();
+    return (adjective ? ['vasárnapi', 'hétfői', 'keddi', 'szerdai', 'csütörtöki', 'pénteki', 'szombati']
+        : ['vasárnap', 'hétfő', 'kedd', 'szerda', 'csütörtök', 'péntek', 'szombat'])[index];
+}
+
+function shiftedSelectorDay(day, delta) {
+    const parts = day.split('-').map(Number);
+    const date = new Date(parts[0], parts[1] - 1, parts[2] + delta, 12);
+    return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+}
+
+function navigateSelectorPlotDay(delta) {
+    const current = mainGraphSetting;
+    if (!['room_metrics', 'weather_metrics'].includes(current.title) && !(current.title === 'cycle_water_temp' && current.detailed)) return;
+    const day = shiftedSelectorDay(current.day, delta);
+    if (day > dayStamp()) return;
+    mainGraphSetting = { ...current, day };
+    mainGraphContentLocked = true;
+    drawMainGraph({ [day]: {} });
+    drawMainGraph();
+}
+
 function drawPlotTitleSelector(plotElement, plotDims, options, fontSize) {
-    const heading = plotElement.append('text')
+    const columns = options.columns || options.choices.length;
+    const rows = Math.ceil(options.choices.length / columns);
+    const lineHeight = fontSize * 1.4;
+    if (options.day) {
+        const date = plotElement.append('text').attr('class', 'selector-plot-date')
+            .attr('data-day', options.day).attr('x', plotDims.w / 2).attr('y', -rows * lineHeight - fontSize * .35)
+            .style('text-anchor', 'middle').style('font-family', dashboardFont).style('font-size', fontSize + 'px');
+        const arrow = (text, label, delta, enabled) => {
+            const activate = event => { event.stopPropagation(); if (enabled) options.onDayChange(delta); };
+            date.append('tspan').attr('role', 'button').attr('aria-label', label)
+                .attr('aria-disabled', enabled ? 'false' : 'true').attr('tabindex', enabled ? 0 : -1)
+                .style('cursor', enabled ? 'pointer' : 'default').style('fill', enabled ? 'black' : '#bbb').text(text)
+                .on('mousedown', event => event.stopPropagation()).on('touchstart', event => event.stopPropagation())
+                .on('click', activate).on('keydown', event => {
+                    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activate(event); }
+                });
+        };
+        arrow('‹  ', 'Előző nap', -1, true);
+        date.append('tspan').text(options.day + ' (' + selectorWeekday(options.day) + ')');
+        arrow('  ›', 'Következő nap', 1, options.day < dayStamp());
+    }
+    for (let row = 0; row < rows; row++) {
+      const heading = plotElement.append('text')
         .attr('class', 'cycle-heat-selector').attr('role', 'tablist')
         .attr('aria-label', options.prefix + 'grafikon választása')
-        .attr('x', plotDims.w / 2).attr('y', -plotDims.h * 0.1 * 0.35)
+        .attr('x', plotDims.w / 2).attr('y', -(rows - row - 1) * lineHeight - fontSize * .35)
         .style('text-anchor', 'middle').style('font-family', dashboardFont)
         .style('font-size', fontSize + 'px');
-    heading.append('tspan').text(options.prefix);
-    options.choices.forEach((choice, index) => {
+      if (!row) heading.append('tspan').text(options.prefix);
+      options.choices.slice(row * columns, (row + 1) * columns).forEach((choice, index) => {
         if (index) heading.append('tspan').attr('aria-hidden', 'true').text(' · ');
         const active = choice.key === options.selected;
         const activate = event => {
@@ -72,8 +118,9 @@ function drawPlotTitleSelector(plotElement, plotDims, options, fontSize) {
                 }
             });
     });
-    const width = heading.node().getComputedTextLength();
-    if (width > plotDims.w) heading.style('font-size', fontSize * plotDims.w / width + 'px');
+      const width = heading.node().getComputedTextLength();
+      if (width > plotDims.w) heading.style('font-size', fontSize * plotDims.w / width + 'px');
+    }
 }
 
 function splitCycleHeatReadings(readings, key, maxGapHours = 3 / 60) {
@@ -119,15 +166,18 @@ function drawCycleHeatPlot(data, setting) {
             strokeWeight: 0, dashed: false }));
     const common = {
         parentId: 'graph', smoothing: { bottom: 0, left: 0 },
+        margins: { top: setting.detailed ? .18 : .1, right: .03, bottom: .15, left: .1 },
         domain: { bottom: [0, 24], left: range },
         dataKeys: { bottom: 'h_of_day_frac', left: metric.key },
         axesLabel: { bottom: 'óra', left: metric.axis },
         tickVals: { left: d3.range(range[0], range[1] + tickStep / 2, tickStep) },
-        plotStyle: { joined: true, col: metric.color, thickness: '1', startCap: false, endCap: true },
-        segment: { do: false }, plotLabel: setting.detailed ? '' : setting.cycleNum + '. kör — fűtőteljesítmény', curveEndText: { show: false }
+        plotStyle: { joined: true, col: metric.color, thickness: '1', startCap: false, endCap: true,
+            smoothCurve: metricName !== 'pump', stepAfter: metricName === 'pump' },
+        segment: { do: false }, plotLabel: setting.detailed ? '' : setting.cycleNum + '. kör mai fűtőteljesítménye', curveEndText: { show: false }
     };
     drawPlot([], { ...common, rects: { when: 'before', list: periods },
         plotLabelTabs: setting.detailed ? { prefix: setting.cycleNum + '. kör — ', selected: metricName,
+            day: setting.day, onDayChange: navigateSelectorPlotDay,
             choices: Object.entries(CYCLE_HEAT_METRICS).map(([key, value]) => ({key, label: value.label, color: value.color})),
             onSelect: selectCycleHeatPlot } : false
     });
@@ -144,10 +194,8 @@ function drawCycleHeatPlot(data, setting) {
 
 function formatCycleEnergyDisplay(readings) {
     const latest = Array.isArray(readings) ? readings.at(-1) : null;
-    if (!Number.isFinite(latest?.energy_kwh)) return { text: '—', description: 'Mai leadott hőenergia nem elérhető.' };
-    return { text: '≈' + Number(latest.energy_kwh.toFixed(1)),
-        description: 'Mai nettó leadott hőenergia: becslés a mért hőteljesítményből.'
-            + (latest.energy_partial ? ' Hiányos mérési lefedettség.' : '') };
+    if (!Number.isFinite(latest?.energy_kwh)) return { text: '—' };
+    return { text: String(Math.round(latest.energy_kwh)) };
 }
 
 function writeCycleEnergyToMarkers(data = null) {
@@ -166,7 +214,6 @@ function writeCycleEnergyToMarkers(data = null) {
             .style('font-family', dashboardFont).style('font-size', '3.5px').style('fill', 'black').text(display.text);
         const width = number.node().getComputedTextLength();
         if (width > markerBB.width * 0.42) number.style('font-size', 3.5 * markerBB.width * 0.42 / width + 'px');
-        number.append('title').text(display.description);
         d3.select('#drawing').append('text')
             .attr('class', 'cycle' + cycle + '_marker_text clickthrough')
             .attr('x', markerBB.x + markerBB.width * 0.79).attr('y', markerBB.y + markerBB.height * 0.75)

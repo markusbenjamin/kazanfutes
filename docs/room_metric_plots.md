@@ -5,6 +5,8 @@ chart. Ctrl+click a room to pin a separate chart with plain-text choices:
 `hőm.`, `páratart.`, `CO₂`, `lux`, `jelenl.`. Selecting a choice keeps
 the chart pinned. An outside click unlocks it. The last choice is remembered
 per room for the current page only; it never changes ordinary hover.
+The date line offers previous/next-day controls without changing the room or
+selected metric. Future days are disabled.
 
 Temperature and humidity use the existing `room_N_measurements.json` stream
 (°C and %). Temperature reuses the ordinary room chart's exact
@@ -22,12 +24,13 @@ break curves; missing data never become zero or vacant.
 The `jelenl.` black curve plots `occupancy_average` as a percentage, read from
 the scheduler's `config/scheduling/local_scheduling_files/occupancy.json` for
 the plotted day's weekday. Hourly averages are centred in their hour bins.
+The axis names that weekday, for example `átlagos szerdai jelenlét (%)`.
 No thresholding, weekly-plan blending, overrides, or fallback are applied.
 Unknown learned averages stay unknown; if none exist, the chart shows
 `Átlagos jelenlét nem elérhető.`
 The scheduler and set-temperature calculation are not changed.
 
-Light-gray background rectangles mark today's evaluated occupied periods
+Light-gray background rectangles mark the selected day's evaluated occupied periods
 from heating-control logs (`occupancy` 0/1/null), independently of the learned
 curve. Unknown states stop a rectangle, and missing observations are held for
 at most 15 minutes. Rectangles do not extend into the future.
