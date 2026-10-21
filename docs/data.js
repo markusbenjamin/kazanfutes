@@ -483,6 +483,26 @@ function extractHeatingPeriodsFromHeatingState(cycleNum, heatingState) {
     return heatingPeriods;
 }
 
+function extractCyclePumpOnPeriods(cycleNum, heatingState, endHour) {
+    const periods = [];
+    let startedAt = null;
+    const samples = (heatingState || [])
+        .filter(sample => sample.cycle_states && Number.isFinite(sample.h_of_day_frac))
+        .slice().sort((a, b) => a.h_of_day_frac - b.h_of_day_frac);
+    samples.forEach(sample => {
+        const hour = sample.h_of_day_frac;
+        if (hour < 0 || hour > endHour) return;
+        if (sample.cycle_states[cycleNum] === 1) {
+            if (startedAt === null) startedAt = hour;
+        } else {
+            if (startedAt !== null && hour > startedAt) periods.push({ x1: startedAt, x2: hour });
+            startedAt = null;
+        }
+    });
+    if (startedAt !== null && endHour > startedAt) periods.push({ x1: startedAt, x2: endHour });
+    return periods;
+}
+
 function extractRoomScheduleFromCondensedSchedule(roomNum, setTempsData) {
     if (condensedSchedule === undefined) { return undefined }
     else {
@@ -2080,7 +2100,7 @@ const elementToMainGraphSettingMapping = {
 for (let cycle = 1; cycle <= 4; cycle++) {
     const waterTemperatureSetting = {
         title: "cycle_water_temp",
-        types: ["cycle_" + cycle + "_water_temps"],
+        types: ["cycle_" + cycle + "_water_temps", "heating_state"],
         day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime),
         cycleNum: cycle,
         conditionals: []
@@ -2710,12 +2730,17 @@ function drawMainGraph(graphData = null) {
                     break;
                 case "cycle_water_temp": {
                     const waterCycle = mainGraphSetting.cycleNum;
-                    const waterReadings = graphData["cycle_" + waterCycle + "_water_temps"]
+                    const waterReadings = (graphData["cycle_" + waterCycle + "_water_temps"] || [])
                         .filter(reading => Number.isFinite(reading.water_temp) && Number.isFinite(reading.h_of_day_frac));
                     const waterRange = d3.extent(waterReadings, reading => reading.water_temp);
                     range = waterReadings.length
                         ? [Math.floor(waterRange[0] / 5) * 5 - 5, Math.ceil(waterRange[1] / 5) * 5 + 5]
                         : [0, 80];
+                    const waterPlotEnd = mainGraphSetting.day === dayStamp() ? getFractionalHourOfDay() : 24;
+                    const waterPumpPeriods = extractCyclePumpOnPeriods(waterCycle, graphData.heating_state, waterPlotEnd)
+                        .map(period => ({ ...period, y1: range[0], y2: range[1],
+                            fill: "rgba(255,0,0,0.025)", stroke: "rgba(255,0,0,0.75)",
+                            strokeWeight: 0.25, dashed: true, dashing: "0.5,1" }));
                     drawPlot(
                         waterReadings,
                         {
@@ -2725,7 +2750,8 @@ function drawMainGraph(graphData = null) {
                             dataKeys: { bottom: "h_of_day_frac", left: "water_temp" },
                             axesLabel: { bottom: "óra", left: "°C" },
                             tickVals: { left: d3.range(range[0], range[1] + 1, 5) },
-                            plotStyle: { joined: true, col: "rgb(200, 0, 0)", thickness: "2", startCap: false, endCap: true },
+                            plotStyle: { joined: true, col: "rgb(200, 0, 0)", thickness: "1", startCap: false, endCap: true },
+                            rects: { when: "before", list: waterPumpPeriods },
                             segment: { do: false },
                             plotLabel: waterCycle + ". kör mai fűtővíz-hőmérséklete" + (waterReadings.length ? "" : " (nincs adat)"),
                             curveEndText: {
