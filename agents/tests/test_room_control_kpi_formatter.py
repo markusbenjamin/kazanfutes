@@ -7,11 +7,11 @@ class RoomControlKPIsTest(unittest.TestCase):
     start = datetime(2026, 10, 21)
     rooms = {'1': {'controlled': True, 'cycle': '2'}, '11': {'controlled': False, 'cycle': '2'}}
 
-    def snapshot(self, minutes=0, temp=20, target=21, command=1, sensor_age=0):
+    def snapshot(self, minutes=0, temp=20, target=21, command=1, sensor_age=0, occupied=True):
         stamp = self.start + timedelta(minutes=minutes)
         return {'timestamp': stamp.strftime('%Y-%m-%d-%H-%M-%S'), 'measured_temps': {'1': temp},
                 'sensor_last_updated': {'1': (stamp - timedelta(seconds=sensor_age)).strftime('%Y-%m-%d-%H-%M-%S')},
-                'set_temps': {'1': target}, 'pump_votes': {'2': command}}
+                'set_temps': {'1': target}, 'pump_votes': {'2': command}, 'occupancy': {'1': occupied}}
 
     def calculate(self, entries, minutes=2, **options):
         return format_room_control_kpis(entries, '2026-10-21', self.rooms,
@@ -90,7 +90,39 @@ class RoomControlKPIsTest(unittest.TestCase):
         self.assertEqual(row['quadrant_seconds']['below_on'], 30)
         self.assertEqual(row['quadrant_seconds']['below_off'], 90)
         self.assertEqual(row['mae_on_c'], 1)
-        self.assertEqual(result['schema_version'], 2)
+        self.assertEqual(result['schema_version'], 3)
+
+    def test_comfort_only_counts_confirmed_occupied_time(self):
+        rows = [self.snapshot(temp=21, occupied=False), self.snapshot(1, temp=21, occupied=True),
+                self.snapshot(2, temp=23, occupied=True), self.snapshot(3, temp=21, occupied=None)]
+        result = self.calculate(rows, minutes=4)
+        self.assertEqual(result['valid_seconds'], 240)
+        self.assertEqual(result['occupied_seconds'], 120)
+        self.assertEqual(result['comfort_seconds'], 60)
+        self.assertEqual(result['comfort_pct'], 50)
+
+    def test_unknown_or_unoccupied_is_not_false_zero_comfort(self):
+        for occupancy in [False, None, 1, 'true']:
+            row = self.calculate([self.snapshot(temp=21, occupied=occupancy)])
+            self.assertEqual(row['occupied_seconds'], 0)
+            self.assertIsNone(row['comfort_pct'])
+
+    def test_comfort_does_not_depend_on_known_heating_or_valves(self):
+        snapshot = self.snapshot(temp=21)
+        snapshot['pump_votes'] = {}
+        row = self.calculate([snapshot])
+        self.assertEqual(row['valid_seconds'], 0)
+        self.assertEqual(row['occupied_seconds'], 120)
+        self.assertEqual(row['comfort_pct'], 100)
+
+    def test_presence_hold_is_bounded_independently(self):
+        first = self.snapshot(temp=21)
+        later = self.snapshot(minutes=3, temp=21)
+        later.pop('occupancy')
+        row = self.calculate([first, later], minutes=5)
+        self.assertEqual(row['valid_seconds'], 300)
+        self.assertEqual(row['occupied_seconds'], 180)
+        self.assertEqual(row['comfort_seconds'], 180)
 
     def test_closed_valves_prevent_false_heating(self):
         rooms = {'1': {'controlled': True, 'cycle': '2', 'thermostats': 'a'}}

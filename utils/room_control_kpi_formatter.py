@@ -24,7 +24,7 @@ def _number(value):
 def format_room_control_kpis(entries, daystamp, rooms, end_time=None,
                              tolerance_c=.5, max_hold_seconds=180,
                              max_sensor_age_seconds=3600):
-    """Report valve-weighted heating MAE/bias, plus all-state comfort.
+    """Report valve-weighted heating MAE/bias, plus occupied-time comfort.
 
     Use the already calculated measured_temps and the same set_temps that the
     ordinary room plot displays. sensor_last_updated bounds sensor freshness.
@@ -45,24 +45,36 @@ def format_room_control_kpis(entries, daystamp, rooms, end_time=None,
         if observed is None or not start - timedelta(seconds=max_hold_seconds) <= observed <= end:
             continue
         update = events.setdefault(observed, {})
-        for field in ('measured_temps', 'set_temps', 'pump_votes', 'sensor_last_updated', 'valve_states'):
+        for field in ('measured_temps', 'set_temps', 'pump_votes', 'sensor_last_updated', 'valve_states', 'occupancy'):
             if isinstance(entry.get(field), dict):
                 update[field] = entry[field]
 
-    stats = {room: {'valid_seconds': 0., 'heating_seconds': 0., 'comfort_seconds': 0.,
+    stats = {room: {'valid_seconds': 0., 'heating_seconds': 0., 'occupied_seconds': 0., 'comfort_seconds': 0.,
                     'absolute_error_on_kh': 0., 'signed_error_on_kh': 0.,
                     'quadrant_seconds': {key: 0. for key in QUADRANTS}}
              for room in controlled}
-    temperatures, targets, commands, valves = {}, {}, {}, {}
+    temperatures, targets, commands, valves, occupancy = {}, {}, {}, {}, {}
 
     def integrate(left, right):
         for room, info in controlled.items():
             temperature = temperatures.get(room)
             target = targets.get(room)
             command = commands.get(str(info['cycle']))
-            if temperature is None or target is None or command is None:
+            if temperature is None or target is None:
                 continue
-            valid_end = min(right, temperature[1], target[1], command[1])
+            temperature_end = min(right, temperature[1], target[1])
+            error = temperature[0] - target[0]
+            within = abs(error) <= tolerance_c + 1e-9
+            row = stats[room]
+            presence = occupancy.get(room)
+            if presence is not None and presence[0] is True:
+                occupied_seconds = max(0., (min(temperature_end, presence[1]) - left).total_seconds())
+                row['occupied_seconds'] += occupied_seconds
+                if within:
+                    row['comfort_seconds'] += occupied_seconds
+            if command is None:
+                continue
+            valid_end = min(temperature_end, command[1])
             opening = 1.
             if command[0] and isinstance(info.get('thermostats'), str):
                 valve = valves.get(room)
@@ -73,14 +85,9 @@ def format_room_control_kpis(entries, daystamp, rooms, end_time=None,
             seconds = (valid_end - left).total_seconds()
             if seconds <= 0:
                 continue
-            error = temperature[0] - target[0]
-            row = stats[room]
             row['valid_seconds'] += seconds
             heating_seconds = seconds * command[0] * opening
-            within = abs(error) <= tolerance_c + 1e-9
-            if within:
-                row['comfort_seconds'] += seconds
-            else:
+            if not within:
                 side = 'below' if error < 0 else 'above'
                 row['quadrant_seconds'][side + '_on'] += heating_seconds
                 row['quadrant_seconds'][side + '_off'] += seconds - heating_seconds
@@ -94,6 +101,10 @@ def format_room_control_kpis(entries, daystamp, rooms, end_time=None,
             integrate(cursor, observed)
             cursor = observed
         expiry = observed + timedelta(seconds=max_hold_seconds)
+        if 'occupancy' in update:
+            for room in controlled:
+                value = update['occupancy'].get(room)
+                occupancy[room] = (value, expiry) if isinstance(value, bool) else None
         if 'valve_states' in update:
             for room, info in controlled.items():
                 if not isinstance(info.get('thermostats'), str):
@@ -124,8 +135,9 @@ def format_room_control_kpis(entries, daystamp, rooms, end_time=None,
         heating_hours = row['heating_seconds'] / 3600
         row['mae_on_c'] = row['absolute_error_on_kh'] / heating_hours if heating_hours else None
         row['bias_on_c'] = row['signed_error_on_kh'] / heating_hours if heating_hours else None
-        row['comfort_pct'] = 100 * row['comfort_seconds'] / row['valid_seconds'] if row['valid_seconds'] else None
+        row['comfort_pct'] = 100 * row['comfort_seconds'] / row['occupied_seconds'] if row['occupied_seconds'] else None
         row['coverage_pct'] = 100 * row['valid_seconds'] / elapsed if elapsed else 0.
-    return {'schema_version': 2, 'day': daystamp, 'observed_until': end.strftime(STAMP_FORMAT),
+    return {'schema_version': 3, 'day': daystamp, 'observed_until': end.strftime(STAMP_FORMAT),
             'tolerance_c': tolerance_c, 'max_hold_seconds': max_hold_seconds,
-            'max_sensor_age_seconds': max_sensor_age_seconds, 'state_source': 'cycle_command_x_mean_valve_opening', 'rooms': stats}
+            'max_sensor_age_seconds': max_sensor_age_seconds, 'state_source': 'cycle_command_x_mean_valve_opening',
+            'comfort_source': 'observed_occupancy', 'rooms': stats}
