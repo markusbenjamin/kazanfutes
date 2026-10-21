@@ -1,8 +1,8 @@
 """Read-only room plot series; sensor assignments must come from room configuration.
 
-Humidity retains the existing room measurement stream. This extra stream uses
-the controller's selected temperature, mapped CO2/lux, observed occupancy and
-the learned weekday/hour occupancy averages used by the scheduler.
+Temperature/humidity retain the existing room measurement stream. This extra
+stream uses mapped CO2/lux, observed occupancy and the learned weekday/hour
+occupancy averages used by the scheduler.
 """
 import json
 from datetime import datetime
@@ -12,10 +12,10 @@ from pathlib import Path
 STAMP_FORMAT = '%Y-%m-%d-%H-%M-%S'
 
 
-def _number(value, minimum=0):
+def _number(value):
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
-    return value if math.isfinite(value) and (minimum is None or value >= minimum) else None
+    return value if math.isfinite(value) and value >= 0 else None
 
 
 def _day_entries(entries, daystamp):
@@ -81,20 +81,6 @@ def format_room_environment(air_entries, control_entries, daystamp, rooms, senso
             reading = result[str(room)].setdefault(observed, {})
             reading.update(co2=_average(nous, co2_names, 'co2'), lux=_average(aqara, lux_names, 'lux'))
     for observed, entry in _day_entries(control_entries, daystamp):
-        temperatures = entry.get('measured_temps')
-        sources = entry.get('sensor_last_updated')
-        if isinstance(temperatures, dict) and isinstance(sources, dict):
-            for room in rooms:
-                value = _number(temperatures.get(str(room)), minimum=None)
-                try:
-                    source_time = datetime.strptime(sources.get(str(room)), STAMP_FORMAT)
-                except (TypeError, ValueError):
-                    source_time = None
-                if value is not None and source_time is not None and source_time <= observed:
-                    if source_time.strftime('%Y-%m-%d') == daystamp:
-                        result[str(room)].setdefault(source_time, {})['control_temp'] = value
-                else:
-                    result[str(room)].setdefault(observed, {})['control_temp'] = None
         occupancy = entry.get('occupancy')
         if not isinstance(occupancy, dict):
             continue

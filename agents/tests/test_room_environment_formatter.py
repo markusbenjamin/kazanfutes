@@ -43,21 +43,13 @@ class RoomEnvironmentFormatterTests(unittest.TestCase):
         self.assertEqual([row['occupancy'] for row in result['1']], [0, 1])
         self.assertEqual([row['occupancy'] for row in result['2']], [None, None])
 
-    def test_control_temperature_uses_selected_value_and_real_source_time(self):
+    def test_temperature_is_not_generated_in_environment_stream(self):
         controls = [{'timestamp': STAMP, 'measured_temps': {'1': 21.3, '2': -1.5},
                      'sensor_last_updated': {'1': DAY+'-11-40-00', '2': DAY+'-11-50-00'}},
                     {'timestamp': DAY+'-12-01-00', 'measured_temps': {'1': 21.3, '2': None},
                      'sensor_last_updated': {'1': DAY+'-11-40-00', '2': None}}]
         result = format_room_environment([air()], controls, DAY, ROOMS)
-        temp = [r for r in result['1'] if 'control_temp' in r]
-        self.assertEqual(temp, [{'timestamp': DAY+'-11-40-00', 'control_temp': 21.3}])
-        temp = [r for r in result['2'] if 'control_temp' in r]
-        self.assertEqual([r['control_temp'] for r in temp], [-1.5, None])
-
-    def test_old_temperature_source_is_not_retimestamped_as_fresh(self):
-        controls = [{'timestamp': STAMP, 'measured_temps': {'1': 26.4},
-                     'sensor_last_updated': {'1': '2026-09-09-20-14-24'}}]
-        self.assertEqual(format_room_environment([], controls, DAY, {'1': {}})['1'], [])
+        self.assertTrue(all('control_temp' not in row and 'temp' not in row for rows in result.values() for row in rows))
 
     def test_learned_average_uses_day_of_week_without_weekly_fallback(self):
         # Wednesday is 3; room 2 remains unknown, never a made-up zero profile.
