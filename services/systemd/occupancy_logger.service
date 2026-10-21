@@ -7,6 +7,8 @@ BindsTo=media-pi-program_stick.mount
 
 [Service]
 Type=simple
+RuntimeMaxSec=60
+TimeoutStopSec=10
 User=pi
 WorkingDirectory=/media/pi/program_stick/kazanfutes/services/
 Environment="HOME=/home/pi"

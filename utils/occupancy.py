@@ -200,3 +200,46 @@ def calculate_occupancy(
             result[room] = bool(len(ordered) >= 2 and (ordered[-1] - ordered[0]).total_seconds() >= minimum_separation * 60)
         results.append(result)
     return results
+
+
+def select_training_sources(logs: list[dict], rooms: dict) -> dict:
+    """Identify the current sensor from recent versioned room observations."""
+    sources = {}
+    for entry in logs:
+        for room, row in entry.get("states", {}).items():
+            room = str(room)
+            if (room not in rooms or not isinstance(row, dict)
+                    or row.get("schema_version") != SCHEMA_VERSION
+                    or row.get("source_name") != rooms[room].get("pres")
+                    or not row.get("source_id")
+                    or row.get("signal_type") not in {"motion", "presence"}):
+                continue
+            sources[room] = {key: row[key] for key in
+                             ("source_name", "source_id", "signal_type")}
+    return sources
+
+
+def filter_training_log(logs: list[dict], sources: dict) -> list[dict]:
+    """Retain current identified sources and the existing legacy PIR history.
+
+    Unidentified old radar records used synthetic timestamps and cannot be
+    reinterpreted as valid presence-level observations from the current device.
+    """
+    filtered = []
+    for entry in logs:
+        states = {}
+        for room, row in entry.get("states", {}).items():
+            room = str(room)
+            source = sources.get(room)
+            if not source or not isinstance(row, dict):
+                continue
+            if row.get("schema_version") == SCHEMA_VERSION:
+                if any(row.get(key) != source[key] for key in
+                       ("source_name", "source_id", "signal_type")):
+                    continue
+            elif source["signal_type"] != "motion":
+                continue
+            states[room] = row
+        if states:
+            filtered.append(dict(entry, states=states))
+    return filtered
