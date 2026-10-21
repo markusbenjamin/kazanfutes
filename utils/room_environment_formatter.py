@@ -1,8 +1,8 @@
 """Read-only room plot series; sensor assignments must come from room configuration.
 
-Temperature/humidity retain the existing room measurement stream. This extra
-stream contains CO2/lux from explicitly associated air sensors and evaluated
-occupancy from heating-control logs, not raw PIR motion or occupancy forecasts.
+Humidity retains the existing room measurement stream. This extra stream uses
+the controller's selected temperature, mapped CO2/lux, observed occupancy and
+the learned weekday/hour occupancy averages used by the scheduler.
 """
 import json
 from datetime import datetime
@@ -12,10 +12,10 @@ from pathlib import Path
 STAMP_FORMAT = '%Y-%m-%d-%H-%M-%S'
 
 
-def _number(value):
+def _number(value, minimum=0):
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
-    return value if math.isfinite(value) and value >= 0 else None
+    return value if math.isfinite(value) and (minimum is None or value >= minimum) else None
 
 
 def _day_entries(entries, daystamp):
@@ -59,7 +59,7 @@ def _average(sensors, names, key):
     return sum(values) / len(values) if values else None
 
 
-def format_room_environment(air_entries, control_entries, daystamp, rooms, sensor_mapping=None):
+def format_room_environment(air_entries, control_entries, daystamp, rooms, sensor_mapping=None, occupancy_patterns=None):
     """Never infer a Nous number or an Aqara location from a room number.
 
     Explicit assignments are {room: {'co2': [sensor_name], 'lux': [sensor_names]}}.
@@ -81,11 +81,38 @@ def format_room_environment(air_entries, control_entries, daystamp, rooms, senso
             reading = result[str(room)].setdefault(observed, {})
             reading.update(co2=_average(nous, co2_names, 'co2'), lux=_average(aqara, lux_names, 'lux'))
     for observed, entry in _day_entries(control_entries, daystamp):
+        temperatures = entry.get('measured_temps')
+        sources = entry.get('sensor_last_updated')
+        if isinstance(temperatures, dict) and isinstance(sources, dict):
+            for room in rooms:
+                value = _number(temperatures.get(str(room)), minimum=None)
+                try:
+                    source_time = datetime.strptime(sources.get(str(room)), STAMP_FORMAT)
+                except (TypeError, ValueError):
+                    source_time = None
+                if value is not None and source_time is not None and source_time <= observed:
+                    if source_time.strftime('%Y-%m-%d') == daystamp:
+                        result[str(room)].setdefault(source_time, {})['control_temp'] = value
+                else:
+                    result[str(room)].setdefault(observed, {})['control_temp'] = None
         occupancy = entry.get('occupancy')
         if not isinstance(occupancy, dict):
             continue
         for room in rooms:
             value = occupancy.get(str(room))
             result[str(room)].setdefault(observed, {})['occupancy'] = int(value) if isinstance(value, bool) else None
+    if occupancy_patterns is not None:
+        day = datetime.strptime(daystamp, '%Y-%m-%d')
+        weekday = str(day.isoweekday())
+        for room in rooms:
+            profile = occupancy_patterns.get(str(room), {}).get(weekday, {})
+            for hour in range(24):
+                value = _number(profile.get(str(hour)))
+                value = value if value is not None and value <= 1 else None
+                # These are hourly averages: position each at the centre of its bin.
+                result[str(room)].setdefault(day.replace(hour=hour, minute=30), {})['occupancy_average'] = value
+                if hour in (0, 23):
+                    edge = day if hour == 0 else day.replace(hour=23, minute=59, second=59)
+                    result[str(room)].setdefault(edge, {})['occupancy_average'] = value
     return {room: [{'timestamp': observed.strftime(STAMP_FORMAT), **reading}
                    for observed, reading in sorted(rows.items())] for room, rows in result.items()}

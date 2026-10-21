@@ -120,7 +120,10 @@ for digestion_day in digestion_days:
                 source_path = relative_path + log_file_suffix
                 source_logs.append(load_ndjson_to_json_list(source_path)
                                    if os.path.exists(os.path.join(get_project_root(), source_path)) else [])
-            formatted_rooms = format_room_environment(*source_logs, digestion_daystamp, get_rooms_info(just_controlled=False))
+            occupancy_path = 'config/scheduling/local_scheduling_files/occupancy.json'
+            occupancy_patterns = load_json_to_dict(occupancy_path) if os.path.exists(os.path.join(get_project_root(), occupancy_path)) else {}
+            formatted_rooms = format_room_environment(*source_logs, digestion_daystamp, get_rooms_info(just_controlled=False),
+                                                       occupancy_patterns=occupancy_patterns)
             for room, formatted_data in formatted_rooms.items():
                 export_json_list_to_json_file(formatted_data,
                     f'{export_path_prefix}data/formatted/{digestion_daystamp}/room_{room}_environment.json')

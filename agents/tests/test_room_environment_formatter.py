@@ -43,6 +43,37 @@ class RoomEnvironmentFormatterTests(unittest.TestCase):
         self.assertEqual([row['occupancy'] for row in result['1']], [0, 1])
         self.assertEqual([row['occupancy'] for row in result['2']], [None, None])
 
+    def test_control_temperature_uses_selected_value_and_real_source_time(self):
+        controls = [{'timestamp': STAMP, 'measured_temps': {'1': 21.3, '2': -1.5},
+                     'sensor_last_updated': {'1': DAY+'-11-40-00', '2': DAY+'-11-50-00'}},
+                    {'timestamp': DAY+'-12-01-00', 'measured_temps': {'1': 21.3, '2': None},
+                     'sensor_last_updated': {'1': DAY+'-11-40-00', '2': None}}]
+        result = format_room_environment([air()], controls, DAY, ROOMS)
+        temp = [r for r in result['1'] if 'control_temp' in r]
+        self.assertEqual(temp, [{'timestamp': DAY+'-11-40-00', 'control_temp': 21.3}])
+        temp = [r for r in result['2'] if 'control_temp' in r]
+        self.assertEqual([r['control_temp'] for r in temp], [-1.5, None])
+
+    def test_old_temperature_source_is_not_retimestamped_as_fresh(self):
+        controls = [{'timestamp': STAMP, 'measured_temps': {'1': 26.4},
+                     'sensor_last_updated': {'1': '2026-09-09-20-14-24'}}]
+        self.assertEqual(format_room_environment([], controls, DAY, {'1': {}})['1'], [])
+
+    def test_learned_average_uses_day_of_week_without_weekly_fallback(self):
+        # Wednesday is 3; room 2 remains unknown, never a made-up zero profile.
+        patterns = {'1': {'3': {'0': 0, '1': .25, '2': .8, '23': 1}, '4': {'0': .9}}}
+        result = format_room_environment([], [], DAY, ROOMS, occupancy_patterns=patterns)
+        self.assertEqual(len(result['1']), 26)
+        self.assertEqual(result['1'][0], {'timestamp': DAY+'-00-00-00', 'occupancy_average': 0})
+        self.assertEqual(result['1'][2], {'timestamp': DAY+'-01-30-00', 'occupancy_average': .25})
+        self.assertEqual(result['1'][-1], {'timestamp': DAY+'-23-59-59', 'occupancy_average': 1})
+        self.assertTrue(all(r['occupancy_average'] is None for r in result['2']))
+
+    def test_invalid_learned_averages_remain_unknown(self):
+        for value in [None, True, '0.5', -1, 1.1, math.nan, math.inf]:
+            result = format_room_environment([], [], DAY, {'1': {}}, occupancy_patterns={'1': {'3': {'0': value}}})
+            self.assertIsNone(result['1'][0]['occupancy_average'])
+
     def test_malformed_days_order_dedup_and_independent_fields(self):
         result = format_room_environment([air(DAY+'-12-01-00'), air(), air(co2=700), None, {},
             air('2026-10-20-23-59-00')], [{'timestamp': STAMP, 'occupancy': {'1': False}}], DAY, ROOMS)
@@ -85,7 +116,8 @@ class RoomEnvironmentFormatterTests(unittest.TestCase):
             'report': Mock(), 'log': Mock(), 'ModuleException': RuntimeError, 'ServiceException': Mock()
         }
         exec(compile(ast.Module(body=[section], type_ignores=[]), 'room-formatting', 'exec'), namespace)
-        self.assertEqual(outputs, {f'data/formatted/{DAY}/room_{r}_environment.json': [] for r in ROOMS})
+        self.assertEqual(set(outputs), {f'data/formatted/{DAY}/room_{r}_environment.json' for r in ROOMS})
+        self.assertTrue(all(len(rows) == 26 and all(row['occupancy_average'] is None for row in rows) for rows in outputs.values()))
         namespace['load_ndjson_to_json_list'].assert_not_called()
         namespace['ServiceException'].assert_not_called()
 
