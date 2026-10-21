@@ -21,6 +21,7 @@ from utils.project import *
 from utils.water_temperature_formatter import format_cycle_water_temperatures
 from utils.boiler_power_formatter import format_boiler_power, format_boiler_commands
 from utils.external_temperature_formatter import format_ws90_external_temperatures
+from utils.heat_delivery_formatter import format_cycle_heat_delivery
 
 parse_old_logs = False
 settings['dev'] = False
@@ -59,7 +60,7 @@ else:
         digestion_days = [datetime.now()]
 
 if not data_types_to_digest:
-    data_types_to_digest = ['room_measurements','room_set_temps','room_overrides','external_temp','gas_consumption','heating_state','room_valve_states','room_kpis','pumps_power','cycle_water_temps','boilers_power']
+    data_types_to_digest = ['room_measurements','room_set_temps','room_overrides','external_temp','gas_consumption','heating_state','room_valve_states','room_kpis','pumps_power','cycle_water_temps','cycle_heat_delivery','boilers_power']
 
 #endregion
 
@@ -355,6 +356,30 @@ for digestion_day in digestion_days:
                 export_json_list_to_json_file(
                     formatted_data,
                     f"{export_path_prefix}data/formatted/{digestion_daystamp}/cycle_{cycle}_water_temps.json"
+                )
+            report(f"Done: {action_string}.", verbose=True)
+            success = True
+        except ModuleException as e:
+            ServiceException(f"Module error while {action_string}.", original_exception=e, severity=2)
+        except Exception:
+            ServiceException(f"Unexpected error while {action_string}.", severity=2)
+        log({f"success {action_string}": success})
+    #endregion
+
+    #region Cycle delivered heat and flow
+    if 'cycle_heat_delivery' in data_types_to_digest:
+        success = False
+        source_path = f"data/logs/heat_delivery/heatmeters_state.json{log_file_suffix}"
+        action_string = f'formatting daily cycle delivered heat and flow for {digestion_daystamp}'
+        try:
+            loaded_log = load_ndjson_to_json_list(source_path) if os.path.exists(os.path.join(get_project_root(), source_path)) else []
+            meter_config = load_json_to_dict('config/heating_monitor.json')['cycles']
+            meter_mapping = {str(cycle): meter_config[str(cycle)]['meter'] for cycle in range(1, 5)}
+            formatted_per_cycle = format_cycle_heat_delivery(loaded_log, digestion_daystamp, meter_mapping)
+            for cycle, formatted_data in formatted_per_cycle.items():
+                export_json_list_to_json_file(
+                    formatted_data,
+                    f"{export_path_prefix}data/formatted/{digestion_daystamp}/cycle_{cycle}_heat_delivery.json"
                 )
             report(f"Done: {action_string}.", verbose=True)
             success = True
