@@ -60,6 +60,10 @@ assert.equal(bins.length, 16);
 assert.equal(bins[0].count, 2);
 assert.equal(bins[4].count, 1);
 assert.equal(bins.reduce((sum, bin) => sum+bin.count, 0), 3);
+assert.equal(evaluate('windDirectionDisplayAngle(270)'), 0); // West points to the top of the building diagram.
+assert.equal(evaluate('windDirectionDisplayAngle(0)'), Math.PI / 2);
+assert.equal(evaluate('windDirectionDisplayAngle(90)'), Math.PI);
+assert.equal(evaluate('windDirectionDisplayAngle(180)'), Math.PI * 1.5);
 assert.equal(evaluate('Object.keys(WEATHER_PLOT_METRICS).some(key => key.includes("battery"))'), false);
 context.setting = {title: 'weather_metrics', day: '2026-10-20', metric: 'temperature'};
 context.data = {weather_station: [{h_of_day_frac: 1, temperature_c: -2}, {h_of_day_frac: 1.01, temperature_c: 0}]};
@@ -68,6 +72,24 @@ assert.equal(calls[0].options.plotLabelTabs.day, '2026-10-20');
 assert.equal(calls[0].options.plotLabelTabs.choices.length, 11);
 assert.equal(calls[1].data[0].temperature_c, -2);
 assert.equal(calls[1].options.curveEndText.text, '0 °C');
+context.setting.metric = 'light';
+context.data = {weather_station: [{h_of_day_frac: 1, illuminance_lux: 50000}, {h_of_day_frac: 1.01, illuminance_lux: 1250}]};
+calls.length = 0;
+vm.runInContext('drawWeatherMetricPlot(data, setting)', context);
+assert.equal(calls[0].options.axesLabel.left, 'klux');
+assert.equal(calls[1].data[0].illuminance_lux, 50);
+assert.equal(calls[1].options.curveEndText.text, '1.3 klux');
+assert.equal(context.data.weather_station[0].illuminance_lux, 50000); // Conversion does not mutate cached lux observations.
+for (const metric of ['wind', 'gust']) {
+    context.setting.metric = metric;
+    context.data = {weather_station: [{h_of_day_frac: 1, wind_speed_m_s: 1, gust_speed_m_s: 2},
+        {h_of_day_frac: 1.01, wind_speed_m_s: 3, gust_speed_m_s: 4}]};
+    calls.length = 0;
+    vm.runInContext('drawWeatherMetricPlot(data, setting)', context);
+    assert.equal(calls[1].options.smoothing.left, 5);
+    assert.equal(calls[1].options.plotStyle.smoothCurve, true);
+    assert.equal(calls[1].options.plotStyle.monotone, false);
+}
 let histogram;
 context.drawWindDirectionHistogram = (element, dims, readings) => { histogram = {element, dims, readings}; };
 context.setting.metric = 'direction';
@@ -79,6 +101,7 @@ assert.equal(histogram.element, 'plot');
 assert.equal(histogram.dims.w, 200);
 const weatherSource = fs.readFileSync(path.join(root, 'docs/weather_plots.js'), 'utf8');
 assert.match(weatherSource, /translate\(\$\{plotDims.w \/ 2\},\$\{plotDims.h \/ 2\}\)/);
+assert.doesNotMatch(weatherSource, /megfigyelés/); // No sample-count footer on the wind dial.
 // Date navigation sits below the title/metric rows for every selector layout.
 const headerNodes = [];
 function headerSelection(tag = 'g') {

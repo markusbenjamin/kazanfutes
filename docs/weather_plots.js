@@ -5,7 +5,7 @@ const WEATHER_PLOT_METRICS = {
     wind: { label: 'szél', key: 'wind_speed_m_s', unit: 'm/s', color: 'rgb(0, 100, 0)', precision: 1 },
     gust: { label: 'széllökés', key: 'gust_speed_m_s', unit: 'm/s', color: 'rgb(100, 150, 0)', precision: 1 },
     direction: { label: 'szélirány', key: 'wind_direction_deg', color: 'rgb(0, 100, 0)' },
-    light: { label: 'fény', key: 'illuminance_lux', unit: 'lux', color: 'rgb(190, 155, 0)', precision: 0 },
+    light: { label: 'fény', key: 'illuminance_lux', unit: 'klux', displayFactor: .001, color: 'rgb(190, 155, 0)', precision: 1 },
     uv: { label: 'UV', key: 'uv_index', unit: 'UV', color: 'rgb(150, 50, 150)', precision: 1 },
     rain: { label: 'csapadék össz.', key: 'precipitation_mm', unit: 'mm', color: 'rgb(40, 80, 180)', precision: 1 },
     rainStatus: { label: 'esőjel', key: 'rain_status', unit: '0/1', color: 'rgb(60, 100, 180)', precision: 0 },
@@ -47,6 +47,11 @@ function windDirectionHistogram(readings, binCount = 16) {
     return bins;
 }
 
+function windDirectionDisplayAngle(degrees) {
+    // The building on the dashboard is west-up; retain geographic bin values.
+    return ((degrees + 90) % 360) * Math.PI / 180;
+}
+
 function drawWindDirectionHistogram(plotElement, plotDims, readings) {
     const bins = windDirectionHistogram(readings);
     const total = bins.reduce((sum, bin) => sum + bin.count, 0);
@@ -59,25 +64,29 @@ function drawWindDirectionHistogram(plotElement, plotDims, readings) {
         centre.append('circle').attr('r', radius * fraction).attr('fill', 'none').attr('stroke', '#ddd').attr('stroke-width', .3);
     });
     const step = Math.PI * 2 / bins.length;
+    const rotation = windDirectionDisplayAngle(0);
     bins.forEach((bin, index) => {
         if (!bin.count) return;
         centre.append('path').attr('d', d3.arc().innerRadius(0).outerRadius(scale(bin.count))
-            .startAngle(index * step - step / 2).endAngle(index * step + step / 2).padAngle(.015)())
+            .startAngle(index * step + rotation - step / 2).endAngle(index * step + rotation + step / 2).padAngle(.015)())
             .attr('fill', 'rgb(0, 100, 0)').attr('stroke', 'white').attr('stroke-width', .3);
     });
-    [['É', 0, -radius - 5], ['K', radius + 6, 0], ['D', 0, radius + 7], ['Ny', -radius - 7, 0]].forEach(([label, x, y]) => {
+    [['Ny', 0, -radius - 5], ['É', radius + 6, 0], ['K', 0, radius + 7], ['D', -radius - 7, 0]].forEach(([label, x, y]) => {
         centre.append('text').attr('x', x).attr('y', y).style('font-family', dashboardFont).style('font-size', '6px')
             .style('text-anchor', 'middle').style('dominant-baseline', 'middle').text(label);
     });
-    centre.append('text').attr('x', 0).attr('y', radius + 15).style('text-anchor', 'middle')
+    if (!total) centre.append('text').attr('x', 0).attr('y', radius + 15).style('text-anchor', 'middle')
         .style('font-family', dashboardFont).style('font-size', '5px')
-        .text(total ? total + ' megfigyelés' : 'Nincs szélirányadat.');
+        .text('Nincs szélirányadat.');
 }
 
 function drawWeatherMetricPlot(data, setting) {
     const metric = WEATHER_PLOT_METRICS[setting.metric] || WEATHER_PLOT_METRICS.temperature;
-    const readings = data.weather_station || [];
+    const rawReadings = data.weather_station || [];
+    const readings = metric.displayFactor ? rawReadings.map(row => ({...row,
+        [metric.key]: Number.isFinite(row[metric.key]) ? row[metric.key] * metric.displayFactor : row[metric.key]})) : rawReadings;
     const direction = setting.metric === 'direction';
+    const smoothWind = setting.metric === 'wind' || setting.metric === 'gust';
     const segments = direction ? [] : splitRoomMetricReadings(readings, metric.key, 15 / 60);
     const values = segments.flat().map(row => row[metric.key]);
     let range = [0, 1];
@@ -89,8 +98,8 @@ function drawWeatherMetricPlot(data, setting) {
     const common = { parentId: 'graph', margins: {top: .3, right: .03, bottom: .15, left: .1},
         domain: {bottom: [0, 24], left: range}, dataKeys: {bottom: 'h_of_day_frac', left: metric.key},
         axesLabel: {bottom: direction ? '' : 'óra', left: direction ? '' : metric.unit},
-        axes: {left: !direction, bottom: !direction}, smoothing: {bottom: 0, left: 0},
-        plotStyle: {joined: true, col: metric.color, thickness: '2', monotone: true, startCap: false, endCap: true},
+        axes: {left: !direction, bottom: !direction}, smoothing: {bottom: 0, left: smoothWind ? 5 : 0},
+        plotStyle: {joined: true, col: metric.color, thickness: '2', monotone: !smoothWind, smoothCurve: smoothWind, startCap: false, endCap: true},
         segment: {do: false}, plotLabel: '', curveEndText: {show: false} };
     const area = drawPlot([], {...common, plotLabelTabs: {prefix: 'WS90 — ', day: setting.day, onDayChange: navigateSelectorPlotDay,
         columns: 4, selected: setting.metric, choices: Object.entries(WEATHER_PLOT_METRICS).map(([key, value]) => ({key, label: value.label, color: value.color})),
