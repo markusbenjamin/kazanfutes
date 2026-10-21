@@ -8,6 +8,37 @@ const ROOM_PLOT_METRICS = {
 };
 const roomMetricSelections = {};
 
+function hidePlotCurveTooltip() {
+    const tooltip = d3.select('#tooltip');
+    if (tooltip.attr('data-curve-tooltip') === 'true') {
+        tooltip.interrupt().attr('data-curve-tooltip', null).style('visibility', 'hidden').style('font-size', null);
+    }
+}
+
+function bindPlotCurveTooltip(curve, label, fontSize = 7) {
+    const tooltip = d3.select('#tooltip');
+    const position = event => {
+        const matrix = curve.node().getScreenCTM();
+        const scale = matrix ? Math.hypot(matrix.a, matrix.b) : 1;
+        tooltip.style('font-size', fontSize * scale + 'px');
+        const bounds = tooltip.node().getBoundingClientRect();
+        const left = Math.max(window.scrollX + 4, Math.min(event.pageX + 10, window.scrollX + window.innerWidth - bounds.width - 4));
+        const top = Math.max(window.scrollY + 4, Math.min(event.pageY + 12, window.scrollY + window.innerHeight - bounds.height - 4));
+        tooltip.style('left', left + 'px').style('top', top + 'px');
+    };
+    curve.attr('aria-label', label);
+    // A transparent hit area makes the thin valve curve practical to hover.
+    const hit = curve.clone(true).attr('class', 'plot-curve-hitbox').attr('aria-label', null).attr('aria-hidden', 'true')
+        .attr('stroke', 'transparent').attr('stroke-width', 3).attr('stroke-dasharray', null).style('pointer-events', 'stroke');
+    [curve, hit].forEach(target => target
+        .on('mouseover.curve-tooltip', event => {
+            tooltip.interrupt().attr('data-curve-tooltip', 'true').text(label).style('visibility', 'visible');
+            position(event);
+        })
+        .on('mousemove.curve-tooltip', position)
+        .on('mouseout.curve-tooltip', hidePlotCurveTooltip));
+}
+
 function createRoomMetricPlotSetting(base, elementId, metric = roomMetricSelections[elementId] || 'temperature') {
     if (!ROOM_PLOT_METRICS[metric]) metric = 'temperature';
     return {
@@ -100,7 +131,8 @@ function drawRoomMetricPlot(data, setting) {
         axesLabel: { bottom: 'óra', left: isOccupancy ? 'átlagos ' + selectorWeekday(setting.day, true) + ' jelenlét (%)' : metric.unit },
         plotStyle: { joined: true, col: metric.color, thickness: '2', startCap: false, endCap: !isOccupancy,
             smoothCurve: isTemperature, monotone: !isTemperature },
-        segment: { do: false }, plotLabel: '', curveEndText: { show: false }
+        segment: { do: false }, plotLabel: '', curveEndText: { show: false },
+        curveTooltip: isTemperature ? 'mért hőmérséklet' : ''
     };
     const roomName = roomsDataAndState[setting.roomNumToPlot].name;
     const endHour = setting.day === dayStamp() ? getFractionalHourOfDay() : 24;

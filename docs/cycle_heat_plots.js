@@ -208,15 +208,24 @@ function writeCycleEnergyToMarkers(data = null) {
         const display = formatCycleEnergyDisplay(data[day]?.['cycle_' + cycle + '_heat_delivery']);
         const markerBB = getBBoxDrawingDimensions('cycle' + cycle + '_marker');
         d3.selectAll('.cycle' + cycle + '_marker_text').remove();
+        const baseline = markerBB.y + markerBB.height * .8;
+        const numberSize = markerBB.height * .85;
+        const unitSize = markerBB.height * .55;
+        const unit = d3.select('#drawing').append('text')
+            .attr('class', 'cycle' + cycle + '_marker_text clickthrough')
+            .attr('x', markerBB.x + markerBB.width * .96).attr('y', baseline)
+            .style('text-anchor', 'end').style('font-family', dashboardFont)
+            .style('font-size', unitSize + 'px').style('fill', 'black').text('kWh');
+        const unitWidth = unit.node().getComputedTextLength();
+        const fittedUnitWidth = Math.min(unitWidth, markerBB.width * .3);
+        if (unitWidth > fittedUnitWidth) unit.style('font-size', unitSize * fittedUnitWidth / unitWidth + 'px');
         const number = d3.select('#drawing').append('text')
             .attr('class', 'cycle' + cycle + '_marker_text clickthrough')
-            .attr('x', markerBB.x + markerBB.width * 0.35).attr('y', markerBB.y + markerBB.height * 0.8)
-            .style('font-family', dashboardFont).style('font-size', '3.5px').style('fill', 'black').text(display.text);
+            .attr('x', markerBB.x + markerBB.width * .34).attr('y', baseline)
+            .style('font-family', dashboardFont).style('font-size', numberSize + 'px').style('fill', 'black').text(display.text);
         const width = number.node().getComputedTextLength();
-        if (width > markerBB.width * 0.42) number.style('font-size', 3.5 * markerBB.width * 0.42 / width + 'px');
-        d3.select('#drawing').append('text')
-            .attr('class', 'cycle' + cycle + '_marker_text clickthrough')
-            .attr('x', markerBB.x + markerBB.width * 0.79).attr('y', markerBB.y + markerBB.height * 0.75)
-            .style('font-family', dashboardFont).style('font-size', '1.8px').style('fill', 'black').text('kWh');
+        // Reserve the measured unit width and a small gap before fitting long totals.
+        const available = markerBB.width * (.96 - .34 - .035) - fittedUnitWidth;
+        if (width > available) number.style('font-size', numberSize * available / width + 'px');
     }
 }

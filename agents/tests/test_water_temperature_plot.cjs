@@ -146,10 +146,14 @@ assert.equal(evaluate('formatCycleEnergyDisplay([{energy_kwh: 12.34}]).text'), '
 assert.equal(evaluate('formatCycleEnergyDisplay([{energy_kwh: 12.6}]).text'), '13');
 assert.deepEqual(evaluate('formatCycleEnergyDisplay([{energy_kwh: 12, energy_partial: true}])'), {text: '12'});
 const markerTexts = [];
+const markerElements = [];
 const selection = () => ({
-    attr() { return this; }, style() { return this; }, remove() { return this; },
+    attrs: {}, styles: {},
+    attr(name, value) { this.attrs[name] = value; return this; },
+    style(name, value) { this.styles[name] = value; return this; }, remove() { return this; },
     text(value) { this.value = value; markerTexts.push(value); return this; },
-    append() { return selection(); }, node() { return {getComputedTextLength: () => 20}; }
+    append() { const element = selection(); markerElements.push(element); return element; },
+    node() { return {getComputedTextLength: () => String(this.value).length * parseFloat(this.styles['font-size']) * .6}; }
 });
 context.d3.select = selection;
 context.d3.selectAll = selection;
@@ -163,6 +167,24 @@ assert.ok(markerTexts.includes('12'));
 assert.ok(markerTexts.includes('0'));
 assert.ok(markerTexts.includes('—'));
 assert.equal(markerTexts.includes(' W'), false);
+for (let cycle = 1; cycle <= 4; cycle++) {
+    const [unit, number] = markerElements.filter(e => e.attrs.class === 'cycle' + cycle + '_marker_text clickthrough');
+    assert.equal(unit.value, 'kWh');
+    assert.equal(unit.styles['text-anchor'], 'end');
+    assert.ok(parseFloat(unit.styles['font-size']) > 1.8);
+    assert.ok(parseFloat(number.styles['font-size']) > 3.5);
+    assert.equal(number.attrs.y, unit.attrs.y);
+    assert.ok(number.attrs.x + number.node().getComputedTextLength() < unit.attrs.x - unit.node().getComputedTextLength());
+    assert.ok(unit.attrs.x < 20);
+}
+// Four-digit totals still fit without shrinking the unit or overlapping it.
+context.energyData['2026-10-21'].cycle_1_heat_delivery = [{energy_kwh: 1234}];
+markerElements.length = 0;
+vm.runInContext('writeCycleEnergyToMarkers(energyData)', context);
+const [longUnit, longNumber] = markerElements.slice(0, 2);
+assert.equal(longNumber.value, '1234');
+assert.ok(longNumber.attrs.x + longNumber.node().getComputedTextLength() < longUnit.attrs.x - longUnit.node().getComputedTextLength());
+assert.ok(parseFloat(longUnit.styles['font-size']) > 1.8);
 let dialRequests;
 context.collectDataFromGitHub = requests => { dialRequests = JSON.parse(JSON.stringify(requests)); };
 vm.runInContext('writeCycleEnergyToMarkers()', context);
