@@ -20,7 +20,7 @@ Data types:
 from utils.project import *
 from utils.water_temperature_formatter import format_cycle_water_temperatures
 from utils.boiler_power_formatter import format_boiler_power, format_boiler_commands
-from utils.external_temperature_formatter import format_ws90_external_temperatures
+from utils.external_temperature_formatter import format_ws90_external_temperatures, format_ws90_weather
 from utils.heat_delivery_formatter import format_cycle_heat_delivery
 from utils.room_environment_formatter import format_room_environment
 
@@ -61,7 +61,7 @@ else:
         digestion_days = [datetime.now()]
 
 if not data_types_to_digest:
-    data_types_to_digest = ['room_measurements','room_environment','room_set_temps','room_overrides','external_temp','gas_consumption','heating_state','room_valve_states','room_kpis','pumps_power','cycle_water_temps','cycle_heat_delivery','boilers_power']
+    data_types_to_digest = ['room_measurements','room_environment','room_set_temps','room_overrides','external_temp','weather_station','gas_consumption','heating_state','room_valve_states','room_kpis','pumps_power','cycle_water_temps','cycle_heat_delivery','boilers_power']
 
 #endregion
 
@@ -241,6 +241,24 @@ for digestion_day in digestion_days:
         # Log execution
         log({f"success {action_string}":success})
 
+    #endregion
+
+    #region WS90 weather selector
+    if 'weather_station' in data_types_to_digest:
+        success = False
+        action_string = f'formatting WS90 weather for {digestion_daystamp}'
+        try:
+            source_path = f'data/logs/weather_station/weather_station.json{log_file_suffix}'
+            loaded_log = load_ndjson_to_json_list(source_path) if os.path.exists(os.path.join(get_project_root(), source_path)) else []
+            formatted_data = format_ws90_weather(loaded_log, digestion_daystamp)
+            export_json_list_to_json_file(formatted_data, f'{export_path_prefix}data/formatted/{digestion_daystamp}/weather_station.json')
+            report(f'Done: {action_string}.', verbose=True)
+            success = True
+        except ModuleException as e:
+            ServiceException(f'Module error while {action_string}.', original_exception=e, severity=2)
+        except Exception:
+            ServiceException(f'Unexpected error while {action_string}.', severity=2)
+        log({f'success {action_string}': success})
     #endregion
 
     #region Gas consumption
