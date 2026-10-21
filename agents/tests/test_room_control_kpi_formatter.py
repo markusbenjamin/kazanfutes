@@ -80,6 +80,45 @@ class RoomControlKPIsTest(unittest.TestCase):
         self.assertEqual(result['rooms']['1']['heating_seconds'], 60)
         self.assertNotIn('11', result['rooms'])
 
+    def test_valves_weight_heating_and_split_quadrants(self):
+        rooms = {'1': {'controlled': True, 'cycle': '2', 'thermostats': 'a;b'}}
+        snapshot = {**self.snapshot(), 'valve_states': {'1': [0, 50]}}
+        result = format_room_control_kpis([snapshot], '2026-10-21', rooms,
+                                         end_time=self.start + timedelta(minutes=2))
+        row = result['rooms']['1']
+        self.assertEqual(row['heating_seconds'], 30)
+        self.assertEqual(row['quadrant_seconds']['below_on'], 30)
+        self.assertEqual(row['quadrant_seconds']['below_off'], 90)
+        self.assertEqual(row['mae_on_c'], 1)
+        self.assertEqual(result['schema_version'], 2)
+
+    def test_closed_valves_prevent_false_heating(self):
+        rooms = {'1': {'controlled': True, 'cycle': '2', 'thermostats': 'a'}}
+        snapshot = {**self.snapshot(), 'valve_states': {'1': [0]}}
+        row = format_room_control_kpis([snapshot], '2026-10-21', rooms,
+                                      end_time=self.start + timedelta(minutes=2))['rooms']['1']
+        self.assertEqual(row['heating_seconds'], 0)
+        self.assertEqual(row['quadrant_seconds']['below_off'], 120)
+        self.assertIsNone(row['mae_on_c'])
+
+    def test_missing_invalid_valves_are_unknown_only_when_circulating(self):
+        rooms = {'1': {'controlled': True, 'cycle': '2', 'thermostats': 'a;b'}}
+        for values in [None, [], [50], [None, 50], [True, 50], [-1, 50], [101, 50]]:
+            snapshot = {**self.snapshot(), 'valve_states': {'1': values}}
+            row = format_room_control_kpis([snapshot], '2026-10-21', rooms,
+                                          end_time=self.start + timedelta(minutes=2))['rooms']['1']
+            self.assertEqual(row['valid_seconds'], 0)
+            snapshot['pump_votes']['2'] = 0
+            row = format_room_control_kpis([snapshot], '2026-10-21', rooms,
+                                          end_time=self.start + timedelta(minutes=2))['rooms']['1']
+            self.assertEqual(row['valid_seconds'], 120)
+
+    def test_no_smart_valves_mean_full_opening(self):
+        rooms = {'1': {'controlled': True, 'cycle': '2', 'thermostats': True}}
+        row = format_room_control_kpis([self.snapshot()], '2026-10-21', rooms,
+                                      end_time=self.start + timedelta(minutes=2))['rooms']['1']
+        self.assertEqual(row['heating_seconds'], 120)
+
 
 if __name__ == '__main__':
     unittest.main()
