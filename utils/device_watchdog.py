@@ -278,6 +278,10 @@ def policy_for(device: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]
     profile.update(override.get("policy", {}))
     if "class" in override:
         profile["class"] = override["class"]
+    # Parasolls are maintenance-only, including when reading older deployments'
+    # critical profile/overrides. Battery urgency must not bypass this policy.
+    if profile_name == "parasoll":
+        profile["class"] = "revision"
     if profile.get("critical_when_heating_on") and (device.get("facts", {}) or {}).get("heating_on") is not True:
         profile["class"] = "revision"
     return profile
@@ -423,11 +427,11 @@ def candidates_for(device: dict[str, Any], config: dict[str, Any], now: datetime
         or battery_percent <= float(critical_battery)
     )
     if low_battery_flag:
-        candidates.append(issue(device, "low_battery", "Device reports low battery", policy, severity=("critical" if device.get("profile") == "parasoll" else None), evidence=battery))
+        candidates.append(issue(device, "low_battery", "Device reports low battery", policy, evidence=battery))
     warning_battery = policy.get("battery_warning_percent")
     if battery_percent is not None:
         if critical_battery is not None and battery_percent <= float(critical_battery):
-            candidates.append(issue(device, "low_battery", f"Battery is {battery_percent:g}%", policy, severity="critical" if device.get("profile") == "parasoll" else None, evidence=battery))
+            candidates.append(issue(device, "low_battery", f"Battery is {battery_percent:g}%", policy, evidence=battery))
         elif warning_battery is not None and battery_percent <= float(warning_battery):
             candidates.append(issue(device, "low_battery", f"Battery is {battery_percent:g}%", policy, evidence=battery))
 
@@ -456,6 +460,8 @@ def initial_incident_state() -> dict[str, Any]:
         "digest_sent_for": None,
         "digest_checked_for": None,
         "digest_last_incident_inventory": None,
+        "heating_reminder_checked_for": None,
+        "heating_reminder_sent_for": None,
     }
 
 
@@ -487,6 +493,12 @@ def update_incidents(
     state.setdefault("active", {})
     state.setdefault("pending", {})
     state.setdefault("known_devices", {})
+    # Reclassify persisted Parasoll incidents even during a partial boiler scan
+    # or unavailable collector. Keep their identity/history and delivery markers.
+    for incident in state["active"].values():
+        known = state["known_devices"].get(incident.get("device_id"), {})
+        if incident.get("category") == "parasoll" or known.get("profile") == "parasoll":
+            incident["class"] = "revision"
     connectivity_enabled = config.get("connectivity", {}).get("enabled", False)
     state["resolution_only_if_notified"] = config.get("connectivity", {}).get("resolution_only_if_notified", False)
     if connectivity_enabled and scope_device_ids is None:
@@ -801,6 +813,40 @@ def mark_resolution_notifications_sent(incidents: dict[str, Any]) -> None:
             if str(entry.get("incident_id")) not in pending
         ]
     pending.clear()
+
+
+def heating_reminder_due(state: dict[str, Any], config: dict[str, Any], now: datetime) -> bool:
+    """Once daily at/after the local morning time, catching up after downtime.
+
+    Only full scans use this schedule. A checked empty inventory must not cause
+    a later opening to be called a reminder; that opening gets its usual alert.
+    """
+    settings = config.get("heating_reminders", {})
+    if not settings.get("enabled", True):
+        return False
+    if now.hour < int(settings.get("hour", 8)):
+        return False
+    today = now.date().isoformat()
+    return today not in {
+        state.get("heating_reminder_checked_for"),
+        state.get("heating_reminder_sent_for"),
+    }
+
+
+def heating_critical_incidents(incidents: dict[str, Any], config: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Select unresolved heating-critical issues, not non-critical maintenance."""
+    selected = {}
+    for identifier, entry in incidents.get("active", {}).items():
+        if entry.get("class") != "critical" or entry.get("category") == "parasoll":
+            continue
+        known = incidents.get("known_devices", {}).get(entry.get("device_id"), {})
+        profile_name = known.get("profile")
+        profile = config.get("profiles", {}).get(profile_name, {})
+        if profile.get("critical_when_heating_on") and policy_for(known, config).get("class") != "critical":
+            continue
+        if profile.get("critical_when_heating_on") or profile_name == "boiler_power_plug":
+            selected[identifier] = entry
+    return selected
 
 
 def digest_due(state: dict[str, Any], config: dict[str, Any], now: datetime) -> bool:

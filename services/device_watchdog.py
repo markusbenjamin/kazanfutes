@@ -48,6 +48,8 @@ from utils.device_watchdog import (
     snapshot,
     update_incidents,
     digest_due,
+    heating_reminder_due,
+    heating_critical_incidents,
 )
 from utils.device_inventory import (
     INVENTORY_RELATIVE_PATH,
@@ -571,26 +573,52 @@ def collect_all(config: dict[str, Any]) -> list[dict[str, Any]]:
     return collect_deconz(config) + collect_pumps() + collect_heatmeters() + collect_shelly() + collect_homewizard() + collect_log_backed_infrastructure()
 
 
-def _notify_critical(incidents: dict[str, Any], now: datetime) -> None:
-    """Deliver each critical opening once; retry only when delivery itself failed."""
+def _notify_critical(incidents: dict[str, Any], now: datetime, config: dict[str, Any] | None = None) -> None:
+    """Group new critical issues and the daily unresolved-heating reminder.
+
+    Passing config enables the morning comparison after a full, fresh scan.
+    Boiler-only scans still send new alerts but never remind from stale state.
+    """
     due = [
         entry for entry in incidents.get("active", {}).values()
         if entry.get("class") == "critical" and not entry.get("immediate_notification_sent_at")
     ]
-    if not due:
-        return
     due_by_id = {entry["incident_id"]: entry for entry in due}
-    body = render_grouped_report({"active": due_by_id}, "CRITICAL DEVICE INCIDENTS")
-    connectivity_count = sum(entry.get("kind") == "connectivity" for entry in due)
+    reminder_due = config is not None and heating_reminder_due(incidents, config, now)
+    reminder = heating_critical_incidents(incidents, config) if reminder_due else {}
+    if reminder_due and not reminder:
+        incidents["heating_reminder_checked_for"] = now.date().isoformat()
+    if not due and not reminder:
+        return
+    selected = {**reminder, **due_by_id}
+    title = "UNRESOLVED HEATING-CRITICAL INCIDENTS" if reminder else "CRITICAL DEVICE INCIDENTS"
+    body = render_grouped_report({"active": selected}, title)
+    subject = "Critical physical-infrastructure issue"
+    if reminder:
+        subject = "Kazanfutes heating-critical incidents — daily reminder"
+        body = (
+            "These heating-critical incidents remain unresolved. This is the grouped daily reminder; "
+            "any newly confirmed critical incidents from this scan are included in the same email.\n\n"
+            + body
+        )
+    connectivity_count = sum(entry.get("kind") == "connectivity" for entry in selected.values())
     if connectivity_count >= 3:
         body = f"Several devices have confirmed connectivity problems in this scan. A shared network fault is possible; the cause is not proven.\n\n{body}"
     try:
-        notify_admin("Critical physical-infrastructure issue", body)
+        notify_admin(subject, body)
     except Exception as error:
         report(f"Device watchdog could not send critical email: {error}")
         return
     for entry in due:
         incidents["active"][entry["incident_id"]]["immediate_notification_sent_at"] = now_iso(now)
+    if reminder:
+        incidents["heating_reminder_checked_for"] = now.date().isoformat()
+        incidents["heating_reminder_sent_for"] = now.date().isoformat()
+        # A first notification delivered in a reminder still counts as notified
+        # for the existing immediate-resolution delivery rules.
+        for entry in reminder.values():
+            if not entry.get("immediate_notification_sent_at"):
+                entry["immediate_notification_sent_at"] = now_iso(now)
 
 
 def _notify_resolutions(incidents: dict[str, Any], now: datetime) -> None:
@@ -714,7 +742,7 @@ def _run_locked(
         for entry in solved:
             append_ndjson(os.path.join(root, SOLVED_RELATIVE_PATH), entry)
         if live:
-            _notify_critical(incidents, now)
+            _notify_critical(incidents, now, config)
             atomic_write_json(incidents_path, incidents)
             _notify_resolutions(incidents, now)
         atomic_write_json(incidents_path, incidents)
