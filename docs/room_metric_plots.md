@@ -5,6 +5,13 @@ chart. Ctrl+click a room to pin a separate chart with plain-text choices:
 `hőm.`, `páratart.`, `CO₂`, `lux`, `jelenl.`. Selecting a choice keeps
 the chart pinned. An outside click unlocks it. The last choice is remembered
 per room for the current page only; it never changes ordinary hover.
+Room-chart curves show cursor-following tooltips: measured temperature
+(`mért hőmérséklet`), requested temperature (`kért hőmérséklet`), and radiator
+valve opening (`radiátor nyitási százalék`). The pale historical average is
+labelled separately. Labels disappear on leaving the curve or redrawing the
+chart, without changing plot pinning or the displayed measurements.
+Curve-tooltip text matches the plot label's rendered size, including dashboard
+zoom; ordinary room-info tooltips keep their existing font size.
 The date line offers previous/next-day controls without changing the room or
 selected metric. Future days are disabled.
 

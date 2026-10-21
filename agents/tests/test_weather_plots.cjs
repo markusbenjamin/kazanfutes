@@ -100,7 +100,7 @@ assert.equal(calls[0].options.axes.left, false);
 assert.equal(histogram.element, 'plot');
 assert.equal(histogram.dims.w, 200);
 const weatherSource = fs.readFileSync(path.join(root, 'docs/weather_plots.js'), 'utf8');
-assert.match(weatherSource, /translate\(\$\{plotDims.w \/ 2\},\$\{plotDims.h \* \.56\}\)/);
+assert.match(weatherSource, /translate\(\$\{plotDims.w \/ 2\},\$\{plotDims.h \* \.62\}\)/);
 assert.doesNotMatch(weatherSource, /megfigyelés/); // No sample-count footer on the wind dial.
 // Date navigation sits below the title/metric rows for every selector layout.
 const headerNodes = [];

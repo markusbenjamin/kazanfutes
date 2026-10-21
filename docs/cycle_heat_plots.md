@@ -51,5 +51,8 @@ long intervals are not filled. Late starts or missing coverage set
 `energy_partial`; absent power stays unknown, not zero. Totals reset with each
 day's formatted file. Dials show whole kWh without an approximation prefix or
 tooltip.
+Values and right-aligned kWh units share a baseline and scale with the dial
+height. The units are larger for readability, with measured space reserved
+before fitting long totals so the value and unit cannot overlap.
 The raw energy counter is deliberately ignored because of observed unit/jump
 inconsistencies. Heating-power plots remain instantaneous kW, not kWh.

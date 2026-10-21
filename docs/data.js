@@ -810,6 +810,7 @@ function drawPlot(plotData, userOptions) {
         axesLabel: { top: false, right: false, left: "", bottom: "" },
         plotLabel: "",
         plotLabelTabs: false,
+        curveTooltip: '',
         emptyMessage: '',
         showLockLabel: true,
         now: { show: false, pos: null },
@@ -1227,7 +1228,7 @@ function drawPlot(plotData, userOptions) {
                 }
 
                 // Draw the segment as a line
-                plotElement.append("path")
+                const curve = plotElement.append("path")
                     .datum(segment)
                     .attr("fill", "none")
                     .attr(
@@ -1287,6 +1288,7 @@ function drawPlot(plotData, userOptions) {
                             endTextRect.attr("width", emphasisWidth / 1.25);
                         }
                     } : null);
+                if (ops.curveTooltip) bindPlotCurveTooltip(curve, ops.curveTooltip, isMobile ? 7 * mobileViewScaler : 7);
             });
         }
         else {
@@ -1322,6 +1324,7 @@ function drawPlot(plotData, userOptions) {
 }
 
 function clearMainGraphs() {
+    hidePlotCurveTooltip();
     d3.selectAll(".main-graph-instance").remove();
 }
 
@@ -2585,6 +2588,7 @@ function drawMainGraph(graphData = null) {
                                     axesLabel: { bottom: "óra", left: "°C" },
                                     tickVals: { left: d3.range(Math.floor(range[0]) - 1, Math.ceil(range[1]) + 2, 1).filter(Number.isInteger) },
                                     plotStyle: { joined: true, col: "rgba(44, 213, 14, 0.92)", thickness: "2", startCap: false, endCap: true, smoothCurve: false },
+                                    curveTooltip: "kért hőmérséklet",
                                     plotLabel: roomsDataAndState[mainGraphSetting.roomNumToPlot].name + " kért és mért hőmérséklet",
                                     rects: { when: "before", list: heatingPeriods },
                                     markers: { when: "after", list: requestMarkers, col: "rgba(245,245,0,1)", thickness: 1.5, dashed: true, dashing: "6,3", endCap: true, endCapSize: 2 }
@@ -2598,7 +2602,8 @@ function drawMainGraph(graphData = null) {
                                     smoothing: { bottom: 0, left: 0 },
                                     dataKeys: { bottom: "h_of_day_frac", left: "set_temp" },
                                     domain: { bottom: [0, 24], left: [Math.floor(range[0]) - 1, Math.ceil(range[1]) + 1] },
-                                    plotStyle: { joined: true, col: "rgba(44, 213, 14, 0.41)", thickness: "2", startCap: false, endCap: false, smoothCurve: false, dashed: true, dashing: "5,2" }
+                                    plotStyle: { joined: true, col: "rgba(44, 213, 14, 0.41)", thickness: "2", startCap: false, endCap: false, smoothCurve: false, dashed: true, dashing: "5,2" },
+                                    curveTooltip: "kért hőmérséklet"
                                 }
                             );
                             if (hasValve) {
@@ -2612,6 +2617,7 @@ function drawMainGraph(graphData = null) {
                                         domain: { bottom: [0, 24], left: [0, 1] },
                                         dataKeys: { bottom: "h_of_day_frac", left: "valve" },
                                         plotStyle: { joined: true, col: "rgba(50,50,50,0.85)", thickness: "0.5", startCap: false, endCap: true },
+                                        curveTooltip: "radiátor nyitási százalék",
                                         segment: { do: true, gap: 10, endCaps: true, startCaps: true },
                                         curveEndText: { show: true, fontSize: 5, text: ((roomValveStateData.at(-1).valve * 100).toFixed(1).replace(/\.0$/, '')) + "%", col: "rgba(50,50,50,1)", xOffset: 1.5, yOffset: 1.75 }
                                     }
@@ -2627,6 +2633,7 @@ function drawMainGraph(graphData = null) {
                                     domain: { bottom: [0, 24], left: [Math.floor(range[0]) - 1, Math.ceil(range[1]) + 1] },
                                     dataKeys: { bottom: "h_of_day_frac", left: "temp" },
                                     plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2", startCap: true, endCap: true },
+                                    curveTooltip: "mért hőmérséklet",
                                     segment: { do: false },
                                     curveEndText: { show: true, fontSize: 6, text: ((roomMeasurementDisplayData.at(-1).temp).toFixed(1).replace(/\.0$/, '')) + "°C", col: "rgba(255,0,0,1)", xOffset: 3, yOffset: 1.75 }
                                 }
@@ -2643,6 +2650,7 @@ function drawMainGraph(graphData = null) {
                                     axesLabel: { bottom: "óra", left: "°C" },
                                     tickVals: { left: d3.range(Math.floor(range[0]) - 0, Math.ceil(range[1]) + 1, 1) },
                                     plotStyle: { joined: true, col: "rgb(255, 154, 154,0.5)", thickness: "3", startCap: false, endCap: false },
+                                    curveTooltip: "elmúlt 3 nap átlagos hőmérséklete",
                                     segment: { do: false },
                                     plotLabel: roomsDataAndState[mainGraphSetting.roomNumToPlot].name + " mért hőmérséklet (+ elmúlt 3 nap átlaga)",
                                 }
@@ -2657,6 +2665,7 @@ function drawMainGraph(graphData = null) {
                                     domain: { bottom: [0, 24], left: [Math.floor(range[0]), Math.ceil(range[1])] },
                                     dataKeys: { bottom: "h_of_day_frac", left: "temp" },
                                     plotStyle: { joined: true, col: "rgb(255, 0, 0)", thickness: "2", startCap: true, endCap: true },
+                                    curveTooltip: "mért hőmérséklet",
                                     segment: { do: false },
                                     curveEndText: { show: true, fontSize: 6, text: ((roomMeasurementDisplayData.at(-1).temp).toFixed(1).replace(/\.0$/, '')) + "°C", col: "rgba(255,0,0,1)", xOffset: 3, yOffset: 1.75 }
                                 }
@@ -2678,6 +2687,7 @@ function drawMainGraph(graphData = null) {
                                 tickVals: { left: d3.range(Math.floor(range[0]) - 1, Math.ceil(range[1]) + 2, 1) },
                                 axesLabel: { bottom: "óra", left: "°C" },
                                 plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2", startCap: false, endCap: true },
+                                curveTooltip: "mért hőmérséklet",
                                 plotLabel: roomsDataAndState[mainGraphSetting.roomNumToPlot].name + " mért hőmérséklet",
                                 segment: { do: false },
                                 curveEndText: { show: true, fontSize: 6, text: ((roomMeasurementData.at(-1).temp).toFixed(1).replace(/\.0$/, '')) + "°C", col: "rgba(255,0,0,1)", xOffset: 3, yOffset: 1.75 }

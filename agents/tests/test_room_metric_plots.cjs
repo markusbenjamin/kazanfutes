@@ -110,6 +110,42 @@ assert.equal(calls[1].data[0].temp, 21.5); // Only the existing room-temperature
 assert.equal(calls[1].options.smoothing.left, 10);
 assert.equal(calls[1].options.plotStyle.smoothCurve, true);
 assert.equal(calls[1].options.plotStyle.monotone, false);
+assert.equal(calls[1].options.curveTooltip, 'mért hőmérséklet');
+const tooltip = {
+    attrs: {}, styles: {}, label: '', interrupt() { return this; },
+    attr(name, value) { if (arguments.length === 1) return this.attrs[name]; this.attrs[name] = value; return this; },
+    style(name, value) { this.styles[name] = value; return this; },
+    text(value) { this.label = value; return this; },
+    node() { return {getBoundingClientRect: () => ({width: 180, height: 24})}; }
+};
+const curveEvents = {};
+context.curve = {attr() { return this; }, style() { return this; }, clone() { return this; },
+    node() { return {getScreenCTM: () => ({a: 2, b: 0})}; },
+    on(event, handler) { curveEvents[event] = handler; return this; }};
+context.d3 = {select: () => tooltip};
+context.window = {scrollX: 0, scrollY: 0, innerWidth: 706, innerHeight: 715};
+vm.runInContext("bindPlotCurveTooltip(curve, 'radiátor nyitási százalék')", context);
+curveEvents['mouseover.curve-tooltip']({pageX: 700, pageY: 710});
+assert.equal(tooltip.label, 'radiátor nyitási százalék');
+assert.equal(tooltip.styles.visibility, 'visible');
+assert.equal(tooltip.styles['font-size'], '14px'); // Same seven SVG units as the plot label, at its actual zoom.
+assert.equal(tooltip.styles.left, '522px'); // Tooltip stays inside the viewport.
+assert.equal(tooltip.styles.top, '687px');
+curveEvents['mousemove.curve-tooltip']({pageX: 100, pageY: 100});
+assert.equal(tooltip.styles.left, '110px');
+curveEvents['mouseout.curve-tooltip']();
+assert.equal(tooltip.styles.visibility, 'hidden');
+assert.equal(tooltip.attrs['data-curve-tooltip'], null);
+assert.equal(tooltip.styles['font-size'], null); // Ordinary room-info tooltips retain their existing CSS size.
+curveEvents['mouseover.curve-tooltip']({pageX: 100, pageY: 100});
+vm.runInContext('hidePlotCurveTooltip()', context);
+assert.equal(tooltip.styles.visibility, 'hidden');
+const ordinaryRoomSource = source.slice(source.indexOf('case "room_plot":'), source.indexOf('case "all_rooms":'));
+assert.match(ordinaryRoomSource, /curveTooltip: "mért hőmérséklet"/);
+assert.match(ordinaryRoomSource, /curveTooltip: "kért hőmérséklet"/);
+assert.match(ordinaryRoomSource, /curveTooltip: "radiátor nyitási százalék"/);
+assert.match(source, /if \(ops.curveTooltip\) bindPlotCurveTooltip\(curve, ops.curveTooltip, isMobile \? 7 \* mobileViewScaler : 7\)/);
+assert.match(source, /function clearMainGraphs\(\) \{\s*hidePlotCurveTooltip\(\)/);
 const click = source.slice(source.indexOf('.on("click.maingraph"'), source.indexOf('d3.select("body")', source.indexOf('.on("click.maingraph"')));
 assert.match(click, /event.stopPropagation\(\);\s*if \(openWeatherMetricPlot\(event, this.id\)\) return;\s*if \(openCycleHeatPlot\(event, this.id\)\) return;\s*if \(openRoomMetricPlot\(event, this.id\)\) return;/);
 const hover = source.slice(source.indexOf('function joinMainGrapDataSourceToElements'), source.indexOf('.on("click.maingraph"'));
