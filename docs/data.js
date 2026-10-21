@@ -643,8 +643,14 @@ function collectDataFromGitHub(dataToCollect, drawFunction) {
             fetchNext(index + 1);
         } else {
             // Not fresh (or doesn't exist) -> fetch from GitHub
-            const url = "https://raw.githubusercontent.com/markusbenjamin/kazanfutes/refs/heads/main/data/formatted/"
-                + day + "/" + type + ".json";
+            // Keep the new power/flow stream separate from cached pre-power trial responses.
+            const newMetricStream = type.endsWith('_heat_delivery') || type.endsWith('_environment');
+            const dataRef = newMetricStream ? 'main' : 'refs/heads/main';
+            const url = "https://raw.githubusercontent.com/markusbenjamin/kazanfutes/" + dataRef + "/data/formatted/"
+                + day + "/" + type + ".json"
+                // Newly introduced files may have cached 404s before their first upload.
+                // The existing loadedData expiry still limits successful heat/flow fetches.
+                + (newMetricStream ? '?updated=' + now.getTime() : '');
 
             fetchJSONEndpoint(url)
                 .then(dataJSON => {
@@ -803,6 +809,9 @@ function drawPlot(plotData, userOptions) {
 
         axesLabel: { top: false, right: false, left: "", bottom: "" },
         plotLabel: "",
+        plotLabelTabs: false,
+        emptyMessage: '',
+        showLockLabel: true,
         now: { show: false, pos: null },
         segment: { do: false, gap: null },
         curveEndText: { show: false, fontSize: null, text: null, col: null, xOffset: 13, yOffset: 3 },
@@ -1036,7 +1045,10 @@ function drawPlot(plotData, userOptions) {
             .text(ops.axesLabel.left);
     }
 
-    if (ops.plotLabel != "") {
+    if (ops.plotLabelTabs) {
+        drawPlotTitleSelector(plotElement, plotDims, ops.plotLabelTabs, isMobile ? 7 * mobileViewScaler : 7);
+    }
+    else if (ops.plotLabel != "") {
         // Plot label
         plotElement.append("text")
             .attr("x", plotDims.w / 2)
@@ -1047,7 +1059,7 @@ function drawPlot(plotData, userOptions) {
             .text(ops.plotLabel);
     }
 
-    if (mainGraphContentLocked) {
+    if (mainGraphContentLocked && ops.showLockLabel) {
         plotElement.append("text")
             //.attr("x", plotDims.w * 0.87125)
             .attr("x", -plotDims.w * ops.margins.left * 1.03)
@@ -1093,6 +1105,11 @@ function drawPlot(plotData, userOptions) {
         if (ops.rects && ops.rects.when == "before") {
             drawRects();
         }
+        if (ops.emptyMessage) {
+            plotElement.append('text').attr('x', plotDims.w / 2).attr('y', plotDims.h / 2)
+                .style('text-anchor', 'middle').style('font-family', dashboardFont)
+                .style('font-size', '6px').style('fill', '#555').text(ops.emptyMessage);
+        }
 
         function drawMarkers() {
             ops.markers.list.forEach(marker => {
@@ -1133,7 +1150,8 @@ function drawPlot(plotData, userOptions) {
             const line = d3.line()
                 .x(d => bottomScale(d[ops.dataKeys.bottom]))
                 .y(d => leftScale(d[ops.dataKeys.left]))
-                .curve(ops.plotStyle.smoothCurve ? d3.curveBasis : d3.curveStep);
+                .curve(ops.plotStyle.stepAfter ? d3.curveStepAfter : ops.plotStyle.monotone ? d3.curveMonotoneX : ops.plotStyle.linear ? d3.curveLinear
+                    : ops.plotStyle.smoothCurve ? d3.curveBasis : d3.curveStep);
 
             const segments = ops.segment.do ? splitDataIntoSegments(plotData, ops.dataKeys.bottom, ops.segment.gap) : [plotData];
 
@@ -2098,16 +2116,11 @@ const elementToMainGraphSettingMapping = {
 };
 
 for (let cycle = 1; cycle <= 4; cycle++) {
-    const waterTemperatureSetting = {
-        title: "cycle_water_temp",
-        types: ["cycle_" + cycle + "_water_temps", "heating_state"],
-        day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime),
-        cycleNum: cycle,
-        conditionals: []
-    };
+    const waterTemperatureSetting = createCycleHeatPlotSetting(cycle, "cycle" + cycle);
     elementToMainGraphSettingMapping["cycle" + cycle] = waterTemperatureSetting;
+    elementToMainGraphSettingMapping['cycle' + cycle + '_marker'] = createCycleHeatPlotSetting(cycle, 'cycle' + cycle + '_marker');
     if (cycle === 1) {
-        elementToMainGraphSettingMapping["cycle1_2"] = waterTemperatureSetting;
+        elementToMainGraphSettingMapping["cycle1_2"] = createCycleHeatPlotSetting(cycle, "cycle1_2");
     }
 }
 
@@ -2133,6 +2146,8 @@ function joinMainGrapDataSourceToElements() {
         })
         .on("click.maingraph", function (event) {
             event.stopPropagation();
+            if (openCycleHeatPlot(event, this.id)) return;
+            if (openRoomMetricPlot(event, this.id)) return;
             mainGraphContentLocked = !mainGraphContentLocked;
             resetAllRoomsPlotToAllCycles(); // Workaround so that all_rooms plot is reset to default even if a mouseout was not activated on the cycle infoboxes
 
@@ -2313,7 +2328,7 @@ function drawMainGraph(graphData = null) {
     }
     else {
         graphData = graphData[mainGraphSetting.day];
-        if (mainGraphSetting.types.length == Object.keys(graphData).length) {
+        if (mainGraphSetting.title === 'cycle_water_temp' || mainGraphSetting.title === 'room_metrics' || mainGraphSetting.types.length == Object.keys(graphData).length) {
             clearMainGraphs();
             let range;
             switch (mainGraphSetting.title) {
@@ -2472,6 +2487,9 @@ function drawMainGraph(graphData = null) {
                         );
                     }
                     break;
+                case "room_metrics":
+                    drawRoomMetricPlot(graphData, mainGraphSetting);
+                    break;
                 case "room_plot":
                     if (mainGraphSetting.roomNumToPlot != 11) {
                         let roomNum = mainGraphSetting.roomNumToPlot;
@@ -2523,10 +2541,9 @@ function drawMainGraph(graphData = null) {
                             period.y1 = Math.floor(range[0]) - 1;
                             period.y2 = Math.ceil(range[1]) + 1;
                             period.fill = "rgba(255,0,0,0.025)";
-                            period.stroke = "rgba(255,0,0,0.75)";
-                            period.strokeWeight = 0.25;
-                            period.dashed = true;
-                            period.dashing = "0.5,1";
+                            period.stroke = "none";
+                            period.strokeWeight = 0;
+                            period.dashed = false;
                         });
 
                         let roomOverrides;
@@ -2676,10 +2693,9 @@ function drawMainGraph(graphData = null) {
                             period.y1 = Math.floor(range[0]);
                             period.y2 = Math.ceil(range[1]);
                             period.fill = "rgba(255,0,0,0.1)";
-                            period.stroke = "rgba(255,0,0,0.5)";
-                            period.strokeWeight = 0.25;
-                            period.dashed = true;
-                            period.dashing = "0.5,1";
+                            period.stroke = "none";
+                            period.strokeWeight = 0;
+                            period.dashed = false;
                         });
                     }
 
@@ -2729,39 +2745,7 @@ function drawMainGraph(graphData = null) {
                     });
                     break;
                 case "cycle_water_temp": {
-                    const waterCycle = mainGraphSetting.cycleNum;
-                    const waterReadings = (graphData["cycle_" + waterCycle + "_water_temps"] || [])
-                        .filter(reading => Number.isFinite(reading.water_temp) && Number.isFinite(reading.h_of_day_frac));
-                    const waterRange = d3.extent(waterReadings, reading => reading.water_temp);
-                    range = waterReadings.length
-                        ? [Math.floor(waterRange[0] / 5) * 5 - 5, Math.ceil(waterRange[1] / 5) * 5 + 5]
-                        : [0, 80];
-                    const waterPlotEnd = mainGraphSetting.day === dayStamp() ? getFractionalHourOfDay() : 24;
-                    const waterPumpPeriods = extractCyclePumpOnPeriods(waterCycle, graphData.heating_state, waterPlotEnd)
-                        .map(period => ({ ...period, y1: range[0], y2: range[1],
-                            fill: "rgba(255,0,0,0.025)", stroke: "rgba(255,0,0,0.75)",
-                            strokeWeight: 0.25, dashed: true, dashing: "0.5,1" }));
-                    drawPlot(
-                        waterReadings,
-                        {
-                            parentId: "graph",
-                            smoothing: { bottom: 0, left: 0 },
-                            domain: { bottom: [0, 24], left: range },
-                            dataKeys: { bottom: "h_of_day_frac", left: "water_temp" },
-                            axesLabel: { bottom: "óra", left: "°C" },
-                            tickVals: { left: d3.range(range[0], range[1] + 1, 5) },
-                            plotStyle: { joined: true, col: "rgb(200, 0, 0)", thickness: "1", startCap: false, endCap: true },
-                            rects: { when: "before", list: waterPumpPeriods },
-                            segment: { do: false },
-                            plotLabel: waterCycle + ". kör mai fűtővíz-hőmérséklete" + (waterReadings.length ? "" : " (nincs adat)"),
-                            curveEndText: {
-                                show: waterReadings.length > 0,
-                                fontSize: 6,
-                                text: waterReadings.length ? Math.round(waterReadings.at(-1).water_temp) + "°C" : "",
-                                col: "rgb(200, 0, 0)", xOffset: 3, yOffset: 1.75
-                            }
-                        }
-                    );
+                    drawCycleHeatPlot(graphData, mainGraphSetting);
                     break;
                 }
                 case "external_temp": {
@@ -2967,7 +2951,7 @@ d3.xml(isMobile ? "canvas_mobile.svg" : "canvas.svg").then(fileData => {
         //runOnceThenSetInterval(addKPIsToTooltip, 10 * 60 * 1000);
     }
     runOnceThenSetInterval(writeGasUsageToDial, 10 * 1000);
-    runOnceThenSetInterval(writePumpPowerToCycleMarkers, 10 * 1000);
+    runOnceThenSetInterval(writeCycleEnergyToMarkers, 10 * 1000);
     runOnceThenSetInterval(getDataFromFirebase, 5 * 1000);
     runOnceThenSetInterval(drawMainGraph, 60 * 1000);
     runOnceThenSetInterval(rescueMainGraph, 100);
