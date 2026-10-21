@@ -71,7 +71,7 @@ function drawPlotTitleSelector(plotElement, plotDims, options, fontSize) {
     const lineHeight = fontSize * 1.4;
     if (options.day) {
         const date = plotElement.append('text').attr('class', 'selector-plot-date')
-            .attr('data-day', options.day).attr('x', plotDims.w / 2).attr('y', -rows * lineHeight - fontSize * .35)
+            .attr('data-day', options.day).attr('x', plotDims.w / 2).attr('y', -fontSize * .35)
             .style('text-anchor', 'middle').style('font-family', dashboardFont).style('font-size', fontSize + 'px');
         const arrow = (text, label, delta, enabled) => {
             const activate = event => { event.stopPropagation(); if (enabled) options.onDayChange(delta); };
@@ -91,7 +91,7 @@ function drawPlotTitleSelector(plotElement, plotDims, options, fontSize) {
       const heading = plotElement.append('text')
         .attr('class', 'cycle-heat-selector').attr('role', 'tablist')
         .attr('aria-label', options.prefix + 'grafikon választása')
-        .attr('x', plotDims.w / 2).attr('y', -(rows - row - 1) * lineHeight - fontSize * .35)
+        .attr('x', plotDims.w / 2).attr('y', -(rows - row - (options.day ? 0 : 1)) * lineHeight - fontSize * .35)
         .style('text-anchor', 'middle').style('font-family', dashboardFont)
         .style('font-size', fontSize + 'px');
       if (!row) heading.append('tspan').text(options.prefix);

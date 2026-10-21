@@ -79,4 +79,21 @@ assert.equal(histogram.element, 'plot');
 assert.equal(histogram.dims.w, 200);
 const weatherSource = fs.readFileSync(path.join(root, 'docs/weather_plots.js'), 'utf8');
 assert.match(weatherSource, /translate\(\$\{plotDims.w \/ 2\},\$\{plotDims.h \/ 2\}\)/);
+// Date navigation sits below the title/metric rows for every selector layout.
+const headerNodes = [];
+function headerSelection(tag = 'g') {
+    const element = {tag, attrs: {}, append(child) { const next = headerSelection(child); headerNodes.push(next); return next; },
+        attr(name, value) { this.attrs[name] = value; return this; }, style() { return this; },
+        text() { return this; }, on() { return this; }, node() { return {getComputedTextLength: () => 20}; }};
+    return element;
+}
+context.dashboardFont = 'Consolas';
+context.headerRoot = headerSelection();
+context.headerOptions = calls[0].options.plotLabelTabs;
+vm.runInContext('drawPlotTitleSelector(headerRoot, {w:200,h:100}, headerOptions, 7)', context);
+const dateHeader = headerNodes.find(node => node.attrs.class === 'selector-plot-date');
+const metricHeaders = headerNodes.filter(node => node.attrs.class === 'cycle-heat-selector');
+assert.equal(metricHeaders.length, 3);
+assert.ok(metricHeaders.every(node => node.attrs.y < dateHeader.attrs.y));
+assert.equal(dateHeader.attrs.y, -7 * .35);
 console.log('Weather/selectors passed: unchanged outdoor hover, Ctrl selector, metric/date preservation, future-day guard, calendar/DST dates, weekday labels, weather values/units, centered wind histogram, no batteries.');
