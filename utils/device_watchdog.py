@@ -420,6 +420,8 @@ def candidates_for(device: dict[str, Any], config: dict[str, Any], now: datetime
         candidates.append(issue(device, "invalid_battery", "Battery value is outside its configured raw range", policy, evidence=battery))
     battery_percent = battery.get("battery_percent")
     critical_battery = policy.get("battery_critical_percent")
+    trv_battery = device.get("profile") == "critical_danfoss_valve"
+    warning_severity = "revision" if trv_battery else None
     low_battery_flag = battery.get("low_battery") and (
         device.get("profile") != "parasoll"
         or battery_percent is None
@@ -427,13 +429,20 @@ def candidates_for(device: dict[str, Any], config: dict[str, Any], now: datetime
         or battery_percent <= float(critical_battery)
     )
     if low_battery_flag:
-        candidates.append(issue(device, "low_battery", "Device reports low battery", policy, evidence=battery))
+        # A quantified TRV warning above the critical threshold is maintenance,
+        # not critical merely because the valve itself is heating-critical.
+        # With no usable percentage, retain a genuine hardware low-battery alarm.
+        flag_severity = warning_severity if trv_battery and (
+            critical_battery is None
+            or (battery_percent is not None and battery_percent > float(critical_battery))
+        ) else None
+        candidates.append(issue(device, "low_battery", "Device reports low battery", policy, severity=flag_severity, evidence=battery))
     warning_battery = policy.get("battery_warning_percent")
     if battery_percent is not None:
         if critical_battery is not None and battery_percent <= float(critical_battery):
             candidates.append(issue(device, "low_battery", f"Battery is {battery_percent:g}%", policy, evidence=battery))
         elif warning_battery is not None and battery_percent <= float(warning_battery):
-            candidates.append(issue(device, "low_battery", f"Battery is {battery_percent:g}%", policy, evidence=battery))
+            candidates.append(issue(device, "low_battery", f"Battery is {battery_percent:g}%", policy, severity=warning_severity, evidence=battery))
 
     event_after = policy.get("event_after_minutes")
     last_event = facts.get("last_event_at")
@@ -504,6 +513,7 @@ def update_incidents(
     if connectivity_enabled and scope_device_ids is None:
         migrate_connectivity(state, devices, now)
     active = state["active"]
+    previous_classes = {identifier: entry.get("class") for identifier, entry in active.items()}
     pending = state["pending"]
     current_candidates: dict[str, dict[str, Any]] = {}
     current_device_ids = {
@@ -669,6 +679,12 @@ def update_incidents(
         solved_incident.update({"status": "solved", "solved_at": now_iso(now)})
         solved.append(solved_incident)
         active.pop(incident_id, None)
+
+    # An open warning can become critical without changing its incident ID.
+    # Re-arm immediate delivery for that escalation, not on every repeat scan.
+    for identifier, incident in active.items():
+        if previous_classes.get(identifier) not in (None, "critical") and incident.get("class") == "critical":
+            incident["immediate_notification_sent_at"] = None
 
     # A delayed recovery delivery must never claim that a currently open
     # episode is resolved (for example after an SMTP outage).
