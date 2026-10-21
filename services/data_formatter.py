@@ -23,6 +23,7 @@ from utils.boiler_power_formatter import format_boiler_power, format_boiler_comm
 from utils.external_temperature_formatter import format_ws90_external_temperatures, format_ws90_weather
 from utils.heat_delivery_formatter import format_cycle_heat_delivery
 from utils.room_environment_formatter import format_room_environment
+from utils.room_control_kpi_formatter import format_room_control_kpis
 
 parse_old_logs = False
 settings['dev'] = False
@@ -61,7 +62,7 @@ else:
         digestion_days = [datetime.now()]
 
 if not data_types_to_digest:
-    data_types_to_digest = ['room_measurements','room_environment','room_set_temps','room_overrides','external_temp','weather_station','gas_consumption','heating_state','room_valve_states','room_kpis','pumps_power','cycle_water_temps','cycle_heat_delivery','boilers_power']
+    data_types_to_digest = ['room_measurements','room_environment','room_set_temps','room_overrides','external_temp','weather_station','gas_consumption','heating_state','room_valve_states','room_kpis','room_control_kpis','pumps_power','cycle_water_temps','cycle_heat_delivery','boilers_power']
 
 #endregion
 
@@ -486,6 +487,24 @@ for digestion_day in digestion_days:
         # Log execution
         log({f"success {action_string}":success})
 
+    #endregion
+
+    #region Room control tracking KPIs
+    if 'room_control_kpis' in data_types_to_digest:
+        success = False
+        action_string = f'formatting room control KPIs for {digestion_daystamp}'
+        try:
+            source_path = f'data/logs/service_execution/heating_control/heating_control.json{log_file_suffix}'
+            entries = load_ndjson_to_json_list(source_path) if os.path.exists(os.path.join(get_project_root(), source_path)) else []
+            formatted_data = format_room_control_kpis(entries, digestion_daystamp, get_rooms_info(just_controlled=False),
+                                                      end_time=datetime.now() if digestion_day.date() == datetime.now().date() else None)
+            export_json_list_to_json_file(formatted_data,
+                f'{export_path_prefix}data/formatted/{digestion_daystamp}/room_control_kpis.json')
+            success = True
+            report(f'Done: {action_string}.', verbose=True)
+        except Exception:
+            ServiceException(f'Unexpected error while {action_string}.', severity=2)
+        log({f'success {action_string}': success})
     #endregion
 
     #region Room KPIs
