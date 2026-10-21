@@ -22,6 +22,7 @@ from utils.water_temperature_formatter import format_cycle_water_temperatures
 from utils.boiler_power_formatter import format_boiler_power, format_boiler_commands
 from utils.external_temperature_formatter import format_ws90_external_temperatures
 from utils.heat_delivery_formatter import format_cycle_heat_delivery
+from utils.room_environment_formatter import format_room_environment
 
 parse_old_logs = False
 settings['dev'] = False
@@ -60,7 +61,7 @@ else:
         digestion_days = [datetime.now()]
 
 if not data_types_to_digest:
-    data_types_to_digest = ['room_measurements','room_set_temps','room_overrides','external_temp','gas_consumption','heating_state','room_valve_states','room_kpis','pumps_power','cycle_water_temps','cycle_heat_delivery','boilers_power']
+    data_types_to_digest = ['room_measurements','room_environment','room_set_temps','room_overrides','external_temp','gas_consumption','heating_state','room_valve_states','room_kpis','pumps_power','cycle_water_temps','cycle_heat_delivery','boilers_power']
 
 #endregion
 
@@ -106,6 +107,30 @@ for digestion_day in digestion_days:
         # Log execution
         log({f"success {action_string}":success})
 
+    #endregion
+
+    #region Room environmental plots
+    if 'room_environment' in data_types_to_digest:
+        success = False
+        action_string = f'formatting daily room environmental plots for {digestion_daystamp}'
+        try:
+            source_logs = []
+            for relative_path in ('data/logs/aqara_and_nous/aqara_and_nous.json',
+                                  'data/logs/service_execution/heating_control/heating_control.json'):
+                source_path = relative_path + log_file_suffix
+                source_logs.append(load_ndjson_to_json_list(source_path)
+                                   if os.path.exists(os.path.join(get_project_root(), source_path)) else [])
+            formatted_rooms = format_room_environment(*source_logs, digestion_daystamp, get_rooms_info(just_controlled=False))
+            for room, formatted_data in formatted_rooms.items():
+                export_json_list_to_json_file(formatted_data,
+                    f'{export_path_prefix}data/formatted/{digestion_daystamp}/room_{room}_environment.json')
+            report(f'Done: {action_string}.', verbose=True)
+            success = True
+        except ModuleException as e:
+            ServiceException(f'Module error while {action_string}.', original_exception=e, severity=2)
+        except Exception:
+            ServiceException(f'Unexpected error while {action_string}.', severity=2)
+        log({f'success {action_string}': success})
     #endregion
 
     #region Room set temps
