@@ -13,6 +13,10 @@
     "minute_window": 15,
     "send_when_empty": false
   },
+  "heating_reminders": {
+    "enabled": true,
+    "hour": 8
+  },
   "healthchecks": {
     "secret_relative_path": "config/secrets_and_env/healthchecks_device_watchdog_url",
     "timeout_seconds": 10
@@ -70,7 +74,7 @@
       "open_after_runs": 1
     },
     "parasoll": {
-      "class": "critical",
+      "class": "revision",
       "open_after_runs": 2,
       "stale_after_minutes": 1440,
       "battery_warning_percent": 15,
