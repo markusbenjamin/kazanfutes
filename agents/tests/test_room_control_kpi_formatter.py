@@ -36,6 +36,7 @@ class RoomControlKPIsTest(unittest.TestCase):
         rows = [self.snapshot(i, temp=22 if i % 2 else 20, command=1 if i < 2 else 0) for i in range(4)]
         result = self.calculate(rows, minutes=4)
         self.assertEqual(list(result['quadrant_seconds'].values()), [60, 60, 60, 60])
+        self.assertTrue(all(abs(value - 1/60) < 1e-9 for value in result['quadrant_error_kh'].values()))
 
     def test_tolerance_boundary_and_zero_temperature(self):
         result = self.calculate([self.snapshot(temp=0, target=.5)])
@@ -89,6 +90,8 @@ class RoomControlKPIsTest(unittest.TestCase):
         self.assertEqual(row['heating_seconds'], 30)
         self.assertEqual(row['quadrant_seconds']['below_on'], 30)
         self.assertEqual(row['quadrant_seconds']['below_off'], 90)
+        self.assertAlmostEqual(row['quadrant_error_kh']['below_on'], 30 / 3600)
+        self.assertAlmostEqual(row['quadrant_error_kh']['below_off'], 90 / 3600)
         self.assertEqual(row['mae_on_c'], 1)
         self.assertEqual(result['schema_version'], 3)
 

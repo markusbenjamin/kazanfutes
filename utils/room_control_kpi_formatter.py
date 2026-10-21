@@ -51,7 +51,8 @@ def format_room_control_kpis(entries, daystamp, rooms, end_time=None,
 
     stats = {room: {'valid_seconds': 0., 'heating_seconds': 0., 'occupied_seconds': 0., 'comfort_seconds': 0.,
                     'absolute_error_on_kh': 0., 'signed_error_on_kh': 0.,
-                    'quadrant_seconds': {key: 0. for key in QUADRANTS}}
+                    'quadrant_seconds': {key: 0. for key in QUADRANTS},
+                    'quadrant_error_kh': {key: 0. for key in QUADRANTS}}
              for room in controlled}
     temperatures, targets, commands, valves, occupancy = {}, {}, {}, {}, {}
 
@@ -91,6 +92,8 @@ def format_room_control_kpis(entries, daystamp, rooms, end_time=None,
                 side = 'below' if error < 0 else 'above'
                 row['quadrant_seconds'][side + '_on'] += heating_seconds
                 row['quadrant_seconds'][side + '_off'] += seconds - heating_seconds
+                row['quadrant_error_kh'][side + '_on'] += abs(error) * heating_seconds / 3600
+                row['quadrant_error_kh'][side + '_off'] += abs(error) * (seconds - heating_seconds) / 3600
             row['heating_seconds'] += heating_seconds
             row['absolute_error_on_kh'] += abs(error) * heating_seconds / 3600
             row['signed_error_on_kh'] += error * heating_seconds / 3600
