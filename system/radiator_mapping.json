@@ -1,0 +1,135 @@
+{
+    "schema_version": 1,
+    "_comment": "location_id and location_label use dev/db/sept_package/locations.csv plus the owner's confirmed additions: 8 = kisterem / Kisterem, 9 = vendegter / Vendégtér, 10 = trafohaz / Trafóház. Location labels are current, not legacy labels. Probes are assigned to units only, not areas or individual radiators. All DB units and legacy heating rooms are included, even without mapped probes or TRVs. legacy_room_numbers lists the unit's own and descendant areas' legacy numbers; this does not assign probes to areas. Device and probe names match raw radiator-temperature logs exactly. The owner supplied the Merce/Dios Edit split. Probe order does not identify radiator numbers, TRVs or SVG elements. Empty probe lists mean no mapped probe, not no radiator. Unresolved sources remain unassigned.",
+    "_intent": {
+        "purpose": "System-level, editable source of truth for physical probe-to-unit associations, independent of frontend presentation.",
+        "verification": "The owner will refine and correct these assignments as physical placement is checked. Existing DB names and numbering alone do not establish which individual radiator or TRV a probe measures.",
+        "probe_identity": "Probe references must remain stable when unit assignments change and must not depend on array order, room names or radiator numbering. The device/probe pair currently identifies each raw source.",
+        "future_trv_associations": "Explicit, verified TRV-to-probe associations may be added here later. Do not assume one-to-one relationships or infer them from list order, similar names or SVG elements.",
+        "unknown_associations": "Keep unknown associations unset or explicitly unassigned; do not fill them by inference.",
+        "frontend_grouping": "Display grouping and SVG element naming belong to the frontend/SVG, not this mapping. SVG-owned groups may reference stable probe identities without claiming an individual radiator or TRV correspondence. Do not add SVG IDs or display-group definitions here."
+    },
+    "rooms": [
+        {
+            "location_id": "oktopusz_szita",
+            "location_label": "Oktopusz szita",
+            "legacy_room_numbers": [1],
+            "probes": [
+                { "device": "oktopusz_1_radiator_shelly", "probe": "temperature:100" }
+            ]
+        },
+        {
+            "location_id": "golyafeszek",
+            "location_label": "Gólyafészek",
+            "legacy_room_numbers": [2],
+            "probes": [
+                { "device": "ovi_radiatorok_shelly", "probe": "temperature:100" },
+                { "device": "ovi_radiatorok_shelly", "probe": "temperature:101" },
+                { "device": "ovi_radiatorok_shelly", "probe": "temperature:102" },
+                { "device": "ovi_radiatorok_shelly", "probe": "temperature:103" }
+            ]
+        },
+        {
+            "location_id": "pk",
+            "location_label": "PK",
+            "legacy_room_numbers": [3],
+            "probes": [
+                { "device": "pk_radiatorok_shelly", "probe": "temperature:100" },
+                { "device": "pk_radiatorok_shelly", "probe": "temperature:101" }
+            ]
+        },
+        {
+            "location_id": "szgk",
+            "location_label": "SZGK",
+            "legacy_room_numbers": [4],
+            "probes": [
+                { "device": "szgk_radiator_shelly", "probe": "temperature:100" }
+            ]
+        },
+        {
+            "location_id": "merce",
+            "location_label": "Mérce",
+            "legacy_room_numbers": [5],
+            "probes": [
+                { "device": "merce_radiatorok_2_shelly", "probe": "temperature:101" },
+                { "device": "merce_radiatorok_2_shelly", "probe": "temperature:102" }
+            ]
+        },
+        {
+            "location_id": "studio",
+            "location_label": "Stúdió",
+            "legacy_room_numbers": [6, 18],
+            "probes": [
+                { "device": "studio_radiator_shelly", "probe": "temperature:100" }
+            ]
+        },
+        {
+            "location_id": "golyairoda",
+            "location_label": "Gólyairoda",
+            "legacy_room_numbers": [7],
+            "probes": [
+                { "device": "golya_radiatorok_shelly", "probe": "gólya1" },
+                { "device": "golya_radiatorok_shelly", "probe": "gólya2" }
+            ]
+        },
+        {
+            "location_id": "kisterem",
+            "location_label": "Kisterem",
+            "legacy_room_numbers": [8],
+            "probes": []
+        },
+        {
+            "location_id": "vendegter",
+            "location_label": "Vendégtér",
+            "legacy_room_numbers": [9],
+            "probes": []
+        },
+        {
+            "location_id": "trafohaz",
+            "location_label": "Trafóház",
+            "legacy_room_numbers": [10],
+            "probes": []
+        },
+        {
+            "location_id": "oktopusz_keramia",
+            "location_label": "Oktopusz kerámia",
+            "legacy_room_numbers": [11],
+            "probes": []
+        },
+        {
+            "location_id": "merce_targyalo",
+            "location_label": "Mérce tárgyaló",
+            "legacy_room_numbers": [12],
+            "probes": [
+                { "device": "merce_radiatorok_2_shelly", "probe": "temperature:100" }
+            ]
+        },
+        {
+            "location_id": "gepmuhely",
+            "location_label": "GÉPműhely",
+            "legacy_room_numbers": [13],
+            "probes": [
+                { "device": "gep_radiator_shelly", "probe": "temperature:100" }
+            ]
+        },
+        {
+            "location_id": "kistargyalo",
+            "location_label": "Kistárgyaló",
+            "legacy_room_numbers": [16],
+            "probes": []
+        },
+        {
+            "location_id": "folyoso",
+            "location_label": "Folyosó",
+            "legacy_room_numbers": [17, 24, 25],
+            "probes": []
+        }
+    ],
+    "unassigned": {
+        "location_id": "unassigned",
+        "location_label": "Még nincs hozzárendelve",
+        "probes": [
+            { "device": "merce_radiatorok_1_shelly", "probe": "temperature:100" }
+        ]
+    }
+}

@@ -24,6 +24,7 @@ from utils.external_temperature_formatter import format_ws90_external_temperatur
 from utils.heat_delivery_formatter import format_cycle_heat_delivery
 from utils.room_environment_formatter import format_room_environment
 from utils.room_control_kpi_formatter import format_room_control_kpis
+from utils.radiator_formatter import format_radiator_temperatures, format_radiator_valves
 
 parse_old_logs = False
 settings['dev'] = False
@@ -62,7 +63,7 @@ else:
         digestion_days = [datetime.now()]
 
 if not data_types_to_digest:
-    data_types_to_digest = ['room_measurements','room_environment','room_set_temps','room_overrides','external_temp','weather_station','gas_consumption','heating_state','room_valve_states','room_kpis','room_control_kpis','pumps_power','cycle_water_temps','cycle_heat_delivery','boilers_power']
+    data_types_to_digest = ['room_measurements','room_environment','room_set_temps','room_overrides','external_temp','weather_station','gas_consumption','heating_state','room_valve_states','room_kpis','room_control_kpis','pumps_power','cycle_water_temps','cycle_heat_delivery','boilers_power','radiators']
 
 #endregion
 
@@ -687,6 +688,28 @@ for digestion_day in digestion_days:
         # Log execution
         log({f"success {action_string}":success})
 
+    #endregion
+
+    #region Per-source radiator telemetry (independent of room valve averages)
+    if 'radiators' in data_types_to_digest:
+        success = False
+        action_string = f'formatting radiator sources for {digestion_daystamp}'
+        try:
+            mapping = load_json_to_dict('system/radiator_mapping.json')
+            probe_log = load_ndjson_to_json_list(f'data/logs/radiator_temps/radiator_temps.json{log_file_suffix}')
+            valve_log = load_ndjson_to_json_list(f'data/logs/thermostats/thermostats_state.json{log_file_suffix}')
+            probes = format_radiator_temperatures(probe_log, digestion_daystamp, mapping)
+            valves = format_radiator_valves(valve_log, digestion_daystamp)
+            export_json_list_to_json_file(probes, f'{export_path_prefix}data/formatted/{digestion_daystamp}/radiator_temps.json')
+            export_json_list_to_json_file(valves, f'{export_path_prefix}data/formatted/{digestion_daystamp}/radiator_valves.json')
+            if not parse_old_logs and digestion_daystamp == datetime.now().strftime('%Y-%m-%d') and valves:
+                JSONNodeAtURL(node_relative_path='system').write({'radiator_valves': valves[-1]}, 'state')
+            success = True
+        except ModuleException as e:
+            ServiceException(f'Module error while {action_string}.', original_exception=e, severity=2)
+        except Exception:
+            ServiceException(f'Module error while {action_string}.', severity=2)
+        log({f'success {action_string}': success})
     #endregion
 
     #region Room valve states

@@ -3,6 +3,7 @@ Reads and logs radiator temperatures.
 """
 
 from utils.project import *
+from utils.radiator_formatter import radiator_probe_snapshot
 from utils.shelly_discovery import (
     ShellyDiscoveryError,
     build_shelly_resolver,
@@ -42,10 +43,10 @@ try:
         for peripheral_name, peripheral_data in device_data.get("peripherals", {}).items():
             radiator_temps[device_name][peripheral_name] = peripheral_data.get("temp")
 
-    #system_node = JSONNodeAtURL(node_relative_path='system')
-    #system_node.write({"radiator_temps": radiator_temps}, "state")
-
     log_data(radiator_temps, "radiator_temps/radiator_temps.json")
+    JSONNodeAtURL(node_relative_path='system').write({
+        'radiator_probes': radiator_probe_snapshot(radiator_temps_detailed['devices'], timestamp())
+    }, 'state')
 
     required_errors = {
         name: error for name, error in resolution_errors.items()
