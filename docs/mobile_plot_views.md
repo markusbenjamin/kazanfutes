@@ -15,8 +15,10 @@ views keep their existing tap behaviour without an extra selector.
 Switches reuse existing plot factories and preserve the shown date and
 remembered metric, without changing shared ordinary-hover settings. Cycle
 analytics retain the cycle filter. Clicking away clears the selected context.
-The view row reserves identical space for the foundation and every overlaid
-curve, so axes, shading and data stay aligned. Desktop Ctrl/Alt shortcuts and
+The view selector sits above the dotted frame, right-aligned on the same line
+as the left-aligned lock/date labels. Historical dates shrink if necessary to
+avoid the selector. No plot space is reserved or removed, so axes, shading and
+data keep their ordinary geometry. Desktop Ctrl/Alt shortcuts and
 the default choice on ordinary room hover are unchanged.
 
 The touch selector works with the default SVG used on phones; it does not

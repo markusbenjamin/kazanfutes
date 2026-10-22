@@ -66,9 +66,12 @@ function mobilePlotViewOptions() {
 }
 
 function drawMobilePlotViewSelector(container, dimensions, options) {
-    const font = isMobile ? 10 : 7;
-    const width = Math.min(dimensions.w / options.modes.length, font * 9);
-    const start = (dimensions.w - width * options.modes.length) / 2;
+    const font = isMobile ? 6 * 1.8 : 6;
+    const padding = font * .75;
+    const widths = options.modes.map(mode => font * (.6 * mode.length + 1.5));
+    const totalWidth = widths.reduce((sum, width) => sum + width, 0);
+    const labelY = -font * .7;
+    let start = dimensions.w - totalWidth;
     const selector = container.append('g').attr('class', 'mobile-plot-views').attr('role', 'tablist')
         .attr('aria-label', 'Grafikon nézete');
     options.modes.forEach((mode, index) => {
@@ -77,11 +80,13 @@ function drawMobilePlotViewSelector(container, dimensions, options) {
             .attr('aria-selected', mode === options.mode ? 'true' : 'false').style('cursor', 'pointer')
             .on('mousedown', event => event.stopPropagation()).on('touchstart', event => event.stopPropagation())
             .on('click', activate).on('keydown', event => {if (event.key === 'Enter' || event.key === ' ') activate(event);});
-        tab.append('rect').attr('x', start + index * width).attr('y', 0).attr('width', width)
-            .attr('height', dimensions.h).attr('fill', 'transparent').style('pointer-events', 'all');
-        tab.append('text').attr('x', start + (index + .5) * width).attr('y', dimensions.h / 2)
-            .style('dominant-baseline', 'middle').style('text-anchor', 'middle').style('font-family', dashboardFont)
+        tab.append('rect').attr('x', start).attr('y', labelY - font * 1.1).attr('width', widths[index])
+            .attr('height', font * 1.6).attr('fill', 'transparent').style('pointer-events', 'all');
+        tab.append('text').attr('x', start + widths[index] - padding).attr('y', labelY)
+            .style('text-anchor', 'end').style('font-family', dashboardFont)
             .style('font-size', font + 'px').style('fill', 'black')
             .style('text-decoration', mode === options.mode ? 'underline' : 'none').text(mode);
+        start += widths[index];
     });
+    return totalWidth;
 }

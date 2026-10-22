@@ -951,17 +951,16 @@ function drawPlot(plotData, userOptions) {
 
     const primaryMainPlot = ops.parentId === 'graph' && ops.background?.show && ops.showLockLabel;
     const mobileViews = ops.parentId === 'graph' ? mobilePlotViewOptions() : null;
-    const mobileHeaderHeight = mobileViews ? (isMobile ? 24 : 18) : 0;
     if (mobileViews) containerElement.on('click.mobile-views', event => event.stopPropagation());
-    if (primaryMainPlot && mobileViews) drawMobilePlotViewSelector(containerElement,
-        {w: containerDims.w, h: mobileHeaderHeight}, mobileViews);
+    const mobileSelectorWidth = primaryMainPlot && mobileViews
+        ? drawMobilePlotViewSelector(containerElement, containerDims, mobileViews) : 0;
 
-    // Reserve the same header space on the foundation and every overlaid curve.
+    // View controls sit above the frame and do not change the plotting geometry.
     let plotDims = {
         x: containerDims.w * ops.margins.left,
-        y: containerDims.h * ops.margins.top + mobileHeaderHeight,
+        y: containerDims.h * ops.margins.top,
         w: containerDims.w - containerDims.w * (ops.margins.left + ops.margins.right),
-        h: Math.max(1, containerDims.h - containerDims.h * (ops.margins.top + ops.margins.bottom) - mobileHeaderHeight)
+        h: containerDims.h - containerDims.h * (ops.margins.top + ops.margins.bottom)
     }
 
     let plotElement = containerElement.append("g").attr("transform", `translate(${plotDims.x},${plotDims.y})`);
@@ -1084,7 +1083,7 @@ function drawPlot(plotData, userOptions) {
     const dateNavigation = ops.plotDateNavigation || (ops.plotLabelTabs?.day ? ops.plotLabelTabs :
         primaryMainPlot ? {day: mainGraphSetting.day, onDayChange: navigateMainPlotDay} : false);
     if (dateNavigation) {
-        drawPlotDateNavigation(containerElement, containerDims, dateNavigation, isMobile ? 6 * mobileViewScaler : 6,
+        drawPlotDateNavigation(containerElement, {...containerDims, labelRight: containerDims.w - mobileSelectorWidth}, dateNavigation, isMobile ? 6 * mobileViewScaler : 6,
             mainGraphContentLocked && ops.showLockLabel);
     }
     else if (mainGraphContentLocked && ops.showLockLabel && ops.background?.show) {
