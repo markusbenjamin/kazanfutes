@@ -267,7 +267,7 @@ function getDataFromFirebase() {
 
                 updateRoomColor(systemJSON.setup.rooms[roomNum].name, roomTemp, roomLastUpdated, roomValveInfo, roomOccupancyState);
 
-                const roomSet = systemJSON.state['set_temps'][roomNum];
+                const roomSet = roomControlSetTemperature(systemJSON.state, roomNum);
                 roomsDataAndState[roomNum].set = roomSet;
 
                 if (timeSinceLastSensorUpdate > 2 * 60) {
@@ -506,72 +506,77 @@ function extractCyclePumpOnPeriods(cycleNum, heatingState, endHour) {
     return periods;
 }
 
+function roomControlSetTemperature(state, roomNum) {
+    const nominal = state.set_temps[roomNum];
+    return Math.max(nominal, state.set_temps_interp?.[roomNum] ?? nominal);
+}
+
+// Keep this calculation aligned with utils/set_temperature.py.
+function interpolateRoomSetTemperature(schedule, day, hour, fraction) {
+    const valueAt = offset => {
+        const absoluteHour = hour + offset;
+        return schedule?.[day + Math.floor(absoluteHour / 24)]?.[((absoluteHour % 24) + 24) % 24] ?? null;
+    };
+    const current = valueAt(0);
+    let ahead, following;
+    for (ahead = 1; ahead <= 24; ahead++) {
+        following = valueAt(ahead);
+        if (following === null) return current;
+        if (following !== current) break;
+    }
+    if (ahead > 24 || following <= current) return current;
+    let plateauStart = 0;
+    for (let back = 1; back <= 3; back++) {
+        if (valueAt(-back) !== current) break;
+        plateauStart = -back;
+    }
+    const rampStart = Math.max(ahead - 3, plateauStart);
+    const progress = Math.max(0, Math.min(1, (fraction - rampStart) / (ahead - rampStart)));
+    return current + (following - current) * progress;
+}
+
+function roomScheduleWithRecentHistory(schedule, history, day, hour) {
+    const combined = Object.fromEntries(Object.entries(schedule).map(([key, values]) => [key, {...values}]));
+    for (let back = 1; back <= 3; back++) {
+        const absoluteHour = day * 24 + hour - back;
+        const previousDay = Math.floor(absoluteHour / 24);
+        const slot = ((absoluteHour % 24) + 24) % 24;
+        combined[previousDay] ??= {};
+        if (combined[previousDay][slot] == null && history?.[absoluteHour] != null) {
+            combined[previousDay][slot] = history[absoluteHour];
+        }
+    }
+    return combined;
+}
+
+function projectedRoomControlSchedule(schedule, day, nowHour) {
+    const points = [];
+    for (let hour = Math.floor(nowHour); hour < 24; hour++) {
+        // Both sides of each boundary preserve immediate downward steps.
+        for (const fraction of [Math.max(0, nowHour - hour), 1]) {
+            const value = interpolateRoomSetTemperature(schedule, day, hour, fraction);
+            if (value === null) continue;
+            points.push({h_of_day_frac: hour + fraction, set_temp: value, temp: value});
+        }
+    }
+    return points;
+}
+
 function extractRoomScheduleFromCondensedSchedule(roomNum, setTempsData, day = dayStamp()) {
-    if (day !== dayStamp() || !setTempsData?.length || !condensedSchedule?.[roomNum]?.[getUnixDay()]) {
-        const recorded = (setTempsData || []).slice().sort((a, b) => a.h_of_day_frac - b.h_of_day_frac);
+    const recorded = (setTempsData || []).slice().sort((a, b) => a.h_of_day_frac - b.h_of_day_frac);
+    if (day !== dayStamp() || !recorded.length || !condensedSchedule?.[roomNum]?.[getUnixDay()]) {
         return {roomSchedule: recorded, roomScheduleAsOfYet: recorded, roomScheduleRestOfDay: []};
     }
-    if (condensedSchedule === undefined) { return undefined }
-    else {
-        let roomScheduleAsOfYet = setTempsData.filter(item => item.h_of_day_frac <= getFractionalHourOfDay());
-        let roomSchedule = structuredClone(roomScheduleAsOfYet);
-        roomSchedule.push({
-            "h_of_day_frac": getFractionalHourOfDay(),
-            "set_temp": roomSchedule[roomSchedule.length - 1]["set_temp"],
-            "temp": roomSchedule[roomSchedule.length - 1]["set_temp"] //Overloading
-        })
-        let roomScheduleRestOfDay = []
-        condensedSchedule[roomNum][getUnixDay()].forEach((setTemp, hour) => {
-            if (getHourOfDay() <= hour) {
-                roomSchedule.push(
-                    {
-                        "h_of_day_frac": getHourOfDay() == hour ? getFractionalHourOfDay() : hour,
-                        "set_temp": setTemp,
-                        "temp": setTemp //Overloading
-                    }
-                );
-                roomScheduleRestOfDay.push(
-                    {
-                        "h_of_day_frac": getHourOfDay() == hour ? getFractionalHourOfDay() : hour,
-                        "set_temp": setTemp,
-                        "temp": setTemp //Overloading
-                    }
-                );
-                roomSchedule.push(
-                    {
-                        "h_of_day_frac": getHourOfDay() == hour ? getFractionalHourOfDay() : hour + 0.999,
-                        "set_temp": setTemp,
-                        "temp": setTemp //Overloading
-                    }
-                );
-                roomScheduleRestOfDay.push(
-                    {
-                        "h_of_day_frac": getHourOfDay() == hour ? getFractionalHourOfDay() : hour + 0.999,
-                        "set_temp": setTemp,
-                        "temp": setTemp //Overloading
-                    }
-                );
-                if (hour == 23) {
-                    roomSchedule.push(
-                        {
-                            "h_of_day_frac": 24,
-                            "set_temp": setTemp,
-                            "temp": setTemp //Overloading
-                        }
-                    );
-                    roomScheduleRestOfDay.push(
-                        {
-                            "h_of_day_frac": 24,
-                            "set_temp": setTemp,
-                            "temp": setTemp //Overloading
-                        }
-                    );
-                }
-            }
-        });
-        roomSchedule.sort((a, b) => a.h_of_day_frac - b.h_of_day_frac);
-        return { roomSchedule: roomSchedule, roomScheduleAsOfYet: roomScheduleAsOfYet, roomScheduleRestOfDay: roomScheduleRestOfDay }
-    }
+    const nowHour = getFractionalHourOfDay();
+    const roomScheduleAsOfYet = recorded.filter(item => item.h_of_day_frac <= nowHour);
+    const schedule = roomScheduleWithRecentHistory(condensedSchedule[roomNum],
+        systemNode?.state?.set_temp_schedule_history?.[roomNum], getUnixDay(), Math.floor(nowHour));
+    const roomScheduleRestOfDay = projectedRoomControlSchedule(schedule, getUnixDay(), nowHour);
+    return {
+        roomSchedule: roomScheduleAsOfYet.concat(roomScheduleRestOfDay),
+        roomScheduleAsOfYet,
+        roomScheduleRestOfDay
+    };
 }
 
 function convertTimestamps(dataJSON, day) {
@@ -2607,7 +2612,7 @@ function drawMainGraph(graphData = null) {
                                     dataKeys: { bottom: "h_of_day_frac", left: "set_temp" },
                                     axesLabel: { bottom: "óra", left: "°C" },
                                     tickVals: { left: d3.range(Math.floor(range[0]) - 1, Math.ceil(range[1]) + 2, 1).filter(Number.isInteger) },
-                                    plotStyle: { joined: true, col: "rgba(44, 213, 14, 0.92)", thickness: "2", startCap: false, endCap: true, smoothCurve: false },
+                                    plotStyle: { joined: true, col: "rgba(44, 213, 14, 0.92)", thickness: "2", startCap: false, endCap: true, linear: true },
                                     curveTooltip: "kért hőmérséklet",
                                     plotLabel: roomsDataAndState[mainGraphSetting.roomNumToPlot].name + " kért és mért hőmérséklet",
                                     rects: { when: "before", list: heatingPeriods },
@@ -2622,7 +2627,7 @@ function drawMainGraph(graphData = null) {
                                     smoothing: { bottom: 0, left: 0 },
                                     dataKeys: { bottom: "h_of_day_frac", left: "set_temp" },
                                     domain: { bottom: [0, 24], left: [Math.floor(range[0]) - 1, Math.ceil(range[1]) + 1] },
-                                    plotStyle: { joined: true, col: "rgba(44, 213, 14, 0.41)", thickness: "2", startCap: false, endCap: false, smoothCurve: false, dashed: true, dashing: "5,2" },
+                                    plotStyle: { joined: true, col: "rgba(44, 213, 14, 0.41)", thickness: "2", startCap: false, endCap: false, linear: true, dashed: true, dashing: "5,2" },
                                     curveTooltip: "kért hőmérséklet"
                                 }
                             );

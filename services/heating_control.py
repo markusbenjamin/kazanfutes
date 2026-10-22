@@ -4,6 +4,8 @@ PID history is bounded and advances only after confirmed thermostat commands.
 """
 
 from utils.project import *
+from utils.set_temperature import (interpolate_set_temperature,
+                                   schedule_with_recent_history)
 
 #region PID calculation
 PID_STATE_VERSION = 2
@@ -309,56 +311,32 @@ def get_system_state():
 
         set_temps = {}
         set_temps_interp = {}
+        # The scheduler starts at today; retain only enough past context for
+        # a ramp spanning midnight, without changing schedule generation.
+        try:
+            previous_history = load_json_to_dict('system/state.json').get('set_temp_schedule_history', {})
+        except ModuleException:
+            previous_history = {}
+        schedule_history = {}
 
         # fractional position within the current hour for interpolation
         now = datetime.now()
         hour_fraction = now.minute / 60.0 + now.second / 3600.0
 
         for room, schedule_for_days in condensed_schedule.items():
+            schedule_for_days, schedule_history[room] = schedule_with_recent_history(
+                schedule_for_days, previous_history.get(room, {}), unix_day, hour_of_day)
             # current nominal set
             set_now = schedule_for_days[str(unix_day)][str(hour_of_day)]
             set_temps[room] = set_now
 
-            next_set = set_now
-            hours_ahead = None
-
-            # search forward up to max_lookahead_hours (can cross day boundary)
-            for h in range(1, max_lookahead_hours + 1):
-                future_hour = (hour_of_day + h) % 24
-                future_day  = unix_day + (hour_of_day + h) // 24
-
-                if str(future_day) not in schedule_for_days:
-                    break
-
-                candidate = schedule_for_days[str(future_day)][str(future_hour)]
-                if candidate != set_now:
-                    next_set = candidate
-                    hours_ahead = h
-                    break
-
-            if hours_ahead is None:
-                # no change within lookahead: no interpolation
-                set_interp = set_now
-            else:
-                # time (in hours) until the next change from "now"
-                time_until_change = max(0.0, hours_ahead - hour_fraction)
-
-                if time_until_change >= interp_window_hours:
-                    # ramp not started yet
-                    frac = 0.0
-                elif time_until_change <= 0.0:
-                    # already at / past change
-                    frac = 1.0
-                else:
-                    # inside ramp window: linear interpolation
-                    frac = (interp_window_hours - time_until_change) / interp_window_hours
-
-                set_interp = set_now + (next_set - set_now) * frac
-
-            set_temps_interp[room] = set_interp
+            set_temps_interp[room] = interpolate_set_temperature(
+                schedule_for_days, unix_day, hour_of_day, hour_fraction,
+                interp_window_hours, max_lookahead_hours)
 
         system_state['set_temps'] = set_temps
         system_state['set_temps_interp'] = set_temps_interp
+        system_state['set_temp_schedule_history'] = schedule_history
 
         report("Successfully acquired set temps and interpolated temps.")
         success = True

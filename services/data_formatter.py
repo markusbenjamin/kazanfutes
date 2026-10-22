@@ -18,6 +18,7 @@ Data types:
 #region Init
 
 from utils.project import *
+from utils.set_temperature import room_control_set_temperature
 from utils.water_temperature_formatter import format_cycle_water_temperatures
 from utils.boiler_power_formatter import format_boiler_power, format_boiler_commands
 from utils.external_temperature_formatter import format_ws90_external_temperatures, format_ws90_weather
@@ -155,7 +156,7 @@ for digestion_day in digestion_days:
                     if 'set_temps' in raw_entry:
                         formatted_entry = {
                             'timestamp': raw_entry['timestamp'],
-                            'set_temp': raw_entry['set_temps'][room]
+                            'set_temp': room_control_set_temperature(raw_entry, room)
                         }
                         if formatted_entry not in formatted_data:
                             formatted_data.append(formatted_entry)
