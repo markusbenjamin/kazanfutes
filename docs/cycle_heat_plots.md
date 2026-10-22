@@ -8,7 +8,8 @@ electrical pump power black. Ordinary click keeps its usual pin/unpin action.
 Selecting a metric keeps the chart pinned; the existing outside-click unlock
 still applies. Detailed choices are remembered per cycle for the current page
 session only, shared by its dial and piping. They never change ordinary hover.
-Detailed selectors also show the date with previous/next-day controls. The
+All cycle plots have previous/next-day arrows at the frame's top corners.
+Past dates sit beside `rögzítve` above the frame; today's date is omitted. The
 metric and cycle stay selected while navigating; future days are disabled.
 The ordinary hover title is `<n>. kör mai fűtőteljesítménye`.
 

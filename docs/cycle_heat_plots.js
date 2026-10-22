@@ -65,33 +65,64 @@ function navigateSelectorPlotDay(delta) {
     drawMainGraph();
 }
 
-function drawPlotTitleSelector(plotElement, plotDims, options, fontSize) {
-    const columns = options.columns || options.choices.length;
-    const rows = Math.ceil(options.choices.length / columns);
-    const lineHeight = fontSize * 1.4;
-    if (options.day) {
-        const date = plotElement.append('text').attr('class', 'selector-plot-date')
-            .attr('data-day', options.day).attr('x', plotDims.w / 2).attr('y', -fontSize * .35)
+function navigateMainPlotDay(delta) {
+    const day = shiftedSelectorDay(mainGraphSetting.day, delta);
+    if (day > dayStamp()) return;
+    mainGraphSetting = {...mainGraphSetting, day};
+    mainGraphContentLocked = true;
+    clearMainGraphs();
+    drawPlot(undefined, {parentId: 'graph', domain: {bottom: [0, 24], left: [0, 1]},
+        dataKeys: {bottom: 'x', left: 'y'}, axes: {left: false, bottom: false},
+        plotLabel: '', curveEndText: {show: false}});
+    drawMainGraph();
+}
+
+function drawPlotDateNavigation(container, dimensions, options, fontSize, locked) {
+        const date = container.append('g').attr('class', 'selector-plot-date')
+            .attr('data-day', options.day)
             .style('text-anchor', 'middle').style('font-family', dashboardFont).style('font-size', fontSize + 'px');
+        const dateY = fontSize * 1.15;
+        const labelY = -fontSize * .7;
+        const padding = fontSize * .75;
         const arrow = (text, label, delta, enabled) => {
             const activate = event => { event.stopPropagation(); if (enabled) options.onDayChange(delta); };
-            date.append('tspan').attr('role', 'button').attr('aria-label', label)
+            date.append('text').attr('x', delta < 0 ? padding : dimensions.w - padding).attr('y', dateY)
+                .attr('role', 'button').attr('aria-label', label)
                 .attr('aria-disabled', enabled ? 'false' : 'true').attr('tabindex', enabled ? 0 : -1)
+                .style('font-size', fontSize * 1.3 + 'px')
                 .style('cursor', enabled ? 'pointer' : 'default').style('fill', enabled ? 'black' : '#bbb').text(text)
                 .on('mousedown', event => event.stopPropagation()).on('touchstart', event => event.stopPropagation())
                 .on('click', activate).on('keydown', event => {
                     if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activate(event); }
                 });
         };
-        arrow('‹  ', 'Előző nap', -1, true);
-        date.append('tspan').text(options.day + ' (' + selectorWeekday(options.day) + ')');
-        arrow('  ›', 'Következő nap', 1, options.day < dayStamp());
-    }
+        arrow('‹', 'Előző nap', -1, true);
+        let labelX = padding;
+        if (locked) {
+            const lock = date.append('text').attr('class', 'plot-lock-label').attr('x', labelX).attr('y', labelY)
+                .style('text-anchor', 'start').style('fill', 'rgba(230,230,230,1)').text('rögzítve');
+            labelX += lock.node().getComputedTextLength() + fontSize;
+        }
+        if (options.day !== dayStamp()) {
+            const dateLabel = date.append('text').attr('class', 'selector-date-label')
+                .attr('x', labelX).attr('y', labelY).style('text-anchor', 'start').style('fill', '#777')
+                .text(options.day + ' (' + selectorWeekday(options.day) + ')');
+            const dateWidth = dateLabel.node().getComputedTextLength();
+            const availableDateWidth = Math.max(fontSize, dimensions.w - padding - fontSize - labelX);
+            if (dateWidth > availableDateWidth) dateLabel.style('font-size', fontSize * availableDateWidth / dateWidth + 'px');
+        }
+        arrow('›', 'Következő nap', 1, options.day < dayStamp());
+}
+
+function drawPlotTitleSelector(plotElement, plotDims, options, fontSize) {
+    const columns = options.columns || options.choices.length || 1;
+    const rows = Math.ceil(options.choices.length / columns);
+    const lineHeight = fontSize * 1.4;
     for (let row = 0; row < rows; row++) {
       const heading = plotElement.append('text')
         .attr('class', 'cycle-heat-selector').attr('role', 'tablist')
         .attr('aria-label', options.prefix + 'grafikon választása')
-        .attr('x', plotDims.w / 2).attr('y', -(rows - row - (options.day ? 0 : 1)) * lineHeight - fontSize * .35)
+        .attr('x', plotDims.w / 2).attr('y', -(rows - row - 1) * lineHeight - fontSize * .35)
         .style('text-anchor', 'middle').style('font-family', dashboardFont)
         .style('font-size', fontSize + 'px');
       if (!row) heading.append('tspan').text(options.prefix);
@@ -166,14 +197,14 @@ function drawCycleHeatPlot(data, setting) {
             strokeWeight: 0, dashed: false }));
     const common = {
         parentId: 'graph', smoothing: { bottom: 0, left: 0 },
-        margins: { top: setting.detailed ? .18 : .1, right: .03, bottom: .15, left: .1 },
+        margins: { top: .1, right: .03, bottom: .15, left: .1 },
         domain: { bottom: [0, 24], left: range },
         dataKeys: { bottom: 'h_of_day_frac', left: metric.key },
         axesLabel: { bottom: 'óra', left: metric.axis },
         tickVals: { left: d3.range(range[0], range[1] + tickStep / 2, tickStep) },
         plotStyle: { joined: true, col: metric.color, thickness: '1', startCap: false, endCap: true,
             smoothCurve: metricName !== 'pump', stepAfter: metricName === 'pump' },
-        segment: { do: false }, plotLabel: setting.detailed ? '' : setting.cycleNum + '. kör mai fűtőteljesítménye', curveEndText: { show: false }
+        segment: { do: false }, plotLabel: setting.detailed ? '' : setting.cycleNum + '. kör ' + (setting.day === dayStamp() ? 'mai ' : 'napi ') + 'fűtőteljesítménye', curveEndText: { show: false }
     };
     drawPlot([], { ...common, rects: { when: 'before', list: periods },
         plotLabelTabs: setting.detailed ? { prefix: setting.cycleNum + '. kör — ', selected: metricName,

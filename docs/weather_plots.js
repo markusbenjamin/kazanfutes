@@ -47,9 +47,16 @@ function windDirectionHistogram(readings, binCount = 16) {
     return bins;
 }
 
+const WIND_DIAL_UP_AZIMUTH_DEG = 265;
+
 function windDirectionDisplayAngle(degrees) {
-    // The building on the dashboard is west-up; retain geographic bin values.
-    return ((degrees + 90) % 360) * Math.PI / 180;
+    // Rotate the display only; histogram bins retain their geographic bearings.
+    return (((degrees - WIND_DIAL_UP_AZIMUTH_DEG) % 360 + 360) % 360) * Math.PI / 180;
+}
+
+function windDirectionLabelPosition(degrees, radius) {
+    const angle = windDirectionDisplayAngle(degrees);
+    return {x: Math.sin(angle) * (radius + 6), y: -Math.cos(angle) * (radius + 6)};
 }
 
 function drawWindDirectionHistogram(plotElement, plotDims, readings) {
@@ -71,7 +78,8 @@ function drawWindDirectionHistogram(plotElement, plotDims, readings) {
             .startAngle(index * step + rotation - step / 2).endAngle(index * step + rotation + step / 2).padAngle(.015)())
             .attr('fill', 'rgb(0, 100, 0)').attr('stroke', 'white').attr('stroke-width', .3);
     });
-    [['Ny', 0, -radius - 5], ['É', radius + 6, 0], ['K', 0, radius + 7], ['D', -radius - 7, 0]].forEach(([label, x, y]) => {
+    [['Ny', 270], ['É', 0], ['K', 90], ['D', 180]].forEach(([label, degrees]) => {
+        const {x, y} = windDirectionLabelPosition(degrees, radius);
         centre.append('text').attr('x', x).attr('y', y).style('font-family', dashboardFont).style('font-size', '6px')
             .style('text-anchor', 'middle').style('dominant-baseline', 'middle').text(label);
     });
@@ -80,14 +88,21 @@ function drawWindDirectionHistogram(plotElement, plotDims, readings) {
         .text('Nincs szélirányadat.');
 }
 
+function weatherRainPeriods(readings, endHour) {
+    // Reuse the bounded binary-period handling, with explicit unknowns breaking rain.
+    return extractRoomOccupancyPeriods(readings.filter(row => Object.hasOwn(row, 'rain_status'))
+        .map(row => ({...row, occupancy: row.rain_status})), endHour, 15 / 60);
+}
+
 function drawWeatherMetricPlot(data, setting) {
     const metric = WEATHER_PLOT_METRICS[setting.metric] || WEATHER_PLOT_METRICS.temperature;
     const rawReadings = data.weather_station || [];
     const readings = metric.displayFactor ? rawReadings.map(row => ({...row,
         [metric.key]: Number.isFinite(row[metric.key]) ? row[metric.key] * metric.displayFactor : row[metric.key]})) : rawReadings;
     const direction = setting.metric === 'direction';
+    const rainIndicator = setting.metric === 'rainStatus';
     const smoothWind = setting.metric === 'wind' || setting.metric === 'gust';
-    const segments = direction ? [] : splitRoomMetricReadings(readings, metric.key, 15 / 60);
+    const segments = direction || rainIndicator ? [] : splitRoomMetricReadings(readings, metric.key, 15 / 60);
     const values = segments.flat().map(row => row[metric.key]);
     let range = [0, 1];
     if (metric.key === 'humidity_pct') range = [0, 100];
@@ -95,16 +110,20 @@ function drawWeatherMetricPlot(data, setting) {
         const low = Math.min(...values), high = Math.max(...values), pad = Math.max((high - low) * .1, 1);
         range = ['temperature_c', 'dewpoint_c', 'pressure_hpa'].includes(metric.key) ? [low - pad, high + pad] : [0, Math.max(1, high * 1.1)];
     }
-    const common = { parentId: 'graph', margins: {top: .3, right: .03, bottom: .15, left: .1},
+    const common = { parentId: 'graph', margins: {top: .24, right: .03, bottom: .15, left: .1},
         domain: {bottom: [0, 24], left: range}, dataKeys: {bottom: 'h_of_day_frac', left: metric.key},
-        axesLabel: {bottom: direction ? '' : 'óra', left: direction ? '' : metric.unit},
-        axes: {left: !direction, bottom: !direction}, smoothing: {bottom: 0, left: smoothWind ? 5 : 0},
+        axesLabel: {bottom: direction ? '' : 'óra', left: direction || rainIndicator ? '' : metric.unit},
+        axes: {left: !direction && !rainIndicator, bottom: !direction}, smoothing: {bottom: 0, left: smoothWind ? 5 : 0},
         plotStyle: {joined: true, col: metric.color, thickness: '2', monotone: !smoothWind, smoothCurve: smoothWind, startCap: false, endCap: true},
         segment: {do: false}, plotLabel: '', curveEndText: {show: false} };
-    const area = drawPlot([], {...common, plotLabelTabs: {prefix: 'WS90 — ', day: setting.day, onDayChange: navigateSelectorPlotDay,
+    const rainPeriods = rainIndicator ? weatherRainPeriods(readings, setting.day === dayStamp() ? getFractionalHourOfDay() : 24)
+        .map(period => ({...period, y1: 0, y2: 1, fill: 'rgba(60,100,180,0.16)', stroke: 'none', strokeWeight: 0, dashed: false})) : [];
+    const area = drawPlot([], {...common, rects: {when: 'before', list: rainPeriods},
+        plotLabelTabs: {prefix: 'WS90 — ', day: setting.day, onDayChange: navigateSelectorPlotDay,
         columns: 4, selected: setting.metric, choices: Object.entries(WEATHER_PLOT_METRICS).map(([key, value]) => ({key, label: value.label, color: value.color})),
         onSelect: selectWeatherMetricPlot}});
     if (direction) { drawWindDirectionHistogram(area.plotElement, area.plotDims, readings); return; }
+    if (rainIndicator) return;
     segments.forEach((segment, index) => drawPlot(segment, {...common, background: {show: false}, axes: {left: false, bottom: false},
         showLockLabel: false, curveEndText: {show: index === segments.length - 1,
             text: Number(segment.at(-1)[metric.key].toFixed(metric.precision)) + ' ' + metric.unit,

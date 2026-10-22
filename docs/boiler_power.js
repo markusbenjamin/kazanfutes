@@ -104,7 +104,7 @@ function drawBoilerPowerPlot(data, setting) {
         axesLabel: { bottom: 'óra', left: 'teljesítmény (W)' },
         tickVals: { left: d3.range(0, upper + step / 2, step) },
         plotStyle: { joined: true, col: 'rgb(40,40,40)', thickness: '1.5', smoothCurve: false, startCap: false, endCap: true },
-        plotLabel: setting.boilerNumber + '. kazán mai villamos teljesítménye'
+        plotLabel: setting.boilerNumber + '. kazán ' + (setting.day === dayStamp() ? 'mai' : 'napi') + ' villamos teljesítménye'
     };
     drawPlot([], { ...common, rects: { when: 'before', list: boilerCommandPeriods(data.boiler_commands || [], 0, upper) } });
     segments.forEach((segment, index) => {

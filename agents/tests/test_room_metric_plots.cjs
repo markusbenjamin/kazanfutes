@@ -61,6 +61,7 @@ for (const [metric, key, value, unit] of [
     assert.equal(calls.length, 2);
     assert.equal(calls[0].options.dataKeys.left, key);
     assert.equal(calls[0].options.plotLabelTabs.choices.length, 5);
+    assert.equal(calls[0].options.margins.top, .1); // No empty row reserved for the old date line.
     assert.equal(calls[1].options.showLockLabel, false);
     assert.equal(calls[1].data[0][key], value);
     assert.equal(calls[1].options.plotStyle.monotone, metric !== 'temperature');
@@ -147,7 +148,7 @@ assert.match(ordinaryRoomSource, /curveTooltip: "radiátor nyitási százalék"/
 assert.match(source, /if \(ops.curveTooltip\) bindPlotCurveTooltip\(curve, ops.curveTooltip, isMobile \? 7 \* mobileViewScaler : 7\)/);
 assert.match(source, /function clearMainGraphs\(\) \{\s*hidePlotCurveTooltip\(\)/);
 const click = source.slice(source.indexOf('.on("click.maingraph"'), source.indexOf('d3.select("body")', source.indexOf('.on("click.maingraph"')));
-assert.match(click, /event.stopPropagation\(\);\s*if \(openWeatherMetricPlot\(event, this.id\)\) return;\s*if \(openCycleHeatPlot\(event, this.id\)\) return;\s*if \(openRoomMetricPlot\(event, this.id\)\) return;/);
+assert.match(click, /event.stopPropagation\(\);\s*if \(openRoomControlPlot\(event, this.id\)\) return;\s*if \(openWeatherMetricPlot\(event, this.id\)\) return;\s*if \(openCycleHeatPlot\(event, this.id\)\) return;\s*if \(openRoomMetricPlot\(event, this.id\)\) return;/);
 const hover = source.slice(source.indexOf('function joinMainGrapDataSourceToElements'), source.indexOf('.on("click.maingraph"'));
 assert.match(hover, /mainGraphSetting = elementToMainGraphSettingMapping\[this.id\]/);
 assert.doesNotMatch(hover, /room_metrics|roomMetricSelections/);

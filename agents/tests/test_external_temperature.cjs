@@ -6,7 +6,8 @@ const source = fs.readFileSync(path.resolve(__dirname, '../../docs/data.js'), 'u
 const plotCase = source.match(/case "external_temp": \{([\s\S]*?)\n\s*break;\n\s*\}/)[1];
 const plots = [];
 const context = vm.createContext({
-    Number, Math, graphData: {}, drawPlot: (rows, options) => plots.push({rows, options}),
+    Number, Math, graphData: {}, mainGraphSetting: {day: '2026-10-21'}, dayStamp: () => '2026-10-21',
+    drawPlot: (rows, options) => plots.push({rows, options}),
     d3: { extent: values => [Math.min(...values), Math.max(...values)],
         range: (start, end, step) => Array.from({length: Math.ceil((end-start)/step)}, (_, i) => start+i*step) },
 });
@@ -27,6 +28,8 @@ assert.equal(zero.rows.length, 2);
 assert.equal(zero.options.curveEndText.text, '0°C');
 const value = plot({external_temp: [{external_temp: 10.2}]});
 assert.equal(value.options.curveEndText.text, '10.2°C');
+context.mainGraphSetting.day = '2026-10-20';
+assert.equal(plot({external_temp: []}).options.plotLabel, 'napi külső hőmérséklet');
 const thermometer = fs.readFileSync(path.resolve(__dirname, '../../docs/draw.js'), 'utf8');
 assert.match(thermometer, /function drawExternalThermometer\(\) \{\s*if \(Number\.isFinite\(externalTemp\)\)/);
 assert.match(source, /externalTemp = Number\.isFinite\(systemJSON\.state\.external_temp\)/);
