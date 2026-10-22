@@ -11,11 +11,11 @@ const roomMetricSelections = {};
 function hidePlotCurveTooltip() {
     const tooltip = d3.select('#tooltip');
     if (tooltip.attr('data-curve-tooltip') === 'true') {
-        tooltip.interrupt().attr('data-curve-tooltip', null).style('visibility', 'hidden').style('font-size', null);
+        tooltip.interrupt().attr('data-curve-tooltip', null).style('visibility', 'hidden').style('font-size', null).style('white-space', null);
     }
 }
 
-function bindPlotCurveTooltip(curve, label, fontSize = 7) {
+function bindPlotCurveTooltip(curve, label, fontSize = 7, cloneHitArea = true) {
     const tooltip = d3.select('#tooltip');
     const position = event => {
         const matrix = curve.node().getScreenCTM();
@@ -28,11 +28,12 @@ function bindPlotCurveTooltip(curve, label, fontSize = 7) {
     };
     curve.attr('aria-label', label);
     // A transparent hit area makes the thin valve curve practical to hover.
-    const hit = curve.clone(true).attr('class', 'plot-curve-hitbox').attr('aria-label', null).attr('aria-hidden', 'true')
-        .attr('stroke', 'transparent').attr('stroke-width', 3).attr('stroke-dasharray', null).style('pointer-events', 'stroke');
-    [curve, hit].forEach(target => target
+    const targets = [curve];
+    if (cloneHitArea) targets.push(curve.clone(true).attr('class', 'plot-curve-hitbox').attr('aria-label', null).attr('aria-hidden', 'true')
+        .attr('stroke', 'transparent').attr('stroke-width', 3).attr('stroke-dasharray', null).style('pointer-events', 'stroke'));
+    targets.forEach(target => target
         .on('mouseover.curve-tooltip', event => {
-            tooltip.interrupt().attr('data-curve-tooltip', 'true').text(label).style('visibility', 'visible');
+            tooltip.interrupt().attr('data-curve-tooltip', 'true').text(label).style('white-space', 'pre-line').style('visibility', 'visible');
             position(event);
         })
         .on('mousemove.curve-tooltip', position)
@@ -125,7 +126,7 @@ function drawRoomMetricPlot(data, setting) {
     else range = [0, values.length ? Math.max(1, Math.max(...values) * 1.1) : metricName === 'co2' ? 2000 : 100];
     const common = {
         parentId: 'graph', smoothing: { bottom: 0, left: isTemperature ? 10 : 0 },
-        margins: { top: .18, right: .03, bottom: .15, left: .1 },
+        margins: { top: .1, right: .03, bottom: .15, left: .1 },
         domain: { bottom: [0, 24], left: range },
         dataKeys: { bottom: 'h_of_day_frac', left: metric.key },
         axesLabel: { bottom: 'óra', left: isOccupancy ? 'átlagos ' + selectorWeekday(setting.day, true) + ' jelenlét (%)' : metric.unit },

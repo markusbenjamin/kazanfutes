@@ -12,8 +12,10 @@ labelled separately. Labels disappear on leaving the curve or redrawing the
 chart, without changing plot pinning or the displayed measurements.
 Curve-tooltip text matches the plot label's rendered size, including dashboard
 zoom; ordinary room-info tooltips keep their existing font size.
-The date line offers previous/next-day controls without changing the room or
-selected metric. Future days are disabled.
+Previous/next-day arrows stay at the frame's top corners, without changing
+the room or selected metric. Past dates sit beside `rögzítve` above the frame;
+today's date is omitted. The selector uses one compact title row with no empty
+date row underneath. Future days are disabled.
 
 Temperature and humidity use the existing `room_N_measurements.json` stream
 (°C and %). Temperature reuses the ordinary room chart's exact

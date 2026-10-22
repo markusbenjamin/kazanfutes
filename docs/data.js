@@ -435,11 +435,13 @@ function getDataFromFirebase() {
 
 let lastGasUpdate, timeItTookToUpdateGasUsage, prevGasUsageRate;
 
-function extractHeatingPeriodsFromHeatingState(cycleNum, heatingState) {
+function extractHeatingPeriodsFromHeatingState(cycleNum, heatingState, day = mainGraphSetting.day) {
+    const samples = (heatingState || []).filter(sample => sample.cycle_states);
+    if (cycleNum > 0) return extractCyclePumpOnPeriods(cycleNum, samples, day === dayStamp() ? getFractionalHourOfDay() : 24);
 
     let heatingPeriods = [];
     let prevHeatingState = -1;
-    heatingState.forEach(timepoint => {
+    samples.forEach(timepoint => {
         if (timepoint.cycle_states) {
             let numOfCyclesOn = cycleNum == 0 ? d3.sum(Object.values(timepoint.cycle_states)) : timepoint.cycle_states[cycleNum]
             let currentHeatingState = Math.ceil(numOfCyclesOn / 4);
@@ -466,7 +468,7 @@ function extractHeatingPeriodsFromHeatingState(cycleNum, heatingState) {
                         heatingPeriods[heatingPeriods.length - 1].x2 = timepoint.h_of_day_frac;
                     }
                 }
-                prevHeatingState = timepoint.cycle_states[cycleNum];
+                prevHeatingState = currentHeatingState;
             }
             //console.log("timepoint: " + timepoint.timestamp + ", heating state: " + currentHeatingState)
         }
@@ -477,7 +479,7 @@ function extractHeatingPeriodsFromHeatingState(cycleNum, heatingState) {
             heatingPeriods[0].x1 = 0;
         }
         if (!heatingPeriods[heatingPeriods.length - 1].x2) {
-            heatingPeriods[heatingPeriods.length - 1].x2 = getFractionalHourOfDay();
+            heatingPeriods[heatingPeriods.length - 1].x2 = day === dayStamp() ? getFractionalHourOfDay() : 24;
         }
     }
     return heatingPeriods;
@@ -503,7 +505,11 @@ function extractCyclePumpOnPeriods(cycleNum, heatingState, endHour) {
     return periods;
 }
 
-function extractRoomScheduleFromCondensedSchedule(roomNum, setTempsData) {
+function extractRoomScheduleFromCondensedSchedule(roomNum, setTempsData, day = dayStamp()) {
+    if (day !== dayStamp() || !setTempsData?.length || !condensedSchedule?.[roomNum]?.[getUnixDay()]) {
+        const recorded = (setTempsData || []).slice().sort((a, b) => a.h_of_day_frac - b.h_of_day_frac);
+        return {roomSchedule: recorded, roomScheduleAsOfYet: recorded, roomScheduleRestOfDay: []};
+    }
     if (condensedSchedule === undefined) { return undefined }
     else {
         let roomScheduleAsOfYet = setTempsData.filter(item => item.h_of_day_frac <= getFractionalHourOfDay());
@@ -644,7 +650,7 @@ function collectDataFromGitHub(dataToCollect, drawFunction) {
         } else {
             // Not fresh (or doesn't exist) -> fetch from GitHub
             // Keep the new power/flow stream separate from cached pre-power trial responses.
-            const newMetricStream = type.endsWith('_heat_delivery') || type.endsWith('_environment') || type === 'weather_station';
+            const newMetricStream = type.endsWith('_heat_delivery') || type.endsWith('_environment') || type === 'weather_station' || type === 'room_control_kpis';
             const dataRef = newMetricStream ? 'main' : 'refs/heads/main';
             const url = "https://raw.githubusercontent.com/markusbenjamin/kazanfutes/" + dataRef + "/data/formatted/"
                 + day + "/" + type + ".json"
@@ -806,10 +812,12 @@ function drawPlot(plotData, userOptions) {
         smoothing: { bottom: 0, left: 0 },
         axes: { top: false, right: false, left: true, bottom: true },
         tickVals: { top: false, right: false, left: false, bottom: false },
+        tickFormat: {bottom: null},
 
         axesLabel: { top: false, right: false, left: "", bottom: "" },
         plotLabel: "",
         plotLabelTabs: false,
+        plotDateNavigation: false,
         curveTooltip: '',
         emptyMessage: '',
         showLockLabel: true,
@@ -972,7 +980,7 @@ function drawPlot(plotData, userOptions) {
                         (Array.isArray(ops.tickVals?.bottom) ? ops.tickVals.bottom : bottomScale.ticks(12))
                             .filter(Number.isInteger)
                     )
-                    .tickFormat(d => d.toFixed(0))
+                    .tickFormat(ops.tickFormat.bottom || (d => d.toFixed(0)))
             );
 
 
@@ -1060,7 +1068,14 @@ function drawPlot(plotData, userOptions) {
             .text(ops.plotLabel);
     }
 
-    if (mainGraphContentLocked && ops.showLockLabel) {
+    const primaryMainPlot = ops.parentId === 'graph' && ops.background?.show && ops.showLockLabel;
+    const dateNavigation = ops.plotDateNavigation || (ops.plotLabelTabs?.day ? ops.plotLabelTabs :
+        primaryMainPlot ? {day: mainGraphSetting.day, onDayChange: navigateMainPlotDay} : false);
+    if (dateNavigation) {
+        drawPlotDateNavigation(containerElement, containerDims, dateNavigation, isMobile ? 6 * mobileViewScaler : 6,
+            mainGraphContentLocked && ops.showLockLabel);
+    }
+    else if (mainGraphContentLocked && ops.showLockLabel && ops.background?.show) {
         plotElement.append("text")
             //.attr("x", plotDims.w * 0.87125)
             .attr("x", -plotDims.w * ops.margins.left * 1.03)
@@ -2150,6 +2165,7 @@ function joinMainGrapDataSourceToElements() {
         })
         .on("click.maingraph", function (event) {
             event.stopPropagation();
+            if (openRoomControlPlot(event, this.id)) return;
             if (openWeatherMetricPlot(event, this.id)) return;
             if (openCycleHeatPlot(event, this.id)) return;
             if (openRoomMetricPlot(event, this.id)) return;
@@ -2225,6 +2241,7 @@ function setInfoboxHovers() {
         })
         .on("click.general_infobox", function (event) {
             event.stopPropagation();
+            if (openRoomControlPlot(event, this.id)) return;
             mainGraphContentLocked = !mainGraphContentLocked;
             resetAllRoomsPlotToAllCycles(true)
             drawMainGraph();
@@ -2318,6 +2335,14 @@ function drawRoomInfo(roomNum) {//IN DEVELOPMENT
 }
 
 function drawMainGraph(graphData = null) {
+    if (mainGraphSetting.title === 'boiler_kpi') {
+        drawBoilerKPIView(graphData);
+        return;
+    }
+    if (isRoomControlView(mainGraphSetting)) {
+        drawRoomControlView(graphData);
+        return;
+    }
     if (graphData == null) {
         const requestedSetting = mainGraphSetting;
         collectDataFromGitHub(
@@ -2332,8 +2357,20 @@ function drawMainGraph(graphData = null) {
         );
     }
     else {
-        graphData = graphData[mainGraphSetting.day];
-        if (mainGraphSetting.title === 'cycle_water_temp' || mainGraphSetting.title === 'room_metrics' || mainGraphSetting.title === 'weather_metrics' || mainGraphSetting.types.length == Object.keys(graphData).length) {
+        graphData = {...(graphData[mainGraphSetting.day] || {})};
+        const ordinary = !['cycle_water_temp', 'room_metrics', 'weather_metrics'].includes(mainGraphSetting.title);
+        const temperatureType = mainGraphSetting.title === 'room_plot' ? 'room_' + mainGraphSetting.roomNumToPlot + '_measurements' : null;
+        const required = temperatureType ? [temperatureType] : mainGraphSetting.types.filter(type => !['override_requests', 'heating_state'].includes(type));
+        if (ordinary && !required.some(type => Array.isArray(graphData[type]) && graphData[type].length) &&
+            !(mainGraphSetting.title === 'heating_state' && graphData.heating_state?.length)) {
+            clearMainGraphs();
+            drawPlot([], {parentId: 'graph', domain: {bottom: [0, 24], left: [0, 1]},
+                dataKeys: {bottom: 'x', left: 'y'}, axes: {left: false, bottom: false},
+                plotLabel: 'Az adott napra nincs adat.', curveEndText: {show: false}});
+            return;
+        }
+        mainGraphSetting.types.forEach(type => {if (!graphData[type]) graphData[type] = [];});
+        {
             clearMainGraphs();
             let range;
             switch (mainGraphSetting.title) {
@@ -2368,7 +2405,7 @@ function drawMainGraph(graphData = null) {
                             tickVals: { bottom: false, left: [...Array(11).keys()] },
                             dataKeys: { bottom: "h_of_day_frac", left: "burn_rate_in_m3_per_h" },
                             axesLabel: { bottom: "óra", left: "ráta (m³/h)" },
-                            plotLabel: "mai gázfogyasztás",
+                            plotLabel: (mainGraphSetting.day === dayStamp() ? 'mai' : 'napi') + " gázfogyasztás",
                             rects: { when: "before", list: heatingPeriodsForAllCycles }
                         }
                     );
@@ -2397,7 +2434,8 @@ function drawMainGraph(graphData = null) {
                     );
 
                     let currentPower = systemNode['state']['pumps']['power'][cycleNum];
-                    latestPowerDataForCycle.push({ 'power': currentPower, 'h_of_day_frac': getFractionalHourOfDay() });
+                    if (mainGraphSetting.day === dayStamp()) latestPowerDataForCycle.push({ 'power': currentPower, 'h_of_day_frac': getFractionalHourOfDay() });
+                    else currentPower = latestPowerDataForCycle.at(-1)?.power;
 
                     const maxPower = Math.max(...latestPowerDataForCycle.map(item => item.power));
                     range = [0, maxPower + 1];
@@ -2429,7 +2467,7 @@ function drawMainGraph(graphData = null) {
                             tickVals: { bottom: false, left: leftTicks },
                             dataKeys: { bottom: "h_of_day_frac", left: "power" },
                             axesLabel: { bottom: "óra", left: "teljesítmény (W)" },
-                            plotLabel: cycleNum + ["-es", "-es", "-mas", "-es"][cycleNum - 1] + " szivattyú mai teljesítménygörbéje",
+                            plotLabel: cycleNum + ["-es", "-es", "-mas", "-es"][cycleNum - 1] + " szivattyú " + (mainGraphSetting.day === dayStamp() ? 'mai' : 'napi') + " teljesítménygörbéje",
                             rects: { when: "before", list: heatingPeriodsForThisCycle },
                             curveEndText: { show: true, fontSize: 5, text: currentPower + " W", col: "rgba(50,50,50,1)", xOffset: 1.5, yOffset: 1.75 }
                         }
@@ -2473,7 +2511,7 @@ function drawMainGraph(graphData = null) {
                                 plotStyle: { joined: true, col: "rgba(8, 86, 222, 0.23)", thickness: "6", startCap: false, endCap: false },
                                 tickVals: { left: [1, 2, 3, 4] },
                                 axesLabel: { bottom: cycle == 1 ? "óra" : false, left: cycle == 1 ? "kör" : false },
-                                plotLabel: cycle == 1 ? "körök mai kapcsolási mintázata" : false,
+                                plotLabel: cycle == 1 ? "körök " + (mainGraphSetting.day === dayStamp() ? 'mai' : 'napi') + " kapcsolási mintázata" : false,
                                 now: { show: cycle == 1, pos: maxHFrac },
                                 segment: { do: true, gap: 0.1 }
                             }
@@ -2502,15 +2540,16 @@ function drawMainGraph(graphData = null) {
                     if (mainGraphSetting.roomNumToPlot != 11) {
                         let roomNum = mainGraphSetting.roomNumToPlot;
                         let cycleNum = roomsDataAndState[roomNum].cycle;
-                        let cycleOn = systemNode['switch']['cycles'][cycleNum] == -1 ? false : true; //DEV: vagy ha mért de nem kontrollált
+                        const isToday = mainGraphSetting.day === dayStamp();
+                        let cycleOn = isToday ? systemNode['switch']['cycles'][cycleNum] != -1 : graphData['room_' + roomNum + '_set_temps']?.length > 0;
 
                         let roomSetTempsData = graphData["room_" + mainGraphSetting.roomNumToPlot + "_set_temps"];
-                        let roomScheduleParts = extractRoomScheduleFromCondensedSchedule(mainGraphSetting.roomNumToPlot, roomSetTempsData);
+                        let roomScheduleParts = extractRoomScheduleFromCondensedSchedule(mainGraphSetting.roomNumToPlot, roomSetTempsData, mainGraphSetting.day);
                         let roomScheduleData = roomScheduleParts.roomSchedule;
-                        if (!cycleOn) {
+                        if (!cycleOn && isToday) {
                             extractPastNDaysAverage(mainGraphSetting.roomNumToPlot);
                         }
-                        let roomMeasurementPastNDaysAverageData = pastNDaysAverageRoomTemps[mainGraphSetting.roomNumToPlot];
+                        let roomMeasurementPastNDaysAverageData = isToday ? (pastNDaysAverageRoomTemps[mainGraphSetting.roomNumToPlot] || []) : [];
                         let roomMeasurementData = graphData["room_" + mainGraphSetting.roomNumToPlot + "_measurements"];
                         let roomMeasurementDisplayData = prepareRoomTemperatureForDisplay(roomMeasurementData);
                         let roomMeasurementPastNDaysAverageDisplayData = resampleRoomTemperatureForDisplay(roomMeasurementPastNDaysAverageData);
@@ -2520,9 +2559,10 @@ function drawMainGraph(graphData = null) {
                         let hasValve = roomsDataAndState[roomNum].hasValve;
                         let roomValveStateData, roomValveCurrentState;
                         if (hasValve) {
-                            roomValveStateData = graphData["room_" + mainGraphSetting.roomNumToPlot + "_valve_state"];
+                            roomValveStateData = (graphData["room_" + mainGraphSetting.roomNumToPlot + "_valve_state"] || []).slice();
                             roomValveCurrentState = arrayMean(systemNode['state']['valve_states'][roomNum]) / 100; //DEV
-                            roomValveStateData.push({ 'valve': roomValveCurrentState, 'h_of_day_frac': getFractionalHourOfDay(dateFromTimestamp(systemNode['state']['last_updated'])) })
+                            if (isToday) roomValveStateData.push({ 'valve': roomValveCurrentState, 'h_of_day_frac': getFractionalHourOfDay(dateFromTimestamp(systemNode['state']['last_updated'])) });
+                            hasValve = roomValveStateData.length > 0;
                         }
 
                         if (cycleOn) {
@@ -2556,7 +2596,7 @@ function drawMainGraph(graphData = null) {
 
                         let roomOverrides;
                         let requestMarkers = [];
-                        if (requestLists) {
+                        if (isToday && requestLists) {
                             roomOverrides = requestLists[mainGraphSetting.roomNumToPlot];
                             if (roomOverrides) {
                                 roomOverrides.forEach(request => {
@@ -2652,7 +2692,7 @@ function drawMainGraph(graphData = null) {
                                     plotStyle: { joined: true, col: "rgb(255, 154, 154,0.5)", thickness: "3", startCap: false, endCap: false },
                                     curveTooltip: "elmúlt 3 nap átlagos hőmérséklete",
                                     segment: { do: false },
-                                    plotLabel: roomsDataAndState[mainGraphSetting.roomNumToPlot].name + " mért hőmérséklet (+ elmúlt 3 nap átlaga)",
+                                    plotLabel: roomsDataAndState[mainGraphSetting.roomNumToPlot].name + " mért hőmérséklet" + (isToday ? " (+ elmúlt 3 nap átlaga)" : ''),
                                 }
                             );
                             drawPlot(
@@ -2696,7 +2736,7 @@ function drawMainGraph(graphData = null) {
                     }
                     break;
                 case "all_rooms":
-                    Object.keys(graphData).forEach(k => Array.isArray(graphData[k]) && (graphData[k] = graphData[k].filter(elem => elem.timestamp?.slice(0, 10) === new Date().toLocaleDateString("sv-SE"))));
+                    Object.keys(graphData).forEach(k => Array.isArray(graphData[k]) && (graphData[k] = graphData[k].filter(elem => elem.timestamp?.slice(0, 10) === mainGraphSetting.day)));
                     range = d3.extent(Object.values(graphData).map(value => value.map(elem => elem['temp'])).flat());
 
                     let drawForSingleCycle = mainGraphSetting.hoveredCycle > 0;
@@ -2719,7 +2759,7 @@ function drawMainGraph(graphData = null) {
                         {
                             axes: { left: true, bottom: true },
                             axesLabel: { bottom: "óra", left: "°C" },
-                            plotLabel: "szobák mai hőmérsékleti görbéje" + (drawForSingleCycle ? " a" + ["z 1-es", " 2-es", " 3-mas", " 4-es"][mainGraphSetting.hoveredCycle - 1] + " körön" : ""),
+                            plotLabel: "szobák " + (mainGraphSetting.day === dayStamp() ? 'mai' : 'napi') + " hőmérsékleti görbéje" + (drawForSingleCycle ? " a" + ["z 1-es", " 2-es", " 3-mas", " 4-es"][mainGraphSetting.hoveredCycle - 1] + " körön" : ""),
                             parentId: "graph",
                             background: { show: true },
                             domain: { bottom: [0, 24], left: [Math.floor(range[0]), Math.ceil(range[1])] },
@@ -2776,7 +2816,7 @@ function drawMainGraph(graphData = null) {
                             axesLabel: { bottom: "óra", left: "°C" },
                             tickVals: { left: d3.range(Math.floor(tempRange[0]) - 1, Math.ceil(tempRange[1]) + 2, 1) },
                             plotStyle: { joined: true, col: "rgba(28, 3, 252, 0.92)", thickness: "3", startCap: false, endCap: true, smoothCurve: true },
-                            plotLabel: "mai külső hőmérséklet",
+                            plotLabel: (mainGraphSetting.day === dayStamp() ? 'mai' : 'napi') + " külső hőmérséklet",
                             curveEndText: { show: externalReadings.length > 0, fontSize: 6.5, text: externalReadings.length ? externalReadings.at(-1).external_temp.toFixed(1).replace(/\.0$/, '') + "°C" : "", col: "rgba(28, 3, 252, 0.92)", xOffset: 5, yOffset: 1.4 }
                         }
                     );
