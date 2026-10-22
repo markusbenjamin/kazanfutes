@@ -34,7 +34,9 @@ Hover displays only known °C and percent values, with no name, and shows the
 mean probe-temperature history. A valve-only target shows opening instead.
 Ctrl+click pins a selector for mean temperature, individual probes, and
 individual TRV openings. Click-away releases it. Date navigation is shared
-with other plots. Valve curves stay rectangular; missing observations are
+with other plots. Each curve's final valid end shows its latest value in the
+curve's colour (temperature to one decimal °C, valve opening as whole %), not
+at intermediate gaps. Valve curves stay rectangular; missing observations are
 never turned into zero. Each temperature probe retains its own last valid
 reading for at most five minutes through missing samples. An average always
 requires all associated probes within that limit; otherwise the curve has a
