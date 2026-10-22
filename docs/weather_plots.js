@@ -165,7 +165,8 @@ function drawWeatherMetricPlot(data, setting) {
         const low = Math.min(...values), high = Math.max(...values), pad = Math.max((high - low) * .1, 1);
         range = ['temperature_c', 'dewpoint_c', 'pressure_hpa'].includes(metric.key) ? [low - pad, high + pad] : [0, Math.max(1, high * 1.1)];
     }
-    const common = { parentId: 'graph', margins: {top: .24, right: .03, bottom: .15, left: .1},
+    // The axis-free dial has symmetric margins, preserving its size and vertical placement.
+    const common = { parentId: 'graph', margins: {top: .24, right: direction ? .065 : .03, bottom: .15, left: direction ? .065 : .1},
         domain: {bottom: [0, 24], left: range}, dataKeys: {bottom: 'h_of_day_frac', left: metric.key},
         axesLabel: {bottom: direction ? '' : 'óra', left: direction ? '' : metric.unit},
         axes: {left: !direction, bottom: !direction}, smoothing: {bottom: 0, left: smoothWind ? 5 : 0},

@@ -41,7 +41,9 @@ Monotone interpolation rounds the joins without overshoot. Stored data
 are unchanged. Set the flag to `false` to restore the daily total described above.
 
 Wind direction uses a 16-sector circular histogram, horizontally centred in
-the plot area and nudged slightly down to balance the negative space below
+the full dotted plot frame using symmetric horizontal margins in this axis-free
+view. Its size and the other weather plots' axis margins are unchanged. It is
+nudged slightly down to balance the negative space below
 the selector. Sector area represents the
 number of observations, with geographic azimuth 265° at the top to match the
 building diagram. Both sectors and compass labels use that rotation: west

@@ -656,7 +656,7 @@ function collectDataFromGitHub(dataToCollect, drawFunction) {
         } else {
             // Not fresh (or doesn't exist) -> fetch from GitHub
             // Keep the new power/flow stream separate from cached pre-power trial responses.
-            const newMetricStream = type.startsWith('radiator_') || type.endsWith('_water_temps') || type.endsWith('_heat_delivery') || type.endsWith('_environment') || type === 'weather_station' || type === 'room_control_kpis';
+            const newMetricStream = type.startsWith('radiator_') || type.endsWith('_water_temps') || type.endsWith('_heat_delivery') || type.endsWith('_environment') || type === 'weather_station' || type === 'room_control_kpis' || type === 'room_control_errors';
             const dataRef = newMetricStream ? 'main' : 'refs/heads/main';
             const url = "https://raw.githubusercontent.com/markusbenjamin/kazanfutes/" + dataRef + "/data/formatted/"
                 + day + "/" + type + ".json"
@@ -949,12 +949,19 @@ function drawPlot(plotData, userOptions) {
         }
     }
 
-    // Create the main plotting area using margins
+    const primaryMainPlot = ops.parentId === 'graph' && ops.background?.show && ops.showLockLabel;
+    const mobileViews = ops.parentId === 'graph' ? mobilePlotViewOptions() : null;
+    const mobileHeaderHeight = mobileViews ? (isMobile ? 24 : 18) : 0;
+    if (mobileViews) containerElement.on('click.mobile-views', event => event.stopPropagation());
+    if (primaryMainPlot && mobileViews) drawMobilePlotViewSelector(containerElement,
+        {w: containerDims.w, h: mobileHeaderHeight}, mobileViews);
+
+    // Reserve the same header space on the foundation and every overlaid curve.
     let plotDims = {
         x: containerDims.w * ops.margins.left,
-        y: containerDims.h * ops.margins.top,
+        y: containerDims.h * ops.margins.top + mobileHeaderHeight,
         w: containerDims.w - containerDims.w * (ops.margins.left + ops.margins.right),
-        h: containerDims.h - containerDims.h * (ops.margins.top + ops.margins.bottom)
+        h: Math.max(1, containerDims.h - containerDims.h * (ops.margins.top + ops.margins.bottom) - mobileHeaderHeight)
     }
 
     let plotElement = containerElement.append("g").attr("transform", `translate(${plotDims.x},${plotDims.y})`);
@@ -1074,7 +1081,6 @@ function drawPlot(plotData, userOptions) {
             .text(ops.plotLabel);
     }
 
-    const primaryMainPlot = ops.parentId === 'graph' && ops.background?.show && ops.showLockLabel;
     const dateNavigation = ops.plotDateNavigation || (ops.plotLabelTabs?.day ? ops.plotLabelTabs :
         primaryMainPlot ? {day: mainGraphSetting.day, onDayChange: navigateMainPlotDay} : false);
     if (dateNavigation) {
@@ -2151,6 +2157,7 @@ function joinMainGrapDataSourceToElements() {
             if (openWeatherMetricPlot(event, this.id)) return;
             if (openCycleHeatPlot(event, this.id)) return;
             if (openRoomMetricPlot(event, this.id)) return;
+            if (openMobilePlotTarget(event, this.id)) return;
             mainGraphContentLocked = !mainGraphContentLocked;
             resetAllRoomsPlotToAllCycles(); // Workaround so that all_rooms plot is reset to default even if a mouseout was not activated on the cycle infoboxes
 
@@ -2175,6 +2182,7 @@ let cyclesDataAndState = { //DEV: configból töltse be
 }
 
 function resetAllRoomsPlotToAllCycles(showAllRoomHovers = false) {
+    clearMobilePlotContext();
     mainGraphSetting = mainGraphDefaultSetting;
     mainGraphSetting.roomNumsToPlot = allMeasuredRooms;
     mainGraphSetting.hoveredCycle = 0;
@@ -2200,6 +2208,8 @@ function setInfoboxHovers() {
             })
             .on("click", function (event) {
                 event.stopPropagation();
+                if (openRoomControlPlot(event, this.id)) return;
+                if (openMobilePlotTarget(event, this.id)) return;
                 mainGraphContentLocked = !mainGraphContentLocked;
                 redrawRoomHovers(mainGraphSetting.roomNumsToPlot, false);
                 mainGraphSetting.hoveredCycle = cycleNum;
@@ -2224,6 +2234,7 @@ function setInfoboxHovers() {
         .on("click.general_infobox", function (event) {
             event.stopPropagation();
             if (openRoomControlPlot(event, this.id)) return;
+            if (openMobilePlotTarget(event, this.id)) return;
             mainGraphContentLocked = !mainGraphContentLocked;
             resetAllRoomsPlotToAllCycles(true)
             drawMainGraph();

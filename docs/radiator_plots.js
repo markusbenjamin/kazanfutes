@@ -167,6 +167,7 @@ async function initializeRadiators() {
                 }).on('mousedown.radiator', event => event.stopPropagation()).on('click.radiator', event => {
                     event.stopPropagation();
                     if (!radiatorHasData(target)) return;
+                    if (openMobilePlotTarget(event, target.id)) return;
                     if (event.ctrlKey) event.preventDefault();
                     mainGraphSetting = radiatorPlotSetting(target, event.ctrlKey);
                     mainGraphContentLocked = true;

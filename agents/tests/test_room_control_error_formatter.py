@@ -7,7 +7,8 @@ class RoomControlErrorsTest(unittest.TestCase):
 
     def snapshot(self, demand=1, measured=20, target=21, stamp='2026-10-22-12-00-00', **extra):
         return {'timestamp': stamp, 'room_states': {'1': demand}, 'measured_temps': {'1': measured},
-                'set_temps': {'1': target}, 'sensor_last_updated': {'1': stamp}, **extra}
+                'set_temps': {'1': target}, 'set_temps_interp': {'1': target},
+                'sensor_last_updated': {'1': stamp}, **extra}
 
     def value(self, entry):
         return format_room_control_errors([entry], '2026-10-22', self.rooms)[0]['errors']['1']
@@ -26,6 +27,18 @@ class RoomControlErrorsTest(unittest.TestCase):
             self.assertIsNone(self.value(self.snapshot(sensor_last_updated={'1': seen})))
         for value in (None, True, float('nan')):
             self.assertIsNone(self.value(self.snapshot(measured=value)))
+
+    def test_uses_logged_interpolated_target_without_nominal_fallback(self):
+        for nominal in (18, 25):
+            self.assertEqual(self.value(self.snapshot(set_temps={'1': nominal},
+                set_temps_interp={'1': 22.5})), 2.5)
+        for value in (None, True, float('nan'), -1):
+            self.assertIsNone(self.value(self.snapshot(set_temps_interp={'1': value})))
+        self.assertIsNone(self.value(self.snapshot(set_temps_interp={})))
+        self.assertEqual(self.value(self.snapshot(demand=0, set_temps_interp={})), 0)
+        missing = self.snapshot()
+        del missing['set_temps_interp']
+        self.assertEqual(format_room_control_errors([missing], '2026-10-22', self.rooms), [])
 
     def test_complete_snapshots_only_day_filter_and_no_uncontrolled_room(self):
         rows = [self.snapshot(stamp='2026-10-21-23-59-59'), self.snapshot(),

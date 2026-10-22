@@ -3,9 +3,13 @@
 const BOILER_GAS_HEATING_VALUE_MJ_M3 = 34;
 const BOILER_KPI_TYPES = ['gas_usage', ...[1, 2, 3, 4].map(cycle => 'cycle_' + cycle + '_heat_delivery')];
 
+function createBoilerKPIPlotSetting(day = dayStamp()) {
+    return {title: 'boiler_kpi', day, windowDays: 7, types: BOILER_KPI_TYPES, conditionals: []};
+}
+
 function openBoilerKPIPlot(event) {
     event.preventDefault();
-    mainGraphSetting = {title: 'boiler_kpi', day: dayStamp(), windowDays: 7, types: BOILER_KPI_TYPES, conditionals: []};
+    mainGraphSetting = createBoilerKPIPlotSetting();
     mainGraphContentLocked = true;
     drawMainGraph({});
     drawMainGraph();

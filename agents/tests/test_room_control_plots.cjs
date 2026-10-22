@@ -18,16 +18,18 @@ function scaleLinear() {
     return scale;
 }
 const context = vm.createContext({Number, Math, Date, Object, mainGraphSetting: {}, mainGraphContentLocked: false,
-    dashboardFont: 'Consolas', dayStamp: () => '2026-10-21', clearMainGraphs() {},
+    dashboardFont: 'Consolas', isMobile:false, dayStamp: () => '2026-10-21', clearMainGraphs() {},
     elementToMainGraphSettingMapping: {Oktopusz: {title:'room_plot',roomNumToPlot:1}, cycle1:{title:'cycle_water_temp'}},
-    allControlledRooms:[1,2], roomsDataAndState:{1:{name:'Oktopusz szita'},2:{name:'Gólyafészek'}},
-    roomsColorScale: ()=>'green', roomsColorRemap:[1,2], d3:{scaleLinear},
+    allControlledRooms:[1,2], roomsDataAndState:{1:{name:'Oktopusz szita',cycle:1},2:{name:'Gólyafészek',cycle:2}},
+    roomsColorScale: value=>'room-color-'+value, roomsColorRemap:[1,2], d3:{scaleLinear},
     drawPlot: (data,options)=>{draws.push({data,options}); return {plotElement:selection(),plotDims:{w:200,h:100}};},
     bindPlotCurveTooltip: (target,label)=>labels.push(label),
     collectDataFromGitHub: (requests,callback)=>loads.push({requests,callback}),
     drawMainGraph() {}
 });
 vm.runInContext(fs.readFileSync(path.join(root,'docs/cycle_heat_plots.js'),'utf8'),context);
+vm.runInContext(fs.readFileSync(path.join(root,'docs/room_metric_plots.js'),'utf8'),context);
+context.bindPlotCurveTooltip=(target,label)=>labels.push(label);
 vm.runInContext(fs.readFileSync(path.join(root,'docs/room_control_plots.js'),'utf8'),context);
 context.drawPlotTitleSelector=()=>{};
 const evaluate = code => JSON.parse(JSON.stringify(vm.runInContext(code,context)));
@@ -38,8 +40,21 @@ assert.equal(evaluate("openRoomControlPlot(event,'Oktopusz')"),false); // Existi
 assert.equal(evaluate("openRoomControlPlot(event,'general_infobox')"),false); // Analytics consistently uses Alt, not Ctrl.
 context.event.ctrlKey=false; context.event.altKey=true;
 assert.equal(evaluate("openRoomControlPlot(event,'general_infobox')"),true);
-assert.equal(context.mainGraphSetting.title,'room_control_overview');
+assert.equal(context.mainGraphSetting.title,'room_control_daily');
+assert.equal(evaluate("openRoomControlPlot({altKey:false,preventDefault(){}},'cycle1_infobox')"),false);
+assert.equal(evaluate("openRoomControlPlot(event,'cycle2_infobox')"),true);
+assert.equal(context.mainGraphSetting.cycleNum,2);
+vm.runInContext('navigateRoomControlDay(-1)',context);
+assert.equal(context.mainGraphSetting.cycleNum,2);
+assert.equal(context.mainGraphSetting.day,'2026-10-20');
+assert.deepEqual(evaluate('mainGraphSetting.types'),['room_control_errors']);
 assert.equal(context.mainGraphContentLocked,true);
+vm.runInContext("openRoomControlPlot(event,'general_infobox')",context);
+vm.runInContext('navigateRoomControlDay(-1)',context);
+assert.equal(context.mainGraphSetting.day,'2026-10-20');
+assert.equal(context.mainGraphSetting.title,'room_control_daily');
+// The old grid and its selector remain frozen and independently testable.
+context.mainGraphSetting={...context.mainGraphSetting,title:'room_control_overview',day:'2026-10-21'};
 const overviewSetting=context.mainGraphSetting;
 vm.runInContext("selectRoomControlOverviewState('above_off')",context);
 assert.notEqual(context.mainGraphSetting,overviewSetting);
@@ -133,8 +148,74 @@ assert.ok(draws.some(call=>call.options.plotLabelTabs?.prefix.includes('(K)')));
 assert.ok(nodes.some(node=>node.value==='±0,5 K'));
 assert.ok(nodes.every(node=>!String(node.value).includes('°C')));
 assert.ok(labels.every(label=>!label.includes('°C')));
+context.mainGraphSetting={title:'room_control_daily',day:'2026-10-21',types:['room_control_errors']};
+const dailyLoadIndex=loads.length;
+vm.runInContext('drawRoomControlView()',context);
+assert.equal(loads[dailyLoadIndex].requests.length,1);
+assert.deepEqual(JSON.parse(JSON.stringify(loads[dailyLoadIndex].requests)),[{day:'2026-10-21',type:'room_control_errors'}]);
+const drawsBeforeLateDaily=draws.length;
+context.mainGraphSetting={title:'all_rooms'};
+loads[dailyLoadIndex].callback({});
+assert.equal(draws.length,drawsBeforeLateDaily);
+context.dailyRows=[{h_of_day_frac:1,errors:{1:1,2:0}}, {h_of_day_frac:1.01,errors:{1:-1,2:0}},
+    {h_of_day_frac:1.02,errors:{1:null,2:0}}, {h_of_day_frac:2,errors:{1:2,2:null}}];
+assert.deepEqual(evaluate('roomControlErrorSegments(dailyRows,1).map(s=>s.map(p=>p.error_k))'),[[1,-1],[2]]);
+context.dailyData={'2026-10-21':{room_control_errors:context.dailyRows}};
+context.dailySetting={title:'room_control_daily',day:'2026-10-21'};
+const beforeDaily=draws.length;
+vm.runInContext('drawRoomControlDaily(dailyData,dailySetting)',context);
+const dailyDraws=draws.slice(beforeDaily);
+assert.equal(dailyDraws.length,4); // Foundation, two pieces for room 1, one piece for room 2.
+assert.equal(dailyDraws[0].options.axesLabel.left,'szabályozási hiba (K)');
+assert.deepEqual(JSON.parse(JSON.stringify(dailyDraws[0].options.domain.left)),[-2,2]);
+assert.deepEqual(dailyDraws.slice(1).map(draw=>JSON.parse(JSON.stringify(draw.data.map(row=>row.error_k)))),[[1,-1],[2],[0,0,0]]);
+assert.ok(dailyDraws.slice(1).every(draw=>draw.options.plotStyle.stepAfter && draw.options.smoothing.left===0));
+assert.equal(dailyDraws[1].options.curveTooltip,'Oktopusz szita');
+assert.equal(dailyDraws[3].options.curveTooltip,'Gólyafészek');
+assert.equal(dailyDraws[0].options.plotDateNavigation.day,'2026-10-21');
+assert.ok(nodes.some(node=>node.value==='Oktopusz szita' && node.attrs['data-room']===1 && node.styles.fill==='room-color-1'));
+assert.ok(nodes.some(node=>node.value==='Gólyafészek' && node.attrs['data-room']===2 && node.styles.fill==='room-color-2'));
+assert.ok(!nodes.some(node=>String(node.value).startsWith('Oktopusz szita:')));
+const heading=nodes.find(node=>node.attrs.class==='room-control-daily-title');
+const legend=nodes.find(node=>node.attrs.class==='room-control-daily-legend');
+assert.equal(heading.styles['font-size'],'7px');
+assert.equal(legend.styles['font-size'],'4.5px');
+assert.ok(legend.attrs.y>heading.attrs.y,'legend must appear below the title');
+assert.equal(dailyDraws[0].options.margins.right,.03);
+const watermarks=nodes.filter(node=>node.attrs.class==='room-control-error-watermark');
+assert.deepEqual(watermarks.map(node=>node.value),['alulfűtés','túlfűtés']);
+assert.equal(watermarks[0].attrs.y,11);
+assert.equal(watermarks[1].attrs.y,97);
+assert.ok(watermarks.every(node=>node.attrs.x===3 && node.styles['text-anchor']==='start' && node.styles['font-size']==='8px'));
+assert.equal(watermarks[0].styles.fill,'rgba(200,0,0,0.06)');
+assert.equal(watermarks[1].styles.fill,'rgba(0,40,180,0.06)');
+assert.ok(watermarks.every(node=>node.styles['pointer-events']==='none'));
+const cycleBefore=draws.length,cycleNodesBefore=nodes.length;
+context.dailySetting={...context.dailySetting,cycleNum:2};
+vm.runInContext('drawRoomControlDaily(dailyData,dailySetting)',context);
+const cycleDraws=draws.slice(cycleBefore);
+assert.equal(cycleDraws.length,2);
+assert.equal(cycleDraws[1].options.curveTooltip,'Gólyafészek');
+assert.equal(cycleDraws[1].options.plotStyle.col,'room-color-2');
+assert.deepEqual(nodes.slice(cycleNodesBefore).filter(node=>node.attrs['data-room']).map(node=>node.attrs['data-room']),[2]);
+assert.ok(nodes.slice(cycleNodesBefore).some(node=>node.value==='2. kör napi szabályozási hibája'));
+const savedRooms=context.allControlledRooms, savedRoomInfo=context.roomsDataAndState;
+context.allControlledRooms=Array.from({length:12},(_,i)=>i+1);
+context.roomsDataAndState=Object.fromEntries(context.allControlledRooms.map(room=>[room,{name:'Room '+room,cycle:1}]));
+const compactStart=nodes.length;
+context.dailySetting={title:'room_control_daily',day:'2026-10-21'};
+vm.runInContext('drawRoomControlDaily({},dailySetting)',context);
+assert.equal(nodes.slice(compactStart).filter(node=>node.attrs.class==='room-control-daily-legend').length,2);
+assert.equal(nodes.slice(compactStart).filter(node=>node.attrs['data-room']).length,12);
+context.allControlledRooms=context.allControlledRooms.slice(0,5);
+const singleLineStart=nodes.length;
+vm.runInContext('drawRoomControlDaily({},dailySetting)',context);
+assert.equal(nodes.slice(singleLineStart).filter(node=>node.attrs.class==='room-control-daily-legend').length,1);
+context.allControlledRooms=savedRooms; context.roomsDataAndState=savedRoomInfo;
 const source=fs.readFileSync(path.join(root,'docs/data.js'),'utf8');
 assert.match(source,/if \(isRoomControlView\(mainGraphSetting\)\)/);
 assert.match(source,/if \(openRoomControlPlot\(event, this.id\)\) return;/);
+assert.match(source.slice(source.indexOf('function setInfoboxHovers()'),source.indexOf('d3.select("#general_infobox")',source.indexOf('function setInfoboxHovers()'))),
+    /\.on\("click", function \(event\) \{\s*event.stopPropagation\(\);\s*if \(openRoomControlPlot\(event, this.id\)\) return;/);
 assert.match(source,/type === 'room_control_kpis'/);
 console.log('Room control views passed: Alt analytics, fixed calendar window, weighted KPIs, uncluttered daily grid, missing cells, zero error, stale responses and cell tooltips.');

@@ -14,7 +14,9 @@ def format_room_control_errors(entries, daystamp, rooms, max_sensor_age_seconds=
     """Daily signed set-minus-measured error gated by each room's own demand.
 
     Use complete end-of-run snapshots, not independently timed vote/target log
-    records. No demand means exactly zero, even without a temperature reading.
+    records. Read the logged set_temps_interp directly, without recomputing the
+    target or falling back to the nominal set_temps. No demand means exactly
+    zero, even without a temperature reading.
     Unknown demand or unavailable temperatures during demand remain unknown.
     """
     controlled = [str(room) for room, info in rooms.items()
@@ -22,7 +24,7 @@ def format_room_control_errors(entries, daystamp, rooms, max_sensor_age_seconds=
     result = {}
     for entry in entries:
         if not isinstance(entry, dict) or not all(isinstance(entry.get(key), dict)
-                                                for key in ('room_states', 'measured_temps', 'set_temps')):
+                                                for key in ('room_states', 'measured_temps', 'set_temps_interp')):
             continue
         observed = _stamp(entry.get('timestamp'))
         if observed is None or observed.strftime('%Y-%m-%d') != daystamp:
@@ -37,7 +39,7 @@ def format_room_control_errors(entries, daystamp, rooms, max_sensor_age_seconds=
                 error = 0.
             elif known:
                 measured = _number(entry['measured_temps'].get(room))
-                target = _number(entry['set_temps'].get(room))
+                target = _number(entry['set_temps_interp'].get(room))
                 seen = _stamp((entry.get('sensor_last_updated') or {}).get(room))
                 fresh = seen is not None and -30 <= (observed - seen).total_seconds() <= max_sensor_age_seconds
                 if fresh and measured is not None and target is not None and target >= 0:

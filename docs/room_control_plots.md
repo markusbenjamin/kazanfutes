@@ -11,7 +11,30 @@ The primary metric is mean absolute temperature error weighted by the room's
 associated cycle's commanded circulation multiplied by mean valve opening
 (0–1). Rooms without smart valves use opening 1. It is not electrical power,
 room demand, measured heat delivery, or a verdict on controller quality.
-The daily overview is a compact grid: one room per row, one calendar day per
+The main-infobox Alt+click now opens a single-day error curve for each controlled
+room. Error is exactly zero for a known room heat-demand vote of zero, and
+`set_temps - measured_temps` while that room demands heat. Positive K means
+below target, negative K means above. Room demand is not inferred from cycle
+pumps or valve opening. Each curve uses the existing room colour and has a
+room-name tooltip. Coloured room names wrap below the title in the same font
+family at a smaller 4.5-unit size (title: 7), without numerical error readouts.
+Up to six room names share one line; the all-room legend uses two balanced
+lines, never three, leaving more room for the chart.
+The former right-hand value list is
+removed, restoring the full chart width. Alt+click a cycle infobox opens the same
+daily view filtered to controlled rooms assigned to that cycle by the existing
+room metadata. Date navigation preserves this cycle filter. Main-infobox
+Alt+click still shows all controlled rooms. Corner arrows change days; missing demand and unavailable or
+stale temperatures during demand are gaps, never false zero. Curves are steps,
+not smoothed, and gaps longer than three minutes break them.
+Small 8-unit, 6%-opacity reddish `alulfűtés` and bluish `túlfűtés` watermarks sit
+at the upper-left and lower-left edges of the positive and negative ranges.
+They sit behind the curves and do not intercept
+pointer events.
+
+The former overview grid is frozen in `drawRoomControlOverview`, no longer
+bound to Alt+click. Its implementation and KPI definitions are preserved:
+one room per row, one calendar day per
 column. A four-state selector switches below/above target crossed with heating
 on/off, preserving the selected end date. Each cell shows mean absolute error
 in K only during that case: `quadrant_error_kh / (quadrant_seconds / 3600)`.
@@ -81,6 +104,18 @@ error integral, alongside `quadrant_seconds`. The dashboard refuses older
 schemas rather than displaying all-time comfort as occupied-only comfort.
 The old `room_KPIs.json` stream is unchanged. There is no new device polling,
 relay operation, Firebase write, or scheduler/control change.
+
+The same formatter also publishes daily `room_control_errors.json` from complete
+end-of-run control snapshots, keeping room demand, setpoint and measured
+temperature together instead of mixing independently timestamped log records.
+It uses the existing calculated `measured_temps`, logged `set_temps_interp`
+and `room_states`. The logged target is used directly, with no nominal-target
+fallback or dashboard reconstruction; no `control_temp` or alternate sensor
+calculation is introduced. Sensor-age
+validation during demand matches the one-hour KPI limit. No-demand periods
+are zero by definition even if their temperatures are unavailable. Uncontrolled
+rooms are excluded. The existing daily KPI schema and room Alt+click views are
+unchanged.
 
 ## Boiler energy KPI
 

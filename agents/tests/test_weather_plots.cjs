@@ -78,6 +78,8 @@ assert.equal(calls[0].options.plotLabelTabs.columns, 3);
 assert.equal(calls[0].options.plotLabelTabs.choices.some(choice => choice.key === 'dewpoint'), false);
 assert.equal(calls[0].options.plotLabelTabs.choices.some(choice => choice.key === 'rainStatus'), false);
 assert.equal(calls[0].options.margins.top, .24); // Three selector rows, without an extra date row.
+assert.equal(calls[0].options.margins.left,.1);
+assert.equal(calls[0].options.margins.right,.03);
 assert.equal(calls[1].data[0].temperature_c, -2);
 assert.equal(calls[1].options.curveEndText.text, '0 °C');
 context.data = {weather_station: [{h_of_day_frac:1,temperature_c:5,dewpoint_c:-10},
@@ -175,6 +177,12 @@ calls.length = 0;
 vm.runInContext('drawWeatherMetricPlot(data, setting)', context);
 assert.equal(calls.length, 1);
 assert.equal(calls[0].options.axes.left, false);
+const dialMargins=calls[0].options.margins;
+assert.equal(dialMargins.left,dialMargins.right);
+assert.equal(dialMargins.left+(1-dialMargins.left-dialMargins.right)/2,.5,'dial centre must match the entire frame centre');
+assert.equal(dialMargins.left+dialMargins.right,.13,'preserve the dial width and radius');
+assert.equal(dialMargins.top,.24);
+assert.equal(dialMargins.bottom,.15);
 assert.equal(histogram.element, 'plot');
 assert.equal(histogram.dims.w, 200);
 const weatherSource = fs.readFileSync(path.join(root, 'docs/weather_plots.js'), 'utf8');
