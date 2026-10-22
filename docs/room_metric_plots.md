@@ -2,7 +2,7 @@
 
 Ordinary room hover and ordinary click keep the existing heating/temperature
 chart. Ctrl+click a room to pin a separate chart with plain-text choices:
-`hőm.`, `páratart.`, `CO₂`, `lux`, `jelenl.`. Selecting a choice keeps
+`hőm.`, `páratart.`, `CO₂`, `lux`, `jelenl.`, `radiátor hőm.`. Selecting a choice keeps
 the chart pinned. An outside click unlocks it. The last choice is remembered
 per room for the current page only; it never changes ordinary hover.
 Room-chart curves show cursor-following tooltips: measured temperature
@@ -23,12 +23,20 @@ Temperature and humidity use the existing `room_N_measurements.json` stream
 curve. There is no separate temperature formatter or `control_temp` field, no
 new sensor selection, and no averaging of extra Nous/Aqara temperature units.
 
-All five curves use thickness 2. Other metrics use shape-preserving monotone
+All curves use thickness 2. Other metrics use shape-preserving monotone
 interpolation; temperature keeps the ordinary room chart's smoothing.
 Temperature matches the ordinary room chart's exact bright
 red; humidity is light blue; CO₂ is dark poison green; lux is golden yellow.
 Unknown values and long gaps
 break curves; missing data never become zero or vacant.
+
+`radiátor hőm.` uses the existing `radiator_temps.json` stream and physical
+unit mapping in `system/radiator_mapping.json`, joined by `legacy_room_numbers`.
+Every probe assigned to that room's unit has its own coloured curve and exact
+`device/probe` tooltip, independently of SVG radiator grouping. There is no
+averaging in this view. It shares the radiator plots' five-minute bounded
+per-probe hold and one dot only at each curve's final end. Date navigation,
+pinning and the other room choices remain available even without probe data.
 
 The `jelenl.` black curve plots `occupancy_average` as a percentage, read from
 the scheduler's `config/scheduling/local_scheduling_files/occupancy.json` for

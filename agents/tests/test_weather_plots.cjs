@@ -73,10 +73,31 @@ context.setting = {title: 'weather_metrics', day: '2026-10-20', metric: 'tempera
 context.data = {weather_station: [{h_of_day_frac: 1, temperature_c: -2}, {h_of_day_frac: 1.01, temperature_c: 0}]};
 vm.runInContext('drawWeatherMetricPlot(data, setting)', context);
 assert.equal(calls[0].options.plotLabelTabs.day, '2026-10-20');
-assert.equal(calls[0].options.plotLabelTabs.choices.length, 11);
+assert.equal(calls[0].options.plotLabelTabs.choices.length, 9);
+assert.equal(calls[0].options.plotLabelTabs.columns, 3);
+assert.equal(calls[0].options.plotLabelTabs.choices.some(choice => choice.key === 'dewpoint'), false);
+assert.equal(calls[0].options.plotLabelTabs.choices.some(choice => choice.key === 'rainStatus'), false);
 assert.equal(calls[0].options.margins.top, .24); // Three selector rows, without an extra date row.
 assert.equal(calls[1].data[0].temperature_c, -2);
 assert.equal(calls[1].options.curveEndText.text, '0 °C');
+context.data = {weather_station: [{h_of_day_frac:1,temperature_c:5,dewpoint_c:-10},
+    {h_of_day_frac:1.01,temperature_c:6,dewpoint_c:null},
+    {h_of_day_frac:1.02,temperature_c:7,dewpoint_c:0}]};
+calls.length = 0;
+vm.runInContext('drawWeatherMetricPlot(data, setting)', context);
+assert.deepEqual(Array.from(calls[0].options.domain.left), [-11.7,8.7]); // Both curves share the complete range.
+assert.equal(calls.length, 4); // Foundation, temperature, two independently split dew-point segments.
+assert.equal(calls[1].options.curveTooltip, 'hőmérséklet');
+assert.equal(calls[1].options.plotStyle.col, 'rgb(28, 3, 252)');
+assert.equal(calls[2].options.curveTooltip, 'harmatpont');
+assert.equal(calls[2].options.plotStyle.col, 'rgb(0, 130, 150)');
+assert.equal(calls[2].options.dataKeys.left, 'dewpoint_c');
+assert.equal(calls[3].options.curveEndText.text, '0 °C');
+context.data = {weather_station: [{h_of_day_frac:1,temperature_c:null,dewpoint_c:-3}]};
+calls.length = 0;
+vm.runInContext('drawWeatherMetricPlot(data, setting)', context);
+assert.equal(calls.length, 2); // A missing temperature does not hide a valid dew point.
+assert.equal(calls[1].options.dataKeys.left, 'dewpoint_c');
 context.setting.metric = 'light';
 context.data = {weather_station: [{h_of_day_frac: 1, illuminance_lux: 50000}, {h_of_day_frac: 1.01, illuminance_lux: 1250}]};
 calls.length = 0;
@@ -85,6 +106,58 @@ assert.equal(calls[0].options.axesLabel.left, 'klux');
 assert.equal(calls[1].data[0].illuminance_lux, 50);
 assert.equal(calls[1].options.curveEndText.text, '1.3 klux');
 assert.equal(context.data.weather_station[0].illuminance_lux, 50000); // Conversion does not mutate cached lux observations.
+context.setting.metric = 'rain';
+context.data = {weather_station: [{h_of_day_frac: 0, precipitation_mm: null},
+    {h_of_day_frac: 1.1, precipitation_mm: 125.5}, {h_of_day_frac: 1, precipitation_mm: 123},
+    {h_of_day_frac: 1.2, precipitation_mm: null}, {h_of_day_frac: 1.3, precipitation_mm: 127}]};
+const originalRain = JSON.stringify(context.data);
+assert.deepEqual(evaluate('weatherDailyPrecipitation(data.weather_station).map(row => row.precipitation_mm)'), [null, 2.5, 0, null, 4]);
+calls.length = 0;
+vm.runInContext('drawWeatherMetricPlot(data, setting)', context);
+assert.equal(calls[0].options.axesLabel.left, 'mm/h');
+assert.ok(Math.abs(calls[0].options.domain.left[1] - 27.5) < 1e-10);
+assert.ok(Math.abs(calls[1].data[0].precipitation_rate_mm_h - 25) < 1e-10);
+assert.equal(calls.at(-1).options.curveEndText.text, '25 mm/h');
+assert.equal(calls[0].options.plotLabelTabs.choices.find(choice => choice.key === 'rain').label, 'csapadék');
+assert.equal(calls[1].options.plotStyle.monotone, true);
+assert.equal(JSON.stringify(context.data), originalRain); // Cached cumulative observations stay untouched.
+context.data = {weather_station: [{h_of_day_frac: 0, precipitation_mm: 200}, {h_of_day_frac: .1, precipitation_mm: 201}]};
+assert.deepEqual(evaluate('weatherDailyPrecipitation(data.weather_station).map(row => row.precipitation_mm)'), [0, 1]); // Each selected day gets its own baseline.
+assert.deepEqual(evaluate('weatherDailyPrecipitation([{h_of_day_frac:0,precipitation_mm:0},{h_of_day_frac:.1,precipitation_mm:2}]).map(row => row.precipitation_mm)'), [0, 2]);
+assert.deepEqual(evaluate('weatherDailyPrecipitation([])'), []);
+context.rateSamples = [{h_of_day_frac: .25, precipitation_mm: 11}, {h_of_day_frac: 0, precipitation_mm: 10},
+    {h_of_day_frac: .5, precipitation_mm: 11}, {h_of_day_frac: .75, precipitation_mm: null},
+    {h_of_day_frac: 1, precipitation_mm: 12}, {h_of_day_frac: 2, precipitation_mm: 15},
+    {h_of_day_frac: 2.25, precipitation_mm: 0}, {h_of_day_frac: 2.5, precipitation_mm: .5}];
+const rateSamples = evaluate('weatherPrecipitationRate(rateSamples)');
+assert.deepEqual(rateSamples.map(row => row.h_of_day_frac), [0,.25,.5,.75,1,2,2.25,2.5]);
+assert.deepEqual(rateSamples.filter(row => row.precipitation_rate_mm_h === null).map(row => row.h_of_day_frac), [0,.75,1,2,2.25]);
+assert.ok(Math.abs(rateSamples[1].precipitation_rate_mm_h - 2) < 1e-10);
+assert.equal(rateSamples[2].precipitation_rate_mm_h, 0);
+assert.equal(rateSamples.at(-1).precipitation_rate_mm_h, 2); // A reset starts an independent segment.
+assert.deepEqual(evaluate('weatherPrecipitationRate([])'), []);
+assert.deepEqual(evaluate('weatherPrecipitationRate([{h_of_day_frac:0,precipitation_mm:0},{h_of_day_frac:0,precipitation_mm:1}]).map(row => row.precipitation_rate_mm_h)'), [null,null]);
+// Gaussian smoothing gives a symmetric, nonnegative bell around an isolated rain interval.
+context.gaussianRain = Array.from({length:81}, (_, index) => ({h_of_day_frac:index/60,
+    precipitation_mm:index >= 40 ? 1 : 0}));
+const gaussianRates = evaluate('weatherPrecipitationRate(gaussianRain)');
+assert.ok(gaussianRates[39].precipitation_rate_mm_h > gaussianRates[35].precipitation_rate_mm_h);
+assert.ok(gaussianRates[35].precipitation_rate_mm_h > gaussianRates[30].precipitation_rate_mm_h);
+assert.ok(gaussianRates[39].precipitation_rate_mm_h < 10); // Raw one-minute spike is 60 mm/h.
+for (let offset = 0; offset < 15; offset++) assert.ok(Math.abs(gaussianRates[39-offset].precipitation_rate_mm_h
+    - gaussianRates[40+offset].precipitation_rate_mm_h) < 1e-10);
+assert.ok(gaussianRates.every(row => row.precipitation_rate_mm_h === null || row.precipitation_rate_mm_h >= 0));
+assert.equal(gaussianRates[20].precipitation_rate_mm_h, 0);
+// Integrating over intervals gives the same result when an interval is subdivided.
+context.coarseRain = [{h_of_day_frac:0,precipitation_mm:0},{h_of_day_frac:.1,precipitation_mm:1},
+    {h_of_day_frac:.25,precipitation_mm:1},{h_of_day_frac:.3,precipitation_mm:1}];
+context.fineRain = [context.coarseRain[0],{h_of_day_frac:.05,precipitation_mm:.5},...context.coarseRain.slice(1)];
+assert.ok(Math.abs(evaluate('weatherPrecipitationRate(coarseRain).at(-1).precipitation_rate_mm_h')
+    - evaluate('weatherPrecipitationRate(fineRain).at(-1).precipitation_rate_mm_h')) < 1e-10);
+context.data = {weather_station: [{h_of_day_frac: 0, precipitation_mm: null}, {h_of_day_frac: .1}]};
+calls.length = 0;
+vm.runInContext('drawWeatherMetricPlot(data, setting)', context);
+assert.equal(calls.length, 1); // An unknown day does not manufacture a zero-rain curve.
 for (const metric of ['wind', 'gust']) {
     context.setting.metric = metric;
     context.data = {weather_station: [{h_of_day_frac: 1, wind_speed_m_s: 1, gust_speed_m_s: 2},
@@ -112,15 +185,17 @@ context.rain=[{h_of_day_frac:1,rain_status:1},{h_of_day_frac:1.1,rain_status:1},
     {h_of_day_frac:3,rain_status:1},{h_of_day_frac:4,rain_status:1}];
 assert.deepEqual(evaluate('weatherRainPeriods(rain,4.1)'),[{x1:1,x2:1.2},{x1:2,x2:2.1},{x1:3,x2:3.25},{x1:4,x2:4.1}]);
 const directionTabs=calls[0].options.plotLabelTabs;
-context.setting.metric='rainStatus';
+context.setting.metric='rain';
 context.data={weather_station:context.rain};
 calls.length=0;
 vm.runInContext('drawWeatherMetricPlot(data,setting)',context);
-assert.equal(calls.length,1); // No rain-status curve layers.
-assert.equal(calls[0].options.axes.left,false);
+assert.equal(calls.length,1); // Rain signal can still shade a day without cumulative readings.
+assert.equal(calls[0].options.axes.left,true);
 assert.equal(calls[0].options.axes.bottom,true);
 assert.equal(calls[0].options.rects.list.length,4);
 assert.equal(calls[0].options.rects.list[0].stroke,'none');
+assert.equal(calls[0].options.rects.list[0].fill,'rgba(60,100,180,0.05)');
+assert.equal(calls[0].options.rects.list[0].y2,calls[0].options.domain.left[1]);
 // Dates use fixed frame corners, independently of metric rows and weekday widths.
 const headerNodes = [];
 function headerSelection(tag = 'g') {

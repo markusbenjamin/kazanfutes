@@ -16,6 +16,7 @@ const context = vm.createContext({
 });
 vm.runInContext(fs.readFileSync(path.join(root, 'docs/room_metric_plots.js'), 'utf8'), context);
 vm.runInContext(fs.readFileSync(path.join(root, 'docs/cycle_heat_plots.js'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(root, 'docs/radiator_plots.js'), 'utf8'), context);
 vm.runInContext(source.slice(source.indexOf('const ROOM_TEMPERATURE_DISPLAY_STEP_HOURS'), source.indexOf('function drawPlot(')), context);
 const evaluate = code => JSON.parse(JSON.stringify(vm.runInContext(code, context)));
 context.prevented = 0;
@@ -60,8 +61,13 @@ for (const [metric, key, value, unit] of [
     vm.runInContext('drawRoomMetricPlot(data, setting)', context);
     assert.equal(calls.length, 2);
     assert.equal(calls[0].options.dataKeys.left, key);
-    assert.equal(calls[0].options.plotLabelTabs.choices.length, 5);
+    assert.equal(calls[0].options.plotLabelTabs.choices.length, 6);
     assert.equal(calls[0].options.margins.top, .1); // No empty row reserved for the old date line.
+    assert.equal(calls[0].options.now.show, metric === 'occupancy');
+    if (metric === 'occupancy') {
+        assert.equal(calls[0].options.now.pos, 12);
+        assert.equal(calls[0].options.now.color, 'rgba(230,130,160,0.45)');
+    }
     assert.equal(calls[1].options.showLockLabel, false);
     assert.equal(calls[1].data[0][key], value);
     assert.equal(calls[1].options.plotStyle.monotone, metric !== 'temperature');
@@ -69,7 +75,7 @@ for (const [metric, key, value, unit] of [
     assert.equal(calls[1].options.smoothing.left, metric === 'temperature' ? 10 : 0);
     assert.equal(calls[1].options.plotStyle.thickness, '2');
     assert.equal(calls[1].options.curveEndText.text, value+' '+unit);
-    assert.deepEqual(JSON.parse(JSON.stringify(calls[0].options.plotLabelTabs.choices.map(c => c.label))), ['hőm.', 'páratart.', 'CO₂', 'lux', 'jelenl.']);
+    assert.deepEqual(JSON.parse(JSON.stringify(calls[0].options.plotLabelTabs.choices.map(c => c.label))), ['hőm.', 'páratart.', 'CO₂', 'lux', 'jelenl.', 'radiátor hőm.']);
 }
 assert.equal(evaluate('ROOM_PLOT_METRICS.temperature.color'), 'rgba(255,0,0,1)');
 assert.equal(evaluate('ROOM_PLOT_METRICS.humidity.color'), 'rgb(100, 180, 255)');
@@ -112,6 +118,47 @@ assert.equal(calls[1].options.smoothing.left, 10);
 assert.equal(calls[1].options.plotStyle.smoothCurve, true);
 assert.equal(calls[1].options.plotStyle.monotone, false);
 assert.equal(calls[1].options.curveTooltip, 'mért hőmérséklet');
+context.probeMapping=JSON.parse(fs.readFileSync(path.join(root,'system/radiator_mapping.json'),'utf8'));
+vm.runInContext('radiatorUnitMapping=probeMapping',context);
+assert.equal(evaluate('roomRadiatorSources(2)').length,4);
+assert.deepEqual(evaluate('roomRadiatorSources(5)'),['merce_radiatorok_2_shelly/temperature:101','merce_radiatorok_2_shelly/temperature:102']);
+assert.deepEqual(evaluate('roomRadiatorSources(12)'),['merce_radiatorok_2_shelly/temperature:100']);
+assert.deepEqual(evaluate('roomRadiatorSources(8)'),[]);
+assert.equal(evaluate('roomRadiatorSources(18)').length,1); // Unit ownership includes its legacy area aliases.
+context.mainGraphSetting={title:'room_metrics',roomNumToPlot:2,sourceElementId:'Gólyafészek',day:'2026-10-20',metric:'temperature'};
+vm.runInContext("selectRoomMetricPlot('radiators')",context);
+assert.deepEqual(evaluate('mainGraphSetting.types'),['radiator_temps']);
+assert.equal(context.mainGraphSetting.day,'2026-10-20');
+assert.equal(context.mainGraphContentLocked,true);
+context.setting=context.mainGraphSetting;
+context.data={radiator_temps:[{h_of_day_frac:1,probes:{
+    'ovi_radiatorok_shelly/temperature:100':20,'ovi_radiatorok_shelly/temperature:101':30,
+    'ovi_radiatorok_shelly/temperature:102':40,'ovi_radiatorok_shelly/temperature:103':50,
+    'merce_radiatorok_2_shelly/temperature:101':99}}]};
+calls.length=0;
+vm.runInContext('drawRoomMetricPlot(data,setting)',context);
+assert.equal(calls.length,5);
+assert.equal(calls[0].options.axesLabel.left,'°C');
+assert.equal(calls[0].options.plotLabelTabs.selected,'radiators');
+assert.equal(calls[0].options.plotLabelTabs.day,'2026-10-20');
+assert.equal(calls[0].options.plotLabelTabs.prefix,'Gólyafészek — ');
+assert.equal(calls[0].options.plotLabelTabs.choices.length,6);
+assert.deepEqual(calls.slice(1).map(call=>call.data[0].value),[20,30,40,50]);
+assert.equal(new Set(calls.slice(1).map(call=>call.options.plotStyle.col)).size,4);
+assert.deepEqual(calls.slice(1).map(call=>call.options.curveTooltip),[100,101,102,103].map(probe=>'ovi_radiatorok_shelly/temperature:'+probe));
+assert.ok(calls.slice(1).every(call=>call.options.plotStyle.endCap));
+calls.length=0;
+context.data={};
+vm.runInContext('drawRoomMetricPlot(data,setting)',context);
+assert.equal(calls.length,1);
+assert.equal(calls[0].options.emptyMessage,'Az adott napra nincs adat.');
+context.roomsDataAndState[8]={name:'Kisterem'};
+context.setting={...context.setting,roomNumToPlot:8};
+calls.length=0;
+vm.runInContext('drawRoomMetricPlot(data,setting)',context);
+assert.equal(calls.length,1);
+assert.equal(calls[0].options.emptyMessage,'A szobához nincs radiátor-hőmérő rendelve.');
+assert.equal(calls[0].options.plotLabelTabs.choices.length,6);
 const tooltip = {
     attrs: {}, styles: {}, label: '', interrupt() { return this; },
     attr(name, value) { if (arguments.length === 1) return this.attrs[name]; this.attrs[name] = value; return this; },

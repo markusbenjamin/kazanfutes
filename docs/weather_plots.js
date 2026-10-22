@@ -1,17 +1,17 @@
 const WEATHER_PLOT_METRICS = {
-    temperature: { label: 'hőm.', key: 'temperature_c', unit: '°C', color: 'rgb(28, 3, 252)', precision: 1 },
+    temperature: { label: 'hőm./harmatp.', key: 'temperature_c', unit: '°C', color: 'rgb(28, 3, 252)', precision: 1 },
     humidity: { label: 'páratart.', key: 'humidity_pct', unit: '%', color: 'rgb(100, 180, 255)', precision: 0 },
-    dewpoint: { label: 'harmatp.', key: 'dewpoint_c', unit: '°C', color: 'rgb(0, 130, 150)', precision: 1 },
     wind: { label: 'szél', key: 'wind_speed_m_s', unit: 'm/s', color: 'rgb(0, 100, 0)', precision: 1 },
     gust: { label: 'széllökés', key: 'gust_speed_m_s', unit: 'm/s', color: 'rgb(100, 150, 0)', precision: 1 },
     direction: { label: 'szélirány', key: 'wind_direction_deg', color: 'rgb(0, 100, 0)' },
     light: { label: 'fény', key: 'illuminance_lux', unit: 'klux', displayFactor: .001, color: 'rgb(190, 155, 0)', precision: 1 },
     uv: { label: 'UV', key: 'uv_index', unit: 'UV', color: 'rgb(150, 50, 150)', precision: 1 },
     rain: { label: 'csapadék össz.', key: 'precipitation_mm', unit: 'mm', color: 'rgb(40, 80, 180)', precision: 1 },
-    rainStatus: { label: 'esőjel', key: 'rain_status', unit: '0/1', color: 'rgb(60, 100, 180)', precision: 0 },
     pressure: { label: 'légnyomás', key: 'pressure_hpa', unit: 'hPa', color: 'rgb(70, 70, 70)', precision: 1 }
 };
 let weatherMetricSelection = 'temperature';
+// Local experiment: set false to restore the daily-total precipitation plot.
+const WEATHER_RAIN_RATE_PREVIEW = true;
 
 function createWeatherMetricPlotSetting(day, metric = weatherMetricSelection) {
     if (!WEATHER_PLOT_METRICS[metric]) metric = 'temperature';
@@ -94,16 +94,71 @@ function weatherRainPeriods(readings, endHour) {
         .map(row => ({...row, occupancy: row.rain_status})), endHour, 15 / 60);
 }
 
+function weatherDailyPrecipitation(readings) {
+    const first = readings.filter(row => Number.isFinite(row.h_of_day_frac) && Number.isFinite(row.precipitation_mm))
+        .reduce((earliest, row) => !earliest || row.h_of_day_frac < earliest.h_of_day_frac ? row : earliest, null);
+    if (!first) return readings;
+    return readings.map(row => ({...row, precipitation_mm: Number.isFinite(row.precipitation_mm)
+        ? row.precipitation_mm - first.precipitation_mm : row.precipitation_mm}));
+}
+
+function weatherGaussianIntegral(z) {
+    // Error-function approximation: Gaussian mass between two times is their difference.
+    const x = Math.abs(z) / Math.SQRT2, t = 1 / (1 + .3275911 * x);
+    const erf = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t
+        - .284496736) * t + .254829592) * t * Math.exp(-x * x);
+    return (1 + Math.sign(z) * erf) / 2;
+}
+
+function weatherPrecipitationRate(readings) {
+    const rates = [], sigma = 5 / 60, radius = 3 * sigma;
+    let samples = [];
+    const finish = () => {
+        const intervals = samples.slice(1).map((row, index) => ({start: samples[index].h_of_day_frac,
+            end: row.h_of_day_frac, rate: (row.precipitation_mm - samples[index].precipitation_mm)
+                / (row.h_of_day_frac - samples[index].h_of_day_frac)}));
+        samples.forEach((row, index) => {
+            let weighted = 0, weights = 0;
+            if (index) for (const interval of intervals) {
+                const start = Math.max(interval.start, row.h_of_day_frac - radius);
+                const end = Math.min(interval.end, row.h_of_day_frac + radius);
+                if (end <= start) continue;
+                const weight = weatherGaussianIntegral((end - row.h_of_day_frac) / sigma)
+                    - weatherGaussianIntegral((start - row.h_of_day_frac) / sigma);
+                weighted += interval.rate * weight; weights += weight;
+            }
+            rates.push({h_of_day_frac: row.h_of_day_frac, precipitation_rate_mm_h: weights ? weighted / weights : null});
+        });
+        samples = [];
+    };
+    readings.filter(row => Number.isFinite(row.h_of_day_frac)).slice()
+        .sort((a, b) => a.h_of_day_frac - b.h_of_day_frac).forEach(row => {
+            const previous = samples.at(-1);
+            const hours = previous ? row.h_of_day_frac - previous.h_of_day_frac : 0;
+            if (!Number.isFinite(row.precipitation_mm) || previous && (hours <= 0 || hours > 15 / 60
+                || row.precipitation_mm < previous.precipitation_mm)) {
+                finish();
+            }
+            if (Number.isFinite(row.precipitation_mm)) samples.push(row);
+            else rates.push({h_of_day_frac: row.h_of_day_frac, precipitation_rate_mm_h: null});
+        });
+    finish();
+    return rates;
+}
+
 function drawWeatherMetricPlot(data, setting) {
-    const metric = WEATHER_PLOT_METRICS[setting.metric] || WEATHER_PLOT_METRICS.temperature;
+    const rainRate = setting.metric === 'rain' && WEATHER_RAIN_RATE_PREVIEW;
+    const metric = rainRate ? {...WEATHER_PLOT_METRICS.rain, label: 'csapadék', key: 'precipitation_rate_mm_h', unit: 'mm/h'}
+        : WEATHER_PLOT_METRICS[setting.metric] || WEATHER_PLOT_METRICS.temperature;
     const rawReadings = data.weather_station || [];
-    const readings = metric.displayFactor ? rawReadings.map(row => ({...row,
+    const readings = rainRate ? weatherPrecipitationRate(rawReadings) : setting.metric === 'rain' ? weatherDailyPrecipitation(rawReadings) : metric.displayFactor ? rawReadings.map(row => ({...row,
         [metric.key]: Number.isFinite(row[metric.key]) ? row[metric.key] * metric.displayFactor : row[metric.key]})) : rawReadings;
     const direction = setting.metric === 'direction';
-    const rainIndicator = setting.metric === 'rainStatus';
     const smoothWind = setting.metric === 'wind' || setting.metric === 'gust';
-    const segments = direction || rainIndicator ? [] : splitRoomMetricReadings(readings, metric.key, 15 / 60);
-    const values = segments.flat().map(row => row[metric.key]);
+    const curves = [{metric, tooltip: setting.metric === 'temperature' ? 'hőmérséklet' : undefined}];
+    if (setting.metric === 'temperature') curves.push({metric: {key: 'dewpoint_c', unit: '°C', color: 'rgb(0, 130, 150)', precision: 1}, tooltip: 'harmatpont'});
+    curves.forEach(curve => { curve.segments = direction ? [] : splitRoomMetricReadings(readings, curve.metric.key, 15 / 60); });
+    const values = curves.flatMap(curve => curve.segments.flat().map(row => row[curve.metric.key]));
     let range = [0, 1];
     if (metric.key === 'humidity_pct') range = [0, 100];
     else if (values.length) {
@@ -112,20 +167,21 @@ function drawWeatherMetricPlot(data, setting) {
     }
     const common = { parentId: 'graph', margins: {top: .24, right: .03, bottom: .15, left: .1},
         domain: {bottom: [0, 24], left: range}, dataKeys: {bottom: 'h_of_day_frac', left: metric.key},
-        axesLabel: {bottom: direction ? '' : 'óra', left: direction || rainIndicator ? '' : metric.unit},
-        axes: {left: !direction && !rainIndicator, bottom: !direction}, smoothing: {bottom: 0, left: smoothWind ? 5 : 0},
+        axesLabel: {bottom: direction ? '' : 'óra', left: direction ? '' : metric.unit},
+        axes: {left: !direction, bottom: !direction}, smoothing: {bottom: 0, left: smoothWind ? 5 : 0},
         plotStyle: {joined: true, col: metric.color, thickness: '2', monotone: !smoothWind, smoothCurve: smoothWind, startCap: false, endCap: true},
         segment: {do: false}, plotLabel: '', curveEndText: {show: false} };
-    const rainPeriods = rainIndicator ? weatherRainPeriods(readings, setting.day === dayStamp() ? getFractionalHourOfDay() : 24)
-        .map(period => ({...period, y1: 0, y2: 1, fill: 'rgba(60,100,180,0.16)', stroke: 'none', strokeWeight: 0, dashed: false})) : [];
+    const rainPeriods = setting.metric === 'rain' ? weatherRainPeriods(rawReadings, setting.day === dayStamp() ? getFractionalHourOfDay() : 24)
+        .map(period => ({...period, y1: range[0], y2: range[1], fill: 'rgba(60,100,180,0.05)', stroke: 'none', strokeWeight: 0, dashed: false})) : [];
     const area = drawPlot([], {...common, rects: {when: 'before', list: rainPeriods},
         plotLabelTabs: {prefix: 'WS90 — ', day: setting.day, onDayChange: navigateSelectorPlotDay,
-        columns: 4, selected: setting.metric, choices: Object.entries(WEATHER_PLOT_METRICS).map(([key, value]) => ({key, label: value.label, color: value.color})),
+        columns: 3, selected: setting.metric, choices: Object.entries(WEATHER_PLOT_METRICS).map(([key, value]) => ({key, label: key === 'rain' && WEATHER_RAIN_RATE_PREVIEW ? 'csapadék' : value.label, color: value.color})),
         onSelect: selectWeatherMetricPlot}});
     if (direction) { drawWindDirectionHistogram(area.plotElement, area.plotDims, readings); return; }
-    if (rainIndicator) return;
-    segments.forEach((segment, index) => drawPlot(segment, {...common, background: {show: false}, axes: {left: false, bottom: false},
-        showLockLabel: false, curveEndText: {show: index === segments.length - 1,
-            text: Number(segment.at(-1)[metric.key].toFixed(metric.precision)) + ' ' + metric.unit,
-            col: metric.color, fontSize: 6, xOffset: 3, yOffset: 1.75}}));
+    curves.forEach(curve => curve.segments.forEach((segment, index) => drawPlot(segment, {...common,
+        dataKeys: {...common.dataKeys, left: curve.metric.key}, plotStyle: {...common.plotStyle, col: curve.metric.color},
+        curveTooltip: curve.tooltip, background: {show: false}, axes: {left: false, bottom: false},
+        showLockLabel: false, curveEndText: {show: index === curve.segments.length - 1,
+            text: Number(segment.at(-1)[curve.metric.key].toFixed(curve.metric.precision)) + ' ' + curve.metric.unit,
+            col: curve.metric.color, fontSize: 6, xOffset: 3, yOffset: 1.75}})));
 }

@@ -4,7 +4,8 @@ const ROOM_PLOT_METRICS = {
     humidity: { label: 'páratart.', key: 'hum', unit: '%', color: 'rgb(100, 180, 255)', precision: 1 },
     co2: { label: 'CO₂', key: 'co2', unit: 'ppm', color: 'rgb(80, 170, 0)', precision: 0 },
     lux: { label: 'lux', key: 'lux', unit: 'lux', color: 'rgb(190, 155, 0)', precision: 0 },
-    occupancy: { label: 'jelenl.', key: 'occupancy_average', unit: '%', color: 'rgb(0, 0, 0)', precision: 0 }
+    occupancy: { label: 'jelenl.', key: 'occupancy_average', unit: '%', color: 'rgb(0, 0, 0)', precision: 0 },
+    radiators: { label: 'radiátor hőm.', unit: '°C', color: 'rgb(200,0,0)' }
 };
 const roomMetricSelections = {};
 
@@ -45,7 +46,8 @@ function createRoomMetricPlotSetting(base, elementId, metric = roomMetricSelecti
     return {
         title: 'room_metrics', roomNumToPlot: base.roomNumToPlot, sourceElementId: elementId,
         day: base.day, metric, conditionals: [],
-        types: ['room_' + base.roomNumToPlot + (metric === 'temperature' || metric === 'humidity' ? '_measurements' : '_environment')]
+        types: metric === 'radiators' ? ['radiator_temps']
+            : ['room_' + base.roomNumToPlot + (metric === 'temperature' || metric === 'humidity' ? '_measurements' : '_environment')]
     };
 }
 
@@ -68,6 +70,15 @@ function selectRoomMetricPlot(metric) {
     mainGraphContentLocked = true;
     drawMainGraph({ [mainGraphSetting.day]: {} });
     drawMainGraph();
+}
+
+function roomMetricPlotTabs(setting) {
+    return {
+        prefix: roomsDataAndState[setting.roomNumToPlot].name + ' — ', selected: setting.metric,
+        day: setting.day, onDayChange: navigateSelectorPlotDay,
+        choices: Object.entries(ROOM_PLOT_METRICS).map(([key, value]) => ({ key, label: value.label, color: value.color })),
+        onSelect: selectRoomMetricPlot
+    };
 }
 
 function splitRoomMetricReadings(readings, key, maxGapHours) {
@@ -108,6 +119,7 @@ function extractRoomOccupancyPeriods(readings, endHour, maxHoldHours = 15 / 60) 
 
 function drawRoomMetricPlot(data, setting) {
     const metricName = ROOM_PLOT_METRICS[setting.metric] ? setting.metric : 'temperature';
+    if (metricName === 'radiators') return drawRoomRadiatorPlot(data, setting);
     const metric = ROOM_PLOT_METRICS[metricName];
     const isTemperature = metricName === 'temperature';
     const type = 'room_' + setting.roomNumToPlot + (isTemperature || metricName === 'humidity' ? '_measurements' : '_environment');
@@ -135,16 +147,14 @@ function drawRoomMetricPlot(data, setting) {
         segment: { do: false }, plotLabel: '', curveEndText: { show: false },
         curveTooltip: isTemperature ? 'mért hőmérséklet' : ''
     };
-    const roomName = roomsDataAndState[setting.roomNumToPlot].name;
     const endHour = setting.day === dayStamp() ? getFractionalHourOfDay() : 24;
     const periods = isOccupancy ? extractRoomOccupancyPeriods(readings, endHour)
         .map(period => ({ ...period, y1: 0, y2: 100, fill: 'rgba(180,180,180,0.3)' })) : [];
     drawPlot([], { ...common, rects: { when: 'before', list: periods },
-        emptyMessage: isOccupancy && !segments.length ? 'Átlagos jelenlét nem elérhető.' : '', plotLabelTabs: {
-        prefix: roomName + ' — ', selected: metricName, day: setting.day, onDayChange: navigateSelectorPlotDay,
-        choices: Object.entries(ROOM_PLOT_METRICS).map(([key, value]) => ({ key, label: value.label, color: value.color })),
-        onSelect: selectRoomMetricPlot
-    }});
+        now: {show: isOccupancy && setting.day === dayStamp(), pos: getFractionalHourOfDay(),
+            color: 'rgba(230,130,160,0.45)', dash: '.5 1.5', thickness: .5},
+        emptyMessage: isOccupancy && !segments.length ? 'Átlagos jelenlét nem elérhető.' : '',
+        plotLabelTabs: roomMetricPlotTabs({...setting, metric: metricName})});
     segments.forEach((segment, index) => {
         const value = segment.at(-1)[metric.key];
         const text = Number(value.toFixed(metric.precision)) + ' ' + metric.unit;

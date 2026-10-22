@@ -216,6 +216,7 @@ function getDataFromFirebase() {
 
             systemOn = systemJSON['switch']['system'] == 1 ? true : false;
             systemNode = systemJSON;
+            updateRadiatorLiveState(systemJSON);
             updateBoilerPowerMarkers(systemJSON.state.boiler_plugs);
 
             condensedSchedule = scheduleJSON.condensed_schedule;
@@ -227,7 +228,7 @@ function getDataFromFirebase() {
             cycles.forEach(cycleNum => {
                 const cycleState = systemJSON.state.pump_states[cycleNum];
                 states += cycleState;
-                updateCycleColor(cycleNum, cycleState);
+                updateCycleColor(cycleNum, cycleState, cycleSupplyTemperature(systemJSON, cycleNum));
             }
             );
             updateBoilerColor(states > 0 ? 1 : 0);
@@ -650,7 +651,7 @@ function collectDataFromGitHub(dataToCollect, drawFunction) {
         } else {
             // Not fresh (or doesn't exist) -> fetch from GitHub
             // Keep the new power/flow stream separate from cached pre-power trial responses.
-            const newMetricStream = type.endsWith('_heat_delivery') || type.endsWith('_environment') || type === 'weather_station' || type === 'room_control_kpis';
+            const newMetricStream = type.startsWith('radiator_') || type.endsWith('_water_temps') || type.endsWith('_heat_delivery') || type.endsWith('_environment') || type === 'weather_station' || type === 'room_control_kpis';
             const dataRef = newMetricStream ? 'main' : 'refs/heads/main';
             const url = "https://raw.githubusercontent.com/markusbenjamin/kazanfutes/" + dataRef + "/data/formatted/"
                 + day + "/" + type + ".json"
@@ -1330,9 +1331,9 @@ function drawPlot(plotData, userOptions) {
                 .attr("y1", 0)
                 .attr("x2", bottomScale(ops.now.pos))
                 .attr("y2", plotDims.h)
-                .attr("stroke", "gray")
-                .attr("stroke-width", 0.5)
-                .attr("stroke-dasharray", "1 2");
+                .attr("stroke", ops.now.color || "gray")
+                .attr("stroke-width", ops.now.thickness ?? 0.5)
+                .attr("stroke-dasharray", ops.now.dash || "1 2");
         }
     }
     return { plotElement, plotDims };
@@ -1379,45 +1380,21 @@ function updateRoomColor(roomId, temp, lastUpdated, roomValveInfo, roomOccupancy
                     maskDef
                 )
         }
-        const valveFillColorScale = d3.scaleSequential(d3.interpolateRgb("rgba(0,0,255,1)", "red")).domain([0, 30]).clamp(true);
-        const valveStrokeColorScale = d3.scaleSequential(d3.interpolateRgb("rgba(0,0,180,1)", "rgba(200,0,0,1)")).domain([0, 30]).clamp(true);
-        for (const valve in roomValveInfo) {
-            let state = +roomValveInfo[valve];
-            d3.select("#" + valve + "_valve").style("fill", valveFillColorScale(state)).style("fill-opacity", "1");
-            d3.select("#" + valve + "_valve").style("stroke", valveStrokeColorScale(state)).style("stroke-opacity", "1");
-
-            //d3.select("#" + valve + "_valve").style("stroke", state / 100 > 0.02 ? "rgba(255,0,0,1)" : "rgba(0,0,200,1)").style("stroke-opacity", "1");
-        }
+        // Radiator colours and per-TRV interactions are managed by radiator_plots.js.
     }
 }
 
-function updateCycleColor(cycle, state) {
-    d3.select("#cycle" + cycle).style("stroke", state == 1 ? "rgba(255,0,0,1)" : "rgba(0,0,200,1)");
+function updateCycleColor(cycle, state, supplyTemperature) {
+    const pipeColor = state === 1 ? heatingTemperatureColor(supplyTemperature) : 'rgb(0,0,200)';
+    d3.select("#cycle" + cycle).style("stroke", pipeColor);
     d3.select("#cycle" + cycle).style("stroke-opacity", "1");
 
-    d3.select("#cycle" + cycle + "_radiators")
-        .selectAll("*")
-        .style("fill", state == 1 ? "rgba(255,0,0,1)" : "rgba(0,0,200,1)")
-        .style("fill-opacity", "1")
-        .style("stroke-opacity", 0);
+    // Radiators independently choose probe temperature, TRV percentage, then piping colour.
     if (cycle == 1) {
-        d3.select("#cycle" + cycle + "_2").style("stroke", state == 1 ? "rgba(255,0,0,1)" : "rgba(0,0,200,1)");
+        d3.select("#cycle" + cycle + "_2").style("stroke", pipeColor);
         d3.select("#cycle" + cycle + "_2").style("stroke-opacity", "1");
     }
 
-    if (cycle == 1 || cycle == 2) {
-        d3.select("#cycle" + cycle + "_radiators")
-            .selectAll("*")
-            .style("fill", "rgba(0,0,200,1)")
-            .style("fill-opacity", "1")
-            .style("stroke-opacity", 0);
-
-        d3.select("#oktopusz_keramia_radiators")
-            .selectAll("*")
-            .style("fill", "rgba(0,0,200,1)")
-            .style("fill-opacity", 1)
-            .style("stroke-opacity", 0);
-    }
 }
 
 let boilerState = null;
@@ -2358,7 +2335,7 @@ function drawMainGraph(graphData = null) {
     }
     else {
         graphData = {...(graphData[mainGraphSetting.day] || {})};
-        const ordinary = !['cycle_water_temp', 'room_metrics', 'weather_metrics'].includes(mainGraphSetting.title);
+        const ordinary = !['radiator', 'cycle_water_temp', 'room_metrics', 'weather_metrics'].includes(mainGraphSetting.title);
         const temperatureType = mainGraphSetting.title === 'room_plot' ? 'room_' + mainGraphSetting.roomNumToPlot + '_measurements' : null;
         const required = temperatureType ? [temperatureType] : mainGraphSetting.types.filter(type => !['override_requests', 'heating_state'].includes(type));
         if (ordinary && !required.some(type => Array.isArray(graphData[type]) && graphData[type].length) &&
@@ -2374,6 +2351,9 @@ function drawMainGraph(graphData = null) {
             clearMainGraphs();
             let range;
             switch (mainGraphSetting.title) {
+                case 'radiator':
+                    drawRadiatorPlot(graphData, mainGraphSetting);
+                    break;
                 case "gas_usage":
                     range = [0, 10];
 
@@ -2996,6 +2976,7 @@ d3.xml(isMobile ? "canvas_mobile.svg" : "canvas.svg").then(fileData => {
     initializeBoilerPowerMarkers();
     initializeInfoboxes();
     initializeMainGraphArea();
+    initializeRadiators();
     setInfoboxHovers();
     if (!isMobile) { // For now only in desktop view
         addSpringyEasterEgg("OktopuszKeramia", "kövek", "drawing", "tooltip");

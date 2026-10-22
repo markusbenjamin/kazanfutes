@@ -175,12 +175,15 @@ function drawCycleHeatPlot(data, setting) {
     const metric = { ...CYCLE_HEAT_METRICS[metricName] };
     if (metricName === 'pump') metric.key = 'pump_' + setting.cycleNum + '_power';
     const type = metricName === 'pump' ? 'pumps_power' : 'cycle_' + setting.cycleNum + (metricName === 'temperature' ? '_water_temps' : '_heat_delivery');
-    const segments = splitCycleHeatReadings(data[type] || [], metric.key, metricName === 'pump' ? Infinity : 3 / 60);
-    const measured = segments.flat();
+    const curves = [{key: metric.key, color: metric.color, tooltip: metricName === 'temperature' ? 'előremenő' : ''}];
+    if (metricName === 'temperature') curves.push({key: 'return_temp', color: 'rgb(0, 40, 150)', tooltip: 'visszatérő'});
+    curves.forEach(curve => curve.segments = splitCycleHeatReadings(data[type] || [], curve.key, metricName === 'pump' ? Infinity : 3 / 60));
+    const temperatures = curves.flatMap(curve => curve.segments.flat().map(reading => reading[curve.key]));
+    const measured = curves[0].segments.flat();
     let range, tickStep;
     if (metricName === 'temperature') {
-        const extent = d3.extent(measured, reading => reading[metric.key]);
-        range = measured.length ? [Math.floor(extent[0] / 5) * 5 - 5, Math.ceil(extent[1] / 5) * 5 + 5] : [0, 80];
+        const extent = d3.extent(temperatures, value => value);
+        range = temperatures.length ? [Math.floor(extent[0] / 5) * 5 - 5, Math.ceil(extent[1] / 5) * 5 + 5] : [0, 80];
         tickStep = 5;
     } else {
         const top = Math.max(0, ...measured.map(reading => reading[metric.key]));
@@ -212,15 +215,16 @@ function drawCycleHeatPlot(data, setting) {
             choices: Object.entries(CYCLE_HEAT_METRICS).map(([key, value]) => ({key, label: value.label, color: value.color})),
             onSelect: selectCycleHeatPlot } : false
     });
-    segments.forEach((segment, index) => {
+    curves.forEach(curve => curve.segments.forEach((segment, index) => {
         const last = segment.at(-1);
-        const value = Number(last[metric.key].toFixed(metric.precision));
+        const value = Number(last[curve.key].toFixed(metric.precision));
         const endText = value + (metricName === 'temperature' ? '' : ' ') + metric.unit;
         drawPlot(segment, { ...common, plotLabel: '', showLockLabel: false, background: { show: false }, axes: { left: false, bottom: false },
-            curveEndText: { show: index === segments.length - 1, fontSize: 6,
-                text: endText, col: metric.color, xOffset: 3, yOffset: 1.75 }
+            dataKeys: {...common.dataKeys, left: curve.key}, plotStyle: {...common.plotStyle, col: curve.color}, curveTooltip: curve.tooltip,
+            curveEndText: { show: index === curve.segments.length - 1, fontSize: 6,
+                text: endText, col: curve.color, xOffset: 3, yOffset: 1.75 }
         });
-    });
+    }));
 }
 
 function formatCycleEnergyDisplay(readings) {
