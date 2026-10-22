@@ -23,7 +23,7 @@ from utils.boiler_power_formatter import format_boiler_power, format_boiler_comm
 from utils.external_temperature_formatter import format_ws90_external_temperatures, format_ws90_weather
 from utils.heat_delivery_formatter import format_cycle_heat_delivery
 from utils.room_environment_formatter import format_room_environment
-from utils.room_control_kpi_formatter import format_room_control_kpis
+from utils.room_control_kpi_formatter import format_room_control_kpis, format_room_control_errors
 from utils.radiator_formatter import format_radiator_temperatures, format_radiator_valves
 
 parse_old_logs = False
@@ -501,6 +501,8 @@ for digestion_day in digestion_days:
                                                       end_time=datetime.now() if digestion_day.date() == datetime.now().date() else None)
             export_json_list_to_json_file(formatted_data,
                 f'{export_path_prefix}data/formatted/{digestion_daystamp}/room_control_kpis.json')
+            export_json_list_to_json_file(format_room_control_errors(entries, digestion_daystamp, get_rooms_info(just_controlled=False)),
+                f'{export_path_prefix}data/formatted/{digestion_daystamp}/room_control_errors.json')
             success = True
             report(f'Done: {action_string}.', verbose=True)
         except Exception:

@@ -10,6 +10,43 @@ STAMP_FORMAT = '%Y-%m-%d-%H-%M-%S'
 QUADRANTS = ('below_on', 'above_on', 'below_off', 'above_off')
 
 
+def format_room_control_errors(entries, daystamp, rooms, max_sensor_age_seconds=3600):
+    """Daily signed set-minus-measured error gated by each room's own demand.
+
+    Use complete end-of-run snapshots, not independently timed vote/target log
+    records. No demand means exactly zero, even without a temperature reading.
+    Unknown demand or unavailable temperatures during demand remain unknown.
+    """
+    controlled = [str(room) for room, info in rooms.items()
+                  if info.get('controlled') and info.get('cycle') is not None]
+    result = {}
+    for entry in entries:
+        if not isinstance(entry, dict) or not all(isinstance(entry.get(key), dict)
+                                                for key in ('room_states', 'measured_temps', 'set_temps')):
+            continue
+        observed = _stamp(entry.get('timestamp'))
+        if observed is None or observed.strftime('%Y-%m-%d') != daystamp:
+            continue
+        errors, demands = {}, {}
+        for room in controlled:
+            demand = entry['room_states'].get(room)
+            known = isinstance(demand, (bool, int)) and demand in (0, 1)
+            demands[room] = int(demand) if known else None
+            error = None
+            if known and not demand:
+                error = 0.
+            elif known:
+                measured = _number(entry['measured_temps'].get(room))
+                target = _number(entry['set_temps'].get(room))
+                seen = _stamp((entry.get('sensor_last_updated') or {}).get(room))
+                fresh = seen is not None and -30 <= (observed - seen).total_seconds() <= max_sensor_age_seconds
+                if fresh and measured is not None and target is not None and target >= 0:
+                    error = target - measured
+            errors[room] = error
+        result[entry['timestamp']] = {'timestamp': entry['timestamp'], 'errors': errors, 'demands': demands}
+    return [result[key] for key in sorted(result)]
+
+
 def _stamp(value):
     try:
         return datetime.strptime(value, STAMP_FORMAT)
