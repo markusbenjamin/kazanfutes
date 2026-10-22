@@ -76,6 +76,23 @@ const empty = plot(1, {});
 assert.equal(empty.data.length, 0);
 assert.equal(empty.options.rects.list.length, 0);
 assert.equal(empty.options.curveEndText.show, false);
+plot(1, {cycle_1_water_temps:[{h_of_day_frac:1,water_temp:60,return_temp:25},
+    {h_of_day_frac:1.02,water_temp:62,return_temp:26}]});
+assert.equal(calls.length,3);
+assert.equal(calls[1].options.curveTooltip,'előremenő');
+assert.equal(calls[2].options.curveTooltip,'visszatérő');
+assert.equal(calls[2].options.dataKeys.left,'return_temp');
+assert.equal(calls[2].options.plotStyle.col,'rgb(0, 40, 150)');
+assert.equal(calls[2].options.plotStyle.thickness,'1');
+assert.ok(calls[0].options.domain.left[0] <= 25 && calls[0].options.domain.left[1] >= 62);
+plot(1, {cycle_1_water_temps:[{h_of_day_frac:1,water_temp:null,return_temp:0}]});
+assert.equal(calls.length,2);
+assert.equal(calls[1].options.curveTooltip,'visszatérő');
+assert.equal(calls[1].options.curveEndText.text,'0°C');
+plot(1, {cycle_1_water_temps:[{h_of_day_frac:1,water_temp:60,return_temp:30},
+    {h_of_day_frac:1.01,water_temp:61,return_temp:null},{h_of_day_frac:1.02,water_temp:62,return_temp:31}]});
+assert.equal(calls.filter(call=>call.options.curveTooltip==='előremenő').length,1);
+assert.equal(calls.filter(call=>call.options.curveTooltip==='visszatérő').length,2);
 const historical = plot(4, {heating_state: samples}, '2026-10-20');
 assert.equal(historical.options.rects.list[0].x2, 24);
 const drawRequests = [];

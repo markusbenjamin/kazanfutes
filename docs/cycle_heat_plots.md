@@ -24,7 +24,12 @@ activation do not bubble into the dashboard's outside-click unlock handler.
 
 ## Formatted data
 
-- Temperature: existing `cycle_N_water_temps.json`, `water_temp` in °C.
+- Temperature: existing `cycle_N_water_temps.json`, `water_temp` (supply) and
+  `return_temp` in °C, from the mapped meter's `flow_temperature_c` and
+  `return_temperature_c`. The same view overlays thin red supply and deep-blue
+  return curves with hover labels `előremenő` and `visszatérő`; no extra legend.
+  Their shared scale includes both series. Invalid values are null and split
+  only the affected curve. Older supply-only files still render supply normally.
 - Thermal power and flow: new `cycle_N_heat_delivery.json`, `power_kw` in kW
   and `flow_m3h` in m³/h; also `energy_kwh` and `energy_partial` for the dials.
 - Electrical pump power: existing `pumps_power.json`, only `pump_N_power` in W.
