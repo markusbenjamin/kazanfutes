@@ -249,5 +249,8 @@ function drawRadiatorPlot(data, setting, target = radiatorTargets.get(setting.so
         prefix:target.label + ' — ',selected:metric,day:setting.day,onDayChange:navigateMainPlotDay,choices,onSelect:selectRadiatorMetric} : false)});
     curves.forEach(curve => curve.segments.forEach((segment, index) => drawPlot(segment, {...common, background:{show:false},
         axes:{left:false,bottom:false},showLockLabel:false,plotLabel:'',curveTooltip:curve.label,
+        curveEndText:{show:index === curve.segments.length - 1,
+            text:Number(segment.at(-1).value.toFixed(metric === 'valves' ? 0 : 1)) + (metric === 'valves' ? '%' : ' °C'),
+            col:curve.color,fontSize:6,xOffset:3,yOffset:1.75},
         plotStyle:{...common.plotStyle,col:curve.color,endCap:metric !== 'valves' && index === curve.segments.length - 1}})));
 }

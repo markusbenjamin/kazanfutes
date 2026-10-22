@@ -135,13 +135,16 @@ function drawRoomMetricPlot(data, setting) {
     if (isOccupancy) range = [0, 100];
     else if (metricName === 'humidity') range = [0, 100];
     else if (metricName === 'temperature') range = values.length ? [Math.floor(Math.min(...values)) - 1, Math.ceil(Math.max(...values)) + 1] : [10, 30];
-    else range = [0, values.length ? Math.max(1, Math.max(...values) * 1.1) : metricName === 'co2' ? 2000 : 100];
+    else if (metricName === 'co2') range = [400, 3500];
+    else range = [0, 1500]; // Room lux: fixed across rooms and days, including empty streams.
     const common = {
         parentId: 'graph', smoothing: { bottom: 0, left: isTemperature ? 10 : 0 },
         margins: { top: .1, right: .03, bottom: .15, left: .1 },
-        domain: { bottom: [0, 24], left: range },
+        domain: { bottom: [0, 24], left: range, niceLeft: metricName !== 'co2' && metricName !== 'lux' },
         dataKeys: { bottom: 'h_of_day_frac', left: metric.key },
-        axesLabel: { bottom: 'óra', left: isOccupancy ? 'átlagos ' + selectorWeekday(setting.day, true) + ' jelenlét (%)' : metric.unit },
+        axesLabel: { bottom: 'óra', left: isOccupancy ? 'átlagos ' + selectorWeekday(setting.day, true) + ' jelenlét (%)'
+            : metricName === 'co2' ? 'kppm' : metric.unit },
+        tickFormat: { left: metricName === 'co2' ? value => String(Number((value / 1000).toFixed(2))) : null },
         plotStyle: { joined: true, col: metric.color, thickness: '2', startCap: false, endCap: !isOccupancy,
             smoothCurve: isTemperature, monotone: !isTemperature },
         segment: { do: false }, plotLabel: '', curveEndText: { show: false },

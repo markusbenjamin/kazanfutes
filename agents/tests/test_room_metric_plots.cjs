@@ -75,6 +75,14 @@ for (const [metric, key, value, unit] of [
     assert.equal(calls[1].options.smoothing.left, metric === 'temperature' ? 10 : 0);
     assert.equal(calls[1].options.plotStyle.thickness, '2');
     assert.equal(calls[1].options.curveEndText.text, value+' '+unit);
+    if (metric === 'co2') {
+        assert.equal(calls[0].options.axesLabel.left,'kppm');
+        assert.equal(calls[0].options.tickFormat.left(400),'0.4');
+        assert.equal(calls[0].options.tickFormat.left(1000),'1');
+        assert.equal(calls[0].options.tickFormat.left(3500),'3.5');
+        assert.equal(calls[1].data[0].co2,650);
+        assert.equal(calls[1].options.curveEndText.text,'650 ppm');
+    } else assert.equal(calls[0].options.tickFormat.left,null);
     assert.deepEqual(JSON.parse(JSON.stringify(calls[0].options.plotLabelTabs.choices.map(c => c.label))), ['hőm.', 'páratart.', 'CO₂', 'lux', 'jelenl.', 'radiátor hőm.']);
 }
 assert.equal(evaluate('ROOM_PLOT_METRICS.temperature.color'), 'rgba(255,0,0,1)');
@@ -82,6 +90,22 @@ assert.equal(evaluate('ROOM_PLOT_METRICS.humidity.color'), 'rgb(100, 180, 255)')
 assert.equal(evaluate('ROOM_PLOT_METRICS.co2.color'), 'rgb(80, 170, 0)');
 assert.equal(evaluate('ROOM_PLOT_METRICS.lux.color'), 'rgb(190, 155, 0)');
 assert.equal(evaluate('ROOM_PLOT_METRICS.occupancy.color'), 'rgb(0, 0, 0)');
+for (const [metric,range] of [['co2',[400,3500]],['lux',[0,1500]]]) {
+    for (const room of [1,2]) for (const day of ['2026-10-20','2026-10-21']) {
+        for (const value of [null,0,500,5000]) {
+            calls.length=0;
+            context.setting={roomNumToPlot:room,metric,day};
+            context.data=value===null?{}:{['room_'+room+'_environment']:[{h_of_day_frac:1,[metric]:value}]};
+            vm.runInContext('drawRoomMetricPlot(data,setting)',context);
+            assert.deepEqual(JSON.parse(JSON.stringify(calls[0].options.domain.left)),range);
+            assert.equal(calls[0].options.domain.niceLeft,false,'axis rounding must not expand fixed limits');
+            if (value!==null) assert.equal(calls[1].data[0][metric],value,'fixed axes must not alter readings');
+        }
+    }
+}
+context.setting={roomNumToPlot:1,metric:'occupancy',day:'2026-10-21'};
+assert.match(source,/if \(ops.domain.niceLeft !== false\) leftScale.nice\(\)/);
+assert.match(source,/\.tickFormat\(typeof ops.tickFormat\?\.left === 'function' \? ops.tickFormat.left : d => d.toFixed\(0\)\)/);
 context.observations = [{h_of_day_frac: 0, occupancy: 1}, {h_of_day_frac: .1, occupancy: 0},
     {h_of_day_frac: 2, occupancy: 1}, {h_of_day_frac: 2.1, occupancy: null},
     {h_of_day_frac: 3, occupancy: 1}, {h_of_day_frac: 4, occupancy: 1}, {h_of_day_frac: 5, occupancy: 1}];
@@ -147,6 +171,8 @@ assert.deepEqual(calls.slice(1).map(call=>call.data[0].value),[20,30,40,50]);
 assert.equal(new Set(calls.slice(1).map(call=>call.options.plotStyle.col)).size,4);
 assert.deepEqual(calls.slice(1).map(call=>call.options.curveTooltip),[100,101,102,103].map(probe=>'ovi_radiatorok_shelly/temperature:'+probe));
 assert.ok(calls.slice(1).every(call=>call.options.plotStyle.endCap));
+assert.deepEqual(calls.slice(1).map(call=>call.options.curveEndText.text),['20 °C','30 °C','40 °C','50 °C']);
+assert.ok(calls.slice(1).every(call=>call.options.curveEndText.show && call.options.curveEndText.col === call.options.plotStyle.col));
 calls.length=0;
 context.data={};
 vm.runInContext('drawRoomMetricPlot(data,setting)',context);

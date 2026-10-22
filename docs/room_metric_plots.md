@@ -27,6 +27,12 @@ All curves use thickness 2. Other metrics use shape-preserving monotone
 interpolation; temperature keeps the ordinary room chart's smoothing.
 Temperature matches the ordinary room chart's exact bright
 red; humidity is light blue; CO₂ is dark poison green; lux is golden yellow.
+Room-selector CO₂ uses a fixed linear 400–3,500 ppm domain, displayed on the
+axis as 0.4–3.5 kppm. Only tick labels are converted; stored readings and
+curve-end values remain in ppm. Room lux uses
+0–1,500 lux. These ranges stay identical across rooms and dates, even for
+empty streams or outliers. Measurement values are not clamped or rewritten.
+The WS90 weather plots are unchanged.
 Unknown values and long gaps
 break curves; missing data never become zero or vacant.
 

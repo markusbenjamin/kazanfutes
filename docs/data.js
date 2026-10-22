@@ -1013,8 +1013,8 @@ function drawPlot(plotData, userOptions) {
 
     leftScale = d3.scaleLinear()
         .domain(ops.domain.left ? ops.domain.left : d3.extent(plotData, d => d[ops.dataKeys.left]))
-        .nice()
         .range([plotDims.h, 0]);
+    if (ops.domain.niceLeft !== false) leftScale.nice();
 
     if (ops.axes.left) {
         leftAxis = plotElement.append("g")
@@ -1025,7 +1025,7 @@ function drawPlot(plotData, userOptions) {
                         (Array.isArray(ops.tickVals?.left) ? ops.tickVals.left : leftScale.ticks(10))
                             .filter(Number.isInteger)
                     )
-                    .tickFormat(d => d.toFixed(0))
+                    .tickFormat(typeof ops.tickFormat?.left === 'function' ? ops.tickFormat.left : d => d.toFixed(0))
             );
 
 
