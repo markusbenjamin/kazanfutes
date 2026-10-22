@@ -108,7 +108,7 @@ function drawPlotDateNavigation(container, dimensions, options, fontSize, locked
                 .attr('x', labelX).attr('y', labelY).style('text-anchor', 'start').style('fill', '#777')
                 .text(options.day + ' (' + selectorWeekday(options.day) + ')');
             const dateWidth = dateLabel.node().getComputedTextLength();
-            const availableDateWidth = Math.max(fontSize, dimensions.w - padding - fontSize - labelX);
+            const availableDateWidth = Math.max(fontSize, (dimensions.labelRight ?? dimensions.w) - padding - fontSize - labelX);
             if (dateWidth > availableDateWidth) dateLabel.style('font-size', fontSize * availableDateWidth / dateWidth + 'px');
         }
         arrow('›', 'Következő nap', 1, options.day < dayStamp());

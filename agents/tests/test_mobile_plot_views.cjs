@@ -67,12 +67,19 @@ assert.equal(evaluate('mobilePlotViewsEnabled()'),true,'explicit legacy mobile l
 function node(){const item={attrs:{},styles:{},events:{},append:()=>node(),attr(k,v){this.attrs[k]=v;return this;},
     style(k,v){this.styles[k]=v;return this;},text(v){this.value=v;return this;},on(k,v){this.events[k]=v;return this;}};nodes.push(item);return item;}
 context.container=node();context.options={modes:['alap','részletes','analitika'],mode:'részletes'};
-vm.runInContext('drawMobilePlotViewSelector(container,{w:300,h:24},options)',context);
+vm.runInContext('drawMobilePlotViewSelector(container,{w:300},options)',context);
 assert.deepEqual(nodes.filter(node=>node.attrs.role==='tab').map(node=>node.attrs['aria-label']),['alap','részletes','analitika']);
 assert.equal(nodes.filter(node=>node.attrs['aria-selected']==='true').length,1);
 assert.ok(nodes.filter(node=>node.attrs.role==='tab').every(node=>node.events.touchstart&&node.events.mousedown&&node.events.click));
 const source=fs.readFileSync('docs/data.js','utf8');
 assert.match(source,/if \(openMobilePlotTarget\(event, this.id\)\) return;/);
-assert.match(source,/y: containerDims.h \* ops.margins.top \+ mobileHeaderHeight/);
-assert.match(source,/ops.margins.bottom\) - mobileHeaderHeight/);
-console.log('Mobile views passed: touch-only tabs, exact labels, contextual availability, all target families, metric/date preservation, desktop shortcuts and shared curve/header geometry.');
+assert.doesNotMatch(source,/mobileHeaderHeight/);
+assert.match(source,/y: containerDims.h \* ops.margins.top,/);
+assert.match(source,/labelRight: containerDims.w - mobileSelectorWidth/);
+const labels=nodes.filter(node=>node.value&&context.options.modes.includes(node.value));
+const hits=nodes.filter(node=>node.attrs.fill==='transparent');
+assert.ok(labels.every(node=>node.attrs.y<0&&node.styles['text-anchor']==='end'));
+assert.ok(hits.every(node=>node.attrs.y+node.attrs.height<0),'all hit areas stay above the frame');
+assert.equal(hits.at(-1).attrs.x+hits.at(-1).attrs.width,300,'selector ends at frame right edge');
+assert.equal(labels.at(-1).attrs.x,300-10.8*.75,'text has the same edge inset as the lock label');
+console.log('Mobile views passed: touch-only tabs, contextual views, date/metric preservation, desktop shortcuts, right-aligned controls above the frame and unchanged plot geometry.');
