@@ -128,7 +128,7 @@ function setupTooltip() {
                         tooltip.html(
                             roomTooltipData.name + (roomTooltipData.vote ? ": " + ["nem kér", "kér"][roomTooltipData.vote] : "") + "<br>" +
                             roomTooltipData.temp + (!isNaN(roomTooltipData.temp) ? " °C" : "") +
-                            (roomTooltipData.set && cycleOn ? " / [" + roomTooltipData.set + (!isNaN(roomTooltipData.set) ? " °C]" : "]") : "") +
+                            (roomTooltipData.set && cycleOn ? " / [" + Number(roomTooltipData.set).toFixed(1) + (!isNaN(roomTooltipData.set) ? " °C]" : "]") : "") +
                             (roomTooltipData.reason ? "<br>" + roomTooltipData.reason + "" : "") +
                             (
                                 roomTooltipData.above ? "<br>" : ""
