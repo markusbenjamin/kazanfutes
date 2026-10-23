@@ -7731,5 +7731,16 @@
         "reported_timestamp": "2026-10-22-12-20-45",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "TRV 77 PID command was not confirmed",
+        "severity": 2,
+        "origin": "heating_control.py/apply_pid_overlay:161 --> heating_control.py/compare_and_command:602 --> heating_control.py:932",
+        "origin_timestamp": "2026-10-23-16-00-34",
+        "registration_timestamp": "2026-10-23-16-00-34",
+        "reported": true,
+        "reported_timestamp": "2026-10-23-16-00-47",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
