@@ -13,7 +13,7 @@ const context=vm.createContext({Number,Math,Date,Object,Map,isMobile:false,windo
     cyclesDataAndState:{2:{rooms:[1,2]}},radiatorTargets:new Map(),dashboardFont:'Consolas',
     radiatorPlotSetting:(target,detailed,day)=>({title:'radiator',sourceElementId:target.id,detailed,day}),
     drawMainGraph:data=>calls.push(data)});
-for(const file of ['cycle_heat_plots','room_metric_plots','weather_plots','room_control_plots','boiler_kpi_plots','mobile_plot_views'])
+for(const file of ['cycle_heat_plots','room_metric_plots','weather_plots','room_control_plots','boiler_kpi_plots','boiler_metric_plots','mobile_plot_views'])
     vm.runInContext(fs.readFileSync('docs/'+file+'.js','utf8'),context);
 const evaluate=code=>JSON.parse(JSON.stringify(vm.runInContext(code,context)));
 context.event={preventDefault(){},ctrlKey:false,altKey:false};
@@ -50,7 +50,11 @@ assert.equal(context.mainGraphSetting.detailed,true);
 assert.equal(context.mainGraphSetting.cycleNum,2);
 vm.runInContext("openMobilePlotTarget(event,'external_thermometer'); selectMobilePlotView('részletes')",context);
 assert.equal(context.mainGraphSetting.title,'weather_metrics');
-vm.runInContext("openMobilePlotTarget(event,'boiler_body'); selectMobilePlotView('analitika')",context);
+vm.runInContext("openMobilePlotTarget(event,'boiler_body')",context);
+assert.deepEqual(evaluate('mobilePlotViewOptions().modes'),['alap','részletes','analitika']);
+vm.runInContext("selectMobilePlotView('részletes')",context);
+assert.equal(context.mainGraphSetting.title,'boiler_metrics');
+vm.runInContext("selectMobilePlotView('analitika')",context);
 assert.equal(context.mainGraphSetting.title,'boiler_kpi');
 assert.equal(evaluate("mobilePlotTarget('gas_dial')"),null);
 context.radiatorTargets.set('pk_radiator_1',{id:'pk_radiator_1'});

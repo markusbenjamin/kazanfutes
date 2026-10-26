@@ -656,7 +656,7 @@ function collectDataFromGitHub(dataToCollect, drawFunction) {
         } else {
             // Not fresh (or doesn't exist) -> fetch from GitHub
             // Keep the new power/flow stream separate from cached pre-power trial responses.
-            const newMetricStream = type.startsWith('radiator_') || type.endsWith('_water_temps') || type.endsWith('_heat_delivery') || type.endsWith('_environment') || type === 'weather_station' || type === 'room_control_kpis' || type === 'room_control_errors';
+            const newMetricStream = type.startsWith('radiator_') || type.endsWith('_water_temps') || type.endsWith('_heat_delivery') || type.endsWith('_environment') || type === 'weather_station' || type === 'room_control_kpis' || type === 'room_control_errors' || type === 'heating_demand';
             const dataRef = newMetricStream ? 'main' : 'refs/heads/main';
             const url = "https://raw.githubusercontent.com/markusbenjamin/kazanfutes/" + dataRef + "/data/formatted/"
                 + day + "/" + type + ".json"
@@ -2150,6 +2150,7 @@ function joinMainGrapDataSourceToElements() {
             if (openWeatherMetricPlot(event, this.id)) return;
             if (openCycleHeatPlot(event, this.id)) return;
             if (openRoomMetricPlot(event, this.id)) return;
+            if (openBoilerMetricPlot(event, this.id)) return;
             if (openMobilePlotTarget(event, this.id)) return;
             mainGraphContentLocked = !mainGraphContentLocked;
             resetAllRoomsPlotToAllCycles(); // Workaround so that all_rooms plot is reset to default even if a mouseout was not activated on the cycle infoboxes
@@ -2344,7 +2345,7 @@ function drawMainGraph(graphData = null) {
     }
     else {
         graphData = {...(graphData[mainGraphSetting.day] || {})};
-        const ordinary = !['radiator', 'cycle_water_temp', 'room_metrics', 'weather_metrics'].includes(mainGraphSetting.title);
+        const ordinary = !['radiator', 'cycle_water_temp', 'room_metrics', 'weather_metrics', 'boiler_metrics'].includes(mainGraphSetting.title);
         const temperatureType = mainGraphSetting.title === 'room_plot' ? 'room_' + mainGraphSetting.roomNumToPlot + '_measurements' : null;
         const required = temperatureType ? [temperatureType] : mainGraphSetting.types.filter(type => !['override_requests', 'heating_state'].includes(type));
         if (ordinary && !required.some(type => Array.isArray(graphData[type]) && graphData[type].length) &&
@@ -2360,6 +2361,9 @@ function drawMainGraph(graphData = null) {
             clearMainGraphs();
             let range;
             switch (mainGraphSetting.title) {
+                case 'boiler_metrics':
+                    drawBoilerMetricPlot(graphData, mainGraphSetting);
+                    break;
                 case 'radiator':
                     drawRadiatorPlot(graphData, mainGraphSetting);
                     break;
