@@ -1371,6 +1371,12 @@ const roomsDataAndState = {
 };
 
 function updateRoomColor(roomId, temp, lastUpdated, roomValveInfo, roomOccupancy) {
+    // Reconcile occupancy on every refresh, independently of temperature freshness.
+    // Unknown or cleared presence must also remove a previously applied pattern.
+    const maskDef = roomOccupancy === true || roomOccupancy === 1
+        ? "repeating-linear-gradient(125deg, rgba(0,0,0,0.8) 0 0.25px, rgba(0,0,0,1) 0.05px 4px)"
+        : null;
+    d3.select("#" + roomId).style("mask", maskDef).style("-webkit-mask", maskDef);
     if (timePassedSince(dateFromTimestamp(lastUpdated)) > 2 * 60) {
         //console.log(d3.select("#" + roomId).style("fill", "rgb(31, 31, 32, 0.8)"));
     }
@@ -1378,18 +1384,6 @@ function updateRoomColor(roomId, temp, lastUpdated, roomValveInfo, roomOccupancy
         // Create a color scale
         const colorScale = d3.scaleSequential(d3.interpolateRgb("rgba(0,0,200,1)", "red")).domain([14, 26]); // Set the input domain (10°C to 30°C)
         d3.select("#" + roomId).style("fill", colorScale(temp)).style("fill-opacity", "1");
-        if (roomOccupancy) {
-            let maskDef = "repeating-linear-gradient(125deg, rgba(0,0,0,0.8) 0 0.25px, rgba(0,0,0,1) 0.05px 4px)"
-            d3.select("#" + roomId)
-                .style(
-                    "mask",
-                    maskDef
-                )
-                .style(
-                    "-webkit-mask",
-                    maskDef
-                )
-        }
         // Radiator colours and per-TRV interactions are managed by radiator_plots.js.
     }
 }
