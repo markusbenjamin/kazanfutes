@@ -12,10 +12,13 @@ Data types:
 - daily pump powers
 - daily boiler plug power and executed boiler commands
 - daily supply-water temperature for each cycle
+- running heating demand at the inferred active supply-temperature plateau
 - daily valve opening state for each room
 """
 
 #region Init
+
+import argparse
 
 from utils.project import *
 from utils.set_temperature import room_control_set_temperature
@@ -23,6 +26,7 @@ from utils.water_temperature_formatter import format_cycle_water_temperatures
 from utils.boiler_power_formatter import format_boiler_power, format_boiler_commands
 from utils.external_temperature_formatter import format_ws90_external_temperatures, format_ws90_weather
 from utils.heat_delivery_formatter import format_cycle_heat_delivery
+from utils.heating_demand_formatter import format_heating_demand
 from utils.room_environment_formatter import format_room_environment
 from utils.room_control_kpi_formatter import format_room_control_kpis, format_room_control_errors
 from utils.radiator_formatter import format_radiator_temperatures, format_radiator_valves
@@ -33,6 +37,22 @@ settings['dev'] = False
 export_path_prefix = ""
 data_types_to_digest = None
 digestion_days = None
+
+# Infer the common supply target from recent flowing-circuit plateaus. Set an
+# explicit temperature here only when a known target should override inference.
+heating_demand_options = {'target_temperature_c': None,
+                          'target_window_seconds': 7200,
+                          'plateau_duration_seconds': 300,
+                          'plateau_tolerance_c': 2.0}
+
+heating_demand_backfill_days = None
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--heating-demand-days', type=int,
+                        help='Regenerate only heating demand for this many calendar days, including today.')
+    heating_demand_backfill_days = parser.parse_args().heating_demand_days
+    if heating_demand_backfill_days is not None and heating_demand_backfill_days < 1:
+        parser.error('--heating-demand-days must be positive')
 
 if settings['dev']:
     settings['verbosity'] = True
@@ -51,7 +71,12 @@ lock_project_dir(f'{export_path_prefix}data/')
 Digestion days, data types.
 """
 
-if parse_old_logs:
+if heating_demand_backfill_days is not None:
+    heating_demand_today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    digestion_days = [heating_demand_today - timedelta(days=offset)
+                      for offset in range(heating_demand_backfill_days - 1, -1, -1)]
+    data_types_to_digest = ['heating_demand']
+elif parse_old_logs:
     start_date = datetime(2025, 10, 7)
     end_date = datetime.now()
     digestion_days = []
@@ -64,13 +89,14 @@ else:
         digestion_days = [datetime.now()]
 
 if not data_types_to_digest:
-    data_types_to_digest = ['room_measurements','room_environment','room_set_temps','room_overrides','external_temp','weather_station','gas_consumption','heating_state','room_valve_states','room_kpis','room_control_kpis','pumps_power','cycle_water_temps','cycle_heat_delivery','boilers_power','radiators']
+    data_types_to_digest = ['room_measurements','room_environment','room_set_temps','room_overrides','external_temp','weather_station','gas_consumption','heating_state','room_valve_states','room_kpis','room_control_kpis','pumps_power','cycle_water_temps','cycle_heat_delivery','heating_demand','boilers_power','radiators']
 
 #endregion
 
 for digestion_day in digestion_days:
     digestion_daystamp = digestion_day.strftime('%Y-%m-%d')
-    if parse_old_logs:
+    if parse_old_logs or (heating_demand_backfill_days is not None
+                         and digestion_day.date() != heating_demand_today.date()):
         log_file_suffix = f".{digestion_daystamp}"
     else:
         log_file_suffix = ""
@@ -437,6 +463,34 @@ for digestion_day in digestion_days:
         except Exception:
             ServiceException(f"Unexpected error while {action_string}.", severity=2)
         log({f"success {action_string}": success})
+    #endregion
+
+    #region Heating demand at the inferred supply-temperature plateau
+    if 'heating_demand' in data_types_to_digest:
+        success = False
+        action_string = f'formatting heating demand for {digestion_daystamp}'
+        try:
+            source_path = f'data/logs/heat_delivery/heatmeters_state.json{log_file_suffix}'
+            previous_daystamp = (digestion_day - timedelta(days=1)).strftime('%Y-%m-%d')
+            previous_path = f'data/logs/heat_delivery/heatmeters_state.json.{previous_daystamp}'
+            loaded_log = []
+            for path in (previous_path, source_path):
+                if os.path.exists(os.path.join(get_project_root(), path)):
+                    loaded_log.extend(load_ndjson_to_json_list(path))
+            meter_config = load_json_to_dict('config/heating_monitor.json')['cycles']
+            meter_mapping = {str(cycle): meter_config[str(cycle)]['meter'] for cycle in range(1, 5)}
+            flow_thresholds = {str(cycle): meter_config[str(cycle)]['min_flow_m3h'] for cycle in range(1, 5)}
+            formatted_data = format_heating_demand(loaded_log, digestion_daystamp, meter_mapping,
+                                                  min_flow_m3h=flow_thresholds, **heating_demand_options)
+            export_json_list_to_json_file(formatted_data,
+                f'{export_path_prefix}data/formatted/{digestion_daystamp}/heating_demand.json')
+            report(f'Done: {action_string}.', verbose=True)
+            success = True
+        except ModuleException as e:
+            ServiceException(f'Module error while {action_string}.', original_exception=e, severity=2)
+        except Exception:
+            ServiceException(f'Unexpected error while {action_string}.', severity=2)
+        log({f'success {action_string}': success})
     #endregion
 
     #region Heating state
