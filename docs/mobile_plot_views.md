@@ -7,9 +7,9 @@ is underlined; transparent hit rectangles surround the text. No long-press,
 double-tap or new zoom gesture is required. Existing pan/pinch behaviour is
 preserved. The control is absent on ordinary desktop pointers.
 
-Rooms offer all three views. Piping, cycle dials, radiator targets and the
-external thermometer offer ordinary/detailed views. Main/cycle infoboxes and
-the boiler offer ordinary/analytics views. Objects without modifier-click
+Rooms and the boiler offer all three views. Piping, cycle dials, radiator targets
+and the external thermometer offer ordinary/detailed views. Main/cycle
+infoboxes offer ordinary/analytics views. Objects without modifier-click
 views keep their existing tap behaviour without an extra selector.
 
 Switches reuse existing plot factories and preserve the shown date and

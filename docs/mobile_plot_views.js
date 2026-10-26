@@ -15,7 +15,7 @@ function mobilePlotTarget(elementId) {
         hoveredCycle: cycle ? Number(cycle[1]) : 0};
     if (!base) return null;
     const modes = ['alap'];
-    if (['room_plot', 'cycle_water_temp', 'external_temp'].includes(base.title)) modes.push('részletes');
+    if (['room_plot', 'cycle_water_temp', 'external_temp'].includes(base.title) || elementId === 'boiler_body') modes.push('részletes');
     if (base.title === 'room_plot' || elementId === 'boiler_body' || elementId === 'general_infobox' || cycle) modes.push('analitika');
     return modes.length > 1 ? {elementId, base, modes} : null;
 }
@@ -26,6 +26,7 @@ function mobilePlotSetting(target, mode, day) {
     if (mode === 'alap') return {...base, day, types: base.types.slice(), conditionals: base.conditionals.slice()};
     if (mode === 'analitika') return elementId === 'boiler_body' ? createBoilerKPIPlotSetting(day)
         : createRoomControlPlotSetting(elementId, day);
+    if (elementId === 'boiler_body') return createBoilerMetricPlotSetting(day);
     if (base.title === 'room_plot') return createRoomMetricPlotSetting({...base, day}, elementId);
     if (base.title === 'external_temp') return createWeatherMetricPlotSetting(day);
     if (base.title === 'cycle_water_temp') return createCycleHeatPlotSetting(base.cycleNum, elementId,
