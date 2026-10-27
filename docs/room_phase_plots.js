@@ -1,0 +1,174 @@
+// One chronological trajectory through valid observations, including across gaps.
+function roomPhaseSegments(points, day, offsetK = 0) {
+    const trajectory = [];
+    for (const point of points) {
+        const parts = point.timestamp?.split('-').map(Number);
+        const hour = parts?.length === 6 ? parts[3] + parts[4] / 60 + parts[5] / 3600 : NaN;
+        if (!point.timestamp?.startsWith(day + '-') || !Number.isFinite(hour) ||
+            !Number.isFinite(point.error_k) || !Number.isFinite(point.intensity_k) ||
+            !['measured', 'estimated'].includes(point.source)) continue;
+        // Undo the payload's encoded reference shift for this zero-offset view.
+        trajectory.push({...point, intensity_k: point.intensity_k + offsetK,
+            deviation_k: -point.error_k, h_of_day_frac: hour});
+    }
+    return trajectory.length ? [trajectory] : [];
+}
+
+function roomPhaseTooltip(point) {
+    return point.timestamp.slice(11,16).replace('-', ':');
+}
+
+function roomPhaseSmoothedPoints(points, windowMinutes = 30) {
+    const halfWindow = windowMinutes / 120;
+    let left = 0, right = 0, errorSum = 0, intensitySum = 0;
+    return points.map((point, index) => {
+        while (right < points.length && points[right].h_of_day_frac <= point.h_of_day_frac + halfWindow) {
+            errorSum += points[right].error_k;
+            intensitySum += points[right].intensity_k;
+            right++;
+        }
+        while (left < right && points[left].h_of_day_frac < point.h_of_day_frac - halfWindow) {
+            errorSum -= points[left].error_k;
+            intensitySum -= points[left].intensity_k;
+            left++;
+        }
+        // Anchor the path to its actual first and current positions.
+        if (index === 0 || index === points.length - 1) return {...point};
+        const error = errorSum / (right - left);
+        return {...point, error_k: error, deviation_k: -error, intensity_k: intensitySum / (right - left)};
+    });
+}
+
+function roomPhasePointDirection(points, index, x, y) {
+    const point = points[index];
+    if (!point) return null;
+    const end = [x(point.intensity_k), y(-point.error_k)];
+    const distinct = step => {
+        for (let neighbour = index + step; neighbour >= 0 && neighbour < points.length; neighbour += step) {
+            const position = [x(points[neighbour].intensity_k), y(-points[neighbour].error_k)];
+            if (Math.hypot(position[0] - end[0], position[1] - end[1]) > .01) return position;
+        }
+        return null;
+    };
+    const previous = distinct(-1), next = distinct(1);
+    if (!previous && !next) return null;
+    let dx, dy;
+    if (previous && next) {
+        // Tangent of the same centripetal Catmull–Rom interpolation used below.
+        const before = Math.sqrt(Math.hypot(end[0] - previous[0], end[1] - previous[1]));
+        const after = Math.sqrt(Math.hypot(next[0] - end[0], next[1] - end[1]));
+        dx = (end[0] - previous[0]) / before - (next[0] - previous[0]) / (before + after) + (next[0] - end[0]) / after;
+        dy = (end[1] - previous[1]) / before - (next[1] - previous[1]) / (before + after) + (next[1] - end[1]) / after;
+    }
+    if (!previous || !next || Math.hypot(dx, dy) < .0001) {
+        dx = next ? next[0] - end[0] : end[0] - previous[0];
+        dy = next ? next[1] - end[1] : end[1] - previous[1];
+    }
+    const distance = Math.hypot(dx, dy);
+    return {end, dx: dx / distance, dy: dy / distance};
+}
+
+function roomPhaseDirection(points, x, y) {
+    return roomPhasePointDirection(points, points.length - 1, x, y);
+}
+
+function drawRoomPhasePlot(data, setting) {
+    const aggregate = setting.roomNumToPlot == null;
+    const curves = roomControlPlotRooms(setting).map(room => {
+        const payload = data[setting.day]?.['room_' + room + '_phase_points'];
+        const offsetK = Number.isFinite(payload?.offset_k) ? payload.offset_k : 0;
+        const points = payload?.schema_version === 1 ? roomPhaseSegments(payload.points || [], setting.day, offsetK).flat() : [];
+        return {room, name: roomsDataAndState[room].name, color: roomsColorScale(roomsColorRemap[room - 1]),
+            points, smoothedPoints: roomPhaseSmoothedPoints(points)};
+    }).filter(curve => curve.points.length);
+    const points = curves.flatMap(curve => curve.points);
+    const legendRows = aggregate ? roomAnalyticLegendLayout(curves).rows : 0;
+    const errors = points.map(point => point.deviation_k);
+    const yBottom = Math.min(-1, Math.floor(Math.min(0, ...errors) * 2) / 2 - .5);
+    const yTop = Math.max(1, Math.ceil(Math.max(0, ...errors) * 2) / 2 + .5);
+    const xBottom = 0;
+    const xTop = Math.max(20, Math.ceil(Math.max(0, ...points.map(point => point.intensity_k)) / 10) * 10);
+    const common = {parentId: 'graph', margins: {top: .13 + legendRows * .05, right: .04, bottom: .18, left: .12},
+        domain: {bottom: [xBottom,xTop], left: [yBottom,yTop], niceLeft: false},
+        dataKeys: {bottom: 'intensity_k', left: 'deviation_k'}, smoothing: {bottom: 0, left: 0},
+        axesLabel: {bottom: 'relatív fűtési intenzitás (K)', left: 'eltérés: mért − kért (K)'},
+        plotStyle: {joined: false, startCap: false, endCap: false},
+        segment: {do: false}, curveEndText: {show: false}, plotLabel: ''};
+    const area = drawPlot([], {...common, plotLabelTabs: aggregate ? false : roomAnalyticTabs(setting),
+        plotDateNavigation: {day: setting.day, onDayChange: navigateRoomControlDay},
+        emptyMessage: points.length ? '' : 'Az adott napra nincs érvényes fázispont.'});
+    if (aggregate) drawRoomAnalyticHeading(area, setting, curves, 'room-phase');
+    const x = d3.scaleLinear().domain(common.domain.bottom).range([0,area.plotDims.w]);
+    const y = d3.scaleLinear().domain(common.domain.left).range([area.plotDims.h,0]);
+    area.plotElement.append('line').attr('class', 'room-phase-zero-line')
+        .attr('x1', x(0)).attr('x2', x(0)).attr('y1', 0).attr('y2', area.plotDims.h)
+        .attr('stroke', '#bbb').attr('stroke-width', .4).attr('stroke-dasharray', '2,2');
+    area.plotElement.append('line').attr('class', 'room-phase-zero-line')
+        .attr('x1', 0).attr('x2', area.plotDims.w).attr('y1', y(0)).attr('y2', y(0))
+        .attr('stroke', '#bbb').attr('stroke-width', .4).attr('stroke-dasharray', '2,2');
+    curves.forEach(curve => {
+        const {smoothedPoints} = curve;
+        const tooltip = point => (aggregate ? curve.name + ' · ' : '') + roomPhaseTooltip(point);
+        const group = area.plotElement.append('g').attr('class', 'room-phase-room').attr('data-room', curve.room)
+            .attr('data-emphasized', 'false').attr('tabindex', 0).attr('aria-label', curve.name);
+        const thickness = isMobile ? 2.5 : 1.25;
+        // Smooth both coordinates in time, then interpolate the resulting trajectory.
+        const line = d3.line().x(point => x(point.intensity_k)).y(point => y(point.deviation_k))
+            .curve(d3.curveCatmullRom.alpha(.5));
+        const path = line(smoothedPoints);
+        const halo = group.append('path').attr('class', 'room-phase-hover-halo').attr('d', path)
+            .attr('fill', 'none').attr('stroke', 'rgba(255,255,255,0.5)').attr('stroke-width', thickness * 3)
+            .attr('opacity', 0).attr('pointer-events', 'none');
+        const trajectory = group.append('path').attr('class', 'room-phase-trajectory')
+            .attr('data-room', curve.room).attr('d', path)
+            .attr('fill', 'none').attr('stroke', curve.color).attr('stroke-width', thickness)
+            .attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round').attr('pointer-events', 'none');
+        const hitArea = group.append('path').attr('class', 'room-phase-hit-area').attr('d', path)
+            .attr('fill', 'none').attr('stroke', 'transparent').attr('stroke-width', thickness * 4)
+            .attr('pointer-events', 'stroke');
+        bindPlotCurveTooltip(hitArea, curve.name, 6, false);
+        const first = smoothedPoints[0];
+        const startDirection = roomPhasePointDirection(smoothedPoints, 0, x, y);
+        const startAngle = startDirection ? Math.atan2(startDirection.dy, startDirection.dx) * 180 / Math.PI : 0;
+        const startTransform = `translate(${x(first.intensity_k)},${y(first.deviation_k)}) rotate(${startAngle})`;
+        const start = group.append(startDirection ? 'path' : 'circle').attr('class', 'room-phase-start-marker')
+            .attr('data-room', curve.room).attr('data-timestamp', first.timestamp)
+            .attr('transform', startTransform).attr('d', startDirection ? 'M3.5,0L-2.5,-2L-2.5,2Z' : null)
+            .attr('r', startDirection ? null : 2.5).attr('fill', 'black');
+        bindPlotCurveTooltip(start, tooltip(first), 6, false);
+        const last = curve.points.at(-1);
+        const direction = roomPhaseDirection(smoothedPoints, x, y);
+        if (direction) {
+            const {end: [cx, cy], dx, dy} = direction;
+            const tipX = cx + dx * 11, tipY = cy + dy * 11;
+            group.append('path').attr('class', 'room-phase-direction')
+                .attr('data-room', curve.room)
+                .attr('d', `M${cx + dx * 3},${cy + dy * 3}L${tipX},${tipY}`
+                    + `M${tipX - dx * 3 - dy * 2},${tipY - dy * 3 + dx * 2}`
+                    + `L${tipX},${tipY}L${tipX - dx * 3 + dy * 2},${tipY - dy * 3 - dx * 2}`)
+                .attr('fill', 'none').attr('stroke', 'red').attr('stroke-width', .8)
+                .attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round').attr('pointer-events', 'none');
+        }
+        const marker = group.append('circle').attr('class', 'room-phase-latest-point')
+            .attr('data-room', curve.room)
+            .attr('cx', x(last.intensity_k)).attr('cy', y(last.deviation_k)).attr('r', 3)
+            .attr('fill', curve.color).attr('stroke', 'white').attr('stroke-width', .4);
+        bindPlotCurveTooltip(marker, tooltip(last), 6, false);
+        const emphasize = () => {
+            group.raise().attr('data-emphasized', 'true');
+            trajectory.attr('stroke-width', thickness * 2);
+            halo.attr('opacity', 1);
+            start.attr('transform', startTransform + ' scale(1.5)');
+            marker.attr('r', 6);
+        };
+        const restore = () => {
+            group.attr('data-emphasized', 'false');
+            trajectory.attr('stroke-width', thickness);
+            halo.attr('opacity', 0);
+            start.attr('transform', startTransform);
+            marker.attr('r', 3);
+        };
+        group.on('mouseenter.phase-focus', emphasize).on('mouseleave.phase-focus', restore)
+            .on('focusin.phase-focus', emphasize).on('focusout.phase-focus', restore);
+    });
+}

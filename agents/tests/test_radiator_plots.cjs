@@ -82,6 +82,7 @@ context.setting={sourceElementId:target.id,metric:'average',detailed:false,day:'
 vm.runInContext('drawRadiatorPlot(data,setting)',context);
 assert.equal(calls[1].data[0].value,30); assert.equal(calls[0].options.axesLabel.left,'°C');
 assert.equal(calls[1].options.plotStyle.endCap,true);
+assert.equal(calls[1].options.plotStyle.thickness,'2','temperature curves retain their existing weight');
 assert.equal(calls[1].options.curveEndText.show,true);
 assert.equal(calls[1].options.curveEndText.text,'30 °C');
 assert.equal(calls[1].options.curveEndText.col,calls[1].options.plotStyle.col);
@@ -102,6 +103,8 @@ assert.ok(calls.slice(1).every(call=>!call.options.plotStyle.startCap));
 calls.length=0; context.setting.metric='valves';
 vm.runInContext('drawRadiatorPlot(data,setting)',context);
 assert.equal(calls[0].options.axesLabel.left,'%'); assert.equal(calls[1].options.plotStyle.stepAfter,true);
+assert.equal(calls[1].options.plotStyle.thickness,'.75','valve opening uses a fine rectangular line');
+assert.equal(calls[1].options.plotStyle.monotone,false,'valve percentages must not be smoothed');
 assert.equal(calls[1].data[0].value,0);
 assert.equal(calls[1].options.plotStyle.endCap,false,'valve curve style stays unchanged');
 assert.equal(calls[1].options.curveEndText.show,true);

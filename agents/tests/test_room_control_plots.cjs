@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '../..');
-const draws = [], loads = [], labels = [], nodes = [];
+const draws = [], loads = [], labels = [], nodes = [], headings = [];
 function selection() {
     const node = {attrs: {}, styles: {}, append: () => selection(), attr(key, value) {this.attrs[key]=value;return this;},
         style(key,value) {this.styles[key]=value;return this;}, text(value) {this.value=value;return this;},
@@ -31,7 +31,7 @@ vm.runInContext(fs.readFileSync(path.join(root,'docs/cycle_heat_plots.js'),'utf8
 vm.runInContext(fs.readFileSync(path.join(root,'docs/room_metric_plots.js'),'utf8'),context);
 context.bindPlotCurveTooltip=(target,label)=>labels.push(label);
 vm.runInContext(fs.readFileSync(path.join(root,'docs/room_control_plots.js'),'utf8'),context);
-context.drawPlotTitleSelector=()=>{};
+context.drawPlotTitleSelector=(node,dims,options,font)=>headings.push({node,options,font});
 const evaluate = code => JSON.parse(JSON.stringify(vm.runInContext(code,context)));
 context.event={ctrlKey:false,altKey:false,preventDefault(){}};
 assert.equal(evaluate("openRoomControlPlot(event,'Oktopusz')"),false);
@@ -178,9 +178,11 @@ assert.ok(nodes.some(node=>node.value==='Gólyafészek' && node.attrs['data-room
 assert.ok(!nodes.some(node=>String(node.value).startsWith('Oktopusz szita:')));
 const heading=nodes.find(node=>node.attrs.class==='room-control-daily-title');
 const legend=nodes.find(node=>node.attrs.class==='room-control-daily-legend');
-assert.equal(heading.styles['font-size'],'7px');
+assert.equal(headings.at(-1).font,7);
+assert.equal(headings.at(-1).options.prefix,'szobák — ');
+assert.deepEqual(Array.from(headings.at(-1).options.choices,choice=>choice.label),['napi hiba','fázissík']);
 assert.equal(legend.styles['font-size'],'4.5px');
-assert.ok(legend.attrs.y>heading.attrs.y,'legend must appear below the title');
+assert.ok(legend.attrs.y>Number(heading.attrs.transform.match(/translate\(0,([^\)]+)\)/)[1]),'legend must appear below the title selector');
 assert.equal(dailyDraws[0].options.margins.right,.03);
 const watermarks=nodes.filter(node=>node.attrs.class==='room-control-error-watermark');
 assert.deepEqual(watermarks.map(node=>node.value),['alulfűtés','túlfűtés']);
@@ -198,7 +200,7 @@ assert.equal(cycleDraws.length,2);
 assert.equal(cycleDraws[1].options.curveTooltip,'Gólyafészek');
 assert.equal(cycleDraws[1].options.plotStyle.col,'room-color-2');
 assert.deepEqual(nodes.slice(cycleNodesBefore).filter(node=>node.attrs['data-room']).map(node=>node.attrs['data-room']),[2]);
-assert.ok(nodes.slice(cycleNodesBefore).some(node=>node.value==='2. kör napi szabályozási hibája'));
+assert.equal(headings.at(-1).options.prefix,'2. kör — ');
 const savedRooms=context.allControlledRooms, savedRoomInfo=context.roomsDataAndState;
 context.allControlledRooms=Array.from({length:12},(_,i)=>i+1);
 context.roomsDataAndState=Object.fromEntries(context.allControlledRooms.map(room=>[room,{name:'Room '+room,cycle:1}]));
