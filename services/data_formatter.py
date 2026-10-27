@@ -30,6 +30,7 @@ from utils.heating_demand_formatter import format_heating_demand
 from utils.room_environment_formatter import format_room_environment
 from utils.room_control_kpi_formatter import format_room_control_kpis, format_room_control_errors
 from utils.radiator_formatter import format_radiator_temperatures, format_radiator_valves
+from utils.room_phase_formatter import format_room_phase_day
 
 parse_old_logs = False
 settings['dev'] = False
@@ -46,13 +47,22 @@ heating_demand_options = {'target_temperature_c': None,
                           'plateau_tolerance_c': 2.0}
 
 heating_demand_backfill_days = None
+room_phase_backfill_days = None
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--heating-demand-days', type=int,
                         help='Regenerate only heating demand for this many calendar days, including today.')
-    heating_demand_backfill_days = parser.parse_args().heating_demand_days
+    parser.add_argument('--room-phase-days', type=int,
+                        help='Regenerate only room phase points for this many calendar days, including today.')
+    arguments = parser.parse_args()
+    heating_demand_backfill_days = arguments.heating_demand_days
+    room_phase_backfill_days = arguments.room_phase_days
     if heating_demand_backfill_days is not None and heating_demand_backfill_days < 1:
         parser.error('--heating-demand-days must be positive')
+    if room_phase_backfill_days is not None and room_phase_backfill_days < 1:
+        parser.error('--room-phase-days must be positive')
+    if heating_demand_backfill_days is not None and room_phase_backfill_days is not None:
+        parser.error('Choose only one targeted backfill')
 
 if settings['dev']:
     settings['verbosity'] = True
@@ -76,6 +86,11 @@ if heating_demand_backfill_days is not None:
     digestion_days = [heating_demand_today - timedelta(days=offset)
                       for offset in range(heating_demand_backfill_days - 1, -1, -1)]
     data_types_to_digest = ['heating_demand']
+elif room_phase_backfill_days is not None:
+    room_phase_today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    digestion_days = [room_phase_today - timedelta(days=offset)
+                      for offset in range(room_phase_backfill_days - 1, -1, -1)]
+    data_types_to_digest = ['room_phase']
 elif parse_old_logs:
     start_date = datetime(2025, 10, 7)
     end_date = datetime.now()
@@ -89,7 +104,7 @@ else:
         digestion_days = [datetime.now()]
 
 if not data_types_to_digest:
-    data_types_to_digest = ['room_measurements','room_environment','room_set_temps','room_overrides','external_temp','weather_station','gas_consumption','heating_state','room_valve_states','room_kpis','room_control_kpis','pumps_power','cycle_water_temps','cycle_heat_delivery','heating_demand','boilers_power','radiators']
+    data_types_to_digest = ['room_measurements','room_environment','room_set_temps','room_overrides','external_temp','weather_station','gas_consumption','heating_state','room_valve_states','room_kpis','room_control_kpis','pumps_power','cycle_water_temps','cycle_heat_delivery','heating_demand','boilers_power','radiators','room_phase']
 
 #endregion
 
@@ -558,6 +573,24 @@ for digestion_day in digestion_days:
                 f'{export_path_prefix}data/formatted/{digestion_daystamp}/room_control_kpis.json')
             export_json_list_to_json_file(format_room_control_errors(entries, digestion_daystamp, get_rooms_info(just_controlled=False)),
                 f'{export_path_prefix}data/formatted/{digestion_daystamp}/room_control_errors.json')
+            success = True
+            report(f'Done: {action_string}.', verbose=True)
+        except Exception:
+            ServiceException(f'Unexpected error while {action_string}.', severity=2)
+        log({f'success {action_string}': success})
+    #endregion
+
+    #region Room phase-plane trajectories (read-only inputs; no device polling)
+    if 'room_phase' in data_types_to_digest:
+        success = False
+        action_string = f'formatting room phase points for {digestion_daystamp}'
+        try:
+            meter_config = load_json_to_dict('config/heating_monitor.json')['cycles']
+            meter_mapping = {str(cycle): meter_config[str(cycle)]['meter'] for cycle in range(1, 5)}
+            phase_data = format_room_phase_day(get_project_root(), digestion_daystamp,
+                get_rooms_info(just_controlled=False), load_json_to_dict('system/radiator_mapping.json'), meter_mapping)
+            export_dict_as_json(phase_data,
+                f'{export_path_prefix}data/formatted/{digestion_daystamp}/room_phase_points.json')
             success = True
             report(f'Done: {action_string}.', verbose=True)
         except Exception:
