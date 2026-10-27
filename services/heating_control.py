@@ -126,7 +126,8 @@ def calculate_pid_overlay(set_temp, measured_temp, sensor_timestamp,
     }
     return {
         'next_state': next_state, 'setpoint': set_PID,
-        'room_overshoot': bool(weight_overshoot),
+        # Veto circulation even at the demand hysteresis boundary.
+        'room_overshoot': error_raw < -PID_OVERSHOOT_VOTE_THRESHOLD,
         'log': {
             'config': dict(gains, bias_max_lag=PID_MAX_LAG,
                            bias_max_overshoot=PID_MAX_BRAKING,
