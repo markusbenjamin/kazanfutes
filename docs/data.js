@@ -656,7 +656,7 @@ function collectDataFromGitHub(dataToCollect, drawFunction) {
         } else {
             // Not fresh (or doesn't exist) -> fetch from GitHub
             // Keep the new power/flow stream separate from cached pre-power trial responses.
-            const newMetricStream = type.startsWith('radiator_') || type.endsWith('_water_temps') || type.endsWith('_heat_delivery') || type.endsWith('_environment') || type === 'weather_station' || type === 'room_control_kpis' || type === 'room_control_errors' || type === 'heating_demand';
+            const newMetricStream = type.startsWith('radiator_') || type.endsWith('_water_temps') || type.endsWith('_heat_delivery') || type.endsWith('_environment') || type.endsWith('_phase_points') || type === 'weather_station' || type === 'room_control_kpis' || type === 'room_control_errors' || type === 'heating_demand';
             const dataRef = newMetricStream ? 'main' : 'refs/heads/main';
             const url = "https://raw.githubusercontent.com/markusbenjamin/kazanfutes/" + dataRef + "/data/formatted/"
                 + day + "/" + type + ".json"

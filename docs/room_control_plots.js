@@ -1,17 +1,31 @@
-// Alt+click a room: tracking summary. Main/cycle infoboxes: daily error curves.
+// Alt+click analytics: room summaries or daily errors, plus phase trajectories.
 const ROOM_CONTROL_WINDOW_DAYS = 7;
 const ROOM_CONTROL_QUADRANTS = [
     {key: 'below_on', label: 'fűtés be, kért alatt'}, {key: 'above_on', label: 'fűtés be, kért felett'},
     {key: 'below_off', label: 'fűtés ki, kért alatt'}, {key: 'above_off', label: 'fűtés ki, kért felett'}
 ];
 let roomControlOverviewSelection = 'below_on';
+const roomAnalyticSelections = {};
+
+function roomAnalyticKey(setting) {
+    return setting.roomNumToPlot ?? (setting.cycleNum ? 'cycle_' + setting.cycleNum : 'all');
+}
+
+function roomControlPlotRooms(setting) {
+    return setting.roomNumToPlot != null ? [setting.roomNumToPlot]
+        : allControlledRooms.filter(room => !setting.cycleNum || Number(roomsDataAndState[room].cycle) === setting.cycleNum);
+}
+
+function roomPhaseDataTypes(setting) {
+    return roomControlPlotRooms(setting).map(room => 'room_' + room + '_phase_points');
+}
 
 function roomControlDays(day, count = ROOM_CONTROL_WINDOW_DAYS) {
     return Array.from({length: count + 1}, (_, index) => shiftedSelectorDay(day, index - count));
 }
 
 function isRoomControlView(setting) {
-    return ['room_control_daily', 'room_control_overview', 'room_control_diagnostic'].includes(setting.title);
+    return ['room_control_daily', 'room_control_overview', 'room_control_diagnostic', 'room_control_phase'].includes(setting.title);
 }
 
 function createRoomControlPlotSetting(elementId, day = dayStamp()) {
@@ -20,11 +34,34 @@ function createRoomControlPlotSetting(elementId, day = dayStamp()) {
     const overview = elementId === 'general_infobox' || Boolean(cycleMatch);
     const diagnostic = base?.title === 'room_plot';
     if (!overview && !diagnostic) return null;
-    return {title: overview ? 'room_control_daily' : 'room_control_diagnostic',
+    const scope = {roomNumToPlot: diagnostic ? base.roomNumToPlot : null, cycleNum: cycleMatch ? Number(cycleMatch[1]) : null};
+    const phase = roomAnalyticSelections[roomAnalyticKey(scope)] === 'phase';
+    return {title: phase ? 'room_control_phase' : overview ? 'room_control_daily' : 'room_control_diagnostic',
         roomNumToPlot: diagnostic ? base.roomNumToPlot : null, day,
         cycleNum: cycleMatch ? Number(cycleMatch[1]) : null,
         overviewState: roomControlOverviewSelection,
-        windowDays: ROOM_CONTROL_WINDOW_DAYS, types: [overview ? 'room_control_errors' : 'room_control_kpis'], conditionals: []};
+        windowDays: ROOM_CONTROL_WINDOW_DAYS,
+        types: phase ? roomPhaseDataTypes(scope) : [overview ? 'room_control_errors' : 'room_control_kpis'], conditionals: []};
+}
+
+function selectRoomAnalyticView(metric) {
+    if (!['room_control_diagnostic', 'room_control_daily', 'room_control_phase'].includes(mainGraphSetting.title) || !['summary', 'phase'].includes(metric)) return;
+    const room = mainGraphSetting.roomNumToPlot;
+    roomAnalyticSelections[roomAnalyticKey(mainGraphSetting)] = metric;
+    mainGraphSetting = {...mainGraphSetting, title: metric === 'phase' ? 'room_control_phase' : room != null ? 'room_control_diagnostic' : 'room_control_daily',
+        types: metric === 'phase' ? roomPhaseDataTypes(mainGraphSetting) : [room != null ? 'room_control_kpis' : 'room_control_errors']};
+    mainGraphContentLocked = true;
+    drawMainGraph({});
+    drawMainGraph();
+}
+
+function roomAnalyticTabs(setting) {
+    const room = setting.roomNumToPlot;
+    const name = room != null ? roomsDataAndState[room].name : setting.cycleNum ? setting.cycleNum + '. kör' : 'szobák';
+    return {prefix: name + ' — ',
+        selected: setting.title === 'room_control_phase' ? 'phase' : 'summary',
+        choices: [{key: 'summary', label: room != null ? 'összegzés' : 'napi hiba', color: 'black'}, {key: 'phase', label: 'fázissík', color: 'black'}],
+        onSelect: selectRoomAnalyticView};
 }
 
 function openRoomControlPlot(event, elementId) {
@@ -100,6 +137,12 @@ function drawRoomControlHeader(area, setting, title, titleY = -13) {
 function drawRoomControlView(data = null) {
     const setting = mainGraphSetting;
     if (data === null) {
+        if (setting.title === 'room_control_phase') {
+            collectDataFromGitHub(roomPhaseDataTypes(setting).map(type => ({day: setting.day, type})), loaded => {
+                if (mainGraphSetting === setting) drawRoomControlView(loaded);
+            });
+            return;
+        }
         if (setting.title === 'room_control_daily') {
             collectDataFromGitHub([{day: setting.day, type: 'room_control_errors'}], loaded => {
                 if (mainGraphSetting === setting) drawRoomControlView(loaded);
@@ -116,7 +159,8 @@ function drawRoomControlView(data = null) {
         return;
     }
     clearMainGraphs();
-    if (setting.title === 'room_control_daily') drawRoomControlDaily(data, setting);
+    if (setting.title === 'room_control_phase') drawRoomPhasePlot(data, setting);
+    else if (setting.title === 'room_control_daily') drawRoomControlDaily(data, setting);
     else if (setting.title === 'room_control_overview') drawRoomControlOverview(data, setting);
     else drawRoomControlDiagnostic(data, setting);
 }
@@ -126,18 +170,36 @@ function roomControlErrorSegments(readings, room) {
         error_k: row.errors?.[room] ?? null})), 'error_k', 3 / 60);
 }
 
+function roomAnalyticLegendLayout(curves) {
+    const rows = curves.length > 6 ? 2 : curves.length ? 1 : 0;
+    return {rows, columns: Math.ceil(curves.length / (rows || 1))};
+}
+
+function drawRoomAnalyticHeading(area, setting, curves, className) {
+    const {rows, columns} = roomAnalyticLegendLayout(curves);
+    const fontSize = isMobile ? 7 * 1.8 : 7;
+    const legendFontSize = fontSize * 4.5 / 7, lineHeight = legendFontSize * 1.4;
+    drawPlotTitleSelector(area.plotElement.append('g').attr('class', className + '-title')
+        .attr('transform', 'translate(0,' + (-rows * lineHeight - fontSize * .65) + ')'),
+        area.plotDims, roomAnalyticTabs(setting), fontSize);
+    for (let row = 0; row < rows; row++) {
+        const legend = roomControlText(area.plotElement, '', area.plotDims.w / 2,
+            -(rows - row - 1) * lineHeight - fontSize, legendFontSize).attr('class', className + '-legend');
+        curves.slice(row * columns, (row + 1) * columns).forEach((curve, index) => {
+            if (index) legend.append('tspan').text(' · ');
+            legend.append('tspan').attr('data-room', curve.room).style('fill', curve.color).text(curve.name);
+        });
+    }
+}
+
 function drawRoomControlDaily(data, setting) {
     const readings = (data[setting.day]?.room_control_errors || []).slice()
         .filter(row => Number.isFinite(row.h_of_day_frac) && row.h_of_day_frac >= 0 && row.h_of_day_frac <= 24)
         .sort((a,b) => a.h_of_day_frac - b.h_of_day_frac);
-    const rooms = allControlledRooms.filter(room => !setting.cycleNum || Number(roomsDataAndState[room].cycle) === setting.cycleNum);
+    const rooms = roomControlPlotRooms(setting);
     const curves = rooms.map(room => ({room, name: roomsDataAndState[room].name,
         color: roomsColorScale(roomsColorRemap[room - 1]), segments: roomControlErrorSegments(readings, room)}));
-    const legendRows = curves.length > 6 ? 2 : curves.length ? 1 : 0;
-    const legendColumns = Math.ceil(curves.length / (legendRows || 1));
-    const fontSize = isMobile ? 7 * 1.8 : 7;
-    const legendFontSize = fontSize * 4.5 / 7;
-    const lineHeight = legendFontSize * 1.4;
+    const legendRows = roomAnalyticLegendLayout(curves).rows;
     const errors = curves.flatMap(curve => curve.segments.flat().map(row => row.error_k));
     const top = Math.max(1, Math.ceil(Math.max(0, ...errors.map(Math.abs)) * 2) / 2);
     const common = {parentId: 'graph', margins: {top: .12 + legendRows * .05, right: .03, bottom: .15, left: .1},
@@ -148,17 +210,7 @@ function drawRoomControlDaily(data, setting) {
     const area = drawPlot([], {...common,
         plotDateNavigation: {day: setting.day, onDayChange: navigateRoomControlDay},
         emptyMessage: errors.length ? '' : 'Az adott napra nincs szabályozási adat.'});
-    const title = setting.cycleNum ? setting.cycleNum + '. kör napi szabályozási hibája' : 'szobák napi szabályozási hibája';
-    roomControlText(area.plotElement, title, area.plotDims.w / 2, -legendRows * lineHeight - fontSize,
-        fontSize).attr('class', 'room-control-daily-title');
-    for (let row = 0; row < legendRows; row++) {
-        const legend = roomControlText(area.plotElement, '', area.plotDims.w / 2,
-            -(legendRows - row - 1) * lineHeight - fontSize, legendFontSize).attr('class', 'room-control-daily-legend');
-        curves.slice(row * legendColumns, (row + 1) * legendColumns).forEach((curve, index) => {
-            if (index) legend.append('tspan').text(' · ');
-            legend.append('tspan').attr('data-room', curve.room).style('fill', curve.color).text(curve.name);
-        });
-    }
+    drawRoomAnalyticHeading(area, setting, curves, 'room-control-daily');
     const watermarkFontSize = isMobile ? 8 * 1.8 : 8;
     [['alulfűtés', watermarkFontSize + 3, 'rgba(200,0,0,0.06)'],
         ['túlfűtés', area.plotDims.h - 3, 'rgba(0,40,180,0.06)']].forEach(([text, y, color]) => {
@@ -261,7 +313,8 @@ function drawRoomControlDiagnostic(data, setting) {
     const area = drawPlot([], {parentId: 'graph', margins: {top: .22, right: .03, bottom: .05, left: .03},
         domain: {bottom: [0, 1], left: [0, 1]}, dataKeys: {bottom: 'x', left: 'y'}, axes: {left: false, bottom: false},
         plotLabel: '', curveEndText: {show: false}, plotDateNavigation: {day: setting.day, onDayChange: navigateRoomControlDay}});
-    drawRoomControlHeader(area, setting, roomsDataAndState[room].name + ' — szabályozottság', -20);
+    drawPlotTitleSelector(area.plotElement.append('g').attr('transform', 'translate(0,-18)'),
+        area.plotDims, roomAnalyticTabs(setting), isMobile ? 10 : 7);
     const {plotElement: plot, plotDims: dims} = area;
     roomControlText(plot, 'átl. absz. eltérés (fűtés): ' + roomControlNumber(today?.mae_on_c) + ' K  |  7 nap: ' + roomControlNumber(previous.mae_on_c) + ' K', dims.w / 2, -12, 5);
     roomControlText(plot, 'komfortidő jelenlétkor: ' + roomControlNumber(today?.comfort_pct, 0) + '%  |  7 nap: ' + roomControlNumber(previous.comfort_pct, 0) + '%  (±0,5 K)', dims.w / 2, -5, 5);

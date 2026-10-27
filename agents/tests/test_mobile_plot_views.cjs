@@ -10,6 +10,7 @@ const mapping={Room:base('room_plot',{roomNumToPlot:1}),cycle2:base('cycle_water
 const context=vm.createContext({Number,Math,Date,Object,Map,isMobile:false,window:{matchMedia:()=>({matches:coarse})},
     dayStamp:()=> '2026-10-22',dayDataNotAvailable:false,dataWaitTime:0,mainGraphSetting:background,mainGraphContentLocked:false,
     mainGraphDefaultSetting:background,elementToMainGraphSettingMapping:mapping,allMeasuredRooms:[1,2,11],
+    allControlledRooms:[1,2],roomsDataAndState:{1:{name:'Room',cycle:2},2:{name:'Other',cycle:1}},
     cyclesDataAndState:{2:{rooms:[1,2]}},radiatorTargets:new Map(),dashboardFont:'Consolas',
     radiatorPlotSetting:(target,detailed,day)=>({title:'radiator',sourceElementId:target.id,detailed,day}),
     drawMainGraph:data=>calls.push(data)});
@@ -45,6 +46,12 @@ assert.equal(context.mainGraphSetting.title,'room_control_daily');
 assert.equal(context.mainGraphSetting.cycleNum,2);
 vm.runInContext("openMobilePlotTarget(event,'general_infobox'); selectMobilePlotView('analitika')",context);
 assert.equal(context.mainGraphSetting.cycleNum,null);
+vm.runInContext("selectRoomAnalyticView('phase')",context);
+assert.equal(context.mainGraphSetting.title,'room_control_phase');
+assert.deepEqual(evaluate('mainGraphSetting.types'),['room_1_phase_points','room_2_phase_points']);
+vm.runInContext("openMobilePlotTarget(event,'cycle2_infobox'); selectMobilePlotView('analitika'); selectRoomAnalyticView('phase')",context);
+assert.equal(context.mainGraphSetting.cycleNum,2);
+assert.deepEqual(evaluate('mainGraphSetting.types'),['room_1_phase_points']);
 vm.runInContext("openMobilePlotTarget(event,'cycle2'); selectMobilePlotView('részletes')",context);
 assert.equal(context.mainGraphSetting.detailed,true);
 assert.equal(context.mainGraphSetting.cycleNum,2);

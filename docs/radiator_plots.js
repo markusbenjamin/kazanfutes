@@ -241,7 +241,7 @@ function drawRadiatorPlot(data, setting, target = radiatorTargets.get(setting.so
     const range = metric === 'valves' ? [0, 100] : values.length ? [Math.floor(Math.min(...values)) - 2, Math.ceil(Math.max(...values)) + 2] : [15, 75];
     const common = {parentId:'graph', margins:{top:.1,right:.03,bottom:.15,left:.1}, domain:{bottom:[0,24],left:range},
         dataKeys:{bottom:'h_of_day_frac',left:'value'}, axesLabel:{bottom:'óra',left:metric === 'valves' ? '%' : '°C'},
-        smoothing:{bottom:0,left:0}, plotStyle:{joined:true,thickness:'2',monotone:metric !== 'valves',stepAfter:metric === 'valves',startCap:false,endCap:false},
+        smoothing:{bottom:0,left:0}, plotStyle:{joined:true,thickness:metric === 'valves' ? '.75' : '2',monotone:metric !== 'valves',stepAfter:metric === 'valves',startCap:false,endCap:false},
         segment:{do:false}, curveEndText:{show:false}, plotLabel:setting.detailed ? '' : target.label + ' — radiátor ' + (metric === 'valves' ? 'nyitás' : 'hőmérséklet')};
     const choices = [];
     if (target.probes.length) choices.push({key:'average',label:'átlag hőm.',color:colors[0]},{key:'probes',label:'hőm. próbánként',color:colors[1]});
