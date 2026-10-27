@@ -154,11 +154,20 @@ class PIDTests(unittest.TestCase):
         self.assertEqual(result['log']['outputs']['bias_overshoot'], -.2)
         self.assertEqual(result['setpoint'], 20.8)
 
-    def test_existing_overshoot_vote_policy_preserved_with_zero_PD(self):
-        result = self.calculate(temp=21.3)
+    def test_overshoot_vote_veto_is_independent_of_valve_demand(self):
+        for valve in (0, 2, 10):
+            with self.subTest(valve=valve):
+                result = self.calculate(temp=21.3, valve=valve)
+                self.assertTrue(result['room_overshoot'])
+                self.assertEqual(result['setpoint'], 21)
+                self.assertFalse(self.calculate(temp=21.1, valve=valve)['room_overshoot'])
+
+    def test_veto_does_not_enable_PID_braking_at_closed_valve(self):
+        gains = dict(self.gains, gain_P_overshoot=10, gain_D=1000)
+        result = self.calculate(temp=22, valve=2, gains=gains)
         self.assertTrue(result['room_overshoot'])
+        self.assertEqual(result['log']['outputs']['bias_overshoot'], 0)
         self.assertEqual(result['setpoint'], 21)
-        self.assertFalse(self.calculate(temp=21.3, valve=2)['room_overshoot'])
 
     def test_bad_gains_and_nonfinite_inputs_rejected(self):
         for value in ('nan', 'inf', '-1'):
@@ -214,7 +223,7 @@ class PIDTests(unittest.TestCase):
 
 class ControlIntegrationTests(unittest.TestCase):
     def run_control(self, failed_trv=None, disabled_room=None, state_missing=False,
-                    sample_offset=0):
+                    sample_offset=0, temp=20, valve=10, previous_vote=0):
         env = load_calculations()
         logs, errors, writes, saved = [], [], [], {}
         class Clock(datetime):
@@ -251,16 +260,35 @@ class ControlIntegrationTests(unittest.TestCase):
                    load_commands=lambda *a: [], refresh_commands=lambda *a: None,
                    COMMANDS_PATH='mocked')
         state = {'set_temps': {r: 21 for r in rooms}, 'set_temps_interp': {r: 21 for r in rooms},
-                 'measured_temps': {r: 20 for r in rooms},
+                 'measured_temps': {r: temp for r in rooms},
                  'sensor_last_updated': {r: (NOW + timedelta(seconds=sample_offset)).strftime(FMT)
                                          for r in rooms},
-                 'valve_states': {r: [10] for r in rooms}, 'room_states': {r: 0 for r in rooms},
+                 'valve_states': {r: [valve] for r in rooms},
+                 'room_states': {r: previous_vote for r in rooms},
                  'pump_states': {str(i): 0 for i in range(1, 5)}, 'boiler_state': 0,
                  'occupancy': {r: True for r in rooms}}
         switch = {'cycles': {str(i): 0 for i in range(1, 5)},
                   'rooms': {r: -1 if r == disabled_room else 0 for r in rooms}}
         env['compare_and_command'](switch, state)
         return logs, errors, writes, saved
+
+    def test_overshoot_overrides_previous_yes_at_exact_demand_threshold(self):
+        logs, errors, writes, saved = self.run_control(temp=21.3, valve=2, previous_vote=1)
+        control = saved['system/control.json']
+        self.assertEqual(control['rooms']['1'], {'vote': 0, 'reason': 'above'})
+        self.assertEqual(control['rooms']['2'], {'vote': 0, 'reason': 'above'})
+        self.assertEqual(control['cycles']['1'], 0)
+        self.assertEqual(control['boiler'], 0)
+        self.assertIn({'success_voting': True}, logs)
+        self.assertFalse(errors)
+
+    def test_previous_yes_at_threshold_is_retained_inside_temperature_margin(self):
+        logs, errors, writes, saved = self.run_control(temp=21.1, valve=2, previous_vote=1)
+        control = saved['system/control.json']
+        self.assertEqual(control['rooms']['1'], {'vote': 1, 'reason': 'd_h_on'})
+        self.assertEqual(control['cycles']['1'], 1)
+        self.assertEqual(control['boiler'], 1)
+        self.assertFalse(errors)
 
     def test_one_unconfirmed_TRV_does_not_block_other_room(self):
         logs, errors, writes, saved = self.run_control(failed_trv='71')
