@@ -589,7 +589,13 @@ for digestion_day in digestion_days:
             meter_mapping = {str(cycle): meter_config[str(cycle)]['meter'] for cycle in range(1, 5)}
             phase_data = format_room_phase_day(get_project_root(), digestion_daystamp,
                 get_rooms_info(just_controlled=False), load_json_to_dict('system/radiator_mapping.json'), meter_mapping)
-            export_dict_as_json(phase_data,
+            phase_header = {key: value for key, value in phase_data.items() if key != 'rooms'}
+            phase_index = {}
+            for room, room_data in phase_data['rooms'].items():
+                export_dict_as_json({**phase_header, 'room': room, **room_data},
+                    f'{export_path_prefix}data/formatted/{digestion_daystamp}/room_{room}_phase_points.json')
+                phase_index[room] = {key: value for key, value in room_data.items() if key != 'points'}
+            export_dict_as_json({**phase_header, 'rooms': phase_index},
                 f'{export_path_prefix}data/formatted/{digestion_daystamp}/room_phase_points.json')
             success = True
             report(f'Done: {action_string}.', verbose=True)
