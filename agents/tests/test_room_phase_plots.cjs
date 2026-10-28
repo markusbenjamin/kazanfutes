@@ -26,7 +26,7 @@ context.drawPlotTitleSelector=(node,dims,options,font)=>headings.push({node,opti
 const evaluate=code=>JSON.parse(JSON.stringify(vm.runInContext(code,context)));
 context.event={altKey:true,preventDefault(){}};
 assert.equal(evaluate("openRoomControlPlot(event,'PK')"),true);
-assert.equal(context.mainGraphSetting.title,'room_control_diagnostic');
+assert.equal(context.mainGraphSetting.title,'room_control_phase','room analytics defaults to the phase plane');
 context.mainGraphSetting.day='2026-10-26';
 vm.runInContext("selectRoomAnalyticView('phase')",context);
 assert.equal(context.mainGraphSetting.title,'room_control_phase');
@@ -56,7 +56,7 @@ context.payload={schema_version:1,offset_k:20,points:context.points};
 context.data={'2026-10-26':{room_3_phase_points:context.payload}};
 context.setting={title:'room_control_phase',roomNumToPlot:3,day:'2026-10-26'};
 vm.runInContext('drawRoomPhasePlot(data,setting)',context);
-assert.equal(draws[0].options.plotLabelTabs.choices[1].label,'fázissík');
+assert.deepEqual(Array.from(draws[0].options.plotLabelTabs.choices,choice=>choice.label),['fázissík','összegzés']);
 assert.equal(draws[0].options.domain.bottom[0],0);
 assert.equal(draws[0].options.domain.bottom[1],30);
 assert.equal(draws[0].options.axesLabel.bottom,'relatív fűtési intenzitás (K)');
@@ -72,7 +72,7 @@ const trajectory=markers.find(node=>node.attrs.class==='room-phase-trajectory');
 assert.equal(trajectory.attrs.stroke,'room-color-3');
 assert.equal(trajectory.attrs['stroke-width'],1.25);
 const timeMarkers=markers.filter(node=>node.attrs.class==='room-phase-time-point');
-assert.equal(timeMarkers.length,0,'no intermittent dots or hourly arrows remain');
+assert.equal(timeMarkers.length,0,'a short trajectory has no interior hourly markers');
 const start=markers.filter(node=>node.attrs.class==='room-phase-start-marker');
 assert.equal(start.length,1);
 assert.equal(start[0].attrs.fill,'black');
@@ -98,6 +98,14 @@ const tangent=evaluate('roomPhasePointDirection(corner,1,value=>value,value=>val
 assert.ok(Math.abs(tangent.dx-Math.SQRT1_2)<1e-12&&Math.abs(tangent.dy-Math.SQRT1_2)<1e-12,
     'direction follows the forward Catmull–Rom tangent, not just the incoming leg');
 assert.deepEqual(evaluate("roomPhaseSegments([], '2026-10-26')"),[]);
+assert.deepEqual(evaluate('roomPhaseHourlyPoints([])'),[]);
+context.hourlyPoints=[point('00-00-20',1,2),point('00-59-40',1,3),point('01-03-00',1,4),
+    point('01-58-00',1,5),point('02-00-00',1,6),point('02-59-40',1,7),point('03-00-20',1,8),point('03-10-00',1,9)];
+assert.deepEqual(evaluate("roomPhaseHourlyPoints(roomPhaseSegments(hourlyPoints, '2026-10-26')[0]).map(point=>point.timestamp.slice(11))"),
+    ['00-00-20','00-59-40','02-00-00','02-59-40'], 'hourly markers use the closest observation on either side, with earlier ties');
+context.gapPoints=[point('00-00-00',1,2),point('04-00-00',1,3)];
+assert.equal(evaluate("roomPhaseHourlyPoints(roomPhaseSegments(gapPoints,'2026-10-26')[0]).length"),2,
+    'long gaps never duplicate an observation');
 assert.deepEqual(evaluate('roomPhaseSmoothedPoints([])'),[]);
 context.noisyPoints=[point('10-00-00',0,0),point('10-01-00',0,0),point('10-02-00',10,20),
     point('10-03-00',0,0),point('10-04-00',0,0),point('10-20-00',30,40)];
@@ -146,12 +154,30 @@ roomGroup.events['focusin.phase-focus']();
 assert.equal(roomPath.attrs['stroke-width'],2.5,'keyboard focus has the same emphasis');
 roomGroup.events['focusout.phase-focus']();
 assert.equal(roomPath.attrs['stroke-width'],1.25);
+
+markers.length=0;curves.length=0;tooltips.length=0;
+context.hourlyData={'2026-10-26':{room_3_phase_points:{schema_version:1,offset_k:0,points:context.hourlyPoints}}};
+vm.runInContext('drawRoomPhasePlot(hourlyData,setting)',context);
+const hourlyArrows=markers.filter(node=>node.attrs.class==='room-phase-time-point');
+assert.deepEqual(hourlyArrows.map(node=>node.attrs['data-timestamp'].slice(11)),['00-59-40','02-00-00','02-59-40']);
+assert.ok(hourlyArrows.every(node=>node.tag==='path'&&node.attrs.fill==='black'&&node.attrs.transform.includes('rotate(')));
+hourlyArrows.forEach(node=>{
+    const index=context.hourlyPoints.findIndex(point=>point.timestamp===node.attrs['data-timestamp']);
+    const pos=node.attrs.transform.match(/^translate\(([^,]+),([^\)]+)\)/).slice(1).map(Number);
+    assert.deepEqual(pos,curves[0].rows[index],'hourly arrowheads lie on the smoothed curve, not the raw observations');
+});
+assert.ok(['00:59','02:00','02:59'].every(time=>tooltips.includes(time)));
+assert.equal(markers.filter(node=>node.attrs.class==='room-phase-start-marker').length,1);
+assert.equal(markers.filter(node=>node.attrs.class==='room-phase-latest-point').length,1);
+assert.equal(markers.filter(node=>node.attrs.class==='room-phase-direction').length,1);
 draws.length=0;
 vm.runInContext('drawRoomPhasePlot({},setting)',context);
 assert.equal(draws.length,1);
 assert.ok(draws[0].options.emptyMessage);
 vm.runInContext("selectRoomAnalyticView('summary')",context);
 assert.equal(context.mainGraphSetting.title,'room_control_diagnostic');
+vm.runInContext("openRoomControlPlot(event,'PK')",context);
+assert.equal(context.mainGraphSetting.title,'room_control_diagnostic','explicit room summary choice remains available and remembered');
 vm.runInContext("selectRoomAnalyticView('phase'); openRoomControlPlot(event,'PK')",context);
 assert.equal(context.mainGraphSetting.title,'room_control_phase','room analytics remembers its selected view');
 
@@ -187,7 +213,7 @@ assert.equal(draws.at(-1).options.domain.bottom[0],0);
 vm.runInContext("openRoomControlPlot(event,'general_infobox')",context);
 assert.equal(context.mainGraphSetting.title,'room_control_phase','main box remembers phase selection');
 vm.runInContext("openRoomControlPlot(event,'cycle2_infobox')",context);
-assert.equal(context.mainGraphSetting.title,'room_control_daily','cycle selection is independent of the main box');
+assert.equal(context.mainGraphSetting.title,'room_control_phase','cycle infobox analytics defaults to phase independently of the main box');
 vm.runInContext("selectRoomAnalyticView('phase'); navigateRoomControlDay(-1)",context);
 assert.equal(context.mainGraphSetting.cycleNum,2);
 assert.deepEqual(evaluate('mainGraphSetting.types'),['room_2_phase_points','room_3_phase_points']);
@@ -196,6 +222,7 @@ assert.deepEqual(loads.at(-1).requests.map(request=>request.type),['room_2_phase
 markers.length=0;
 vm.runInContext('drawRoomPhasePlot(aggregateData,mainGraphSetting)',context);
 assert.deepEqual(markers.filter(node=>node.attrs.class==='room-phase-trajectory').map(node=>node.attrs['data-room']),[3]);
+assert.equal(markers.filter(node=>node.attrs.class==='room-phase-time-point').length,0,'cycle plots remain free of intermittent markers');
 assert.equal(headings.at(-1).options.prefix,'2. kör — ');
 vm.runInContext("selectRoomAnalyticView('summary')",context);
 assert.equal(context.mainGraphSetting.title,'room_control_daily');
@@ -211,4 +238,8 @@ assert.deepEqual(evaluate("roomControlPlotRooms({cycleNum:1})"),[1]);
 assert.deepEqual(evaluate("roomControlPlotRooms({cycleNum:2})"),[2,3]);
 assert.deepEqual(evaluate("roomControlPlotRooms({cycleNum:3})"),[]);
 assert.deepEqual(evaluate("roomControlPlotRooms({cycleNum:4})"),[]);
-console.log('Room phase views passed: room/main/cycle selectors and colours, scoped loads, shared axes, dates, smoothing, zero offset, thick hover-raised/haloed curves, black start arrows and room-coloured endpoints with red direction arrows.');
+assert.equal(evaluate("createRoomControlPlotSetting('cycle1_infobox').title"),'room_control_phase');
+assert.equal(evaluate("createRoomControlPlotSetting('cycle3_infobox').title"),'room_control_phase');
+assert.equal(evaluate("createRoomControlPlotSetting('cycle4_infobox').title"),'room_control_phase');
+assert.deepEqual(evaluate("roomAnalyticTabs({title:'room_control_phase',cycleNum:1}).choices.map(choice=>choice.label)"),['fázissík','napi hiba']);
+console.log('Room phase views passed: single-room-only smoothed hourly arrowheads/time tooltips, unchanged aggregate/cycle markers, scopes, colours, dates, smoothing, zero offset and hover emphasis.');

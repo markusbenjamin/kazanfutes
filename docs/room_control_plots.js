@@ -35,7 +35,7 @@ function createRoomControlPlotSetting(elementId, day = dayStamp()) {
     const diagnostic = base?.title === 'room_plot';
     if (!overview && !diagnostic) return null;
     const scope = {roomNumToPlot: diagnostic ? base.roomNumToPlot : null, cycleNum: cycleMatch ? Number(cycleMatch[1]) : null};
-    const phase = roomAnalyticSelections[roomAnalyticKey(scope)] === 'phase';
+    const phase = (roomAnalyticSelections[roomAnalyticKey(scope)] || 'phase') === 'phase';
     return {title: phase ? 'room_control_phase' : overview ? 'room_control_daily' : 'room_control_diagnostic',
         roomNumToPlot: diagnostic ? base.roomNumToPlot : null, day,
         cycleNum: cycleMatch ? Number(cycleMatch[1]) : null,
@@ -60,7 +60,7 @@ function roomAnalyticTabs(setting) {
     const name = room != null ? roomsDataAndState[room].name : setting.cycleNum ? setting.cycleNum + '. kör' : 'szobák';
     return {prefix: name + ' — ',
         selected: setting.title === 'room_control_phase' ? 'phase' : 'summary',
-        choices: [{key: 'summary', label: room != null ? 'összegzés' : 'napi hiba', color: 'black'}, {key: 'phase', label: 'fázissík', color: 'black'}],
+        choices: [{key: 'phase', label: 'fázissík', color: 'black'}, {key: 'summary', label: room != null ? 'összegzés' : 'napi hiba', color: 'black'}],
         onSelect: selectRoomAnalyticView};
 }
 

@@ -1,8 +1,10 @@
 # Room tracking diagnostics
 
 Ordinary room hover, ordinary click and Ctrl+click retain their existing
-behaviour. Alt+click a room pins its control summary in the main plotting
-area. Alt+click the main system infobox pins the all-room daily error view.
+behaviour. Alt+click a room pins its phase-plane plot by default, with the
+control summary available as the second selector option. Main and cycle
+infobox Alt+clicks likewise default to the phase plane, with daily error second.
+An explicitly selected alternative is remembered for that room or infobox.
 Clicking away restores the ordinary plot. Date arrows sit in the plot frame's
 top corners. Past dates appear beside `rögzítve` above the dotted frame; today's date is omitted.
 No future days can be selected.
@@ -11,8 +13,8 @@ The primary metric is mean absolute temperature error weighted by the room's
 associated cycle's commanded circulation multiplied by mean valve opening
 (0–1). Rooms without smart valves use opening 1. It is not electrical power,
 room demand, measured heat delivery, or a verdict on controller quality.
-The main-infobox Alt+click now opens a single-day error curve for each controlled
-room. Error is exactly zero for a known room heat-demand vote of zero, and
+The main-infobox secondary `napi hiba` view shows a single-day error curve for
+each controlled room. Error is exactly zero for a known room heat-demand vote of zero, and
 `set_temps - measured_temps` while that room demands heat. Positive K means
 below target, negative K means above. Room demand is not inferred from cycle
 pumps or valve opening. Each curve uses the existing room colour and has a
@@ -21,8 +23,8 @@ family at a smaller 4.5-unit size (title: 7), without numerical error readouts.
 Up to six room names share one line; the all-room legend uses two balanced
 lines, never three, leaving more room for the chart.
 The former right-hand value list is
-removed, restoring the full chart width. Alt+click a cycle infobox opens the same
-daily view filtered to controlled rooms assigned to that cycle by the existing
+removed, restoring the full chart width. A cycle infobox's secondary `napi hiba`
+view is filtered to controlled rooms assigned to that cycle by the existing
 room metadata. Date navigation preserves this cycle filter. Main-infobox
 Alt+click still shows all controlled rooms. Corner arrows change days; missing demand and unavailable or
 stale temperatures during demand are gaps, never false zero. Curves are steps,

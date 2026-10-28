@@ -1,13 +1,13 @@
 # Room phase-plane experiment
 
-Alt+click a room, then choose `fázissík` beside `összegzés`. Touch uses the same
+Alt+click a room to open `fázissík` by default, with `összegzés` second. Touch uses the same
 selector under `analitika`. The old summary, main/cycle daily error plots and
 Ctrl+click sensor selector remain available. View selection is remembered per
 room and dates are preserved when switching.
 
 Alt+click the main infobox for all controlled rooms, or a cycle infobox for only
 the rooms assigned to that cycle in the existing setup. Their analytics selector
-switches between `napi hiba` and `fázissík`; touch uses `analitika` as before.
+defaults to `fázissík`, with `napi hiba` second; touch uses `analitika` as before.
 Selection is remembered separately for each room, each cycle and the main box.
 The aggregate chart overlays separate room trajectories on shared axes (never
 averaging rooms), with the same canonical room colours as the existing dashboard
@@ -69,7 +69,12 @@ rolling mean (valid observations within ±15 minutes of each logged timestamp).
 The actual first and latest positions anchor the ends. This is display-only:
 raw payloads do not change. All valid observations are joined, including across unknown
 records, source changes and long gaps; these connecting curves are visual
-interpolation, not additional measurements. There are no intermediate markers.
+interpolation, not additional measurements. Single-room plots also have small
+black hourly arrowheads on the smoothed curve, following its local forward
+tangent. Each uses the nearest valid logged timestamp to the whole hour and
+shows actual HH:MM on hover. Repeated selections across gaps and the existing
+large start/end positions are not duplicated; stationary positions have no
+invented arrow direction. All-room and cycle views have no intermediate markers.
 Each trajectory starts with a large black arrowhead following its forward tangent
 and ends with a large room-coloured dot plus the red current-direction arrow.
 Start/end tooltips show actual HH:MM (and the room name in aggregate views).
