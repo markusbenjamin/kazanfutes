@@ -80,7 +80,8 @@ and ends with a large room-coloured dot plus the red current-direction arrow.
 Start/end tooltips show actual HH:MM (and the room name in aggregate views).
 A fully stationary trajectory has a black starting dot instead of an invented
 direction. Curves have the main all-room plot's 1.25-unit base thickness (2.5 on
-the explicit mobile layout). Hover or keyboard focus doubles line width, raises
+the explicit mobile layout). Hover or keyboard focus doubles line width only
+in the all-room and cycle views; single-room line width stays fixed. It raises
 the whole room trajectory/markers above the others, shows a translucent white
 halo, and enlarges the start/end markers; leaving restores normal styling.
 Both axes retain a visible zero
