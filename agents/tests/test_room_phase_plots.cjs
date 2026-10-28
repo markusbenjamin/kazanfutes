@@ -59,7 +59,7 @@ vm.runInContext('drawRoomPhasePlot(data,setting)',context);
 assert.deepEqual(Array.from(draws[0].options.plotLabelTabs.choices,choice=>choice.label),['fázissík','összegzés']);
 assert.equal(draws[0].options.domain.bottom[0],0);
 assert.equal(draws[0].options.domain.bottom[1],30);
-assert.equal(draws[0].options.axesLabel.bottom,'relatív fűtési intenzitás (K)');
+assert.equal(draws[0].options.axesLabel.bottom,'radiátor hőmérséklet (K)');
 assert.equal(draws[0].options.axesLabel.left,'eltérés: mért − kért (K)');
 assert.equal(draws[0].options.dataKeys.bottom,'intensity_k');
 assert.equal(draws[0].options.dataKeys.left,'deviation_k');
