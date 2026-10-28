@@ -141,7 +141,7 @@ const roomEnd=markers.find(node=>node.attrs.class==='room-phase-latest-point');
 roomGroup.events['mouseenter.phase-focus']();
 assert.equal(roomGroup.attrs['data-emphasized'],'true');
 assert.equal(roomGroup.raises,1,'hovered room and its markers rise above other trajectories');
-assert.equal(roomPath.attrs['stroke-width'],2.5);
+assert.equal(roomPath.attrs['stroke-width'],1.25,'single-room curves keep their width on hover');
 assert.equal(roomHalo.attrs.opacity,1);
 assert.equal(roomEnd.attrs.r,6);
 assert.ok(startArrow.attrs.transform.endsWith('scale(1.5)'));
@@ -151,7 +151,7 @@ assert.equal(roomHalo.attrs.opacity,0);
 assert.equal(roomEnd.attrs.r,3);
 assert.ok(!startArrow.attrs.transform.includes('scale('));
 roomGroup.events['focusin.phase-focus']();
-assert.equal(roomPath.attrs['stroke-width'],2.5,'keyboard focus has the same emphasis');
+assert.equal(roomPath.attrs['stroke-width'],1.25,'single-room curves keep their width on keyboard focus too');
 roomGroup.events['focusout.phase-focus']();
 assert.equal(roomPath.attrs['stroke-width'],1.25);
 

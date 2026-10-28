@@ -182,7 +182,7 @@ function drawRoomPhasePlot(data, setting) {
         bindPlotCurveTooltip(marker, tooltip(last), 6, false);
         const emphasize = () => {
             group.raise().attr('data-emphasized', 'true');
-            trajectory.attr('stroke-width', thickness * 2);
+            trajectory.attr('stroke-width', aggregate ? thickness * 2 : thickness);
             halo.attr('opacity', 1);
             start.attr('transform', startTransform + ' scale(1.5)');
             marker.attr('r', 6);
