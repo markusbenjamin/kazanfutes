@@ -18,6 +18,20 @@ function roomPhaseTooltip(point) {
     return point.timestamp.slice(11,16).replace('-', ':');
 }
 
+function roomPhaseHourlyPoints(points) {
+    if (!points.length) return [];
+    const selected = [], seen = new Set();
+    const latestHour = Math.floor(points.at(-1).h_of_day_frac);
+    for (let hour = 0; hour <= latestHour; hour++) {
+        const nearest = points.reduce((best, point) =>
+            Math.abs(point.h_of_day_frac - hour) < Math.abs(best.h_of_day_frac - hour) ? point : best);
+        if (seen.has(nearest.timestamp)) continue;
+        seen.add(nearest.timestamp);
+        selected.push(nearest);
+    }
+    return selected;
+}
+
 function roomPhaseSmoothedPoints(points, windowMinutes = 30) {
     const halfWindow = windowMinutes / 120;
     let left = 0, right = 0, errorSum = 0, intensitySum = 0;
@@ -128,6 +142,18 @@ function drawRoomPhasePlot(data, setting) {
             .attr('pointer-events', 'stroke');
         bindPlotCurveTooltip(hitArea, curve.name, 6, false);
         const first = smoothedPoints[0];
+        if (!aggregate) for (const point of roomPhaseHourlyPoints(smoothedPoints)) {
+            // The existing large start/end markers already cover these positions.
+            if (point === first || point === smoothedPoints.at(-1)) continue;
+            const direction = roomPhasePointDirection(smoothedPoints, smoothedPoints.indexOf(point), x, y);
+            if (!direction) continue;
+            const angle = Math.atan2(direction.dy, direction.dx) * 180 / Math.PI;
+            const hourly = group.append('path').attr('class', 'room-phase-time-point')
+                .attr('data-room', curve.room).attr('data-timestamp', point.timestamp)
+                .attr('transform', `translate(${x(point.intensity_k)},${y(point.deviation_k)}) rotate(${angle})`)
+                .attr('d', 'M2,0L-1.5,-1.25L-1,0L-1.5,1.25Z').attr('fill', 'black');
+            bindPlotCurveTooltip(hourly, tooltip(point), 6, false);
+        }
         const startDirection = roomPhasePointDirection(smoothedPoints, 0, x, y);
         const startAngle = startDirection ? Math.atan2(startDirection.dy, startDirection.dx) * 180 / Math.PI : 0;
         const startTransform = `translate(${x(first.intensity_k)},${y(first.deviation_k)}) rotate(${startAngle})`;
