@@ -6,8 +6,8 @@ const draws=[], markers=[], tooltips=[], loads=[];
 const curves=[], headings=[];
 function line(){let x,y,curve;const f=rows=>{curves.push({rows:rows.map(row=>[x(row),y(row)]),curve});return 'M0,0C1,1,2,2,3,3';};
     f.x=value=>(x=value,f);f.y=value=>(y=value,f);f.curve=value=>(curve=value,f);return f;}
-function selection(){const node={attrs:{},events:{},raises:0,append(tag){const child=selection();child.tag=tag;markers.push(child);return child;},
-    attr(key,value){this.attrs[key]=value;return this;},style(){return this;},text(value){this.value=value;return this;},
+function selection(){const node={attrs:{},styles:{},events:{},raises:0,append(tag){const child=selection();child.tag=tag;markers.push(child);return child;},
+    attr(key,value){this.attrs[key]=value;return this;},style(key,value){this.styles[key]=value;return this;},text(value){this.value=value;return this;},
     on(key,handler){this.events[key]=handler;return this;},raise(){this.raises++;return this;}};return node;}
 function scale(){let domain=[0,1],range=[0,1];const f=value=>range[0]+(value-domain[0])/(domain[1]-domain[0])*(range[1]-range[0]);
     f.domain=value=>(domain=value,f);f.range=value=>(range=value,f);return f;}
@@ -56,7 +56,15 @@ context.payload={schema_version:1,offset_k:20,points:context.points};
 context.data={'2026-10-26':{room_3_phase_points:context.payload}};
 context.setting={title:'room_control_phase',roomNumToPlot:3,day:'2026-10-26'};
 vm.runInContext('drawRoomPhasePlot(data,setting)',context);
-assert.deepEqual(Array.from(draws[0].options.plotLabelTabs.choices,choice=>choice.label),['fázissík','összegzés']);
+assert.equal(draws[0].options.plotLabelTabs,false,'phase heading is drawn above its own state row');
+assert.deepEqual(Array.from(headings[0].options.choices,choice=>choice.label),['fázissík','összegzés']);
+const initialState=markers.find(node=>node.attrs.class==='room-phase-state');
+assert.equal(initialState.value,'szoba jó de melegszik, radiátor meleg és melegszik');
+assert.equal(initialState.styles['font-family'],'Consolas');
+assert.equal(initialState.styles['font-size'],'6px','state uses the axis-label font size');
+assert.equal(initialState.styles.fill,'#777','state matches unselected selector text');
+assert.equal(initialState.styles['text-anchor'],'middle');
+assert.ok(initialState.attrs.y<0,'state remains above the axes, not over the trajectory');
 assert.equal(draws[0].options.domain.bottom[0],0);
 assert.equal(draws[0].options.domain.bottom[1],30);
 assert.equal(draws[0].options.axesLabel.bottom,'radiátor hőmérséklet (K)');
@@ -93,6 +101,52 @@ context.signPoints=[point('10-00-00',2,-10),point('10-01-00',-2,10)];
 const signDirection=evaluate('roomPhaseDirection(signPoints, value=>value, value=>-value)');
 assert.ok(signDirection.dx>0&&signDirection.dy<0,'overheating moves up and hotter radiators move right');
 assert.equal(evaluate('roomPhaseDirection([repeated[1],repeated[2]], value=>value, value=>value)'),null);
+function movement(rows) {
+    context.movementRows=rows;
+    return evaluate("(() => {const points=roomPhaseSegments(movementRows,'2026-10-26')[0] || []; const motion=roomPhaseMovement(points,roomPhaseDirection(points,value=>value,value=>-value)); return [['szoba',motion.room],['radiátor',motion.radiator]].filter(([,motion])=>motion).map(([name,motion])=>name+' '+motion).join(', ');})()");
+}
+assert.equal(movement([]),'');
+assert.equal(movement([point('10-00-00',0,2)]),'');
+assert.equal(movement([point('10-00-00',0,2),point('10-10-00',-.1,2.5)]),'szoba melegszik, radiátor melegszik');
+assert.equal(movement([point('10-00-00',0,2),point('10-10-00',.1,1.5)]),'szoba hűl, radiátor hűl');
+assert.equal(movement([point('10-00-00',0,2),point('10-10-00',-.09,2.49)]),'','independent deadbands omit both small components');
+assert.equal(movement([point('10-00-00',0,2),point('10-10-00',-.2,2.1)]),'szoba melegszik');
+assert.equal(movement([point('10-00-00',0,2),point('10-10-00',.02,3)]),'radiátor melegszik');
+assert.equal(movement([point('10-00-00',0,2),point('10-05-00',.2,3)]),'szoba hűl, radiátor melegszik');
+assert.equal(movement([point('10-00-00',0,2),point('10-10-00',-1,5),point('10-11-00',-.8,4)]),
+    'szoba hűl, radiátor hűl','use the final arrow direction, not the opposite ten-minute trend');
+assert.equal(movement([point('10-05-00',0,2),point('10-10-00',-1,5),point('10-11-00',-1,5)]),
+    'szoba melegszik, radiátor melegszik','repeated endpoint uses the same previous distinct point as the arrow');
+assert.equal(movement([point('10-00-00',0,2),point('10-11-00',-1,5)]),'','long incoming gaps do not imply a current state');
+assert.equal(movement([point('10-00-00',0,2),point('10-00-00',-1,5)]),'','duplicate timestamps have no valid rate');
+assert.equal(movement([point('10-00-00',0,2),point('10-10-00',0,2)]),'','stationary trajectories have no state');
+function diagnostic(rows) {
+    context.diagnosticRows=rows;
+    return evaluate("(() => {const points=roomPhaseSegments(diagnosticRows,'2026-10-26')[0] || []; return roomPhaseDiagnosticText(points,roomPhaseDirection(points,value=>value,value=>-value));})()");
+}
+assert.equal(diagnostic([]),'');
+assert.equal(evaluate('ROOM_PHASE_ROOM_BAND_K'),1);
+assert.equal(diagnostic([point('10-00-00',1.01,16)]),'szoba hideg, radiátor meleg');
+assert.equal(diagnostic([point('10-00-00',-1.01,5)]),'szoba meleg, radiátor hideg');
+assert.equal(diagnostic([point('10-00-00',1,15)]),'szoba jó, radiátor langyos','both exact upper boundaries are inclusive');
+assert.equal(diagnostic([point('10-00-00',-1,5)]),'szoba jó, radiátor hideg','exact lower boundaries are inclusive');
+assert.equal(diagnostic([point('10-00-00',.9,15.01)]),'szoba jó, radiátor meleg','the full plus/minus one K band is good');
+assert.equal(diagnostic([point('10-00-00',0,5.01)]),'szoba jó, radiátor langyos');
+assert.equal(diagnostic([{...point('10-00-00',1.3,99),radiator_temp_c:30,room_temp_c:20}]),
+    'szoba hideg, radiátor langyos','actual radiator-minus-room temperatures take precedence over X fallback');
+assert.equal(diagnostic([{...point('10-00-00',1.3,20),radiator_temp_c:null}]),'szoba hideg, radiátor meleg','older payloads retain the zero-offset axis fallback');
+assert.equal(diagnostic([point('10-00-00',.9,16),point('10-05-00',1.1,17)]),
+    'szoba hideg és hűl, radiátor meleg és melegszik');
+assert.equal(diagnostic([point('10-00-00',0,10),point('10-10-00',-.02,9)]),
+    'szoba jó, radiátor langyos és hűl','quiet component keeps its state without a conjunction');
+assert.equal(diagnostic([point('10-00-00',0,10),point('10-10-00',.2,10)]),
+    'szoba jó de hűl, radiátor langyos');
+assert.equal(diagnostic([point('10-00-00',0,10),point('10-10-00',-.2,10)]),
+    'szoba jó de melegszik, radiátor langyos');
+assert.equal(diagnostic([point('10-00-00',-1.2,10),point('10-10-00',-1.4,9)]),
+    'szoba meleg és melegszik, radiátor langyos és hűl','other room states and radiator retain és');
+assert.equal(diagnostic([point('10-00-00',1.2,20),point('11-00-00',1.4,10)]),
+    'szoba hideg, radiátor langyos','long gaps suppress motion, not the latest valid states');
 context.corner=[point('10-00-00',0,0),point('10-01-00',0,1),point('10-02-00',-1,1)];
 const tangent=evaluate('roomPhasePointDirection(corner,1,value=>value,value=>value)');
 assert.ok(Math.abs(tangent.dx-Math.SQRT1_2)<1e-12&&Math.abs(tangent.dy-Math.SQRT1_2)<1e-12,
@@ -199,6 +253,9 @@ assert.deepEqual(markers.filter(node=>node.attrs.class==='room-phase-latest-poin
 const aggregateGroups=markers.filter(node=>node.attrs.class==='room-phase-room');
 const aggregateStarts=markers.filter(node=>node.attrs.class==='room-phase-start-marker');
 const aggregateEnds=markers.filter(node=>node.attrs.class==='room-phase-latest-point');
+const aggregateState=markers.find(node=>node.attrs.class==='room-phase-state');
+assert.equal(aggregateState,undefined,'multi-room plots have no movement state');
+assert.equal(draws.at(-1).options.margins.top,.18,'aggregate heading does not reserve a state row');
 aggregateGroups[0].events['mouseenter.phase-focus']();
 assert.equal(aggregatePaths[0].attrs['stroke-width'],2.5);
 assert.equal(aggregatePaths[1].attrs['stroke-width'],1.25,'hover affects only its own room');
@@ -206,6 +263,8 @@ assert.ok(aggregateStarts[0].attrs.transform.endsWith('scale(1.5)'));
 assert.equal(aggregateEnds[0].attrs.r,6);
 assert.equal(aggregateEnds[1].attrs.r,3);
 aggregateGroups[0].events['mouseleave.phase-focus']();
+aggregateGroups[1].events['focusin.phase-focus']();
+aggregateGroups[1].events['focusout.phase-focus']();
 assert.ok(!aggregateStarts[0].attrs.transform.includes('scale('));
 assert.equal(aggregateEnds[0].attrs.r,3);
 assert.equal(headings.at(-1).options.prefix,'szobák — ');
@@ -225,6 +284,7 @@ markers.length=0;
 vm.runInContext('drawRoomPhasePlot(aggregateData,mainGraphSetting)',context);
 assert.deepEqual(markers.filter(node=>node.attrs.class==='room-phase-trajectory').map(node=>node.attrs['data-room']),[3]);
 assert.equal(markers.filter(node=>node.attrs.class==='room-phase-time-point').length,0,'cycle plots remain free of intermittent markers');
+assert.equal(markers.filter(node=>node.attrs.class==='room-phase-state').length,0,'cycle plots have no movement state');
 assert.equal(headings.at(-1).options.prefix,'2. kör — ');
 vm.runInContext("selectRoomAnalyticView('summary')",context);
 assert.equal(context.mainGraphSetting.title,'room_control_daily');
@@ -244,4 +304,7 @@ assert.equal(evaluate("createRoomControlPlotSetting('cycle1_infobox').title"),'r
 assert.equal(evaluate("createRoomControlPlotSetting('cycle3_infobox').title"),'room_control_phase');
 assert.equal(evaluate("createRoomControlPlotSetting('cycle4_infobox').title"),'room_control_phase');
 assert.deepEqual(evaluate("roomAnalyticTabs({title:'room_control_phase',cycleNum:1}).choices.map(choice=>choice.label)"),['fázissík','napi hiba']);
-console.log('Room phase views passed: single-room-only smoothed hourly arrowheads/time tooltips, unchanged aggregate/cycle markers, scopes, colours, dates, smoothing, zero offset and hover emphasis.');
+context.fetchJSONEndpoint=()=>{throw new Error('Plot-only state must not fetch control config');};
+vm.runInContext('drawRoomPhasePlot(data,setting)',context);
+assert.equal(evaluate('typeof loadRoomPhaseHysteresis'),'undefined','plot band has no config-loading dependency');
+console.log('Room phase views passed: fixed plot-only +/-1 K room band, diagnostic states and arrow-consistent motion, single-room-only text, hourly tooltips, unchanged aggregate/cycle markers, dates, smoothing and hover emphasis.');

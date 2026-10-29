@@ -86,6 +86,30 @@ shows a translucent white halo, and enlarges the start/end markers; leaving
 restores normal styling. Single-room views have no hover/focus emphasis:
 line width, start/end sizes, halo and stacking stay unchanged. Time tooltips
 remain available.
+Below the phase selector, a six-unit, dashboard-font `#777` status reads
+for example `szoba hideg és hűl, radiátor meleg és melegszik`.
+Room state uses the logged set-minus-measured error and a fixed plot-only
+±1 K band: below set-minus-1 is `hideg`, above set-plus-1 is `meleg`, and
+both band edges are included in `jó`. This does not fetch or change the
+controller's hysteresis/configuration, and applies equally to archived dates.
+Radiator state uses the latest radiator-minus-room temperature difference:
+at most 5 K is `hideg`, over 5 K through 15 K is `langyos`, over 15 K is `meleg`.
+This uses the payload's measured/estimated effective radiator temperature,
+falling back to the zero-offset X coordinate for older payloads.
+Only movement words are omitted below their thresholds: 0.1 K per ten minutes
+for Y, 0.5 K per ten minutes for X. A stationary component keeps its state,
+without `és` (e.g. `szoba jó, radiátor langyos`).
+When the room is `jó` and moving, use `de` instead: `szoba jó de hűl` or
+`szoba jó de melegszik`. Other states and radiator wording retain `és`.
+Both rates come from the same incoming segment of the smoothed trajectory as
+the final red arrow, never a separate trend window: up/right means warming,
+down/left cooling. These describe the plotted coordinates (room deviation
+and radiator excess), not independently recalculated absolute temperatures.
+No movement is claimed for stationary/single-point trajectories, duplicate-time
+segments or an incoming interval longer than ten minutes. Single-room status
+is always visible when meaningful. All-room and cycle views do not show this
+state text or reserve space for it. The single-room subtitle has its own
+compact row above the axes.
 Both axes retain a visible zero
 reference; Y fits the observed deviations rather than reserving an equally
 large empty opposite side. Backend availability and freshness rules are unchanged.

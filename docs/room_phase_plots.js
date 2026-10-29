@@ -57,10 +57,14 @@ function roomPhasePointDirection(points, index, x, y) {
     const point = points[index];
     if (!point) return null;
     const end = [x(point.intensity_k), y(-point.error_k)];
+    let previousIndex = null;
     const distinct = step => {
         for (let neighbour = index + step; neighbour >= 0 && neighbour < points.length; neighbour += step) {
             const position = [x(points[neighbour].intensity_k), y(-points[neighbour].error_k)];
-            if (Math.hypot(position[0] - end[0], position[1] - end[1]) > .01) return position;
+            if (Math.hypot(position[0] - end[0], position[1] - end[1]) > .01) {
+                if (step < 0) previousIndex = neighbour;
+                return position;
+            }
         }
         return null;
     };
@@ -79,11 +83,46 @@ function roomPhasePointDirection(points, index, x, y) {
         dy = next ? next[1] - end[1] : end[1] - previous[1];
     }
     const distance = Math.hypot(dx, dy);
-    return {end, dx: dx / distance, dy: dy / distance};
+    return {end, dx: dx / distance, dy: dy / distance, previousIndex};
 }
 
 function roomPhaseDirection(points, x, y) {
     return roomPhasePointDirection(points, points.length - 1, x, y);
+}
+
+function roomPhaseMovement(points, direction) {
+    const movement = {room: null, radiator: null};
+    if (!direction || direction.previousIndex === null) return movement;
+    const last = points.at(-1), previous = points[direction.previousIndex];
+    const elapsed = last.h_of_day_frac - previous.h_of_day_frac;
+    // Use the arrow's exact incoming segment, expressed as K per ten minutes.
+    // A long gap is not evidence for a current heating/cooling state.
+    if (!(elapsed > 0) || elapsed > 10 / 60 + 1e-9) return movement;
+    const roomChange = (previous.error_k - last.error_k) / elapsed / 6;
+    const radiatorChange = (last.intensity_k - previous.intensity_k) / elapsed / 6;
+    if (Math.abs(roomChange) >= .1 - 1e-9)
+        movement.room = direction.dy < 0 ? 'melegszik' : 'hűl';
+    if (Math.abs(radiatorChange) >= .5 - 1e-9)
+        movement.radiator = direction.dx > 0 ? 'melegszik' : 'hűl';
+    return movement;
+}
+
+// Plot-only classification band; independent of the real heating controller.
+const ROOM_PHASE_ROOM_BAND_K = 1;
+
+function roomPhaseDiagnosticText(points, direction) {
+    const last = points.at(-1);
+    if (!last) return '';
+    const movement = roomPhaseMovement(points, direction);
+    const roomState = Number.isFinite(last.error_k)
+        ? last.error_k > ROOM_PHASE_ROOM_BAND_K ? 'hideg' : last.error_k < -ROOM_PHASE_ROOM_BAND_K ? 'meleg' : 'jó' : null;
+    const excess = Number.isFinite(last.radiator_temp_c) && Number.isFinite(last.room_temp_c)
+        ? last.radiator_temp_c - last.room_temp_c : last.intensity_k;
+    const radiatorState = Number.isFinite(excess) ? excess > 15 ? 'meleg' : excess > 5 ? 'langyos' : 'hideg' : null;
+    return [['szoba', roomState, movement.room], ['radiátor', radiatorState, movement.radiator]]
+        .filter(([, state, motion]) => state || motion)
+        .map(([name, state, motion]) => name + ' ' + [state, motion].filter(Boolean)
+            .join(name === 'szoba' && state === 'jó' ? ' de ' : ' és ')).join(', ');
 }
 
 function drawRoomPhasePlot(data, setting) {
@@ -102,16 +141,26 @@ function drawRoomPhasePlot(data, setting) {
     const yTop = Math.max(1, Math.ceil(Math.max(0, ...errors) * 2) / 2 + .5);
     const xBottom = 0;
     const xTop = Math.max(20, Math.ceil(Math.max(0, ...points.map(point => point.intensity_k)) / 10) * 10);
-    const common = {parentId: 'graph', margins: {top: .13 + legendRows * .05, right: .04, bottom: .18, left: .12},
+    const common = {parentId: 'graph', margins: {top: (aggregate ? .13 : .17) + legendRows * .05, right: .04, bottom: .18, left: .12},
         domain: {bottom: [xBottom,xTop], left: [yBottom,yTop], niceLeft: false},
         dataKeys: {bottom: 'intensity_k', left: 'deviation_k'}, smoothing: {bottom: 0, left: 0},
         axesLabel: {bottom: 'radiátor hőmérséklet (K)', left: 'eltérés: mért − kért (K)'},
         plotStyle: {joined: false, startCap: false, endCap: false},
         segment: {do: false}, curveEndText: {show: false}, plotLabel: ''};
-    const area = drawPlot([], {...common, plotLabelTabs: aggregate ? false : roomAnalyticTabs(setting),
+    const area = drawPlot([], {...common, plotLabelTabs: false,
         plotDateNavigation: {day: setting.day, onDayChange: navigateRoomControlDay},
         emptyMessage: points.length ? '' : 'Az adott napra nincs érvényes fázispont.'});
+    const labelScale = isMobile ? mobileViewScaler : 1;
+    let stateLabel;
     if (aggregate) drawRoomAnalyticHeading(area, setting, curves, 'room-phase');
+    else {
+        drawPlotTitleSelector(area.plotElement.append('g').attr('class', 'room-phase-title')
+            .attr('transform', `translate(0,${-8.4 * labelScale})`), area.plotDims, roomAnalyticTabs(setting), 7 * labelScale);
+        stateLabel = area.plotElement.append('text').attr('class', 'room-phase-state')
+            .attr('x', area.plotDims.w / 2).attr('y', -2.5 * labelScale)
+            .style('text-anchor', 'middle').style('font-family', dashboardFont)
+            .style('font-size', 6 * labelScale + 'px').style('fill', '#777').style('pointer-events', 'none').text('');
+    }
     const x = d3.scaleLinear().domain(common.domain.bottom).range([0,area.plotDims.w]);
     const y = d3.scaleLinear().domain(common.domain.left).range([area.plotDims.h,0]);
     area.plotElement.append('line').attr('class', 'room-phase-zero-line')
@@ -164,6 +213,7 @@ function drawRoomPhasePlot(data, setting) {
         bindPlotCurveTooltip(start, tooltip(first), 6, false);
         const last = curve.points.at(-1);
         const direction = roomPhaseDirection(smoothedPoints, x, y);
+        if (!aggregate) stateLabel.text(roomPhaseDiagnosticText(smoothedPoints, direction));
         if (direction) {
             const {end: [cx, cy], dx, dy} = direction;
             const tipX = cx + dx * 11, tipY = cy + dy * 11;
