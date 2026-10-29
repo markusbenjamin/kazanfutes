@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
 const source = fs.readFileSync(path.resolve(__dirname,'../../docs/data.js'),'utf8');
-const draws = [], requests = [];
+const draws = [], requests = [], barDraws = [];
 const context = vm.createContext({Number, Math, Date, Object, Map,
     dayStamp: () => '2026-10-27', getFractionalHourOfDay: () => 12, mainGraphSetting: {}, mainGraphContentLocked: false,
     elementToMainGraphSettingMapping: {boiler_body: {title: 'heating_state', day: '2026-10-27'}},
@@ -11,6 +11,7 @@ const context = vm.createContext({Number, Math, Date, Object, Map,
     navigateMainPlotDay() {}, d3: {range: (start,end,step) => Array.from({length: Math.ceil((end-start)/step)},(_,i) => start+i*step)}});
 for (const file of ['cycle_heat_plots','boiler_metric_plots'])
     vm.runInContext(fs.readFileSync(path.resolve(__dirname,'../../docs/'+file+'.js'),'utf8'),context);
+context.drawLoggedPowerBars = (area, rows, metric, range) => barDraws.push({rows,metric,range});
 vm.runInContext(source.slice(source.indexOf('function extractHeatingPeriodsFromHeatingState('),
     source.indexOf('function convertTimestamps(')),context);
 const evaluate = code => JSON.parse(JSON.stringify(vm.runInContext(code,context)));
@@ -65,9 +66,14 @@ draws.length = 0;
 context.demand = {heating_state:context.states,heating_demand: [{h_of_day_frac:1,demand_kw:0},{h_of_day_frac:1.01,demand_kw:null},
     {h_of_day_frac:1.02,demand_kw:12.25}]};
 vm.runInContext("drawBoilerMetricPlot(demand,createBoilerMetricPlotSetting('2026-10-26','demand'))",context);
-assert.equal(draws.length,3,'unknown demand splits the curve, real zero is kept');
-assert.equal(draws[1].rows[0].demand_kw,0);
-assert.equal(draws.at(-1).options.curveEndText.text,'12.25 kW');
+assert.equal(draws.length,1,'demand uses a single foundation with bars, not curves');
+assert.equal(barDraws.length,1);
+assert.equal(barDraws[0].rows,context.demand.heating_demand,'logged values are passed through unchanged');
+assert.equal(barDraws[0].metric.key,'demand_kw');
+assert.equal(barDraws[0].metric.unit,'kW');
+assert.equal(barDraws[0].metric.color,'rgb(230,130,0)');
+assert.equal(barDraws[0].metric.precision,2);
+assert.equal(barDraws[0].range,draws[0].options.domain.left);
 assert.equal(draws[0].options.rects.list.length,2);
 assert.ok(draws[0].options.rects.list.every(rect=>rect.y1===0&&rect.y2===draws[0].options.domain.left[1]));
 context.openPeriod = [{h_of_day_frac:8,cycle_states:{1:1,2:0,3:0,4:0}}];

@@ -95,12 +95,16 @@ function drawBoilerMetricPlot(data, setting) {
         axesLabel: {bottom: 'óra', left: metric.axis}, tickVals: {left: d3.range(range[0], range[1] + step / 2, step)},
         smoothing: {bottom: 0, left: 0}, segment: {do: false}, plotLabel: '', curveEndText: {show: false},
         plotStyle: {joined: true, thickness: '1', smoothCurve: true, startCap: false, endCap: false}};
-    drawPlot([], {...common, emptyMessage,
+    const area = drawPlot([], {...common, emptyMessage,
         rects: {when: 'before', list: boilerHeatingPeriodRects(data.heating_state, setting.day, range)},
         plotLabelTabs: {prefix: 'kazán — ', selected: setting.metric,
         choices: Object.entries(BOILER_METRICS).map(([key, value]) => ({key, label: value.label, color: value.color})),
         onSelect: selectBoilerMetricPlot},
         plotDateNavigation: {day: setting.day, onDayChange: navigateMainPlotDay}});
+    if (!isTemperature) {
+        drawLoggedPowerBars(area, readings, {...metric, unit: 'kW', precision: 2}, range);
+        return;
+    }
     curves.forEach(curve => curve.segments.forEach((segment, index) => {
         const last = index === curve.segments.length - 1;
         drawPlot(segment, {...common, background: {show: false}, axes: {left: false, bottom: false}, showLockLabel: false,

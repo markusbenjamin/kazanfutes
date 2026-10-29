@@ -138,22 +138,17 @@ const roomGroup=markers.find(node=>node.attrs.class==='room-phase-room');
 const roomPath=markers.find(node=>node.attrs.class==='room-phase-trajectory');
 const roomHalo=markers.find(node=>node.attrs.class==='room-phase-hover-halo');
 const roomEnd=markers.find(node=>node.attrs.class==='room-phase-latest-point');
-roomGroup.events['mouseenter.phase-focus']();
-assert.equal(roomGroup.attrs['data-emphasized'],'true');
-assert.equal(roomGroup.raises,1,'hovered room and its markers rise above other trajectories');
-assert.equal(roomPath.attrs['stroke-width'],1.25,'single-room curves keep their width on hover');
-assert.equal(roomHalo.attrs.opacity,1);
-assert.equal(roomEnd.attrs.r,6);
-assert.ok(startArrow.attrs.transform.endsWith('scale(1.5)'));
-roomGroup.events['mouseleave.phase-focus']();
-assert.equal(roomPath.attrs['stroke-width'],1.25);
-assert.equal(roomHalo.attrs.opacity,0);
-assert.equal(roomEnd.attrs.r,3);
-assert.ok(!startArrow.attrs.transform.includes('scale('));
-roomGroup.events['focusin.phase-focus']();
-assert.equal(roomPath.attrs['stroke-width'],1.25,'single-room curves keep their width on keyboard focus too');
-roomGroup.events['focusout.phase-focus']();
-assert.equal(roomPath.attrs['stroke-width'],1.25);
+for (const event of ['mouseenter','mouseleave','focusin','focusout']) {
+    // Simulate the event even if no emphasis handler is attached.
+    roomGroup.events[event+'.phase-focus']?.();
+    assert.equal(roomGroup.events[event+'.phase-focus'],undefined,'single-room views attach no emphasis handlers');
+    assert.equal(roomGroup.attrs['data-emphasized'],'false');
+    assert.equal(roomGroup.raises,0,'single-room stacking stays fixed');
+    assert.equal(roomPath.attrs['stroke-width'],1.25);
+    assert.equal(roomHalo.attrs.opacity,0);
+    assert.equal(roomEnd.attrs.r,3,'single-room end marker never grows');
+    assert.ok(!startArrow.attrs.transform.includes('scale('),'single-room start marker never grows');
+}
 
 markers.length=0;curves.length=0;tooltips.length=0;
 context.hourlyData={'2026-10-26':{room_3_phase_points:{schema_version:1,offset_k:0,points:context.hourlyPoints}}};
@@ -202,10 +197,17 @@ assert.equal(markers.filter(node=>node.attrs.class==='room-phase-start-marker').
 assert.equal(markers.filter(node=>node.attrs.class==='room-phase-time-point').length,0);
 assert.deepEqual(markers.filter(node=>node.attrs.class==='room-phase-latest-point').map(node=>node.attrs.fill),['room-color-1','room-color-3']);
 const aggregateGroups=markers.filter(node=>node.attrs.class==='room-phase-room');
+const aggregateStarts=markers.filter(node=>node.attrs.class==='room-phase-start-marker');
+const aggregateEnds=markers.filter(node=>node.attrs.class==='room-phase-latest-point');
 aggregateGroups[0].events['mouseenter.phase-focus']();
 assert.equal(aggregatePaths[0].attrs['stroke-width'],2.5);
 assert.equal(aggregatePaths[1].attrs['stroke-width'],1.25,'hover affects only its own room');
+assert.ok(aggregateStarts[0].attrs.transform.endsWith('scale(1.5)'));
+assert.equal(aggregateEnds[0].attrs.r,6);
+assert.equal(aggregateEnds[1].attrs.r,3);
 aggregateGroups[0].events['mouseleave.phase-focus']();
+assert.ok(!aggregateStarts[0].attrs.transform.includes('scale('));
+assert.equal(aggregateEnds[0].attrs.r,3);
 assert.equal(headings.at(-1).options.prefix,'szobák — ');
 assert.ok(tooltips.some(label=>label.startsWith('Szita · ')));
 assert.ok(tooltips.some(label=>label.startsWith('PK · ')));

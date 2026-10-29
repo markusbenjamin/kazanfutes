@@ -180,9 +180,11 @@ function drawRoomPhasePlot(data, setting) {
             .attr('cx', x(last.intensity_k)).attr('cy', y(last.deviation_k)).attr('r', 3)
             .attr('fill', curve.color).attr('stroke', 'white').attr('stroke-width', .4);
         bindPlotCurveTooltip(marker, tooltip(last), 6, false);
+        // A single-room view keeps all geometry and styling fixed; only tooltips hover.
+        if (!aggregate) return;
         const emphasize = () => {
             group.raise().attr('data-emphasized', 'true');
-            trajectory.attr('stroke-width', aggregate ? thickness * 2 : thickness);
+            trajectory.attr('stroke-width', thickness * 2);
             halo.attr('opacity', 1);
             start.attr('transform', startTransform + ' scale(1.5)');
             marker.attr('r', 6);

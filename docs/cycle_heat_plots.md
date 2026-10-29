@@ -13,7 +13,12 @@ Past dates sit beside `rögzítve` above the frame; today's date is omitted. The
 metric and cycle stay selected while navigating; future days are disabled.
 The ordinary hover title is `<n>. kör mai fűtőteljesítménye`.
 
-All four views retain the selected cycle's pump-on shading and thin curves.
+All four views retain the selected cycle's pump-on shading. Detailed thermal
+power uses borderless orange bars, one per logged instantaneous kW value,
+without averaging or smoothing. Bar widths follow nearby timestamps, capped
+at three minutes (one minute for an isolated reading); missing observations
+are not zero-filled or bridged. Tooltips show HH:MM and kW, and the last valid
+bar retains its value label. Ordinary hover keeps its thin power curve.
 Period rectangles show their fill only, with no borders.
 Pump power joins known observations even across time gaps; explicit unknown
 values still break it. Its black curve is rectangular (step-after), with no
