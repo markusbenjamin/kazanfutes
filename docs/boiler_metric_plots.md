@@ -10,6 +10,10 @@ current open periods end at now, historical ones at midnight. Shading is drawn
 once behind the curves and spans the current plot's full vertical range.
 
 Demand reads `demand_kw` directly from the Pi's `heating_demand.json`.
+It uses borderless orange bars, one per logged instantaneous kW value, with
+HH:MM/value tooltips and the latest valid value label. It shares the detailed
+cycle-power bar renderer: widths follow nearby timestamps, capped at three
+minutes (one minute for an isolated reading). No averaging or smoothing.
 Unknown values remain gaps, and real zero demand remains zero. No alternative
 demand calculation is performed by the dashboard.
 

@@ -6,13 +6,26 @@ const source = fs.readFileSync(path.resolve(__dirname, '../../docs/data.js'), 'u
 const helper = source.slice(source.indexOf('function extractCyclePumpOnPeriods('), source.indexOf('function extractRoomScheduleFromCondensedSchedule('));
 const mapping = source.slice(source.indexOf('for (let cycle = 1; cycle <= 4; cycle++) {\n    const waterTemperatureSetting'), source.indexOf('registerBoilerPowerPlots(elementToMainGraphSettingMapping);'));
 const plotCase = source.match(/case "cycle_water_temp": \{([\s\S]*?)\n\s*break;\n\s*\}/)[1];
-const calls = [];
+const calls = [], barNodes = [], barTooltips = [];
+let niceCalls = 0;
+function barSelection() {
+    return {attrs:{},styles:{},append(tag){const node=barSelection();node.tag=tag;barNodes.push(node);return node;},
+        attr(key,value){this.attrs[key]=value;return this;},style(key,value){this.styles[key]=value;return this;},
+        text(value){this.value=value;return this;}};
+}
+function scaleLinear() {
+    let domain=[0,1],range=[0,1];
+    const scale=value=>range[0]+(value-domain[0])/(domain[1]-domain[0])*(range[1]-range[0]);
+    scale.domain=value=>(domain=value,scale);scale.range=value=>(range=value,scale);
+    scale.nice=()=>{niceCalls++;return scale;};return scale;
+}
 const context = vm.createContext({
     Number, Math, Date, range: null, mainGraphSetting: {}, graphData: {},
     elementToMainGraphSettingMapping: {}, dayStamp: () => '2026-10-21',
     dayDataNotAvailable: false, dataWaitTime: 10, getFractionalHourOfDay: () => 12,
-    drawPlot: (data, options) => calls.push({data, options}),
-    d3: { extent: (rows, accessor) => {
+    dashboardFont: 'Consolas', bindPlotCurveTooltip: (node,label) => barTooltips.push(label),
+    drawPlot: (data, options) => { const area={plotElement:barSelection(),plotDims:{w:240,h:100}}; calls.push({data,options,area}); return area; },
+    d3: { scaleLinear, extent: (rows, accessor) => {
         const values = rows.map(accessor); return [Math.min(...values), Math.max(...values)];
     }, range: (start, end, step) => Array.from({length: Math.ceil((end-start)/step)}, (_, i) => start+i*step) },
 });
@@ -141,7 +154,44 @@ assert.equal(calls[1].options.plotLabel, '');
 assert.equal(calls[1].options.curveEndText.text, '16.67 kW');
 assert.equal(calls[1].options.plotStyle.col, 'rgb(230, 130, 0)');
 assert.equal(calls[1].options.curveEndText.col, 'rgb(230, 130, 0)');
-context.mainGraphSetting.metric = 'pump';
+// Only the Ctrl/touch detailed power view becomes bars; ordinary hover above stays a curve.
+const powerData = [{h_of_day_frac:2,power_kw:16.672},{h_of_day_frac:1,power_kw:0},
+    {h_of_day_frac:1.01,power_kw:null},{h_of_day_frac:1.02,power_kw:8}];
+const originalPowerData = JSON.stringify(powerData);
+for (let cycle=1;cycle<=4;cycle++) {
+    calls.length=0;barNodes.length=0;barTooltips.length=0;niceCalls=0;
+    context.mainGraphSetting = {cycleNum:cycle,day:'2026-10-21',metric:'power',detailed:true};
+    context.graphData = {[`cycle_${cycle}_heat_delivery`]:powerData,heating_state:samples};
+    vm.runInContext('drawCycleHeatPlot(graphData,mainGraphSetting)',context);
+    assert.equal(calls.length,1,'no power curve is drawn over the bars');
+    assert.equal(calls[0].options.plotLabelTabs.selected,'power');
+    assert.ok(calls[0].options.rects.list.length,'pump-on shading stays behind the bars');
+    const bars=barNodes.filter(node=>node.attrs.class==='logged-power-bar');
+    assert.equal(bars.length,3,'null remains absent while real zero remains a bar');
+    assert.deepEqual(bars.map(node=>node.attrs['data-value']),[0,8,16.672]);
+    assert.equal(bars[0].attrs.height,0);
+    assert.ok(bars.every(node=>node.attrs.width>0&&node.attrs.fill==='rgb(230, 130, 0)'&&node.attrs.stroke==='none'));
+    assert.ok(bars.every(node=>node.attrs.width<=240/24*(3/60)),'bar widths cannot fill long logging gaps');
+    assert.equal(niceCalls,1,'bars use the same rounded domain as the axis');
+    assert.ok(barTooltips.includes('02:00\n16.67 kW'));
+    assert.equal(barNodes.find(node=>node.attrs.class==='logged-power-end-label').value,'16.67 kW');
+}
+assert.equal(JSON.stringify(powerData),originalPowerData,'no sorting or resampling mutates cached data');
+context.isolatedPower=[{h_of_day_frac:-1,power_kw:3},{h_of_day_frac:0,power_kw:5},
+    {h_of_day_frac:0,power_kw:6},{h_of_day_frac:24,power_kw:7},{h_of_day_frac:25,power_kw:8}];
+barNodes.length=0;
+context.barArea={plotElement:barSelection(),plotDims:{w:240,h:100}};
+vm.runInContext("drawLoggedPowerBars(barArea,[],{key:'power_kw',unit:'kW',precision:2,color:'orange'},[0,20])",context);
+assert.equal(barNodes.length,0,'empty data renders neither bars nor a latest label');
+vm.runInContext("drawLoggedPowerBars(barArea,isolatedPower,{key:'power_kw',unit:'kW',precision:2,color:'orange'},[0,20])",context);
+const edgeBars=barNodes.filter(node=>node.attrs.class==='logged-power-bar');
+assert.deepEqual(edgeBars.map(node=>node.attrs['data-value']),[6,7],'last duplicate wins; invalid times are ignored');
+assert.ok(edgeBars.every(node=>node.attrs.x>=0&&node.attrs.x+node.attrs.width<=240),'bars stay inside day boundaries');
+barNodes.length=0;
+context.isolatedPower=[{h_of_day_frac:3,power_kw:9}];
+vm.runInContext("drawLoggedPowerBars(barArea,isolatedPower,{key:'power_kw',unit:'kW',precision:2,color:'orange'},[0,20])",context);
+assert.equal(barNodes.filter(node=>node.attrs.class==='logged-power-bar').length,1,'isolated values still render');
+context.mainGraphSetting = {cycleNum:2,day:'2026-10-21',metric:'pump',detailed:true};
 context.mainGraphSetting.detailed = true;
 context.graphData = {pumps_power: [{h_of_day_frac: 1, pump_1_power: 90, pump_2_power: 0},
     {h_of_day_frac: 1.1, pump_1_power: 100, pump_2_power: 35},
