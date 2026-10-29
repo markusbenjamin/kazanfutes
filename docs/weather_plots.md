@@ -37,8 +37,13 @@ with a centred Gaussian kernel (5-minute standard deviation, truncated at
 so irregular sample spacing does not bias the result. Edge weights are
 renormalized over the available observations. Missing observations, counter
 resets and gaps longer than 15 minutes split the smoothing into separate segments.
-Monotone interpolation rounds the joins without overshoot. Stored data
-are unchanged. Set the flag to `false` to restore the daily total described above.
+The rate is displayed as five-minute bars rather than a curve, retaining the
+existing blue and faint rain-period background. Heights are time-weighted mean
+rates over observed intervals in each bin, in mm/h (not rainfall totals in mm).
+Partial intervals at the edges are kept; unknown intervals and gaps longer than
+15 minutes never become zero-rain bars. Bar tooltips show the interval and rate,
+and the latest bar keeps a value label. Stored data are unchanged. Set the flag
+to `false` to restore the daily-total curve described above.
 
 Wind direction uses a 16-sector circular histogram, horizontally centred in
 the full dotted plot frame using symmetric horizontal margins in this axis-free

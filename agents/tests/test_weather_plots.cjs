@@ -3,16 +3,30 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '../..');
-const calls = [], requests = [];
+const calls = [], requests = [], rainNodes = [], rainTooltips = [];
+let niceCalls = 0;
+function plotSelection() {
+    return {attrs:{},styles:{},append(tag){const node=plotSelection();node.tag=tag;rainNodes.push(node);return node;},
+        attr(key,value){this.attrs[key]=value;return this;},style(key,value){this.styles[key]=value;return this;},
+        text(value){this.value=value;return this;}};
+}
+function scaleLinear() {
+    let domain=[0,1],range=[0,1];
+    const scale=value=>range[0]+(value-domain[0])/(domain[1]-domain[0])*(range[1]-range[0]);
+    scale.domain=value=>(domain=value,scale);scale.range=value=>(range=value,scale);
+    scale.nice=()=>{niceCalls++;return scale;};return scale;
+}
 const context = vm.createContext({Number, Math, Date, Object,
+    dashboardFont:'Consolas',d3:{scaleLinear},
     dayStamp: () => '2026-10-21', mainGraphSetting: {}, mainGraphContentLocked: false,
     elementToMainGraphSettingMapping: {external_thermometer: {title: 'external_temp', day: '2026-10-21'}},
     drawMainGraph: data => requests.push(data),
-    drawPlot: (data, options) => { calls.push({data, options}); return {plotElement: 'plot', plotDims: {w: 200, h: 100}}; }
+    drawPlot: (data, options) => { const area={plotElement:plotSelection(),plotDims:{w:200,h:100}}; calls.push({data,options,area}); return area; }
 });
 for (const file of ['cycle_heat_plots.js', 'room_metric_plots.js', 'weather_plots.js']) {
     vm.runInContext(fs.readFileSync(path.join(root, 'docs', file), 'utf8'), context);
 }
+context.bindPlotCurveTooltip=(node,label)=>rainTooltips.push(label);
 const evaluate = code => JSON.parse(JSON.stringify(vm.runInContext(code, context)));
 assert.equal(evaluate("selectorWeekday('2026-10-21', true)"), 'szerdai');
 assert.equal(evaluate("selectorWeekday('2026-10-22', true)"), 'csütörtöki');
@@ -118,10 +132,16 @@ calls.length = 0;
 vm.runInContext('drawWeatherMetricPlot(data, setting)', context);
 assert.equal(calls[0].options.axesLabel.left, 'mm/h');
 assert.ok(Math.abs(calls[0].options.domain.left[1] - 27.5) < 1e-10);
-assert.ok(Math.abs(calls[1].data[0].precipitation_rate_mm_h - 25) < 1e-10);
-assert.equal(calls.at(-1).options.curveEndText.text, '25 mm/h');
+assert.equal(calls.length,1,'rain draws one foundation and bars, not an overlaid curve');
+const initialBars=rainNodes.filter(node=>node.attrs.class==='weather-rain-bar');
+assert.equal(initialBars.length,2);
+assert.equal(niceCalls,1,'bar heights use the same rounded scale domain as the shared plot axis');
+assert.ok(initialBars.every(node=>Math.abs(node.attrs['data-rate']-25)<1e-10));
+assert.ok(initialBars.every(node=>node.attrs.width>0&&node.attrs.height>0&&node.attrs.fill==='rgb(40, 80, 180)'));
+assert.ok(initialBars.every(node=>node.attrs.stroke==='none'));
+assert.equal(rainNodes.find(node=>node.attrs.class==='weather-rain-end-label').value,'25 mm/h');
+assert.ok(rainTooltips.some(text=>text==='01:00–01:05\n25 mm/h'));
 assert.equal(calls[0].options.plotLabelTabs.choices.find(choice => choice.key === 'rain').label, 'csapadék');
-assert.equal(calls[1].options.plotStyle.monotone, true);
 assert.equal(JSON.stringify(context.data), originalRain); // Cached cumulative observations stay untouched.
 context.data = {weather_station: [{h_of_day_frac: 0, precipitation_mm: 200}, {h_of_day_frac: .1, precipitation_mm: 201}]};
 assert.deepEqual(evaluate('weatherDailyPrecipitation(data.weather_station).map(row => row.precipitation_mm)'), [0, 1]); // Each selected day gets its own baseline.
@@ -137,6 +157,17 @@ assert.deepEqual(rateSamples.filter(row => row.precipitation_rate_mm_h === null)
 assert.ok(Math.abs(rateSamples[1].precipitation_rate_mm_h - 2) < 1e-10);
 assert.equal(rateSamples[2].precipitation_rate_mm_h, 0);
 assert.equal(rateSamples.at(-1).precipitation_rate_mm_h, 2); // A reset starts an independent segment.
+context.barRates=[{h_of_day_frac:0,precipitation_rate_mm_h:null},{h_of_day_frac:.1,precipitation_rate_mm_h:6},
+    {h_of_day_frac:.2,precipitation_rate_mm_h:12},{h_of_day_frac:.3,precipitation_rate_mm_h:null},
+    {h_of_day_frac:1,precipitation_rate_mm_h:null},{h_of_day_frac:1.1,precipitation_rate_mm_h:0}];
+const bars=evaluate('weatherPrecipitationBars(barRates)');
+assert.equal(bars.length,5,'missing periods are absent while real zero rainfall remains a bar');
+assert.ok(Math.abs(bars[1].value-10.8)<1e-10,'irregular observations are averaged by duration, not sample count');
+assert.ok(Math.abs(bars[2].x2-.2)<1e-10,'last partial five-minute interval keeps its actual edge');
+assert.ok(bars.filter(bar=>bar.x1>=1).every(bar=>bar.value===0));
+assert.ok(bars.every(bar=>bar.x2<=.2||bar.x1>=1),'unknown and long gaps are not filled in');
+assert.deepEqual(evaluate('weatherPrecipitationBars([])'),[]);
+assert.deepEqual(evaluate('weatherPrecipitationBars([{h_of_day_frac:0,precipitation_rate_mm_h:null},{h_of_day_frac:1,precipitation_rate_mm_h:3}])'),[]);
 assert.deepEqual(evaluate('weatherPrecipitationRate([])'), []);
 assert.deepEqual(evaluate('weatherPrecipitationRate([{h_of_day_frac:0,precipitation_mm:0},{h_of_day_frac:0,precipitation_mm:1}]).map(row => row.precipitation_rate_mm_h)'), [null,null]);
 // Gaussian smoothing gives a symmetric, nonnegative bell around an isolated rain interval.
@@ -183,7 +214,7 @@ assert.equal(dialMargins.left+(1-dialMargins.left-dialMargins.right)/2,.5,'dial 
 assert.equal(dialMargins.left+dialMargins.right,.13,'preserve the dial width and radius');
 assert.equal(dialMargins.top,.24);
 assert.equal(dialMargins.bottom,.15);
-assert.equal(histogram.element, 'plot');
+assert.equal(histogram.element,calls[0].area.plotElement);
 assert.equal(histogram.dims.w, 200);
 const weatherSource = fs.readFileSync(path.join(root, 'docs/weather_plots.js'), 'utf8');
 assert.match(weatherSource, /translate\(\$\{plotDims.w \/ 2\},\$\{plotDims.h \* \.62\}\)/);

@@ -146,6 +146,52 @@ function weatherPrecipitationRate(readings) {
     return rates;
 }
 
+function weatherPrecipitationBars(readings, binMinutes = 5) {
+    const width = binMinutes / 60, bins = new Map();
+    const sorted = readings.filter(row => Number.isFinite(row.h_of_day_frac)
+        && row.h_of_day_frac >= 0 && row.h_of_day_frac <= 24).slice().sort((a,b) => a.h_of_day_frac - b.h_of_day_frac);
+    sorted.forEach((row, index) => {
+        const previous = sorted[index - 1];
+        const start = previous?.h_of_day_frac, end = row.h_of_day_frac;
+        if (!previous || !(end > start) || end - start > 15 / 60
+            || !Number.isFinite(row.precipitation_rate_mm_h) || row.precipitation_rate_mm_h < 0) return;
+        for (let bin = Math.floor(start / width + 1e-9); bin < Math.ceil(end / width - 1e-9); bin++) {
+            const x1 = Math.max(start, bin * width), x2 = Math.min(end, (bin + 1) * width);
+            if (!(x2 > x1)) continue;
+            const item = bins.get(bin) || {x1, x2, weighted: 0, hours: 0};
+            item.x1 = Math.min(item.x1, x1); item.x2 = Math.max(item.x2, x2);
+            item.weighted += row.precipitation_rate_mm_h * (x2 - x1);
+            item.hours += x2 - x1;
+            bins.set(bin, item);
+        }
+    });
+    return Array.from(bins.values(), item => ({x1: item.x1, x2: item.x2, value: item.weighted / item.hours}));
+}
+
+function drawWeatherPrecipitationBars(area, bars, metric, range) {
+    const x = d3.scaleLinear().domain([0,24]).range([0,area.plotDims.w]);
+    const y = d3.scaleLinear().domain(range).nice().range([area.plotDims.h,0]);
+    const time = hour => {
+        const minutes = Math.round(hour * 60);
+        return String(Math.floor(minutes / 60)).padStart(2,'0') + ':' + String(minutes % 60).padStart(2,'0');
+    };
+    bars.forEach(bar => {
+        const width = x(bar.x2) - x(bar.x1), gap = width * .12;
+        const rect = area.plotElement.append('rect').attr('class', 'weather-rain-bar')
+            .attr('data-start-hour', bar.x1).attr('data-end-hour', bar.x2).attr('data-rate', bar.value)
+            .attr('x', x(bar.x1) + gap / 2).attr('width', Math.max(0,width - gap))
+            .attr('y', y(bar.value)).attr('height', Math.max(0,y(0) - y(bar.value)))
+            .attr('fill', metric.color).attr('stroke', 'none');
+        bindPlotCurveTooltip(rect, time(bar.x1) + '–' + time(bar.x2) + '\n'
+            + Number(bar.value.toFixed(metric.precision)) + ' ' + metric.unit, 6, false);
+    });
+    const last = bars.at(-1);
+    if (last) area.plotElement.append('text').attr('class', 'weather-rain-end-label')
+        .attr('x', x(last.x2) + 3).attr('y', y(last.value) + 1.75)
+        .style('font-family', dashboardFont).style('font-size', '6px').style('fill', metric.color)
+        .text(Number(last.value.toFixed(metric.precision)) + ' ' + metric.unit);
+}
+
 function drawWeatherMetricPlot(data, setting) {
     const rainRate = setting.metric === 'rain' && WEATHER_RAIN_RATE_PREVIEW;
     const metric = rainRate ? {...WEATHER_PLOT_METRICS.rain, label: 'csapadék', key: 'precipitation_rate_mm_h', unit: 'mm/h'}
@@ -179,6 +225,7 @@ function drawWeatherMetricPlot(data, setting) {
         columns: 3, selected: setting.metric, choices: Object.entries(WEATHER_PLOT_METRICS).map(([key, value]) => ({key, label: key === 'rain' && WEATHER_RAIN_RATE_PREVIEW ? 'csapadék' : value.label, color: value.color})),
         onSelect: selectWeatherMetricPlot}});
     if (direction) { drawWindDirectionHistogram(area.plotElement, area.plotDims, readings); return; }
+    if (rainRate) { drawWeatherPrecipitationBars(area, weatherPrecipitationBars(readings), metric, range); return; }
     curves.forEach(curve => curve.segments.forEach((segment, index) => drawPlot(segment, {...common,
         dataKeys: {...common.dataKeys, left: curve.metric.key}, plotStyle: {...common.plotStyle, col: curve.metric.color},
         curveTooltip: curve.tooltip, background: {show: false}, axes: {left: false, bottom: false},
