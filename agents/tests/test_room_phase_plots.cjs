@@ -67,7 +67,7 @@ assert.equal(initialState.styles['text-anchor'],'middle');
 assert.ok(initialState.attrs.y<0,'state remains above the axes, not over the trajectory');
 assert.equal(draws[0].options.domain.bottom[0],0);
 assert.equal(draws[0].options.domain.bottom[1],30);
-assert.equal(draws[0].options.axesLabel.bottom,'radiátor hőmérséklet (K)');
+assert.equal(draws[0].options.axesLabel.bottom,'radiátor - szoba hőmérséklet (K)');
 assert.equal(draws[0].options.axesLabel.left,'eltérés: mért − kért (K)');
 assert.equal(draws[0].options.dataKeys.bottom,'intensity_k');
 assert.equal(draws[0].options.dataKeys.left,'deviation_k');

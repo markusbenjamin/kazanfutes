@@ -144,7 +144,7 @@ function drawRoomPhasePlot(data, setting) {
     const common = {parentId: 'graph', margins: {top: (aggregate ? .13 : .17) + legendRows * .05, right: .04, bottom: .18, left: .12},
         domain: {bottom: [xBottom,xTop], left: [yBottom,yTop], niceLeft: false},
         dataKeys: {bottom: 'intensity_k', left: 'deviation_k'}, smoothing: {bottom: 0, left: 0},
-        axesLabel: {bottom: 'radiátor hőmérséklet (K)', left: 'eltérés: mért − kért (K)'},
+        axesLabel: {bottom: 'radiátor - szoba hőmérséklet (K)', left: 'eltérés: mért − kért (K)'},
         plotStyle: {joined: false, startCap: false, endCap: false},
         segment: {do: false}, curveEndText: {show: false}, plotLabel: ''};
     const area = drawPlot([], {...common, plotLabelTabs: false,
