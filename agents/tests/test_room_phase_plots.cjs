@@ -57,7 +57,7 @@ context.data={'2026-10-26':{room_3_phase_points:context.payload}};
 context.setting={title:'room_control_phase',roomNumToPlot:3,day:'2026-10-26'};
 vm.runInContext('drawRoomPhasePlot(data,setting)',context);
 assert.equal(draws[0].options.plotLabelTabs,false,'phase heading is drawn above its own state row');
-assert.deepEqual(Array.from(headings[0].options.choices,choice=>choice.label),['fázissík','összegzés']);
+assert.deepEqual(Array.from(headings[0].options.choices,choice=>choice.label),['fázissík','statisztika']);
 const initialState=markers.find(node=>node.attrs.class==='room-phase-state');
 assert.equal(initialState.value,'szoba jó de melegszik, radiátor meleg és melegszik');
 assert.equal(initialState.styles['font-family'],'Consolas');

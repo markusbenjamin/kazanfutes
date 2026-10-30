@@ -6,6 +6,7 @@ const ROOM_CONTROL_QUADRANTS = [
 ];
 let roomControlOverviewSelection = 'below_on';
 const roomAnalyticSelections = {};
+const roomPhaseSummaryPresence = {};
 
 function roomAnalyticKey(setting) {
     return setting.roomNumToPlot ?? (setting.cycleNum ? 'cycle_' + setting.cycleNum : 'all');
@@ -18,6 +19,10 @@ function roomControlPlotRooms(setting) {
 
 function roomPhaseDataTypes(setting) {
     return roomControlPlotRooms(setting).map(room => 'room_' + room + '_phase_points');
+}
+
+function roomPhaseSummaryTypes(room) {
+    return ['room_' + room + '_phase_points', 'room_' + room + '_environment'];
 }
 
 function roomControlDays(day, count = ROOM_CONTROL_WINDOW_DAYS) {
@@ -41,7 +46,9 @@ function createRoomControlPlotSetting(elementId, day = dayStamp()) {
         cycleNum: cycleMatch ? Number(cycleMatch[1]) : null,
         overviewState: roomControlOverviewSelection,
         windowDays: ROOM_CONTROL_WINDOW_DAYS,
-        types: phase ? roomPhaseDataTypes(scope) : [overview ? 'room_control_errors' : 'room_control_kpis'], conditionals: []};
+        presenceMode: diagnostic ? roomPhaseSummaryPresence[base.roomNumToPlot] || 'occupied' : 'all',
+        types: phase ? roomPhaseDataTypes(scope) : overview ? ['room_control_errors']
+            : roomPhaseSummaryTypes(base.roomNumToPlot), conditionals: []};
 }
 
 function selectRoomAnalyticView(metric) {
@@ -49,7 +56,8 @@ function selectRoomAnalyticView(metric) {
     const room = mainGraphSetting.roomNumToPlot;
     roomAnalyticSelections[roomAnalyticKey(mainGraphSetting)] = metric;
     mainGraphSetting = {...mainGraphSetting, title: metric === 'phase' ? 'room_control_phase' : room != null ? 'room_control_diagnostic' : 'room_control_daily',
-        types: metric === 'phase' ? roomPhaseDataTypes(mainGraphSetting) : [room != null ? 'room_control_kpis' : 'room_control_errors']};
+        types: metric === 'phase' ? roomPhaseDataTypes(mainGraphSetting) : room != null
+            ? roomPhaseSummaryTypes(room) : ['room_control_errors']};
     mainGraphContentLocked = true;
     drawMainGraph({});
     drawMainGraph();
@@ -60,7 +68,7 @@ function roomAnalyticTabs(setting) {
     const name = room != null ? roomsDataAndState[room].name : setting.cycleNum ? setting.cycleNum + '. kör' : 'szobák';
     return {prefix: name + ' — ',
         selected: setting.title === 'room_control_phase' ? 'phase' : 'summary',
-        choices: [{key: 'phase', label: 'fázissík', color: 'black'}, {key: 'summary', label: room != null ? 'összegzés' : 'napi hiba', color: 'black'}],
+        choices: [{key: 'phase', label: 'fázissík', color: 'black'}, {key: 'summary', label: room != null ? 'statisztika' : 'napi hiba', color: 'black'}],
         onSelect: selectRoomAnalyticView};
 }
 
@@ -136,6 +144,10 @@ function drawRoomControlHeader(area, setting, title, titleY = -13) {
 
 function drawRoomControlView(data = null) {
     const setting = mainGraphSetting;
+    if (setting.title === 'room_control_diagnostic' && setting.roomNumToPlot != null) {
+        drawRoomPhaseSummaryView(data, setting);
+        return;
+    }
     if (data === null) {
         if (setting.title === 'room_control_phase') {
             collectDataFromGitHub(roomPhaseDataTypes(setting).map(type => ({day: setting.day, type})), loaded => {
