@@ -116,7 +116,7 @@ function drawRoomPhaseSummary(data, setting) {
     const area = drawPlot([], {parentId: 'graph', margins: {top: .18, right: .1, bottom: .18, left: .12},
         domain: {bottom: [0,xTop], left: [yBottom,yTop], niceLeft: false},
         dataKeys: {bottom: 'intensity_k', left: 'deviation_k'}, plotLabel: '', curveEndText: {show: false},
-        axesLabel: {bottom: 'radiátor hőmérséklet (K)', left: 'eltérés: mért − kért (K)'},
+        axesLabel: {bottom: 'radiátor - szoba hőmérséklet (K)', left: 'eltérés: mért − kért (K)'},
         plotDateNavigation: {day: setting.day, onDayChange: navigateRoomControlDay},
         emptyMessage: seconds ? '' : presenceMode === 'occupied' ? 'Jelenlétkor nincs érvényes fázisadat.'
             : presenceMode === 'empty' ? 'Üresen nincs érvényes fázisadat.' : 'Nincs érvényes fázisadat erre az időszakra.'});

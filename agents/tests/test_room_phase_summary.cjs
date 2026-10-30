@@ -44,6 +44,7 @@ assert.equal(headings.length,2,'analytics tabs and a compact occupancy selector'
 assert.equal(headings[1].options.selected,'all');
 assert.deepEqual(Array.from(headings[1].options.choices,choice=>choice.label),['jelenlét','üres','össz']);
 assert.equal(draws[0].options.margins.top,.18);
+assert.equal(draws[0].options.axesLabel.bottom,'radiátor - szoba hőmérséklet (K)');
 assert.ok(nodes.every(node=>!String(node.value).includes('hideg')&&!String(node.value).includes('h adat')&&!String(node.value).includes('2026-10-24')),'state percentages and date-range text are removed');
 assert.equal(nodes.filter(node=>node.attrs.class==='room-phase-summary-cell').length,3);
 assert.equal(nodes.filter(node=>node.attrs.class==='room-phase-summary-guide').length,5);
