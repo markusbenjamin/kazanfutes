@@ -1,7 +1,8 @@
 # Room phase-plane experiment
 
-Alt+click a room to open `fázissík` by default, with `összegzés` second. Touch uses the same
-selector under `analitika`. The old summary, main/cycle daily error plots and
+Alt+click a room to open `fázissík` by default, with `statisztika` second. Touch uses the same
+selector under `analitika`. The room summary is a seven-day dwell-time heatmap;
+the old summary implementation remains frozen in code. Main/cycle daily error plots and
 Ctrl+click sensor selector remain available. View selection is remembered per
 room and dates are preserved when switching.
 
@@ -14,6 +15,56 @@ averaging rooms), with the same canonical room colours as the existing dashboard
 and a compact coloured legend. Only the selected rooms' per-room files are loaded;
 rooms without valid points are omitted, not plotted at zero. Marker tooltips in
 aggregate views include the room name as well as HH:MM.
+
+## Seven-day room summary
+
+`statisztika` loads seven calendar days ending on the selected day (including
+today's observed part, not seven prior days plus today). `room_phase_summary.js`
+bins the existing per-room phase files into fixed 2 K radiator-excess by 0.5 K
+room-deviation cells. The same no-offset X and measured-minus-set Y conventions
+apply. No formatter changes or new polling are needed.
+
+Cells accumulate elapsed time, not sample counts. Both interval endpoints must
+be valid measured/estimated phase observations, with at most three minutes
+between them. Explicit unavailable records break coverage. The earlier point's
+coordinates are held over that valid interval; no Catmull–Rom path, 30-minute
+display smoothing, terminal hold, midnight bridge or long-gap interpolation is
+counted. Latest duplicate timestamps win, including unknown values. Only schema-1
+payloads are accepted. Millisecond rounding avoids floating-point duration noise.
+
+The compact header contains only `fázissík / statisztika` and an
+`jelenlét · üres · össz` selector, defaulting to `jelenlét`. It uses the shared
+accessible plot tabs with click/tap/Enter/Space support. No period,
+observed-hour count, state percentages or red occupancy outline is displayed.
+The filter is remembered per room and preserved through metric/date changes.
+`jelenlét` intersects valid phase intervals with actual occupancy-on periods
+from `room_N_environment.json`, using the same
+15-minute bounded hold and explicit-unknown breaks as the existing presence plot.
+`üres` uses explicitly observed occupancy-off periods with the same hold limit;
+unknown readings and stale gaps are never counted as absence.
+Learned occupancy/weekly plans are never substituted. Missing occupancy means
+no eligible occupied or empty time, not absence or perfect performance. All-time mode
+still works without occupancy data. Late requests cannot replace a newly
+selected room, filter or date.
+
+Cell percentages use eligible observed time in the selected mode as denominator.
+Trial dynamics arrows overlay the heatmap on a coarser 4 K by 1 K grid. Each
+direction is the elapsed-time-weighted mean velocity of valid adjacent points,
+using only the selected occupancy periods. Source-fallback transitions are
+excluded. No long-gap or midnight bridges are added. Arrows require five minutes
+of eligible observations, at least 25% directional coherence (net movement over
+total movement in grid-scaled coordinates), and a mean ten-minute movement of
+at least 0.02 grid cells. Opposing movements can therefore leave no arrow.
+Red trial arrows have a white halo, fixed local length, and point in the mean
+direction using the displayed axis scaling; length does not represent speed.
+Hover reports the mean radiator-excess and room-deviation changes in K/h.
+Zero coverage shows an empty-data message instead of a false distribution.
+Grayscale darkness scales with the cell's time
+percentage using a square-root scale from 0 to that view's largest cell; the
+small grayscale key explicitly labels this maximum. Tooltip ranges, hours and
+percentages remain exact to their displayed precision. Faint dashed guides mark
+Y = -1, 0, 1 K and X = 5, 15 K. This is a distribution, not a quality score.
+All-room/cycle analytics and their daily-error tabs are unchanged.
 
 Y is the actual thermostatic room temperature minus logged `set_temps_interp`,
 in K, without demand gating: overheating is positive and above zero. The

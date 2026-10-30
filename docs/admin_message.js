@@ -79,6 +79,11 @@ function dismissAdminMessage() {
 }
 
 function updateAdminMessage(value) {
+    // Returning from the request form should go straight to the dashboard.
+    if (new URLSearchParams(window.location.search).get("ref_source") === "form") {
+        hideAdminMessage();
+        return;
+    }
     const message = typeof value === "string" ? value.replace(/\r\n?/g, "\n").trim() : "";
     if (!message) {
         currentAdminMessage = "";

@@ -31,6 +31,7 @@ vm.runInContext(fs.readFileSync(path.join(root,'docs/cycle_heat_plots.js'),'utf8
 vm.runInContext(fs.readFileSync(path.join(root,'docs/room_metric_plots.js'),'utf8'),context);
 context.bindPlotCurveTooltip=(target,label)=>labels.push(label);
 vm.runInContext(fs.readFileSync(path.join(root,'docs/room_control_plots.js'),'utf8'),context);
+vm.runInContext(fs.readFileSync(path.join(root,'docs/room_phase_summary.js'),'utf8'),context);
 context.drawPlotTitleSelector=(node,dims,options,font)=>headings.push({node,options,font});
 const evaluate = code => JSON.parse(JSON.stringify(vm.runInContext(code,context)));
 context.event={ctrlKey:false,altKey:false,preventDefault(){}};
@@ -114,9 +115,10 @@ context.stateData={day:{room_control_kpis:{rooms:{1:{valid_seconds:7200,heating_
 assert.deepEqual(evaluate("ROOM_CONTROL_QUADRANTS.map(s=>roomControlDailyRow(stateData,'day',1,s.key).state_error_k)"),[1,2,3,4]);
 assert.equal(evaluate("roomControlDailyRow({'d':{room_control_kpis:{rooms:{1:{mae_on_c:0,heating_seconds:0}}}}},'d',1)"),null);
 vm.runInContext('drawRoomControlView()',context);
-assert.equal(loads[0].requests.length,8);
-assert.equal(loads[0].requests[0].day,'2026-10-14');
+assert.equal(loads[0].requests.length,14);
+assert.equal(loads[0].requests[0].day,'2026-10-15');
 assert.equal(loads[0].requests.at(-1).day,'2026-10-21');
+assert.ok(loads[0].requests.every(request=>['room_1_phase_points','room_1_environment'].includes(request.type)));
 const before=draws.length;
 context.mainGraphSetting={title:'all_rooms'};
 loads[0].callback({});
