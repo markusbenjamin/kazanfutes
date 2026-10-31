@@ -11,7 +11,7 @@
     "rooms": {
         "1": {
             "coverage": {
-                "measured": 343,
+                "measured": 352,
                 "estimated": 0,
                 "unavailable": 0
             },
@@ -19,12 +19,13 @@
                 "heat_tau_s": 1200.0,
                 "cool_tau_s": 3600.0,
                 "gain": 1.0,
-                "valve_exponent": 0.35,
-                "quality": "partly_fitted",
+                "valve_exponent": 0.7,
+                "quality": "fitted",
                 "fitted_parts": [
+                    "heating",
                     "cooling"
                 ],
-                "heating_samples": 52,
+                "heating_samples": 60,
                 "cooling_samples": 1250
             },
             "probe_sources": [
@@ -33,7 +34,7 @@
         },
         "2": {
             "coverage": {
-                "measured": 286,
+                "measured": 295,
                 "estimated": 0,
                 "unavailable": 57
             },
@@ -56,7 +57,7 @@
         },
         "3": {
             "coverage": {
-                "measured": 343,
+                "measured": 352,
                 "estimated": 0,
                 "unavailable": 0
             },
@@ -71,7 +72,7 @@
                     "cooling"
                 ],
                 "heating_samples": 741,
-                "cooling_samples": 785
+                "cooling_samples": 794
             },
             "probe_sources": [
                 "pk_radiatorok_shelly/temperature:100",
@@ -80,7 +81,7 @@
         },
         "4": {
             "coverage": {
-                "measured": 285,
+                "measured": 294,
                 "estimated": 0,
                 "unavailable": 58
             },
@@ -95,7 +96,7 @@
                     "cooling"
                 ],
                 "heating_samples": 381,
-                "cooling_samples": 735
+                "cooling_samples": 744
             },
             "probe_sources": [
                 "szgk_radiator_shelly/temperature:100"
@@ -103,7 +104,7 @@
         },
         "5": {
             "coverage": {
-                "measured": 343,
+                "measured": 352,
                 "estimated": 0,
                 "unavailable": 0
             },
@@ -118,7 +119,7 @@
                     "cooling"
                 ],
                 "heating_samples": 460,
-                "cooling_samples": 343
+                "cooling_samples": 352
             },
             "probe_sources": [
                 "merce_radiatorok_2_shelly/temperature:101",
@@ -127,7 +128,7 @@
         },
         "6": {
             "coverage": {
-                "measured": 343,
+                "measured": 352,
                 "estimated": 0,
                 "unavailable": 0
             },
@@ -149,7 +150,7 @@
         },
         "7": {
             "coverage": {
-                "measured": 304,
+                "measured": 313,
                 "estimated": 0,
                 "unavailable": 39
             },
@@ -162,7 +163,7 @@
                 "fitted_parts": [
                     "heating"
                 ],
-                "heating_samples": 537,
+                "heating_samples": 546,
                 "cooling_samples": 2
             },
             "probe_sources": [
@@ -173,7 +174,7 @@
         "8": {
             "coverage": {
                 "measured": 0,
-                "estimated": 307,
+                "estimated": 316,
                 "unavailable": 36
             },
             "model": {
@@ -191,7 +192,7 @@
         "9": {
             "coverage": {
                 "measured": 0,
-                "estimated": 307,
+                "estimated": 316,
                 "unavailable": 36
             },
             "model": {
@@ -210,7 +211,7 @@
             "coverage": {
                 "measured": 0,
                 "estimated": 0,
-                "unavailable": 343
+                "unavailable": 352
             },
             "model": {
                 "heat_tau_s": 1200.0,
@@ -226,7 +227,7 @@
         },
         "12": {
             "coverage": {
-                "measured": 343,
+                "measured": 352,
                 "estimated": 0,
                 "unavailable": 0
             },
@@ -241,7 +242,7 @@
                     "cooling"
                 ],
                 "heating_samples": 63,
-                "cooling_samples": 350
+                "cooling_samples": 359
             },
             "probe_sources": [
                 "merce_radiatorok_2_shelly/temperature:100"
@@ -249,7 +250,7 @@
         },
         "13": {
             "coverage": {
-                "measured": 343,
+                "measured": 352,
                 "estimated": 0,
                 "unavailable": 0
             },
