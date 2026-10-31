@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import subprocess
 from datetime import datetime
@@ -11,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from utils.project import get_project_root, notify_admin
+from utils.pv_status import no_sunlight_standby
 from utils.device_watchdog import (
     append_ndjson, atomic_write_json, last_ndjson_record, now_iso, parse_time, ping_healthchecks, read_json,
 )
@@ -109,7 +111,7 @@ def stream_timestamp(path: Path, field: str) -> Any:
 
 
 def fresh_illuminance_evidence(root: Path, policy: dict[str, Any], now: datetime) -> str:
-    """Return optional WS90 evidence; it never affects PV incident detection."""
+    """Return fresh bright-light evidence, including contradictions to standby."""
     evidence = policy.get("illumination_evidence", {})
     relative = evidence.get("stream")
     if not relative:
@@ -131,7 +133,7 @@ def fresh_illuminance_evidence(root: Path, policy: dict[str, Any], now: datetime
         illuminance_lux = float(value)
     except (TypeError, ValueError):
         return ""
-    if illuminance_lux < float(evidence.get("minimum_lux", 10000)):
+    if not math.isfinite(illuminance_lux) or illuminance_lux < float(evidence.get("minimum_lux", 10000)):
         return ""
     return f"; fresh WS90 illuminance is {illuminance_lux:.0f} lux"
 
@@ -166,6 +168,30 @@ def pv_inverter_candidates(
             profile,
             "pv_inverter_unreachable",
             f"FusionSolar is not accessible to the logger (stage: {stage}){illuminance_evidence}",
+        )]
+
+    if record.get("inverter_connected") is False:
+        return [candidate(
+            relative, profile, "pv_inverter_disconnected",
+            f"FusionSolar is reachable but explicitly reports the inverter offline{illuminance_evidence}",
+        )]
+
+    if no_sunlight_standby(record):
+        if illuminance_evidence:
+            return [candidate(
+                relative, profile, "pv_unexpected_standby",
+                f"Inverter reports standby: no sunlight despite bright outdoor light{illuminance_evidence}",
+            )]
+        # The device reports why it is stopped and is still connected. Its
+        # production history may remain unchanged, or be empty after midnight.
+        # No clock/sunset calculation or weather-station availability is needed.
+        return []
+
+    operating_state = str(record.get("inverter_operating_state") or "")
+    if any(word in operating_state.lower() for word in ("fault", "error", "abnormal", "disconnected")):
+        return [candidate(
+            relative, profile, "pv_inverter_fault",
+            f"Inverter explicitly reports {operating_state}{illuminance_evidence}",
         )]
 
     if record.get("telemetry_state") != "received":

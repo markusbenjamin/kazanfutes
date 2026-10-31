@@ -3,6 +3,7 @@ Logs one FusionSolar live inverter sample.
 """
 
 from utils.project import *
+from utils.pv_status import parse_operating_status
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 import json
@@ -105,7 +106,7 @@ def inverter_observation_status(row):
     return {
         "timestamp": timestamp(),
         "access_state": "reachable",
-        "telemetry_state": "received",
+        "telemetry_state": row.get("telemetry_state", "received"),
         "source_timestamp": row.get("source_timestamp"),
         "dc_voltage_state": voltage_state,
         "dc_voltage_field_count": len(voltages),
@@ -114,6 +115,7 @@ def inverter_observation_status(row):
             else "zero" if abs(active_power) <= ZERO_VOLTAGE_THRESHOLD_VOLTS
             else "nonzero"
         ),
+        **{key: value for key, value in row.items() if key.startswith("inverter_")},
     }
 
 
@@ -297,6 +299,35 @@ def post_json(driver, url, body, roarand):
     )
 
 
+def read_inverter_status(driver, roarand):
+    """Query connectivity and the inverter's stated operating/shutdown reason."""
+    device = DEVICE_DN.replace("=", "%3D")
+    online = fetch_json(
+        driver,
+        f"/rest/pvms/web/device/v1/deviceExt/is-device-online?dn={device}",
+        roarand,
+    )
+    payload = online.get("json")
+    if (
+        online.get("status") != 200 or not isinstance(payload, dict)
+        or payload.get("success") is not True or not isinstance(payload.get("data"), bool)
+    ):
+        raise PVObservationError("inverter_connectivity", "reachable", "Could not verify inverter connectivity")
+    if payload["data"] is False:
+        return parse_operating_status({}, False)
+    result = fetch_json(
+        driver,
+        f"/rest/pvms/web/device/v1/device-realtime-data?deviceDn={device}&displayAccessModel=true",
+        roarand,
+    )
+    if result.get("status") != 200:
+        raise PVObservationError("inverter_status", "reachable", "Could not fetch inverter operating status")
+    try:
+        return parse_operating_status(result.get("json"), True)
+    except ValueError as error:
+        raise PVObservationError("inverter_status", "reachable", str(error)) from error
+
+
 def read_live_row():
     username, password = load_credentials()
     driver = make_driver()
@@ -358,6 +389,10 @@ def read_live_row():
 
         if not roarand:
             raise PVObservationError("session", "unavailable", "Did not capture roarand from browser traffic")
+
+        inverter_status = read_inverter_status(driver, roarand)
+        if inverter_status["inverter_connected"] is False:
+            return {"timestamp": timestamp(), "telemetry_state": "missing", **inverter_status}
 
         signal_tree_result = fetch_json(
             driver=driver,
@@ -448,13 +483,17 @@ def read_live_row():
         ]
 
         if not usable_epochs:
-            raise PVObservationError("history", "reachable", "Live data contains only missing values")
+            # The daily history can be empty before the inverter starts at dawn.
+            # Keep monitoring the explicit device state without fabricating a
+            # fresh power/voltage sample or treating normal standby as a job error.
+            return {"timestamp": timestamp(), "telemetry_state": "missing", **inverter_status}
 
         latest_epoch = max(usable_epochs)
         latest_row = rows_by_epoch[latest_epoch]
 
         out = {
             "timestamp": timestamp(),
+            **inverter_status,
             "source_timestamp": datetime.fromtimestamp(
                 latest_epoch,
                 tz=timezone.utc,
@@ -492,7 +531,8 @@ def main():
         return False
 
     try:
-        log_data(out, "electricity/pv_inverter.json")
+        if out.get("source_timestamp"):
+            log_data(out, "electricity/pv_inverter.json")
         log_observation_status(inverter_observation_status(out))
     except Exception as error:
         ServiceException(
