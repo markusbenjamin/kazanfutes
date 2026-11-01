@@ -1,0 +1,19 @@
+[Unit]
+Description=PV production performance inspections and admin notifications
+After=network-online.target
+Wants=network-online.target media-pi-program_stick.mount
+BindsTo=media-pi-program_stick.mount
+
+[Service]
+Type=oneshot
+User=pi
+WorkingDirectory=/media/pi/program_stick/kazanfutes
+Environment="HOME=/home/pi"
+Environment="PYTHONPATH=/media/pi/program_stick/kazanfutes"
+Environment="PYTHONDONTWRITEBYTECODE=1"
+StateDirectory=kazanfutes-pv-watchdog
+StateDirectoryMode=0750
+UMask=0077
+Nice=10
+TimeoutStartSec=900
+ExecStart=/home/pi/Kazanfutes_local/bin/python -B /media/pi/program_stick/kazanfutes/services/pv_performance_watchdog.py --bootstrap-from 2026-01-01

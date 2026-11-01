@@ -1,0 +1,12 @@
+[Unit]
+Description=Check PV performance each morning, afternoon and evening
+
+[Timer]
+OnCalendar=*-*-* 07,13,19:15:00
+Persistent=true
+RandomizedDelaySec=60
+AccuracySec=1min
+WakeSystem=false
+
+[Install]
+WantedBy=timers.target

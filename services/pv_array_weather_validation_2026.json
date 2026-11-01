@@ -1,0 +1,1883 @@
+{
+  "model_id": "64f37e79c14c3bff5ddf01b798b6a418945ee23592c7f5e34121af70145e2235",
+  "policy": {
+    "min_hour_samples": 10,
+    "min_ghi": 300.0,
+    "min_elevation": 20.0,
+    "max_azimuth_difference": 8.0,
+    "max_elevation_difference": 5.0,
+    "max_ghi_ratio": 1.25,
+    "max_diffuse_fraction_difference": 0.2,
+    "max_temperature_difference": 10.0,
+    "min_neighbors": 12,
+    "min_reference_days": 5,
+    "max_neighbors": 30,
+    "max_neighbors_per_day": 2,
+    "min_daily_hours": 3,
+    "loss_threshold": 0.2,
+    "persistence_days": 3,
+    "evidence_window_days": 14
+  },
+  "reference_hours": 1884,
+  "eligible_evaluation_hours": 1582,
+  "reference_quality": {
+    "weak_or_invalid_weather": 2734,
+    "incomplete_pv_hour": 547,
+    "low_sun": 6
+  },
+  "evaluation_quality": {
+    "weak_or_invalid_weather": 1933,
+    "incomplete_pv_hour": 675,
+    "low_sun": 6
+  },
+  "prediction_exclusions": {
+    "insufficient_comparable_history": 214
+  },
+  "daily": [
+    {
+      "day": "2026-01-01",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-02",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-03",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-04",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-05",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-06",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-07",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-08",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-09",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-10",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-11",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-12",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-13",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-14",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-15",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-16",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-17",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-18",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-19",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-20",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-21",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-22",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-23",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-24",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-25",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-26",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-27",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-28",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-29",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-30",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-01-31",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-02-01",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-02-02",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-02-03",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-02-04",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-02-05",
+      "hours": 1,
+      "qualified": false,
+      "deficit": 0.6311663528714995,
+      "conservative_deficit": 0.28408626806911874
+    },
+    {
+      "day": "2026-02-06",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-02-07",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-02-08",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-02-09",
+      "hours": 1,
+      "qualified": false,
+      "deficit": 0.13583093055522655,
+      "conservative_deficit": -0.46513953866454094
+    },
+    {
+      "day": "2026-02-10",
+      "hours": 3,
+      "qualified": true,
+      "deficit": 0.47880907312378496,
+      "conservative_deficit": 0.2092077438126041
+    },
+    {
+      "day": "2026-02-11",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-02-12",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-02-13",
+      "hours": 2,
+      "qualified": false,
+      "deficit": -0.07641447345584451,
+      "conservative_deficit": -0.47453241796577816
+    },
+    {
+      "day": "2026-02-14",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-02-15",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-02-16",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-02-17",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-02-18",
+      "hours": 2,
+      "qualified": false,
+      "deficit": 0.12788068409988684,
+      "conservative_deficit": -0.21264549306173008
+    },
+    {
+      "day": "2026-02-19",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-02-20",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-02-21",
+      "hours": 3,
+      "qualified": true,
+      "deficit": 0.3584880387993674,
+      "conservative_deficit": 0.2053088594675503
+    },
+    {
+      "day": "2026-02-22",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-02-23",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-02-24",
+      "hours": 4,
+      "qualified": true,
+      "deficit": 0.001429565675968969,
+      "conservative_deficit": -0.45011992583078086
+    },
+    {
+      "day": "2026-02-25",
+      "hours": 2,
+      "qualified": false,
+      "deficit": -0.05667176003644214,
+      "conservative_deficit": -0.5495180116769516
+    },
+    {
+      "day": "2026-02-26",
+      "hours": 6,
+      "qualified": true,
+      "deficit": 0.024720225344512237,
+      "conservative_deficit": -0.23452607343872267
+    },
+    {
+      "day": "2026-02-27",
+      "hours": 6,
+      "qualified": true,
+      "deficit": 0.006105100875438696,
+      "conservative_deficit": -0.35294017354867346
+    },
+    {
+      "day": "2026-02-28",
+      "hours": 6,
+      "qualified": true,
+      "deficit": 0.03975130206592703,
+      "conservative_deficit": -0.2922999346680222
+    },
+    {
+      "day": "2026-03-01",
+      "hours": 6,
+      "qualified": true,
+      "deficit": 0.04105548248879343,
+      "conservative_deficit": -0.30434526058052014
+    },
+    {
+      "day": "2026-03-02",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-03-03",
+      "hours": 3,
+      "qualified": true,
+      "deficit": 0.03939392880600967,
+      "conservative_deficit": -0.31112740354265234
+    },
+    {
+      "day": "2026-03-04",
+      "hours": 6,
+      "qualified": true,
+      "deficit": 0.1311422910212977,
+      "conservative_deficit": -0.23718746085041653
+    },
+    {
+      "day": "2026-03-05",
+      "hours": 6,
+      "qualified": true,
+      "deficit": 0.09670557997668505,
+      "conservative_deficit": -0.22705620620022837
+    },
+    {
+      "day": "2026-03-06",
+      "hours": 6,
+      "qualified": true,
+      "deficit": 0.08369484719635434,
+      "conservative_deficit": -0.21888554050595732
+    },
+    {
+      "day": "2026-03-07",
+      "hours": 6,
+      "qualified": true,
+      "deficit": 0.08285690701078785,
+      "conservative_deficit": -0.24033155945620321
+    },
+    {
+      "day": "2026-03-08",
+      "hours": 6,
+      "qualified": true,
+      "deficit": 0.1415145762691764,
+      "conservative_deficit": -0.17948120799265976
+    },
+    {
+      "day": "2026-03-09",
+      "hours": 7,
+      "qualified": true,
+      "deficit": 0.1594608169411872,
+      "conservative_deficit": -0.15946207430196857
+    },
+    {
+      "day": "2026-03-10",
+      "hours": 6,
+      "qualified": true,
+      "deficit": 0.1042166520308293,
+      "conservative_deficit": -0.36902218970202805
+    },
+    {
+      "day": "2026-03-11",
+      "hours": 7,
+      "qualified": true,
+      "deficit": 0.14352116765716516,
+      "conservative_deficit": -0.3080460517482184
+    },
+    {
+      "day": "2026-03-12",
+      "hours": 7,
+      "qualified": true,
+      "deficit": 1.0,
+      "conservative_deficit": 1.0
+    },
+    {
+      "day": "2026-03-13",
+      "hours": 7,
+      "qualified": true,
+      "deficit": 0.28134066500006283,
+      "conservative_deficit": -0.07074613535751983
+    },
+    {
+      "day": "2026-03-14",
+      "hours": 7,
+      "qualified": true,
+      "deficit": 0.10835793335527566,
+      "conservative_deficit": -0.35220580285122605
+    },
+    {
+      "day": "2026-03-15",
+      "hours": 7,
+      "qualified": true,
+      "deficit": 0.11431535793398573,
+      "conservative_deficit": -0.34650384787359645
+    },
+    {
+      "day": "2026-03-16",
+      "hours": 7,
+      "qualified": true,
+      "deficit": 0.21952306109509656,
+      "conservative_deficit": -0.19255132781590611
+    },
+    {
+      "day": "2026-03-17",
+      "hours": 2,
+      "qualified": false,
+      "deficit": 0.15890118023523692,
+      "conservative_deficit": -0.29875210427775456
+    },
+    {
+      "day": "2026-03-18",
+      "hours": 7,
+      "qualified": true,
+      "deficit": -0.11120256181640875,
+      "conservative_deficit": -0.7537350480834626
+    },
+    {
+      "day": "2026-03-19",
+      "hours": 4,
+      "qualified": true,
+      "deficit": 0.4426202249825054,
+      "conservative_deficit": 0.16183692799182348
+    },
+    {
+      "day": "2026-03-20",
+      "hours": 3,
+      "qualified": true,
+      "deficit": 0.1521378275014178,
+      "conservative_deficit": -0.2787674061100829
+    },
+    {
+      "day": "2026-03-21",
+      "hours": 5,
+      "qualified": true,
+      "deficit": 0.07376772956174182,
+      "conservative_deficit": -0.5484378958694531
+    },
+    {
+      "day": "2026-03-22",
+      "hours": 3,
+      "qualified": true,
+      "deficit": -0.051624253542318366,
+      "conservative_deficit": -0.48225073084719683
+    },
+    {
+      "day": "2026-03-23",
+      "hours": 6,
+      "qualified": true,
+      "deficit": 0.07506005294325535,
+      "conservative_deficit": -0.5587681689712651
+    },
+    {
+      "day": "2026-03-24",
+      "hours": 5,
+      "qualified": true,
+      "deficit": 0.16149195413070327,
+      "conservative_deficit": -0.13859456709882578
+    },
+    {
+      "day": "2026-03-25",
+      "hours": 5,
+      "qualified": true,
+      "deficit": 0.07636446290328591,
+      "conservative_deficit": -0.4213701148734621
+    },
+    {
+      "day": "2026-03-26",
+      "hours": 1,
+      "qualified": false,
+      "deficit": 0.3549300028413932,
+      "conservative_deficit": -0.022807323442948224
+    },
+    {
+      "day": "2026-03-27",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-03-28",
+      "hours": 1,
+      "qualified": false,
+      "deficit": 0.7453702834309774,
+      "conservative_deficit": 0.4843239957174119
+    },
+    {
+      "day": "2026-03-29",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-03-30",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-03-31",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-04-01",
+      "hours": 5,
+      "qualified": true,
+      "deficit": -0.04193515688916394,
+      "conservative_deficit": -0.3190538725299552
+    },
+    {
+      "day": "2026-04-02",
+      "hours": 3,
+      "qualified": true,
+      "deficit": -0.00690221011311265,
+      "conservative_deficit": -0.6274289343453578
+    },
+    {
+      "day": "2026-04-03",
+      "hours": 7,
+      "qualified": true,
+      "deficit": -0.024843292655618132,
+      "conservative_deficit": -0.5203188650509858
+    },
+    {
+      "day": "2026-04-04",
+      "hours": 6,
+      "qualified": true,
+      "deficit": -0.1319411714616372,
+      "conservative_deficit": -0.45821963124910736
+    },
+    {
+      "day": "2026-04-05",
+      "hours": 9,
+      "qualified": true,
+      "deficit": -0.013375171231293947,
+      "conservative_deficit": -0.3464373879133056
+    },
+    {
+      "day": "2026-04-06",
+      "hours": 9,
+      "qualified": true,
+      "deficit": 0.05916563395297314,
+      "conservative_deficit": -0.26713786890578284
+    },
+    {
+      "day": "2026-04-07",
+      "hours": 9,
+      "qualified": true,
+      "deficit": -0.054126598746791155,
+      "conservative_deficit": -0.37439473686813773
+    },
+    {
+      "day": "2026-04-08",
+      "hours": 8,
+      "qualified": true,
+      "deficit": -0.08130257886378711,
+      "conservative_deficit": -0.46427475096405013
+    },
+    {
+      "day": "2026-04-09",
+      "hours": 6,
+      "qualified": true,
+      "deficit": -0.00402063074491954,
+      "conservative_deficit": -0.4460289121351675
+    },
+    {
+      "day": "2026-04-10",
+      "hours": 2,
+      "qualified": false,
+      "deficit": -0.020949552665842086,
+      "conservative_deficit": -0.26670311401599434
+    },
+    {
+      "day": "2026-04-11",
+      "hours": 9,
+      "qualified": true,
+      "deficit": -0.00020756316488235171,
+      "conservative_deficit": -0.38687842394449223
+    },
+    {
+      "day": "2026-04-12",
+      "hours": 9,
+      "qualified": true,
+      "deficit": 0.12252309725735933,
+      "conservative_deficit": -0.1995057604024939
+    },
+    {
+      "day": "2026-04-13",
+      "hours": 3,
+      "qualified": true,
+      "deficit": 0.3839343010776123,
+      "conservative_deficit": -0.1532687402267301
+    },
+    {
+      "day": "2026-04-14",
+      "hours": 3,
+      "qualified": true,
+      "deficit": 0.5217534011832838,
+      "conservative_deficit": 0.12301156044390038
+    },
+    {
+      "day": "2026-04-15",
+      "hours": 5,
+      "qualified": true,
+      "deficit": 0.09673952737821423,
+      "conservative_deficit": -0.5414609890770876
+    },
+    {
+      "day": "2026-04-16",
+      "hours": 5,
+      "qualified": true,
+      "deficit": 0.03451762539290948,
+      "conservative_deficit": -0.33843978954908116
+    },
+    {
+      "day": "2026-04-17",
+      "hours": 9,
+      "qualified": true,
+      "deficit": 0.10902270664028879,
+      "conservative_deficit": -0.06372388559885178
+    },
+    {
+      "day": "2026-04-18",
+      "hours": 9,
+      "qualified": true,
+      "deficit": 0.0172491718376675,
+      "conservative_deficit": -0.2159750899508155
+    },
+    {
+      "day": "2026-04-19",
+      "hours": 9,
+      "qualified": true,
+      "deficit": 0.04855290450381011,
+      "conservative_deficit": -0.1374541180187001
+    },
+    {
+      "day": "2026-04-20",
+      "hours": 9,
+      "qualified": true,
+      "deficit": -0.021711490216123064,
+      "conservative_deficit": -0.314501837127517
+    },
+    {
+      "day": "2026-04-21",
+      "hours": 5,
+      "qualified": true,
+      "deficit": 0.4028723522848141,
+      "conservative_deficit": 0.16651258840252192
+    },
+    {
+      "day": "2026-04-22",
+      "hours": 2,
+      "qualified": false,
+      "deficit": 0.09016619400994619,
+      "conservative_deficit": -0.16974819890737458
+    },
+    {
+      "day": "2026-04-23",
+      "hours": 9,
+      "qualified": true,
+      "deficit": 0.1238156488008838,
+      "conservative_deficit": -0.07513596293693547
+    },
+    {
+      "day": "2026-04-24",
+      "hours": 9,
+      "qualified": true,
+      "deficit": -0.0729972812687858,
+      "conservative_deficit": -0.30511108780042173
+    },
+    {
+      "day": "2026-04-25",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.04236819088895616,
+      "conservative_deficit": -0.2017674950605748
+    },
+    {
+      "day": "2026-04-26",
+      "hours": 8,
+      "qualified": true,
+      "deficit": -0.03747147331456446,
+      "conservative_deficit": -0.3260126610463623
+    },
+    {
+      "day": "2026-04-27",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.023268354191920082,
+      "conservative_deficit": -0.43861538725222515
+    },
+    {
+      "day": "2026-04-28",
+      "hours": 9,
+      "qualified": true,
+      "deficit": 0.08014313432098086,
+      "conservative_deficit": -0.34561001513676737
+    },
+    {
+      "day": "2026-04-29",
+      "hours": 9,
+      "qualified": true,
+      "deficit": -0.04494501081886182,
+      "conservative_deficit": -0.4579047959789053
+    },
+    {
+      "day": "2026-04-30",
+      "hours": 9,
+      "qualified": true,
+      "deficit": -0.00988437331144576,
+      "conservative_deficit": -0.478415449813258
+    },
+    {
+      "day": "2026-05-01",
+      "hours": 7,
+      "qualified": true,
+      "deficit": 0.10288015469665868,
+      "conservative_deficit": -0.1983091814318565
+    },
+    {
+      "day": "2026-05-02",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.016149031691841786,
+      "conservative_deficit": -0.23819451526867108
+    },
+    {
+      "day": "2026-05-03",
+      "hours": 10,
+      "qualified": true,
+      "deficit": 0.02767624901345256,
+      "conservative_deficit": -0.17239145575424164
+    },
+    {
+      "day": "2026-05-04",
+      "hours": 10,
+      "qualified": true,
+      "deficit": 0.003070454502523856,
+      "conservative_deficit": -0.13407907623373538
+    },
+    {
+      "day": "2026-05-05",
+      "hours": 9,
+      "qualified": true,
+      "deficit": 0.035575246774318,
+      "conservative_deficit": -0.08578829058007398
+    },
+    {
+      "day": "2026-05-06",
+      "hours": 9,
+      "qualified": true,
+      "deficit": 0.043142005886960266,
+      "conservative_deficit": -0.14623360753181958
+    },
+    {
+      "day": "2026-05-07",
+      "hours": 3,
+      "qualified": true,
+      "deficit": 0.440227011355639,
+      "conservative_deficit": 0.034110884216313475
+    },
+    {
+      "day": "2026-05-08",
+      "hours": 9,
+      "qualified": true,
+      "deficit": -0.06479879108613673,
+      "conservative_deficit": -0.5851630109439998
+    },
+    {
+      "day": "2026-05-09",
+      "hours": 8,
+      "qualified": true,
+      "deficit": -0.0509155699723467,
+      "conservative_deficit": -0.5693373411544549
+    },
+    {
+      "day": "2026-05-10",
+      "hours": 9,
+      "qualified": true,
+      "deficit": -0.07381046697986982,
+      "conservative_deficit": -0.3587694867166171
+    },
+    {
+      "day": "2026-05-11",
+      "hours": 6,
+      "qualified": true,
+      "deficit": 0.20592691762450432,
+      "conservative_deficit": -0.4567075151514628
+    },
+    {
+      "day": "2026-05-12",
+      "hours": 4,
+      "qualified": true,
+      "deficit": -0.34955337673508846,
+      "conservative_deficit": -1.1116168195263363
+    },
+    {
+      "day": "2026-05-13",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.3182387794069119,
+      "conservative_deficit": -1.2568650211392032
+    },
+    {
+      "day": "2026-05-14",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.1067998331547848,
+      "conservative_deficit": -0.44774539099138644
+    },
+    {
+      "day": "2026-05-15",
+      "hours": 7,
+      "qualified": true,
+      "deficit": -0.0036414526269983316,
+      "conservative_deficit": -0.7452397577769103
+    },
+    {
+      "day": "2026-05-16",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-05-17",
+      "hours": 2,
+      "qualified": false,
+      "deficit": 0.7906825452354496,
+      "conservative_deficit": 0.5859604806781975
+    },
+    {
+      "day": "2026-05-18",
+      "hours": 1,
+      "qualified": false,
+      "deficit": -0.15176031706369808,
+      "conservative_deficit": -1.481653999921221
+    },
+    {
+      "day": "2026-05-19",
+      "hours": 11,
+      "qualified": true,
+      "deficit": -0.07309139237542261,
+      "conservative_deficit": -0.5522264320295878
+    },
+    {
+      "day": "2026-05-20",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.12914409700644125,
+      "conservative_deficit": -0.48430367562211196
+    },
+    {
+      "day": "2026-05-21",
+      "hours": 6,
+      "qualified": true,
+      "deficit": -0.13384194121345927,
+      "conservative_deficit": -0.4636232437371337
+    },
+    {
+      "day": "2026-05-22",
+      "hours": 8,
+      "qualified": true,
+      "deficit": -0.11942529175599903,
+      "conservative_deficit": -0.365163006142575
+    },
+    {
+      "day": "2026-05-23",
+      "hours": 7,
+      "qualified": true,
+      "deficit": -0.07641465017982352,
+      "conservative_deficit": -0.2834248004209974
+    },
+    {
+      "day": "2026-05-24",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.08995074569597628,
+      "conservative_deficit": -0.2176669759976373
+    },
+    {
+      "day": "2026-05-25",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.1025277413906398,
+      "conservative_deficit": -0.43776037829628023
+    },
+    {
+      "day": "2026-05-26",
+      "hours": 7,
+      "qualified": true,
+      "deficit": -0.06485445808658108,
+      "conservative_deficit": -0.19698824727300024
+    },
+    {
+      "day": "2026-05-27",
+      "hours": 8,
+      "qualified": true,
+      "deficit": -0.033266298531037464,
+      "conservative_deficit": -0.28700611522852193
+    },
+    {
+      "day": "2026-05-28",
+      "hours": 7,
+      "qualified": true,
+      "deficit": -0.09709852298881438,
+      "conservative_deficit": -0.18580597540551436
+    },
+    {
+      "day": "2026-05-29",
+      "hours": 9,
+      "qualified": true,
+      "deficit": -0.11044660602853429,
+      "conservative_deficit": -0.2324003359707334
+    },
+    {
+      "day": "2026-05-30",
+      "hours": 8,
+      "qualified": true,
+      "deficit": 0.41806525466832567,
+      "conservative_deficit": 0.1264026331750946
+    },
+    {
+      "day": "2026-05-31",
+      "hours": 11,
+      "qualified": true,
+      "deficit": -0.12561957279615688,
+      "conservative_deficit": -0.5711170715483205
+    },
+    {
+      "day": "2026-06-01",
+      "hours": 4,
+      "qualified": true,
+      "deficit": 0.23157694903607073,
+      "conservative_deficit": -0.4730494887660672
+    },
+    {
+      "day": "2026-06-02",
+      "hours": 10,
+      "qualified": true,
+      "deficit": 0.021488056668140243,
+      "conservative_deficit": -0.2232195305153244
+    },
+    {
+      "day": "2026-06-03",
+      "hours": 5,
+      "qualified": true,
+      "deficit": 0.3406701850348268,
+      "conservative_deficit": -0.07226843422176832
+    },
+    {
+      "day": "2026-06-04",
+      "hours": 8,
+      "qualified": true,
+      "deficit": 0.06441685436746425,
+      "conservative_deficit": -0.5742771657981607
+    },
+    {
+      "day": "2026-06-05",
+      "hours": 5,
+      "qualified": true,
+      "deficit": 0.13891987516852788,
+      "conservative_deficit": -0.37819870729204275
+    },
+    {
+      "day": "2026-06-06",
+      "hours": 11,
+      "qualified": true,
+      "deficit": -0.0036529395985056556,
+      "conservative_deficit": -0.1385431110134352
+    },
+    {
+      "day": "2026-06-07",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.03452803320826403,
+      "conservative_deficit": -0.2514887385902955
+    },
+    {
+      "day": "2026-06-08",
+      "hours": 11,
+      "qualified": true,
+      "deficit": -0.05997333132614946,
+      "conservative_deficit": -0.18787529831197247
+    },
+    {
+      "day": "2026-06-09",
+      "hours": 6,
+      "qualified": true,
+      "deficit": 0.075544775116551,
+      "conservative_deficit": -0.14284257502260012
+    },
+    {
+      "day": "2026-06-10",
+      "hours": 7,
+      "qualified": true,
+      "deficit": 0.04110373942384249,
+      "conservative_deficit": -0.2310977528542022
+    },
+    {
+      "day": "2026-06-11",
+      "hours": 9,
+      "qualified": true,
+      "deficit": 0.24803305277952015,
+      "conservative_deficit": -0.006095434855684978
+    },
+    {
+      "day": "2026-06-12",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.21834031604826665,
+      "conservative_deficit": -0.6682718049956049
+    },
+    {
+      "day": "2026-06-13",
+      "hours": 4,
+      "qualified": true,
+      "deficit": -0.2623239310321017,
+      "conservative_deficit": -0.6865949926401129
+    },
+    {
+      "day": "2026-06-14",
+      "hours": 7,
+      "qualified": true,
+      "deficit": 0.16137940725794286,
+      "conservative_deficit": -0.36566031490139816
+    },
+    {
+      "day": "2026-06-15",
+      "hours": 10,
+      "qualified": true,
+      "deficit": 0.10095206533621026,
+      "conservative_deficit": -0.30962081560172816
+    },
+    {
+      "day": "2026-06-16",
+      "hours": 11,
+      "qualified": true,
+      "deficit": -0.08676855852808218,
+      "conservative_deficit": -0.24128395005218484
+    },
+    {
+      "day": "2026-06-17",
+      "hours": 11,
+      "qualified": true,
+      "deficit": -0.09319692400406043,
+      "conservative_deficit": -0.29501012289764184
+    },
+    {
+      "day": "2026-06-18",
+      "hours": 5,
+      "qualified": true,
+      "deficit": -0.03177994140423568,
+      "conservative_deficit": -0.20635810978095082
+    },
+    {
+      "day": "2026-06-19",
+      "hours": 11,
+      "qualified": true,
+      "deficit": 0.01093799383313021,
+      "conservative_deficit": -0.19125715008223798
+    },
+    {
+      "day": "2026-06-20",
+      "hours": 11,
+      "qualified": true,
+      "deficit": -0.03602210275800832,
+      "conservative_deficit": -0.1572040154252381
+    },
+    {
+      "day": "2026-06-21",
+      "hours": 10,
+      "qualified": true,
+      "deficit": 0.11154188776169605,
+      "conservative_deficit": -0.007101674349801357
+    },
+    {
+      "day": "2026-06-22",
+      "hours": 8,
+      "qualified": true,
+      "deficit": -0.04672916739488997,
+      "conservative_deficit": -0.23995473436204073
+    },
+    {
+      "day": "2026-06-23",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.030208626801377036,
+      "conservative_deficit": -0.3127389112544836
+    },
+    {
+      "day": "2026-06-24",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.19779753653506416,
+      "conservative_deficit": -0.5946509961605957
+    },
+    {
+      "day": "2026-06-25",
+      "hours": 11,
+      "qualified": true,
+      "deficit": -0.07643581921445364,
+      "conservative_deficit": -0.2286527710493742
+    },
+    {
+      "day": "2026-06-26",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.01160825205895133,
+      "conservative_deficit": -0.0933999058738626
+    },
+    {
+      "day": "2026-06-27",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.04668858531334541,
+      "conservative_deficit": -0.14205718161511527
+    },
+    {
+      "day": "2026-06-28",
+      "hours": 10,
+      "qualified": true,
+      "deficit": 0.029648304923645896,
+      "conservative_deficit": -0.053558598767616594
+    },
+    {
+      "day": "2026-06-29",
+      "hours": 11,
+      "qualified": true,
+      "deficit": 0.018200741456956604,
+      "conservative_deficit": -0.0609803862240168
+    },
+    {
+      "day": "2026-06-30",
+      "hours": 10,
+      "qualified": true,
+      "deficit": 0.05400857327130082,
+      "conservative_deficit": -0.02457570836674261
+    },
+    {
+      "day": "2026-07-01",
+      "hours": 10,
+      "qualified": true,
+      "deficit": 0.30404646258099577,
+      "conservative_deficit": 0.23315975030186364
+    },
+    {
+      "day": "2026-07-02",
+      "hours": 8,
+      "qualified": true,
+      "deficit": -0.2037601598809864,
+      "conservative_deficit": -0.5497649775295683
+    },
+    {
+      "day": "2026-07-03",
+      "hours": 8,
+      "qualified": true,
+      "deficit": -0.13487074186461578,
+      "conservative_deficit": -0.333665612598979
+    },
+    {
+      "day": "2026-07-04",
+      "hours": 11,
+      "qualified": true,
+      "deficit": -0.1492305410529,
+      "conservative_deficit": -0.30101092011990627
+    },
+    {
+      "day": "2026-07-05",
+      "hours": 10,
+      "qualified": true,
+      "deficit": 0.24812275515519855,
+      "conservative_deficit": 0.012298515021622713
+    },
+    {
+      "day": "2026-07-06",
+      "hours": 7,
+      "qualified": true,
+      "deficit": 0.12813591606263897,
+      "conservative_deficit": -0.23789907573302926
+    },
+    {
+      "day": "2026-07-07",
+      "hours": 7,
+      "qualified": true,
+      "deficit": 0.29731206500323837,
+      "conservative_deficit": 0.11492137525210766
+    },
+    {
+      "day": "2026-07-08",
+      "hours": 8,
+      "qualified": true,
+      "deficit": 0.03415236601748328,
+      "conservative_deficit": -0.41936322230944656
+    },
+    {
+      "day": "2026-07-09",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.11403218005099802,
+      "conservative_deficit": -0.4127011053854215
+    },
+    {
+      "day": "2026-07-10",
+      "hours": 5,
+      "qualified": true,
+      "deficit": -0.25023354925037533,
+      "conservative_deficit": -0.5994229409093164
+    },
+    {
+      "day": "2026-07-11",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-07-27",
+      "hours": 6,
+      "qualified": true,
+      "deficit": -0.12987329598424302,
+      "conservative_deficit": -0.629129051585803
+    },
+    {
+      "day": "2026-07-28",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.13160716744043044,
+      "conservative_deficit": -0.3373084162021196
+    },
+    {
+      "day": "2026-07-29",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.01962114881996757,
+      "conservative_deficit": -0.11957590480117242
+    },
+    {
+      "day": "2026-07-30",
+      "hours": 10,
+      "qualified": true,
+      "deficit": 0.015377566010153942,
+      "conservative_deficit": -0.07835512434623837
+    },
+    {
+      "day": "2026-07-31",
+      "hours": 10,
+      "qualified": true,
+      "deficit": 0.023290462639371068,
+      "conservative_deficit": -0.07356105407627567
+    },
+    {
+      "day": "2026-08-01",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.038039312774075906,
+      "conservative_deficit": -0.15059670475795373
+    },
+    {
+      "day": "2026-08-02",
+      "hours": 8,
+      "qualified": true,
+      "deficit": -0.011117235308945483,
+      "conservative_deficit": -0.14017831783204393
+    },
+    {
+      "day": "2026-08-03",
+      "hours": 10,
+      "qualified": true,
+      "deficit": 0.05311739703181251,
+      "conservative_deficit": -0.07159699611643933
+    },
+    {
+      "day": "2026-08-04",
+      "hours": 10,
+      "qualified": true,
+      "deficit": 0.04397994646408443,
+      "conservative_deficit": -0.046182926303474536
+    },
+    {
+      "day": "2026-08-05",
+      "hours": 10,
+      "qualified": true,
+      "deficit": 0.046836970015787016,
+      "conservative_deficit": -0.054797987830790706
+    },
+    {
+      "day": "2026-08-06",
+      "hours": 8,
+      "qualified": true,
+      "deficit": -0.05713779283592424,
+      "conservative_deficit": -0.18597014977591164
+    },
+    {
+      "day": "2026-08-07",
+      "hours": 7,
+      "qualified": true,
+      "deficit": -0.0848826612327882,
+      "conservative_deficit": -0.33260390743344215
+    },
+    {
+      "day": "2026-08-08",
+      "hours": 10,
+      "qualified": true,
+      "deficit": 0.01032821197041267,
+      "conservative_deficit": -0.12610452763557745
+    },
+    {
+      "day": "2026-08-09",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.0027410293799423613,
+      "conservative_deficit": -0.12164933108886067
+    },
+    {
+      "day": "2026-08-10",
+      "hours": 10,
+      "qualified": true,
+      "deficit": 0.008727233574878479,
+      "conservative_deficit": -0.11263663470503182
+    },
+    {
+      "day": "2026-08-11",
+      "hours": 8,
+      "qualified": true,
+      "deficit": 0.03188021728428703,
+      "conservative_deficit": -0.12718900010118972
+    },
+    {
+      "day": "2026-08-12",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.025919994508186273,
+      "conservative_deficit": -0.14812658032404746
+    },
+    {
+      "day": "2026-08-13",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.021945608416279017,
+      "conservative_deficit": -0.14732093669968616
+    },
+    {
+      "day": "2026-08-14",
+      "hours": 10,
+      "qualified": true,
+      "deficit": -0.004460704104170876,
+      "conservative_deficit": -0.1401119387840486
+    },
+    {
+      "day": "2026-08-15",
+      "hours": 10,
+      "qualified": true,
+      "deficit": 0.01017409877733011,
+      "conservative_deficit": -0.13932595925444957
+    },
+    {
+      "day": "2026-08-16",
+      "hours": 10,
+      "qualified": true,
+      "deficit": 0.020624499720905853,
+      "conservative_deficit": -0.10860029213074163
+    },
+    {
+      "day": "2026-08-17",
+      "hours": 2,
+      "qualified": false,
+      "deficit": 0.3016836427113754,
+      "conservative_deficit": 0.07311048386796393
+    },
+    {
+      "day": "2026-08-18",
+      "hours": 8,
+      "qualified": true,
+      "deficit": 0.049314897212396125,
+      "conservative_deficit": -0.17940688739751787
+    },
+    {
+      "day": "2026-08-19",
+      "hours": 2,
+      "qualified": false,
+      "deficit": 0.11197604412785034,
+      "conservative_deficit": -0.987887648123319
+    },
+    {
+      "day": "2026-08-20",
+      "hours": 4,
+      "qualified": true,
+      "deficit": 0.0002577994339123535,
+      "conservative_deficit": -0.16921868221918657
+    },
+    {
+      "day": "2026-08-27",
+      "hours": 5,
+      "qualified": true,
+      "deficit": -0.13957585359626346,
+      "conservative_deficit": -0.4919624129417297
+    },
+    {
+      "day": "2026-08-30",
+      "hours": 5,
+      "qualified": true,
+      "deficit": 0.0023357786005080428,
+      "conservative_deficit": -0.32627352255761966
+    },
+    {
+      "day": "2026-08-31",
+      "hours": 6,
+      "qualified": true,
+      "deficit": -0.0020259473664998584,
+      "conservative_deficit": -0.17478477343167476
+    },
+    {
+      "day": "2026-09-01",
+      "hours": 9,
+      "qualified": true,
+      "deficit": 0.029184851212706753,
+      "conservative_deficit": -0.1982833693187085
+    },
+    {
+      "day": "2026-09-02",
+      "hours": 7,
+      "qualified": true,
+      "deficit": 0.3000736163251717,
+      "conservative_deficit": -0.020687927442869514
+    },
+    {
+      "day": "2026-09-03",
+      "hours": 7,
+      "qualified": true,
+      "deficit": 0.07593037935176172,
+      "conservative_deficit": -0.21483838002562394
+    },
+    {
+      "day": "2026-09-04",
+      "hours": 4,
+      "qualified": true,
+      "deficit": 0.03269391069436178,
+      "conservative_deficit": -0.2081341417694258
+    },
+    {
+      "day": "2026-09-05",
+      "hours": 2,
+      "qualified": false,
+      "deficit": 0.39282842350012814,
+      "conservative_deficit": 0.02420458574258466
+    },
+    {
+      "day": "2026-09-06",
+      "hours": 9,
+      "qualified": true,
+      "deficit": 0.06409319896649812,
+      "conservative_deficit": -0.1704158056332301
+    },
+    {
+      "day": "2026-09-07",
+      "hours": 9,
+      "qualified": true,
+      "deficit": 0.025017326207877666,
+      "conservative_deficit": -0.18403195569203423
+    },
+    {
+      "day": "2026-09-08",
+      "hours": 8,
+      "qualified": true,
+      "deficit": 0.00717020127200263,
+      "conservative_deficit": -0.21796234450956176
+    },
+    {
+      "day": "2026-09-09",
+      "hours": 9,
+      "qualified": true,
+      "deficit": 0.0350087136878966,
+      "conservative_deficit": -0.16138962323741413
+    },
+    {
+      "day": "2026-09-10",
+      "hours": 1,
+      "qualified": false,
+      "deficit": 0.25362705106823813,
+      "conservative_deficit": -0.04896690901147771
+    },
+    {
+      "day": "2026-09-11",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-09-12",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-09-13",
+      "hours": 3,
+      "qualified": true,
+      "deficit": -0.07665445310694041,
+      "conservative_deficit": -0.2377690067790319
+    },
+    {
+      "day": "2026-09-14",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-09-15",
+      "hours": 4,
+      "qualified": true,
+      "deficit": -0.13326470024363823,
+      "conservative_deficit": -0.32543874054248967
+    },
+    {
+      "day": "2026-09-16",
+      "hours": 1,
+      "qualified": false,
+      "deficit": -0.040840137606507065,
+      "conservative_deficit": -0.09352749752608225
+    },
+    {
+      "day": "2026-09-17",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-09-18",
+      "hours": 4,
+      "qualified": true,
+      "deficit": 0.10246216714328682,
+      "conservative_deficit": -0.2011901682343602
+    },
+    {
+      "day": "2026-09-19",
+      "hours": 3,
+      "qualified": true,
+      "deficit": -0.03200563564825365,
+      "conservative_deficit": -0.22960327355129562
+    },
+    {
+      "day": "2026-09-20",
+      "hours": 3,
+      "qualified": true,
+      "deficit": -0.08695222106802225,
+      "conservative_deficit": -0.2613946031022987
+    },
+    {
+      "day": "2026-09-21",
+      "hours": 6,
+      "qualified": true,
+      "deficit": 0.12382683257729332,
+      "conservative_deficit": -0.40260880554649336
+    },
+    {
+      "day": "2026-09-22",
+      "hours": 4,
+      "qualified": true,
+      "deficit": 0.16485104722217236,
+      "conservative_deficit": -0.20444235878804862
+    },
+    {
+      "day": "2026-09-23",
+      "hours": 6,
+      "qualified": true,
+      "deficit": -0.28072816603973116,
+      "conservative_deficit": -0.8105801031993094
+    },
+    {
+      "day": "2026-09-24",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-09-25",
+      "hours": 1,
+      "qualified": false,
+      "deficit": -0.37231701699564423,
+      "conservative_deficit": -2.0530373022833013
+    },
+    {
+      "day": "2026-09-26",
+      "hours": 2,
+      "qualified": false,
+      "deficit": -0.03939844846060603,
+      "conservative_deficit": -0.4925509201642764
+    },
+    {
+      "day": "2026-09-27",
+      "hours": 2,
+      "qualified": false,
+      "deficit": -0.08794613053520894,
+      "conservative_deficit": -0.6344106212849197
+    },
+    {
+      "day": "2026-09-28",
+      "hours": 3,
+      "qualified": true,
+      "deficit": -0.06565532593438195,
+      "conservative_deficit": -0.4903683067129079
+    },
+    {
+      "day": "2026-09-29",
+      "hours": 3,
+      "qualified": true,
+      "deficit": -0.012175564679077766,
+      "conservative_deficit": -0.43196573930074433
+    },
+    {
+      "day": "2026-09-30",
+      "hours": 4,
+      "qualified": true,
+      "deficit": -0.042220901127759225,
+      "conservative_deficit": -0.469450663959452
+    },
+    {
+      "day": "2026-10-01",
+      "hours": 5,
+      "qualified": true,
+      "deficit": -0.0027720517757199303,
+      "conservative_deficit": -0.44484107280877083
+    },
+    {
+      "day": "2026-10-02",
+      "hours": 3,
+      "qualified": true,
+      "deficit": -0.03273153474856594,
+      "conservative_deficit": -0.49292072904718154
+    },
+    {
+      "day": "2026-10-03",
+      "hours": 3,
+      "qualified": true,
+      "deficit": -0.020160217062995978,
+      "conservative_deficit": -0.45922681872196325
+    },
+    {
+      "day": "2026-10-04",
+      "hours": 2,
+      "qualified": false,
+      "deficit": 0.11097722548163591,
+      "conservative_deficit": -0.24507478656200266
+    },
+    {
+      "day": "2026-10-05",
+      "hours": 1,
+      "qualified": false,
+      "deficit": 0.2078826521910978,
+      "conservative_deficit": -0.062194576436862326
+    },
+    {
+      "day": "2026-10-06",
+      "hours": 3,
+      "qualified": true,
+      "deficit": 0.045310856226617124,
+      "conservative_deficit": -0.4443959109090865
+    },
+    {
+      "day": "2026-10-07",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-10-08",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-10-09",
+      "hours": 2,
+      "qualified": false,
+      "deficit": 0.06141813885948988,
+      "conservative_deficit": -0.7409124672548095
+    },
+    {
+      "day": "2026-10-10",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-10-11",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-10-12",
+      "hours": 3,
+      "qualified": true,
+      "deficit": -0.18470606211839735,
+      "conservative_deficit": -0.7215338467647159
+    },
+    {
+      "day": "2026-10-13",
+      "hours": 5,
+      "qualified": true,
+      "deficit": -0.02587862980254485,
+      "conservative_deficit": -0.5354059489493037
+    },
+    {
+      "day": "2026-10-14",
+      "hours": 2,
+      "qualified": false,
+      "deficit": -0.05620825346178826,
+      "conservative_deficit": -0.568562408610036
+    },
+    {
+      "day": "2026-10-15",
+      "hours": 4,
+      "qualified": true,
+      "deficit": 0.5364490693593126,
+      "conservative_deficit": 0.16967512400943863
+    },
+    {
+      "day": "2026-10-16",
+      "hours": 3,
+      "qualified": true,
+      "deficit": -0.050659203857245316,
+      "conservative_deficit": -0.32520870329619167
+    },
+    {
+      "day": "2026-10-17",
+      "hours": 2,
+      "qualified": false,
+      "deficit": -0.31326688841355965,
+      "conservative_deficit": -0.9647188163921647
+    },
+    {
+      "day": "2026-10-18",
+      "hours": 2,
+      "qualified": false,
+      "deficit": 0.010776571162073645,
+      "conservative_deficit": -0.5150876402918261
+    },
+    {
+      "day": "2026-10-19",
+      "hours": 3,
+      "qualified": true,
+      "deficit": -0.050021028926003686,
+      "conservative_deficit": -0.8186430857985336
+    },
+    {
+      "day": "2026-10-20",
+      "hours": 2,
+      "qualified": false,
+      "deficit": 0.49850942957301425,
+      "conservative_deficit": 0.3567991167121074
+    },
+    {
+      "day": "2026-10-21",
+      "hours": 4,
+      "qualified": true,
+      "deficit": 0.0002969255353767464,
+      "conservative_deficit": -0.7712576176709272
+    },
+    {
+      "day": "2026-10-22",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-10-24",
+      "hours": 0,
+      "qualified": false
+    },
+    {
+      "day": "2026-10-25",
+      "hours": 2,
+      "qualified": false,
+      "deficit": -0.1692239407416063,
+      "conservative_deficit": -1.0210009576777348
+    },
+    {
+      "day": "2026-10-26",
+      "hours": 2,
+      "qualified": false,
+      "deficit": -0.03763385370909167,
+      "conservative_deficit": -0.2111422500159783
+    }
+  ],
+  "candidate_episodes": [],
+  "evaluation_start": "2026-01-01",
+  "evaluation_end_exclusive": "2026-10-27",
+  "baseline_start": "2025-01-01",
+  "baseline_end_exclusive": "2026-01-01",
+  "status": "posthoc_development_replay",
+  "notifications_enabled": false,
+  "limitations": [
+    "ERA5 is a delayed regional estimate, not a roof irradiance measurement.",
+    "Bounds describe between-day spread, not calibrated confidence intervals.",
+    "Reference health is unknown; repair and cleaning effects are not isolated.",
+    "Design was chosen after the March event was inspected; this is not blind validation."
+  ],
+  "weather_provenance": {
+    "url": "https://archive-api.open-meteo.com/v1/archive?latitude=47.4879&longitude=19.0929&start_date=2025-01-01&end_date=2026-10-26&models=era5&timezone=UTC&timeformat=unixtime&hourly=shortwave_radiation%2Cdiffuse_radiation%2Ctemperature_2m",
+    "sha256": "768b4478e52eb6ff65ef67ea2dea721e20fe81c358b69ba5539d26560c8849a1",
+    "retrieved_at": "2026-11-01T08:40:00.251815+00:00",
+    "hours": 15936,
+    "grid_latitude": 47.5,
+    "grid_longitude": 19.0,
+    "source": "Open-Meteo / ERA5",
+    "point_in_time_weather": false
+  },
+  "training_quality": {
+    "exports_read": 33,
+    "export_records": 142560,
+    "duplicate_buckets": 15110,
+    "exports_after_availability_cutoff": 5,
+    "unique_samples": 58009
+  },
+  "evaluation_quality_logs": {
+    "pv_files": 277,
+    "pv_rows": 50819,
+    "pv_duplicate_buckets": 1451,
+    "pv_revised_buckets": 213,
+    "pv_missing_measurements": 33,
+    "pv_invalid_or_stale_source": 2575,
+    "weather_files": 173,
+    "weather_rows": 236852,
+    "weather_invalid_measurements": 11308,
+    "weather_stale_or_invalid_timestamp": 10,
+    "pv_accepted_legacy": 40724,
+    "pv_dc_power_mismatches": 2877,
+    "weather_matched_samples": 27992,
+    "pv_accepted_source": 5775,
+    "pv_unique_samples": 46499
+  },
+  "source_hashes": {
+    "pv_performance": "d6363eb2d1c34cee1bc1d209e29e7cb28e6982f906e2a8c67c39dc801eec8f94",
+    "pv_performance_io": "8c376a41f023e7df2379c29807d72ed743a5e427370daa9034e2a6ee69226670",
+    "pv_array_weather": "1a667f156f611eb3532188841d92d1b7b76f9231cbd834f7e896bd8b0bd464e3"
+  }
+}
