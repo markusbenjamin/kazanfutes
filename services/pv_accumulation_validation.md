@@ -2,6 +2,11 @@
 
 Local implementation and retrospective evaluation, 1 November 2026.
 
+Deployment update: the implementation was published to GitHub and installed on
+the Pi on 1 November 2026. The scheduled wrapper and email delivery are now
+enabled. See `pv_performance_watchdog.md` for operation and deployment evidence.
+The investigation and publication-block notes below record the earlier state.
+
 The new detector raises an inspection from **11 March 2026 observations on
 logged PV1 and PV2**, before the two-panel repair on 13 March. A daily run after
 the day closes would report this on 12 March. The independent array track
@@ -184,8 +189,8 @@ the saved aggregate report.
 - `pv_performance_validation.md` and its older JSON artifacts: preserved
   previous detector failures.
 
-Deployment and notification scheduling remain pending. At this review the
-checkout is 265 commits behind fetched `origin/main`, with unrelated local
+Before deployment, publication and notification scheduling were pending. The
+original checkout was 265 commits behind fetched `origin/main`, with unrelated local
 edits to the presence calculator, PV logger, service-data watchdog, occupancy
 unit/utilities and a deleted presence-calculator test. The approved Git sync
 flow refuses to include those changes without an explicit reconciliation
@@ -195,6 +200,5 @@ were not investigated or modified. The local PV logger and service-data
 watchdog edits already match `origin/main`, while four other code paths differ.
 Blindly including all dirty files would therefore be inappropriate. A temporary
 sparse checkout of the same `main` branch, excluding data and publishing only
-the reviewed PV additions through the approved flow, is a proposed alternative
-requiring approval for its location. No unrelated edits were discarded,
-committed or pushed.
+the reviewed PV additions through the approved flow, was subsequently authorized
+and used. No unrelated edits were discarded, committed or pushed.

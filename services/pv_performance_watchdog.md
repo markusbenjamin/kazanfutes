@@ -59,3 +59,26 @@ needs to be stopped or restarted.
 See `pv_accumulation_validation.md` for the known-event replay, limitations,
 previous failures, and measured alert burden. The March case influenced
 development and does not establish an unbiased fault-detection rate.
+
+## Deployment record: 1 November 2026
+
+The implementation was published on `main` at
+`3f3d0cd337d2f46257773ef99ef37dc0d3b19d6b` through the approved project sync
+routine in a clean sparse checkout. The existing Windows worktree and unrelated
+edits were preserved. The Pi fast-forwarded to that commit under its repository
+sync lock, and all 64 tests passed there as well as locally.
+
+The timer was enabled and its first service run completed successfully at
+20:03:31 CET. The admin SMTP route accepted the activation email; the durable
+outbox was empty afterward. Open inspections were the array and logged PV1/PV2.
+An immediate second run left the sent count at one and the outbox empty,
+confirming that unchanged state did not send a duplicate. The timer reported
+`enabled`, `active (waiting)`, with its next run at 07:15:28 CET on 2 November.
+The frozen model remained
+`87d4dc0625aa9068e51bb2c8d175ab4421f060fcc761ac140fd8cb876ec6fdf8`.
+
+The project filesystem is an active ext4 mount at `/media/pi/program_stick`,
+generated from `/etc/fstab`. For offline unit checks on this Pi, use
+`systemd-analyze --generators=yes verify ...`; without generators, the verifier
+incorrectly reports the runtime mount dependency as missing. No mount, heating
+service or deCONZ restart was needed.
