@@ -12,7 +12,8 @@ DAY = '2026-10-21'
 
 def row(minute, power=6000, flow=0.5, meter='1', **extra):
     return {'timestamp': DAY+f'-00-{minute:02d}-00',
-            'states': {meter: {'power_w': power, 'volume_flow_m3h': flow, **extra}}}
+            'states': {meter: {'power_w': power, 'volume_flow_m3h': flow,
+                               'flow_temperature_c': 50, 'return_temperature_c': 40, **extra}}}
 
 
 class HeatDeliveryFormatterTests(unittest.TestCase):
@@ -56,7 +57,7 @@ class HeatDeliveryFormatterTests(unittest.TestCase):
         self.assertEqual(format_cycle_heat_delivery([], DAY, {'1': 1}), {'1': []})
 
     def test_late_first_observation_keeps_actual_power_without_accumulation(self):
-        result = format_cycle_heat_delivery([row(10, power=16672)], DAY, {'1': 1})['1'][0]
+        result = format_cycle_heat_delivery([row(10, power=16672, flow=1, return_temperature_c=36)], DAY, {'1': 1})['1'][0]
         self.assertEqual(result['power_kw'], 16.672)
         self.assertEqual(result['energy_kwh'], 0)
         self.assertTrue(result['energy_partial'])
@@ -73,6 +74,59 @@ class HeatDeliveryFormatterTests(unittest.TestCase):
         row_out = format_cycle_heat_delivery([row(0, power=None)], DAY, {'1': 1})['1'][0]
         self.assertIsNone(row_out['energy_kwh'])
         self.assertTrue(row_out['energy_partial'])
+
+    def test_actual_zero_flow_megawatt_spike_never_enters_daily_total(self):
+        rows = format_cycle_heat_delivery([row(0), row(1), row(2, power=33391000, flow=0,
+            flow_temperature_c=32, return_temperature_c=26), row(3), row(4)], DAY, {'1': 1})['1']
+        self.assertEqual([r['power_kw'] for r in rows], [6, 6, None, 6, 6])
+        self.assertEqual([r['energy_kwh'] for r in rows], [0, .1, .1, .1, .2])
+        self.assertTrue(rows[-1]['energy_partial'])
+
+    def test_plausible_wattage_must_also_match_flow_and_delta(self):
+        # Actual corrupt example: 44.775 kW vs about 2.31 kW water-side heat.
+        result = format_cycle_heat_delivery([row(0, power=44775, flow=.398,
+            flow_temperature_c=37, return_temperature_c=32)], DAY, {'1': 1})['1'][0]
+        self.assertIsNone(result['power_kw'])
+        self.assertIsNone(result['energy_kwh'])
+
+    def test_supported_large_startup_peak_is_not_median_clipped(self):
+        samples = [row(0), row(1, power=55125, flow=1.3, flow_temperature_c=74,
+            return_temperature_c=37), row(2)]
+        rows = format_cycle_heat_delivery(samples, DAY, {'1': 1})['1']
+        self.assertEqual(rows[1]['power_kw'], 55.125)
+        self.assertFalse(rows[-1]['energy_partial'])
+
+    def test_positive_power_requires_valid_forward_heat_delivery(self):
+        for extra in [{'flow': 0}, {'flow': .005}, {'flow': None},
+                      {'flow_temperature_c': None}, {'flow_temperature_c': 0},
+                      {'flow_temperature_c': 100}, {'return_temperature_c': True},
+                      {'return_temperature_c': 50}, {'return_temperature_c': 60}]:
+            with self.subTest(extra=extra):
+                result = format_cycle_heat_delivery([row(0, **extra)], DAY, {'1': 1})['1'][0]
+                self.assertIsNone(result['power_kw'])
+                self.assertTrue(result['energy_partial'])
+        result = format_cycle_heat_delivery([row(0, power=0, flow=None,
+            flow_temperature_c=None, return_temperature_c=None)], DAY, {'1': 1})['1'][0]
+        self.assertEqual((result['power_kw'], result['energy_kwh']), (0, 0))
+
+    def test_tolerates_quantisation_but_not_persistent_corruption(self):
+        rows = format_cycle_heat_delivery([row(0, power=7500), row(1, power=7500),
+            row(2, power=50000), row(3, power=50000)], DAY, {'1': 1})['1']
+        self.assertEqual([r['power_kw'] for r in rows], [7.5, 7.5, None, None])
+        self.assertEqual(rows[-1]['energy_kwh'], .125)
+
+    def test_malformed_states_break_integration_and_override_duplicates(self):
+        for bad in [None, [], 'bad']:
+            samples = [row(0), row(1), {**row(1), 'states': bad}, row(2)]
+            rows = format_cycle_heat_delivery(samples, DAY, {'1': 1})['1']
+            self.assertEqual([r['power_kw'] for r in rows], [6, None, 6])
+            self.assertEqual(rows[-1]['energy_kwh'], 0)
+
+    def test_filter_options_must_be_finite(self):
+        for key in ['max_gap_seconds', 'min_flow_m3h', 'power_tolerance_w', 'power_tolerance_fraction']:
+            for bad in [True, math.nan, math.inf, -1]:
+                with self.subTest(key=key, bad=bad), self.assertRaises(ValueError):
+                    format_cycle_heat_delivery([], DAY, {'1': 1}, **{key: bad})
 
     def test_formatter_writes_all_four_files_without_device_io(self):
         tree = ast.parse(Path('services/data_formatter.py').read_text(encoding='utf-8'))
