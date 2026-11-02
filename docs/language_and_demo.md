@@ -38,3 +38,14 @@ same existing Sheet download to system/dashboard in Firebase. Add admin_message_
 as an optional Sheet key/value for English admin text. No automatic translation
 or Hungarian fallback is used when that field is absent/blank. Demo and
 ref_source=form suppress admin text regardless of language.
+
+## Plot loading messages
+
+A newly selected plot/day/filter gets a ten-second grace period before an
+empty-data message appears. During it the plot says `Adatok betöltése.` /
+`Loading data.`; real data replaces the placeholder immediately. If the plot
+is still empty after ten seconds, its specific unavailable-data message appears.
+Polling/redrawing the same view does not restart the grace period. Changing
+views cancels the old deadline, and timers update only still-connected empty
+labels, never redraw over a successfully loaded curve. The presentation-only
+helper lives in plot_loading.js; it does not alter the downloaded data.

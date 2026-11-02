@@ -97,7 +97,7 @@ function drawBoilerKPIView(data = null) {
     segments.forEach(points => drawPlot(points, {...common, background: {show: false}, showLockLabel: false,
         axes: {left: false, bottom: false}, plotStyle: {joined: true, linear: true, col: 'black', thickness: '1.5', startCap: true, endCap: true},
         curveTooltip: 'leadott hő / gázenergia'}));
-    if (!segments.length) roomControlText(area.plotElement, 'Nincs elegendő energiaadat.', area.plotDims.w / 2, area.plotDims.h / 2);
+    if (!segments.length) setPlotEmptyMessage(roomControlText(area.plotElement, '', area.plotDims.w / 2, area.plotDims.h / 2), 'Nincs elegendő energiaadat.');
 }
 
 function drawBoilerDailyScatter(rows, setting) {

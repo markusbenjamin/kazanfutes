@@ -332,7 +332,7 @@ function drawRoomControlDiagnostic(data, setting) {
     roomControlText(plot, 'komfortidő jelenlétkor: ' + roomControlNumber(today?.comfort_pct, 0) + '%  |  7 nap: ' + roomControlNumber(previous.comfort_pct, 0) + '%  (±0,5 K)', dims.w / 2, -5, 5);
     const currentDay = setting.day === dayStamp() ? 'ma' : setting.day.slice(5).replace('-', '.');
     if (!(today?.valid_seconds > 0) && !previous.valid_seconds) {
-        roomControlText(plot, 'Nincs elegendő szabályozási adat.', dims.w / 2, dims.h / 2);
+        setPlotEmptyMessage(roomControlText(plot, '', dims.w / 2, dims.h / 2), 'Nincs elegendő szabályozási adat.');
         return;
     }
     const left = 28, width = dims.w - left - 31, blockHeight = dims.h / 2, barHeight = blockHeight * .2;
