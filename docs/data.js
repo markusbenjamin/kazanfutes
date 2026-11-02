@@ -1103,13 +1103,12 @@ function drawPlot(plotData, userOptions) {
     }
 
     if (plotData === undefined) {
-        plotElement.append("text")
+        setPlotEmptyMessage(plotElement.append("text")
             .attr("x", plotDims.w / 2)
             .attr("y", plotDims.h / 2)
             .style("text-anchor", "middle")
             .style("font-size", (isMobile ? 7 * mobileViewScaler : 7) + "px")
-            .style("font-family", dashboardFont)
-            .text(dashboardText("Adatok betöltése."));
+            .style("font-family", dashboardFont), 'Az adott napra nincs adat.');
     }
     else {
         if (ops.smoothing.bottom > 0) {
@@ -1137,9 +1136,9 @@ function drawPlot(plotData, userOptions) {
             drawRects();
         }
         if (ops.emptyMessage) {
-            plotElement.append('text').attr('x', plotDims.w / 2).attr('y', plotDims.h / 2)
+            setPlotEmptyMessage(plotElement.append('text').attr('x', plotDims.w / 2).attr('y', plotDims.h / 2)
                 .style('text-anchor', 'middle').style('font-family', dashboardFont)
-                .style('font-size', '6px').style('fill', '#555').text(dashboardText(ops.emptyMessage));
+                .style('font-size', '6px').style('fill', '#555'), ops.emptyMessage);
         }
 
         function drawMarkers() {
@@ -2326,6 +2325,13 @@ function drawRoomInfo(roomNum) {//IN DEVELOPMENT
 }
 
 function drawMainGraph(graphData = null) {
+    const changed = beginMainPlotLoading(mainGraphSetting);
+    if (changed && graphData === null) {
+        clearMainGraphs();
+        drawPlot(undefined, {parentId: 'graph', domain: {bottom: [0, 24], left: [0, 1]},
+            dataKeys: {bottom: 'x', left: 'y'}, axes: {left: false, bottom: false},
+            plotLabel: '', curveEndText: {show: false}});
+    }
     if (mainGraphSetting.title === 'boiler_kpi') {
         drawBoilerKPIView(graphData);
         return;
@@ -2357,7 +2363,7 @@ function drawMainGraph(graphData = null) {
             clearMainGraphs();
             drawPlot([], {parentId: 'graph', domain: {bottom: [0, 24], left: [0, 1]},
                 dataKeys: {bottom: 'x', left: 'y'}, axes: {left: false, bottom: false},
-                plotLabel: 'Az adott napra nincs adat.', curveEndText: {show: false}});
+                plotLabel: '', emptyMessage: 'Az adott napra nincs adat.', curveEndText: {show: false}});
             return;
         }
         mainGraphSetting.types.forEach(type => {if (!graphData[type]) graphData[type] = [];});

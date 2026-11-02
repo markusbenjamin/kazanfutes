@@ -170,13 +170,14 @@ html, body {
     align-items: center;
     gap: 4px;
     background: white;
+    font: 16px Consolas, monospace;
 }
 
 #demo-help-launcher {
     border: none;
     background: white;
     color: black;
-    font: 16px Consolas, monospace;
+    font: inherit;
     text-decoration: underline;
     padding: 6px 10px;
     cursor: pointer;
@@ -191,10 +192,11 @@ html, body {
     width: 32px;
     height: 32px;
     box-sizing: border-box;
-    border-radius: 50%;
+    color: black;
+    font: inherit;
+    text-decoration: underline;
 }
 #dashboard-page-tools a[hidden] { display: none; }
-#dashboard-page-tools svg { width: 18px; height: 12px; }
 #dashboard-page-tools a:hover { background: #eee; }
 #dashboard-page-tools :focus-visible { outline: 2px solid black; outline-offset: -2px; }
 @media (pointer: coarse) {

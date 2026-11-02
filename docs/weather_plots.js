@@ -83,9 +83,8 @@ function drawWindDirectionHistogram(plotElement, plotDims, readings) {
         centre.append('text').attr('x', x).attr('y', y).style('font-family', dashboardFont).style('font-size', '6px')
             .style('text-anchor', 'middle').style('dominant-baseline', 'middle').text(dashboardCompassLabel(label));
     });
-    if (!total) centre.append('text').attr('x', 0).attr('y', radius + 15).style('text-anchor', 'middle')
-        .style('font-family', dashboardFont).style('font-size', '5px')
-        .text(dashboardText('Nincs szélirányadat.'));
+    if (!total) setPlotEmptyMessage(centre.append('text').attr('x', 0).attr('y', radius + 15).style('text-anchor', 'middle')
+        .style('font-family', dashboardFont).style('font-size', '5px'), 'Nincs szélirányadat.');
 }
 
 function weatherRainPeriods(readings, endHour) {

@@ -3,8 +3,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(path.resolve(__dirname, '../../docs/dashboard_i18n.js'), 'utf8');
+const loadingSource = fs.readFileSync(path.resolve(__dirname, '../../docs/plot_loading.js'), 'utf8');
 module.exports = sandbox => {
     const context = vm.createContext({URLSearchParams, ...sandbox});
     vm.runInContext(source, context);
+    vm.runInContext(loadingSource, context);
     return context;
 };

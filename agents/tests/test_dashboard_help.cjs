@@ -3,6 +3,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const createContext = require('./dashboard_test_context.cjs');
+const html = fs.readFileSync(path.resolve(__dirname, '../../docs/dashboard.html'), 'utf8');
+const languageTools = html.match(/<nav id="dashboard-page-tools"[\s\S]*?<\/nav>/)[0];
+assert.doesNotMatch(languageTools, /<svg/,'language switch uses text, not flags');
+for (const code of ['hu','en']) assert.match(languageTools, new RegExp('id="dashboard-language-' + code + '"[^>]*>' + code + '</a>'));
 function page(search) {
     let document;
     class Element {

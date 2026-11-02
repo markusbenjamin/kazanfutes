@@ -59,6 +59,8 @@ const DASHBOARD_ENGLISH = {
     'élnek a kövek mert bennük is erő szalad': 'the stones are alive, for strength runs within them',
     'élnek a kövek': 'the stones are alive', 'mert bennük is erő szalad': 'for strength runs within them',
     'Nincs szélirányadat.': 'No wind direction data.',
+    'Az adott napra nincs kapcsolási adat.': 'No switching data for this day.',
+    'Nincs engedélyezett fűtési kör.': 'No enabled heating circuits.',
     'Átlagos jelenlét nem elérhető.': 'Average occupancy unavailable.',
     'Nincs elegendő energiaadat.': 'Insufficient energy data.',
     'Az adott napra nincs érvényes fázispont.': 'No valid phase points for this day.',
