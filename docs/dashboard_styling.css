@@ -170,13 +170,14 @@ html, body {
     align-items: center;
     gap: 4px;
     background: white;
+    font: 16px Consolas, monospace;
 }
 
 #demo-help-launcher {
     border: none;
     background: white;
     color: black;
-    font: 16px Consolas, monospace;
+    font: inherit;
     text-decoration: underline;
     padding: 6px 10px;
     cursor: pointer;
@@ -192,7 +193,7 @@ html, body {
     height: 32px;
     box-sizing: border-box;
     color: black;
-    font: 14px Consolas, monospace;
+    font: inherit;
     text-decoration: underline;
 }
 #dashboard-page-tools a[hidden] { display: none; }
