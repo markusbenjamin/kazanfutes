@@ -8,7 +8,7 @@ const selection = () => ({attrs: {}, append(tag) {const node=selection();node.ta
     attr(key,value) {this.attrs[key]=value;return this;}, style() {return this;}, text() {return this;}});
 function scale() {let domain,range;const f=value=>range[0]+(value-domain[0])/(domain[1]-domain[0])*(range[1]-range[0]);
     f.domain=value=>(domain=value,f);f.range=value=>(range=value,f);return f;}
-const context = vm.createContext({Number, Math, Date, Object, dayStamp: () => '2026-10-21',
+const context = require('./dashboard_test_context.cjs')({Number, Math, Date, Object, dayStamp: () => '2026-10-21',
     mainGraphSetting: {}, mainGraphContentLocked: false, dashboardFont: 'Consolas', isMobile:false, mobileViewScaler:1.8,
     d3:{scaleLinear:scale}, bindPlotCurveTooltip:(node,label)=>tooltips.push(label), clearMainGraphs() {}, drawMainGraph() {},
     collectDataFromGitHub: (requests, callback) => loads.push({requests, callback}),

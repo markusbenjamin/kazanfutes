@@ -1,4 +1,4 @@
-// The config updater publishes only the Sheet's admin_message to Firebase.
+// The config updater publishes the Sheet's Hungarian and English messages.
 // Keep acknowledgement only until reload, so polling does not reopen it.
 const adminMessageBox = document.getElementById("admin-message");
 const adminMessageContent = document.getElementById("admin-message-content");
@@ -80,7 +80,7 @@ function dismissAdminMessage() {
 
 function updateAdminMessage(value) {
     // Returning from the request form should go straight to the dashboard.
-    if (new URLSearchParams(window.location.search).get("ref_source") === "form") {
+    if (dashboardPageOptions().demo || new URLSearchParams(window.location.search).get("ref_source") === "form") {
         hideAdminMessage();
         return;
     }

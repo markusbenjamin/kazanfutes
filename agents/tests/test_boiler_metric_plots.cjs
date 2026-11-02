@@ -4,7 +4,7 @@ const vm = require('node:vm');
 const path = require('node:path');
 const source = fs.readFileSync(path.resolve(__dirname,'../../docs/data.js'),'utf8');
 const draws = [], requests = [], barDraws = [];
-const context = vm.createContext({Number, Math, Date, Object, Map,
+const context = require('./dashboard_test_context.cjs')({Number, Math, Date, Object, Map,
     dayStamp: () => '2026-10-27', getFractionalHourOfDay: () => 12, mainGraphSetting: {}, mainGraphContentLocked: false,
     elementToMainGraphSettingMapping: {boiler_body: {title: 'heating_state', day: '2026-10-27'}},
     drawMainGraph: data => requests.push(data), drawPlot: (rows, options) => draws.push({rows, options}),

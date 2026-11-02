@@ -213,7 +213,7 @@ function drawRoomPhasePlot(data, setting) {
         bindPlotCurveTooltip(start, tooltip(first), 6, false);
         const last = curve.points.at(-1);
         const direction = roomPhaseDirection(smoothedPoints, x, y);
-        if (!aggregate) stateLabel.text(roomPhaseDiagnosticText(smoothedPoints, direction));
+        if (!aggregate) stateLabel.text(dashboardText(roomPhaseDiagnosticText(smoothedPoints, direction)));
         if (direction) {
             const {end: [cx, cy], dx, dy} = direction;
             const tipX = cx + dx * 11, tipY = cy + dy * 11;

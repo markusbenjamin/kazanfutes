@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, '../..');
 const source = fs.readFileSync(path.join(root, 'docs/data.js'), 'utf8');
 const calls = [], requests = [];
 const ordinary = { title: 'room_plot', roomNumToPlot: 1, day: '2026-10-21', types: ['old_room_data'] };
-const context = vm.createContext({
+const context = require('./dashboard_test_context.cjs')({
     Number, Math, Date, Object, mainGraphSetting: {}, mainGraphContentLocked: false,
     elementToMainGraphSettingMapping: { Oktopusz: ordinary, cycle1: { title: 'cycle_water_temp' } },
     roomsDataAndState: { 1: { name: 'Oktopusz szita' }, 2: { name: 'Gólyafészek' } },

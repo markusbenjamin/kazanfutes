@@ -38,7 +38,7 @@ class AdminMessageConfigTests(unittest.TestCase):
         message = '**Frissítés**\n\nA fűtési beállítások változtak.'
         config = {**self.config, 'admin_message': message}
         self.assertEqual(self.refresh(config), config)
-        self.system.write.assert_called_once_with({'admin_message': message}, 'dashboard')
+        self.system.write.assert_called_once_with({'admin_message': message, 'admin_message_en': ''}, 'dashboard')
         self.download.assert_called_once_with('configured-sheet')
         self.assertFalse(self.state['update_needed'])
 
@@ -48,7 +48,7 @@ class AdminMessageConfigTests(unittest.TestCase):
                 self.state['update_needed'] = True
                 self.system.reset_mock()
                 self.refresh({**self.config, **extra})
-                self.system.write.assert_called_once_with({'admin_message': ''}, 'dashboard')
+                self.system.write.assert_called_once_with({'admin_message': '', 'admin_message_en': ''}, 'dashboard')
 
     def test_failed_publication_is_retried_before_acknowledgement(self):
         self.system.write.side_effect = RuntimeError('Firebase unavailable')
@@ -65,7 +65,14 @@ class AdminMessageConfigTests(unittest.TestCase):
         ]
         result = self.namespace['update_local_heating_control_config']()
         self.assertEqual(result, {**self.config, 'admin_message': ''})
-        self.system.write.assert_called_once_with({'admin_message': ''}, 'dashboard')
+        self.system.write.assert_called_once_with({'admin_message': '', 'admin_message_en': ''}, 'dashboard')
+
+    def test_both_languages_are_published_without_translation_or_extra_sheet_reads(self):
+        config = {**self.config, 'admin_message': 'Magyar üzenet', 'admin_message_en': 'English message'}
+        self.assertEqual(self.refresh(config), config)
+        self.system.write.assert_called_once_with(
+            {'admin_message': 'Magyar üzenet', 'admin_message_en': 'English message'}, 'dashboard')
+        self.download.assert_called_once()
 
 
 if __name__ == '__main__':

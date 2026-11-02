@@ -27,14 +27,14 @@ function bindPlotCurveTooltip(curve, label, fontSize = 7, cloneHitArea = true) {
         const top = Math.max(window.scrollY + 4, Math.min(event.pageY + 12, window.scrollY + window.innerHeight - bounds.height - 4));
         tooltip.style('left', left + 'px').style('top', top + 'px');
     };
-    curve.attr('aria-label', label);
+    curve.attr('aria-label', dashboardText(label));
     // A transparent hit area makes the thin valve curve practical to hover.
     const targets = [curve];
     if (cloneHitArea) targets.push(curve.clone(true).attr('class', 'plot-curve-hitbox').attr('aria-label', null).attr('aria-hidden', 'true')
         .attr('stroke', 'transparent').attr('stroke-width', 3).attr('stroke-dasharray', null).style('pointer-events', 'stroke'));
     targets.forEach(target => target
         .on('mouseover.curve-tooltip', event => {
-            tooltip.interrupt().attr('data-curve-tooltip', 'true').text(label).style('white-space', 'pre-line').style('visibility', 'visible');
+            tooltip.interrupt().attr('data-curve-tooltip', 'true').text(dashboardText(label)).style('white-space', 'pre-line').style('visibility', 'visible');
             position(event);
         })
         .on('mousemove.curve-tooltip', position)

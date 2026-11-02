@@ -16,7 +16,7 @@ function scaleLinear() {
     scale.domain=value=>(domain=value,scale);scale.range=value=>(range=value,scale);
     scale.nice=()=>{niceCalls++;return scale;};return scale;
 }
-const context = vm.createContext({Number, Math, Date, Object,
+const context = require('./dashboard_test_context.cjs')({Number, Math, Date, Object,
     dashboardFont:'Consolas',d3:{scaleLinear},
     dayStamp: () => '2026-10-21', mainGraphSetting: {}, mainGraphContentLocked: false,
     elementToMainGraphSettingMapping: {external_thermometer: {title: 'external_temp', day: '2026-10-21'}},

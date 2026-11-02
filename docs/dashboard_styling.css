@@ -36,7 +36,7 @@ html, body {
     pointer-events: stroke;
 }
 
-#admin-message {
+.dashboard-message {
     position: fixed;
     z-index: 1000;
     top: 50%;
@@ -57,64 +57,64 @@ html, body {
     line-height: 1.5;
 }
 
-#admin-message[hidden] {
+.dashboard-message[hidden] {
     display: none;
 }
 
-#admin-message-content {
+.dashboard-message-content {
     overflow-y: auto;
     overflow-wrap: anywhere;
     min-height: 0;
     padding-right: 24px;
 }
 
-#admin-message-content p,
-#admin-message-content ul,
-#admin-message-content ol,
-#admin-message-content h3 {
+.dashboard-message-content p,
+.dashboard-message-content ul,
+.dashboard-message-content ol,
+.dashboard-message-content h3 {
     margin: 0 0 1em;
 }
 
-#admin-message-content p {
+.dashboard-message-content p {
     white-space: pre-wrap;
 }
 
-#admin-message-content ul,
-#admin-message-content ol {
+.dashboard-message-content ul,
+.dashboard-message-content ol {
     padding-left: 1.5em;
     list-style-position: outside;
 }
 
-#admin-message-content ul {
+.dashboard-message-content ul {
     list-style-type: disc;
 }
 
-#admin-message-content li {
+.dashboard-message-content li {
     margin: 0.25em 0;
 }
 
-#admin-message-content h3 {
+.dashboard-message-content h3 {
     font-size: 1.05em;
 }
 
-#admin-message a,
-#admin-message button {
+.dashboard-message a,
+.dashboard-message button {
     color: black;
     font: inherit;
 }
 
-#admin-message a {
+.dashboard-message a {
     text-decoration: underline;
 }
 
-#admin-message button {
+.dashboard-message button {
     border: none;
     border-radius: 0;
     background: transparent;
     cursor: pointer;
 }
 
-#admin-message-close {
+.dashboard-message-close {
     position: absolute;
     top: 8px;
     right: 8px;
@@ -138,25 +138,73 @@ html, body {
     padding: 8px 12px;
 }
 
-#admin-message button:hover,
+.dashboard-message button:hover,
 .admin-message-actions a:hover {
     background: rgb(255, 154, 154, 0.5);
 }
 
-#admin-message :focus-visible {
+.dashboard-message :focus-visible {
     outline: 2px solid black;
     outline-offset: 2px;
 }
 
-#admin-message-ok:focus-visible {
+.dashboard-message-ok:focus-visible {
     outline: none;
     text-decoration: underline;
 }
 
 @media (max-width: 600px) {
-    #admin-message {
+    .dashboard-message {
         width: 92vw;
         max-height: 84vh;
         max-height: 84dvh;
     }
 }
+
+#dashboard-page-tools {
+    position: fixed;
+    top: 12px;
+    right: 16px;
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: white;
+}
+
+#demo-help-launcher {
+    border: none;
+    background: white;
+    color: black;
+    font: 16px Consolas, monospace;
+    text-decoration: underline;
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+#demo-help-launcher[hidden] { display: none; }
+
+#dashboard-page-tools a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    box-sizing: border-box;
+    border-radius: 50%;
+}
+#dashboard-page-tools a[hidden] { display: none; }
+#dashboard-page-tools svg { width: 18px; height: 12px; }
+#dashboard-page-tools a:hover { background: #eee; }
+#dashboard-page-tools :focus-visible { outline: 2px solid black; outline-offset: -2px; }
+@media (pointer: coarse) {
+    #dashboard-page-tools a { width: 44px; height: 44px; }
+}
+
+#demo-help {
+    z-index: 1002;
+    background: rgb(255, 247, 153);
+    font-size: clamp(16px, 1.5vw, 20px);
+}
+#demo-help button:hover { background: rgba(255, 220, 80, 0.5); }
+#demo-help-content { margin-right: 20px; padding-right: 12px; }

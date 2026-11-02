@@ -7,7 +7,7 @@ const base=(title,extra={})=>({title,day:'2026-10-22',types:['source'],condition
 const background=base('all_rooms',{roomNumsToPlot:[1,2,11],hoveredCycle:0});
 const mapping={Room:base('room_plot',{roomNumToPlot:1}),cycle2:base('cycle_water_temp',{cycleNum:2}),
     external_thermometer:base('external_temp'),boiler_body:base('heating_state'),gas_dial:base('gas_usage')};
-const context=vm.createContext({Number,Math,Date,Object,Map,isMobile:false,window:{matchMedia:()=>({matches:coarse})},
+const context=require('./dashboard_test_context.cjs')({Number,Math,Date,Object,Map,isMobile:false,window:{matchMedia:()=>({matches:coarse})},
     dayStamp:()=> '2026-10-22',dayDataNotAvailable:false,dataWaitTime:0,mainGraphSetting:background,mainGraphContentLocked:false,
     mainGraphDefaultSetting:background,elementToMainGraphSettingMapping:mapping,allMeasuredRooms:[1,2,11],
     allControlledRooms:[1,2],roomsDataAndState:{1:{name:'Room',cycle:2},2:{name:'Other',cycle:1}},
