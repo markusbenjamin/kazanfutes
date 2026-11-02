@@ -7,67 +7,28 @@
   "timer_job_failure_grace_minutes": 10,
   "timer_output_grace_minutes": 5,
   "default_output_max_age_minutes": 60,
-  "git_push_monitor": {
-    "service": "data_and_config_uploader.service",
-    "profile": "critical",
-    "max_age_minutes": 30
-  },
+  "git_push_monitor": { "service": "data_and_config_uploader.service", "profile": "critical", "max_age_minutes": 30 },
   "healthchecks": {
     "secret_relative_path": "config/secrets_and_env/healthchecks_service_data_watchdog_url",
     "timeout_seconds": 10
   },
   "profiles": {
-    "critical": {
-      "notify_immediately": true
-    },
-    "revision": {
-      "notify_immediately": true
-    }
+    "critical": { "notify_immediately": true },
+    "revision": { "notify_immediately": true }
   },
   "service_overrides": {
-    "heating_control.service": {
-      "profile": "critical"
-    },
-    "pv_logger.service": {
-      "profile": "critical",
-      "state_monitor": "pv_inverter"
-    }
+    "heating_control.service": { "profile": "critical" },
+    "pv_logger.service": { "profile": "critical", "state_monitor": "pv_inverter" }
   },
   "streams": {
-    "system/state.json": {
-      "service": "heating_control.service",
-      "kind": "periodic",
-      "timestamp_field": "last_updated"
-    },
-    "temperature_and_humidity/temperature_and_humidity.json": {
-      "service": "temperature_and_humidity_logger.service",
-      "kind": "periodic"
-    },
-    "thermostats/thermostats_state.json": {
-      "service": "thermostats_manager.service",
-      "kind": "periodic"
-    },
-    "electricity/main_meter.json": {
-      "service": "electric_meter_logger.service",
-      "kind": "periodic"
-    },
-    "boilers_power/boiler_plugs.json": {
-      "service": "boiler_power_monitor.service",
-      "kind": "periodic",
-      "max_age_minutes": 5
-    },
-    "heat_delivery/heatmeters_state.json": {
-      "service": "heatmeters_logger.service",
-      "kind": "periodic"
-    },
-    "radiator_temps/radiator_temps.json": {
-      "service": "radiator_temps_logger.service",
-      "kind": "periodic"
-    },
-    "weather_station/weather_station.json": {
-      "service": "weather_station_logger.service",
-      "kind": "periodic"
-    },
+    "system/state.json": { "service": "heating_control.service", "kind": "periodic", "timestamp_field": "last_updated" },
+    "temperature_and_humidity/temperature_and_humidity.json": { "service": "temperature_and_humidity_logger.service", "kind": "periodic" },
+    "thermostats/thermostats_state.json": { "service": "thermostats_manager.service", "kind": "periodic" },
+    "electricity/main_meter.json": { "service": "electric_meter_logger.service", "kind": "periodic" },
+    "boilers_power/boiler_plugs.json": { "service": "boiler_power_monitor.service", "kind": "periodic", "max_age_minutes": 5 },
+    "heat_delivery/heatmeters_state.json": { "service": "heatmeters_logger.service", "kind": "periodic" },
+    "radiator_temps/radiator_temps.json": { "service": "radiator_temps_logger.service", "kind": "periodic" },
+    "weather_station/weather_station.json": { "service": "weather_station_logger.service", "kind": "periodic" },
     "electricity/pv_inverter_status.json": {
       "service": "pv_logger.service",
       "kind": "pv_inverter",
@@ -78,50 +39,19 @@
         "stream": "weather_station/weather_station.json",
         "timestamp_field": "last_updated",
         "max_age_minutes": 5,
-        "value_path": [
-          "state",
-          "illuminance_lux"
-        ],
+        "value_path": ["state", "illuminance_lux"],
         "minimum_lux": 10000
       }
     },
-    "zigbee/parasoll_batteries.json": {
-      "service": "parasoll_battery_logger.service",
-      "kind": "periodic"
-    },
-    "aqara_and_nous/aqara_and_nous.json": {
-      "service": "aqara_and_nous_logger.service",
-      "kind": "periodic"
-    },
-    "presence/presence_all.json": {
-      "service": "presence_logger.service",
-      "kind": "periodic"
-    },
-    "occupancy/occupancy.json": {
-      "service": "occupancy_logger.service",
-      "kind": "periodic"
-    },
-    "config/scheduling/local_scheduling_files/occupancy.json": {
-      "service": "presence_pattern_calculator.service",
-      "kind": "periodic",
-      "max_age_minutes": 1500
-    },
-    "open_close/open_close_events.json": {
-      "service": "open_close_logger.service",
-      "kind": "event_driven"
-    },
-    "gas_consumption/gas_relay_turns.json": {
-      "service": "gasmeter_logger.service",
-      "kind": "event_driven"
-    },
-    "electricity/submeters.json": {
-      "service": "electric_submeters_logger.service",
-      "kind": "event_driven"
-    },
-    "pumps/power.json": {
-      "service": "pump_powers_logger.service",
-      "kind": "event_driven"
-    }
+    "zigbee/parasoll_batteries.json": { "service": "parasoll_battery_logger.service", "kind": "periodic" },
+    "aqara_and_nous/aqara_and_nous.json": { "service": "aqara_and_nous_logger.service", "kind": "periodic" },
+    "presence/presence_all.json": { "service": "presence_logger.service", "kind": "periodic" },
+    "occupancy/occupancy.json": { "service": "occupancy_logger.service", "kind": "periodic" },
+    "config/scheduling/local_scheduling_files/occupancy.json": { "service": "presence_pattern_calculator.service", "kind": "periodic", "max_age_minutes": 1500 },
+    "open_close/open_close_events.json": { "service": "open_close_logger.service", "kind": "event_driven" },
+    "gas_consumption/gas_relay_turns.json": { "service": "gasmeter_logger.service", "kind": "event_driven" },
+    "electricity/submeters.json": { "service": "electric_submeters_logger.service", "kind": "event_driven" },
+    "pumps/power.json": { "service": "pump_powers_logger.service", "kind": "event_driven" }
   },
   "excluded_streams": [
     "service_execution",
