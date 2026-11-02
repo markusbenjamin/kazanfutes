@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const calls = [];
-const context = vm.createContext({Number,Math,Date,Object,Map,Set,Array,
+const context = require('./dashboard_test_context.cjs')({Number,Math,Date,Object,Map,Set,Array,
     dayStamp:()=> '2026-10-22', dateFromTimestamp:stamp=>new Date(stamp.slice(0,10)+'T'+stamp.slice(11).replaceAll('-',':')),
     getFractionalHourOfDay:()=>12, drawPlot:(data,options)=>calls.push({data,options}),
     navigateMainPlotDay:()=>{}, mainGraphSetting:{}, mainGraphContentLocked:false,

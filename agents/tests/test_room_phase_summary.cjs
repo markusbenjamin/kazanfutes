@@ -8,7 +8,7 @@ function selection(){return {attrs:{},styles:{},events:{},append(tag){const chil
     text(value){this.value=value;return this;},on(key,value){this.events[key]=value;return this;}};}
 function scale(){let domain=[0,1],range=[0,1];const f=value=>range[0]+(value-domain[0])/(domain[1]-domain[0])*(range[1]-range[0]);
     f.domain=value=>(domain=value,f);f.range=value=>(range=value,f);return f;}
-const context=vm.createContext({Number,Math,Date,Object,Array,Map,isMobile:false,mobileViewScaler:1.8,
+const context=require('./dashboard_test_context.cjs')({Number,Math,Date,Object,Array,Map,isMobile:false,mobileViewScaler:1.8,
     dashboardFont:'Consolas',dayStamp:()=> '2026-10-30',getFractionalHourOfDay:()=>12,
     mainGraphSetting:{},mainGraphContentLocked:false,allControlledRooms:[1],roomsDataAndState:{1:{name:'Szita',cycle:1}},
     elementToMainGraphSettingMapping:{Oktopusz:{title:'room_plot',roomNumToPlot:1}},

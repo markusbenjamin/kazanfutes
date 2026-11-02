@@ -35,6 +35,10 @@ function insertCanvasFromFile(fileData) {
 
     // Append the cleaned group to the new SVG
     newDrawingGroup.appendChild(newGroup);
+    // Localise static SVG lettering without changing IDs or drawing geometry.
+    newGroup.querySelectorAll('text, tspan').forEach(node => {
+        if (!node.children.length) node.textContent = dashboardText(node.textContent);
+    });
 
 
     const p5jsDrawing = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -125,8 +129,8 @@ function setupTooltip() {
                     tooltip.transition().duration(200).style("visibility", "visible");
                     let cycleOn = systemNode['switch']['cycles'][roomTooltipData.cycle] == -1 ? false : true;
                     if (systemOn) {
-                        tooltip.html(
-                            roomTooltipData.name + (roomTooltipData.vote ? ": " + ["nem kér", "kér"][roomTooltipData.vote] : "") + "<br>" +
+                        tooltip.html(dashboardText(
+                            roomTooltipData.name + (roomTooltipData.vote ? ": " + dashboardText(["nem kér", "kér"][roomTooltipData.vote]) : "") + "<br>" +
                             roomTooltipData.temp + (!isNaN(roomTooltipData.temp) ? " °C" : "") +
                             (roomTooltipData.set && cycleOn ? " / [" + Number(roomTooltipData.set).toFixed(1) + (!isNaN(roomTooltipData.set) ? " °C]" : "]") : "") +
                             (roomTooltipData.reason ? "<br>" + roomTooltipData.reason + "" : "") +
@@ -149,15 +153,15 @@ function setupTooltip() {
                             //        "<br>Körindítás: " + roundTo(100 * roomTooltipData.turnon.today, 1) + " (átl.: " + roundTo(100 * roomTooltipData.turnon.avg, 1) + ")"
                             //        : ""
                             //)
-                        )
+                        ))
                             .style("left", (event.pageX + 5) + "px")
                             .style("top", (event.pageY - 28) + "px");
                     }
                     else {
-                        tooltip.html(
+                        tooltip.html(dashboardText(
                             roomTooltipData.name + "<br>" +
                             roomTooltipData.temp + (!isNaN(roomTooltipData.temp) ? " °C" : "")
-                        )
+                        ))
                             .style("left", (event.pageX + 5) + "px")
                             .style("top", (event.pageY - 28) + "px");
                     }
@@ -212,7 +216,7 @@ function getDataFromFirebase() {
             const scheduleJSON = fullFirebaseDataJSON.schedule;
             const updateJSON = fullFirebaseDataJSON.update;
 
-            updateAdminMessage(systemJSON.dashboard?.admin_message);
+            updateAdminMessage(dashboardAdminMessage(systemJSON.dashboard));
 
             systemOn = systemJSON['switch']['system'] == 1 ? true : false;
             systemNode = systemJSON;
@@ -1017,7 +1021,7 @@ function drawPlot(plotData, userOptions) {
             .style("text-anchor", "middle")
             .style("font-size", (isMobile ? 6 * mobileViewScaler : 6) + "px")
             .style("font-family", dashboardFont)
-            .text(ops.axesLabel.bottom);
+            .text(dashboardText(ops.axesLabel.bottom));
     }
 
     let leftScale, leftAxis;
@@ -1063,7 +1067,7 @@ function drawPlot(plotData, userOptions) {
             .style("text-anchor", "middle")
             .style("font-size", (isMobile ? 6 * mobileViewScaler : 6) + "px")
             .style("font-family", dashboardFont)
-            .text(ops.axesLabel.left);
+            .text(dashboardText(ops.axesLabel.left));
     }
 
     if (ops.plotLabelTabs) {
@@ -1077,7 +1081,7 @@ function drawPlot(plotData, userOptions) {
             .style("text-anchor", "middle")
             .style("font-size", (isMobile ? 7 * mobileViewScaler : 7) + "px")
             .style("font-family", dashboardFont)
-            .text(ops.plotLabel);
+            .text(dashboardText(ops.plotLabel));
     }
 
     const dateNavigation = ops.plotDateNavigation || (ops.plotLabelTabs?.day ? ops.plotLabelTabs :
@@ -1095,7 +1099,7 @@ function drawPlot(plotData, userOptions) {
             .style("font-size", (isMobile ? 6 * mobileViewScaler : 6) + "px")
             .style("font-family", dashboardFont)
             .style("fill", "rgba(230,230,230,1)")
-            .text("rögzítve");
+            .text(dashboardText("rögzítve"));
     }
 
     if (plotData === undefined) {
@@ -1105,7 +1109,7 @@ function drawPlot(plotData, userOptions) {
             .style("text-anchor", "middle")
             .style("font-size", (isMobile ? 7 * mobileViewScaler : 7) + "px")
             .style("font-family", dashboardFont)
-            .text("Adatok betöltése.");
+            .text(dashboardText("Adatok betöltése."));
     }
     else {
         if (ops.smoothing.bottom > 0) {
@@ -1135,7 +1139,7 @@ function drawPlot(plotData, userOptions) {
         if (ops.emptyMessage) {
             plotElement.append('text').attr('x', plotDims.w / 2).attr('y', plotDims.h / 2)
                 .style('text-anchor', 'middle').style('font-family', dashboardFont)
-                .style('font-size', '6px').style('fill', '#555').text(ops.emptyMessage);
+                .style('font-size', '6px').style('fill', '#555').text(dashboardText(ops.emptyMessage));
         }
 
         function drawMarkers() {
@@ -1236,7 +1240,7 @@ function drawPlot(plotData, userOptions) {
                         .style("font-size", ops.curveEndText.fontSize + "px")
                         .style("font-family", dashboardFont)
                         .style("fill", ops.curveEndText.col ? ops.curveEndText.col : "black")
-                        .text(ops.curveEndText.text);
+                        .text(dashboardText(ops.curveEndText.text));
 
                     const bbox = endText.node().getBBox();
 
@@ -1715,7 +1719,7 @@ function initializeMainGraphArea() {
         .attr("y", graphDims.cy) // Y-coordinate
         .attr("text-anchor", "middle") // Horizontally center
         .attr("dominant-baseline", "middle") // Vertically center
-        .text("Adatok betöltése.") // Text content
+        .text(dashboardText("Adatok betöltése.")) // Text content
         .attr("fill", "black") // Text color (SVG uses `fill` for text color)
         .style("font-family", dashboardFont) // Font family
         .style("font-size", "10px"); // Font size
@@ -1748,7 +1752,7 @@ function addLineToBox(boxId, message, xPosFactor, yPosFactor, fontSize, centered
         .attr("class", boxId + "-content clickthrough")
         .attr("x", x + (centered ? w * 0.5 : 0) + w * xPosFactor)
         .attr("y", y + h * yPosFactor)
-        .text(message)
+        .text(dashboardText(message))
         .style("text-anchor", centered ? "middle" : "left")
         .style("font-family", dashboardFont)
         .style("font-size", fontSize + "px");
@@ -2316,7 +2320,7 @@ function drawRoomInfo(roomNum) {//IN DEVELOPMENT
         .attr("dominant-baseline", "middle") // Align the text center vertically
         .style("fill", "white")
         .style("font-size", roomNum == 7 ? "6" : "6")
-        .text(roomInfo)
+        .text(dashboardText(roomInfo))
         .attr("class", "room-info clickthrough")
         .raise();
 }

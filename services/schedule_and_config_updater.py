@@ -97,7 +97,8 @@ def update_local_heating_control_config():
                 for row in heating_control_config_online_version[1:] if row and row[0]
             }
             export_dict_as_json(updated_heating_config,f'{export_path_prefix}config/heating_control_config.json')
-            system_node.write({'admin_message': updated_heating_config.get('admin_message', '') or ''}, 'dashboard')
+            system_node.write({key: updated_heating_config.get(key, '') or ''
+                               for key in ('admin_message', 'admin_message_en')}, 'dashboard')
             new_no_presence_offset =  heating_config['no_presence_offset']
             new_heating_window = heating_config['heating_window']
             if old_no_presence_offset != new_no_presence_offset or old_heating_window != new_heating_window:

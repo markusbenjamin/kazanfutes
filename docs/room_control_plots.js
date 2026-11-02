@@ -135,7 +135,7 @@ function roomControlNumber(value, precision = 1) {
 
 function roomControlText(parent, text, x, y, size = 5, anchor = 'middle', color = 'black') {
     return parent.append('text').attr('x', x).attr('y', y).style('font-family', dashboardFont)
-        .style('font-size', size + 'px').style('text-anchor', anchor).style('fill', color).text(text);
+        .style('font-size', size + 'px').style('text-anchor', anchor).style('fill', color).text(dashboardText(text));
 }
 
 function drawRoomControlHeader(area, setting, title, titleY = -13) {

@@ -6,9 +6,9 @@ const path = require('node:path');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 
 const docs = path.resolve(__dirname, '../../docs');
-const files = new Set(['styles.css', 'dashboard_styling.css', 'admin_message.js', 'Consolas.woff2', 'favicon.ico']);
+const files = new Set(['styles.css', 'dashboard_styling.css', 'admin_message.js', 'dashboard_i18n.js', 'dashboard_help.js', 'Consolas.woff2', 'favicon.ico']);
 const fixture = fs.readFileSync(path.join(docs, 'dashboard.html'), 'utf8')
-    .replace(/<script src="(?!admin_message\.js)[^"]+"><\/script>/g, '');
+    .replace(/<script src="(?!(?:admin_message|dashboard_i18n|dashboard_help)\.js)[^"]+"><\/script>/g, '');
 const server = http.createServer((request, response) => {
     const name = new URL(request.url, 'http://localhost').pathname.slice(1);
     if (!name) {

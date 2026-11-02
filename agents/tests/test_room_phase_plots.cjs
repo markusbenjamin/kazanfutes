@@ -11,7 +11,7 @@ function selection(){const node={attrs:{},styles:{},events:{},raises:0,append(ta
     on(key,handler){this.events[key]=handler;return this;},raise(){this.raises++;return this;}};return node;}
 function scale(){let domain=[0,1],range=[0,1];const f=value=>range[0]+(value-domain[0])/(domain[1]-domain[0])*(range[1]-range[0]);
     f.domain=value=>(domain=value,f);f.range=value=>(range=value,f);return f;}
-const context=vm.createContext({Number,Math,Date,Object,Array,dayStamp:()=> '2026-10-27',isMobile:false,
+const context=require('./dashboard_test_context.cjs')({Number,Math,Date,Object,Array,dayStamp:()=> '2026-10-27',isMobile:false,
     dashboardFont:'Consolas',allControlledRooms:[1,2,3],roomsColorRemap:[1,2,3],roomsColorScale:value=>'room-color-'+value,
     mainGraphSetting:{},mainGraphContentLocked:false,ROOM_CONTROL_WINDOW_DAYS:7,
     elementToMainGraphSettingMapping:{PK:{title:'room_plot',roomNumToPlot:3}},

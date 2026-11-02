@@ -4,7 +4,7 @@ const vm = require('node:vm');
 const path = require('node:path');
 const calls = [];
 const styles = [];
-const context = vm.createContext({
+const context = require('./dashboard_test_context.cjs')({
     Date, Number, Math,
     dateFromTimestamp: stamp => new Date(stamp.replace(/^(\d{4})-(\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d{2})$/, '$1-$2-$3T$4:$5:$6')),
     dayStamp: () => '2026-10-19', dayDataNotAvailable: false, dataWaitTime: 10,

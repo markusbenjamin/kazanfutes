@@ -81,11 +81,11 @@ function drawWindDirectionHistogram(plotElement, plotDims, readings) {
     [['Ny', 270], ['É', 0], ['K', 90], ['D', 180]].forEach(([label, degrees]) => {
         const {x, y} = windDirectionLabelPosition(degrees, radius);
         centre.append('text').attr('x', x).attr('y', y).style('font-family', dashboardFont).style('font-size', '6px')
-            .style('text-anchor', 'middle').style('dominant-baseline', 'middle').text(label);
+            .style('text-anchor', 'middle').style('dominant-baseline', 'middle').text(dashboardCompassLabel(label));
     });
     if (!total) centre.append('text').attr('x', 0).attr('y', radius + 15).style('text-anchor', 'middle')
         .style('font-family', dashboardFont).style('font-size', '5px')
-        .text('Nincs szélirányadat.');
+        .text(dashboardText('Nincs szélirányadat.'));
 }
 
 function weatherRainPeriods(readings, endHour) {

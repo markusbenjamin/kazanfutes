@@ -14,7 +14,7 @@ const select = id => {
         return this;
     }};
 };
-const context = vm.createContext({
+const context = require('./dashboard_test_context.cjs')({
     d3: {select, interpolateRgb: () => {}, scaleSequential: () => ({domain: () => temp => 'room-' + temp})},
     timePassedSince: age => age, dateFromTimestamp: age => age
 });

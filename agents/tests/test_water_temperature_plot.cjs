@@ -19,7 +19,7 @@ function scaleLinear() {
     scale.domain=value=>(domain=value,scale);scale.range=value=>(range=value,scale);
     scale.nice=()=>{niceCalls++;return scale;};return scale;
 }
-const context = vm.createContext({
+const context = require('./dashboard_test_context.cjs')({
     Number, Math, Date, range: null, mainGraphSetting: {}, graphData: {},
     elementToMainGraphSettingMapping: {}, dayStamp: () => '2026-10-21',
     dayDataNotAvailable: false, dataWaitTime: 10, getFractionalHourOfDay: () => 12,

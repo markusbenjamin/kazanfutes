@@ -11,7 +11,7 @@ function fixture(search) {
     const content = {scrollTop: 0};
     const button = {addEventListener() {}};
     const window = {location: {search}};
-    const context = vm.createContext({URL, URLSearchParams, window, document: {
+    const context = require('./dashboard_test_context.cjs')({URL, URLSearchParams, window, document: {
         activeElement: {}, getElementById(id) {
             return id === 'admin-message' ? box : id === 'admin-message-content' ? content : button;
         }

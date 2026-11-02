@@ -17,7 +17,7 @@ function scaleLinear() {
     scale.domain = values => {domain=values;return scale;}; scale.range = values => {range=values;return scale;};
     return scale;
 }
-const context = vm.createContext({Number, Math, Date, Object, mainGraphSetting: {}, mainGraphContentLocked: false,
+const context = require('./dashboard_test_context.cjs')({Number, Math, Date, Object, mainGraphSetting: {}, mainGraphContentLocked: false,
     dashboardFont: 'Consolas', isMobile:false, dayStamp: () => '2026-10-21', clearMainGraphs() {},
     elementToMainGraphSettingMapping: {Oktopusz: {title:'room_plot',roomNumToPlot:1}, cycle1:{title:'cycle_water_temp'}},
     allControlledRooms:[1,2], roomsDataAndState:{1:{name:'Oktopusz szita',cycle:1},2:{name:'Gólyafészek',cycle:2}},

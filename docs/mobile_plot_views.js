@@ -74,10 +74,10 @@ function drawMobilePlotViewSelector(container, dimensions, options) {
     const labelY = -font * .7;
     let start = dimensions.w - totalWidth;
     const selector = container.append('g').attr('class', 'mobile-plot-views').attr('role', 'tablist')
-        .attr('aria-label', 'Grafikon nézete');
+        .attr('aria-label', dashboardText('Grafikon nézete'));
     options.modes.forEach((mode, index) => {
         const activate = event => {event.stopPropagation(); event.preventDefault(); selectMobilePlotView(mode);};
-        const tab = selector.append('g').attr('role', 'tab').attr('tabindex', 0).attr('aria-label', mode)
+        const tab = selector.append('g').attr('role', 'tab').attr('tabindex', 0).attr('aria-label', dashboardText(mode))
             .attr('aria-selected', mode === options.mode ? 'true' : 'false').style('cursor', 'pointer')
             .on('mousedown', event => event.stopPropagation()).on('touchstart', event => event.stopPropagation())
             .on('click', activate).on('keydown', event => {if (event.key === 'Enter' || event.key === ' ') activate(event);});
@@ -86,7 +86,7 @@ function drawMobilePlotViewSelector(container, dimensions, options) {
         tab.append('text').attr('x', start + widths[index] - padding).attr('y', labelY)
             .style('text-anchor', 'end').style('font-family', dashboardFont)
             .style('font-size', font + 'px').style('fill', 'black')
-            .style('text-decoration', mode === options.mode ? 'underline' : 'none').text(mode);
+            .style('text-decoration', mode === options.mode ? 'underline' : 'none').text(dashboardText(mode));
         start += widths[index];
     });
     return totalWidth;

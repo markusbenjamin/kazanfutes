@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(path.resolve(__dirname, '../../docs/data.js'), 'utf8').replace(/\r\n/g, '\n');
-const context = vm.createContext({Number, Math, Date, structuredClone, mainGraphSetting: {day:'2026-10-20'},
+const context = require('./dashboard_test_context.cjs')({Number, Math, Date, structuredClone, mainGraphSetting: {day:'2026-10-20'},
     dayStamp: () => '2026-10-21', getFractionalHourOfDay: () => 10, getUnixDay: () => 123,
     getHourOfDay: () => 10, condensedSchedule: undefined, d3: {sum: values => values.reduce((a,b) => a+b, 0)}});
 vm.runInContext(source.slice(source.indexOf('function extractHeatingPeriodsFromHeatingState('), source.indexOf('function convertTimestamps(')), context);

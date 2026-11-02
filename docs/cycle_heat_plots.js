@@ -87,7 +87,7 @@ function drawPlotDateNavigation(container, dimensions, options, fontSize, locked
         const arrow = (text, label, delta, enabled) => {
             const activate = event => { event.stopPropagation(); if (enabled) options.onDayChange(delta); };
             date.append('text').attr('x', delta < 0 ? padding : dimensions.w - padding).attr('y', dateY)
-                .attr('role', 'button').attr('aria-label', label)
+                .attr('role', 'button').attr('aria-label', dashboardText(label))
                 .attr('aria-disabled', enabled ? 'false' : 'true').attr('tabindex', enabled ? 0 : -1)
                 .style('font-size', fontSize * 1.3 + 'px')
                 .style('cursor', enabled ? 'pointer' : 'default').style('fill', enabled ? 'black' : '#bbb').text(text)
@@ -100,13 +100,13 @@ function drawPlotDateNavigation(container, dimensions, options, fontSize, locked
         let labelX = padding;
         if (locked) {
             const lock = date.append('text').attr('class', 'plot-lock-label').attr('x', labelX).attr('y', labelY)
-                .style('text-anchor', 'start').style('fill', 'rgba(230,230,230,1)').text('rögzítve');
+                .style('text-anchor', 'start').style('fill', 'rgba(230,230,230,1)').text(dashboardText('rögzítve'));
             labelX += lock.node().getComputedTextLength() + fontSize;
         }
         if (options.day !== dayStamp()) {
             const dateLabel = date.append('text').attr('class', 'selector-date-label')
                 .attr('x', labelX).attr('y', labelY).style('text-anchor', 'start').style('fill', '#777')
-                .text(options.day + ' (' + selectorWeekday(options.day) + ')');
+                .text(dashboardText(options.day + ' (' + selectorWeekday(options.day) + ')'));
             const dateWidth = dateLabel.node().getComputedTextLength();
             const availableDateWidth = Math.max(fontSize, (dimensions.labelRight ?? dimensions.w) - padding - fontSize - labelX);
             if (dateWidth > availableDateWidth) dateLabel.style('font-size', fontSize * availableDateWidth / dateWidth + 'px');
@@ -121,11 +121,11 @@ function drawPlotTitleSelector(plotElement, plotDims, options, fontSize) {
     for (let row = 0; row < rows; row++) {
       const heading = plotElement.append('text')
         .attr('class', 'cycle-heat-selector').attr('role', 'tablist')
-        .attr('aria-label', options.prefix + 'grafikon választása')
+        .attr('aria-label', dashboardText(options.prefix) + dashboardText('grafikon választása'))
         .attr('x', plotDims.w / 2).attr('y', -(rows - row - 1) * lineHeight - fontSize * .35)
         .style('text-anchor', 'middle').style('font-family', dashboardFont)
         .style('font-size', fontSize + 'px');
-      if (!row) heading.append('tspan').text(options.prefix);
+      if (!row) heading.append('tspan').text(dashboardText(options.prefix));
       options.choices.slice(row * columns, (row + 1) * columns).forEach((choice, index) => {
         if (index) heading.append('tspan').attr('aria-hidden', 'true').text(' · ');
         const active = choice.key === options.selected;
@@ -138,7 +138,7 @@ function drawPlotTitleSelector(plotElement, plotDims, options, fontSize) {
             .attr('data-cycle-metric', choice.key)
             .style('fill', active ? choice.color : '#777')
             .style('text-decoration', active ? 'underline' : 'none')
-            .style('cursor', 'pointer').text(choice.label)
+            .style('cursor', 'pointer').text(dashboardText(choice.label))
             .on('mousedown', event => event.stopPropagation())
             .on('touchstart', event => event.stopPropagation())
             .on('click', activate)
