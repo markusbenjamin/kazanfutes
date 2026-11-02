@@ -9,6 +9,7 @@ Usual logging and reporting.
 """
 
 from utils.project import *
+from utils.scheduling_temperature import get_scheduling_external_temperature
 
 export_path_prefix = ""
 #export_path_prefix = "dev/"
@@ -410,7 +411,10 @@ def generate_schedule(for_how_many_days : int):
         warming = lambda t, T1, T2, tau: T2 + (T1 - T2) * math.exp(-t / tau)
         def clamp(x, low, high):
             return max(min(x, high), low)
-        external_temp = scrape_external_temperature()
+        external_temp, external_temp_source = get_scheduling_external_temperature(
+            get_project_root(), scrape_external_temperature,
+        )
+        report(f"Scheduling outdoor temperature: {external_temp} C ({external_temp_source}).")
         warming_curve =  {}
         back_hour_num = 7
         for room_num in presence_with_override:
