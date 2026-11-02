@@ -19,11 +19,11 @@ dialog; admin messages remain pink. Ok, X or Escape closes help, and the button
 reopens it by keyboard/touch. Firebase polling cannot reopen dismissed help or
 show the real admin message in demo. No storage permissions are needed.
 
-The Hungarian and UK flag links next to help switch the whole dashboard by
+The `hu` and `en` text links next to help switch the whole dashboard by
 reloading with `lang=hu` or `lang=en`. All other URL parameters and the fragment
 are preserved, including demo, zoom, mobile and ref_source. Only the non-active
-language is shown as a small flag toggle, with a native-language accessible name.
-The flag stays visually small on touch screens while retaining a 44px tap target.
+language is shown as a compact text toggle, with a native-language accessible name.
+The link stays visually small on touch screens while retaining a 44px tap target.
 
 English translations are applied at display boundaries before text measurements.
 SVG IDs, field names, metric keys, colors, control calculations and proper room/

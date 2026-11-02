@@ -191,10 +191,11 @@ html, body {
     width: 32px;
     height: 32px;
     box-sizing: border-box;
-    border-radius: 50%;
+    color: black;
+    font: 14px Consolas, monospace;
+    text-decoration: underline;
 }
 #dashboard-page-tools a[hidden] { display: none; }
-#dashboard-page-tools svg { width: 18px; height: 12px; }
 #dashboard-page-tools a:hover { background: #eee; }
 #dashboard-page-tools :focus-visible { outline: 2px solid black; outline-offset: -2px; }
 @media (pointer: coarse) {
