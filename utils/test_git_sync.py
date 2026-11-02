@@ -158,6 +158,55 @@ class GitSyncTests(unittest.TestCase):
         callback.assert_not_called()
         self.assertEqual(self.git('rev-parse', 'HEAD'), self.original_head)
 
+    def test_conflicted_index_without_an_operation_marker_is_blocked(self):
+        self.write('scripts/tracked.py', 'first side\n')
+        self.git('add', 'scripts/tracked.py')
+        self.git('commit', '-m', 'first side')
+        self.git('checkout', '--detach', self.original_head)
+        self.write('scripts/tracked.py', 'other side\n')
+        self.git('add', 'scripts/tracked.py')
+        self.git('commit', '-m', 'other side')
+        other_head = self.git('rev-parse', 'HEAD')
+        self.git('checkout', 'main')
+        self.git('merge', '--no-edit', other_head, check=False)
+        # Simulate an interrupted tool removing its marker in this disposable
+        # repository. The unresolved index must independently prevent syncing.
+        (self.repo / '.git/MERGE_HEAD').unlink()
+        self.assertFalse((self.repo / '.git/MERGE_HEAD').exists())
+        before = self.git('ls-files', '--unmerged')
+        self.assertTrue(before)
+        before_head = self.git('rev-parse', 'HEAD')
+        with self.assertRaisesRegex(git_api['GitSyncBlocked'], 'unresolved merge conflicts'):
+            self.sync()
+        self.assertEqual(self.git('ls-files', '--unmerged'), before)
+        self.assertEqual(self.git('rev-parse', 'HEAD'), before_head)
+
+    def test_status_exclusions_keep_literal_directory_names_and_other_edits(self):
+        for path in ('payload/[x]/current.json', 'payload/x/current.json', 'payload-old/current.json'):
+            self.write(path, 'initial\n')
+        self.git('add', 'payload', 'payload-old')
+        self.git('commit', '-m', 'literal directory fixtures')
+        for path in ('payload/[x]/current.json', 'payload/x/current.json', 'payload-old/current.json'):
+            self.write(path, 'changed\n')
+        self.write('payload/current.json', 'newly collected\n')
+        changes = git_api['_changes_outside_sync_paths'](str(self.repo), ['payload/[x]'])
+        self.assertEqual({path for _, path in changes},
+                         {'payload/current.json', 'payload/x/current.json', 'payload-old/current.json'})
+        self.assertEqual({path for _, path in git_api['_changes_outside_sync_paths'](str(self.repo), ['payload'])},
+                         {'payload-old/current.json'})
+
+    def test_move_outside_selected_paths_remains_blocked(self):
+        self.git('mv', 'payload/current.json', 'scripts/moved.json')
+        with self.assertRaisesRegex(git_api['GitSyncBlocked'], 'scripts/moved.json'):
+            self.sync()
+        self.assertEqual(self.git('rev-parse', 'HEAD'), self.original_head)
+        self.assertEqual((self.repo / 'scripts/moved.json').read_text(), 'collected\n')
+
+    def test_whole_repository_selection_has_no_outside_paths(self):
+        self.write('scripts/tracked.py', 'selected\n')
+        self.write('scripts/new.py', 'also selected\n')
+        self.assertEqual(git_api['_changes_outside_sync_paths'](str(self.repo), ['.'], include_untracked=True), [])
+
     def test_detached_head_is_blocked(self):
         self.git('checkout', '--detach')
         with self.assertRaisesRegex(git_api['GitSyncBlocked'], 'checkout must be on main'):

@@ -620,7 +620,9 @@ def _sync_paths_with_repo_unlocked(
     for marker in ("MERGE_HEAD", "rebase-merge", "rebase-apply", "CHERRY_PICK_HEAD", "REVERT_HEAD"):
         if _git_marker_exists(repo_root, marker):
             raise GitSyncBlocked(f"unfinished Git operation ({marker}); resolve it before syncing")
-    if _git_output(repo_root, ["diff", "--name-only", "--diff-filter=U"]):
+    # Conflicts are recorded in index stages. A worktree diff also reads dirty
+    # log contents, even with --diff-filter=U, and can time out before staging.
+    if _git_output(repo_root, ["ls-files", "--unmerged"]):
         raise GitSyncBlocked("unresolved merge conflicts; resolve them before syncing")
     if _git_output(repo_root, ["branch", "--show-current"]) != branch:
         raise GitSyncBlocked(f"checkout must be on {branch} before syncing")
@@ -710,10 +712,15 @@ def _tracked_changes_outside_sync_paths(repo_root, git_paths):
 
 def _changes_outside_sync_paths(repo_root, git_paths, *, include_untracked=False):
     """Read staged/unstaged paths without quoting, rename or whitespace ambiguity."""
+    if "." in git_paths:
+        return []
+    # Exclude selected paths before Git examines their contents. Filtering only
+    # the resulting status output still scans all the continuously growing logs.
     output = _run_git_command(repo_root, [
         "status", "--porcelain=v1", "-z", "--no-renames",
         "--untracked-files=all" if include_untracked else "--untracked-files=no",
-    ]).stdout
+        "--", ".",
+    ] + [":(top,exclude,literal)" + path for path in git_paths]).stdout
 
     def is_selected(path):
         return any(
