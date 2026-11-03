@@ -167,7 +167,7 @@ function splitCycleHeatReadings(readings, key, maxGapHours = 3 / 60) {
         segment.push(reading);
     });
     finish();
-    return segments;
+    return joinLivePlotTail(segments);
 }
 
 function drawLoggedPowerBars(area, readings, metric, range, end = 24) {

@@ -96,7 +96,7 @@ function splitRoomMetricReadings(readings, key, maxGapHours) {
             segment.push(row);
         });
     finish();
-    return segments;
+    return joinLivePlotTail(segments);
 }
 
 function extractRoomOccupancyPeriods(readings, endHour, maxHoldHours = 15 / 60) {

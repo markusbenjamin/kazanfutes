@@ -755,7 +755,8 @@ function resampleRoomTemperatureForDisplay(
         .filter(reading => reading?.h_of_day_frac != null && reading?.temp != null && Number.isFinite(Number(reading.h_of_day_frac)) && Number.isFinite(Number(reading.temp)))
         .map(reading => ({
             h_of_day_frac: Number(reading.h_of_day_frac),
-            temp: Number(reading.temp)
+            temp: Number(reading.temp),
+            ...(reading.live === true ? {live: true} : {})
         }))
         .sort((a, b) => a.h_of_day_frac - b.h_of_day_frac);
 
@@ -1184,7 +1185,7 @@ function drawPlot(plotData, userOptions) {
                 .curve(ops.plotStyle.stepAfter ? d3.curveStepAfter : ops.plotStyle.monotone ? d3.curveMonotoneX : ops.plotStyle.linear ? d3.curveLinear
                     : ops.plotStyle.smoothCurve ? d3.curveBasis : d3.curveStep);
 
-            const segments = ops.segment.do ? splitDataIntoSegments(plotData, ops.dataKeys.bottom, ops.segment.gap) : [plotData];
+            const segments = joinLivePlotTail(ops.segment.do ? splitDataIntoSegments(plotData, ops.dataKeys.bottom, ops.segment.gap) : [plotData]);
 
             // Draw a path for each segment
             segments.forEach((segment, segmentIndex) => {
