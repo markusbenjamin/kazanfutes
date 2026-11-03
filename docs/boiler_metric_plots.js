@@ -70,6 +70,7 @@ function boilerHeatingPeriodRects(heatingState, day, range) {
 function drawBoilerMetricPlot(data, setting) {
     const metric = BOILER_METRICS[setting.metric];
     const isTemperature = setting.metric === 'temperature';
+    const end = setting.day === dayStamp() ? getFractionalHourOfDay() : 24;
     const cycles = isTemperature ? boilerEnabledCycles(data.heating_state) : null;
     const readings = isTemperature ? boilerAverageWaterTemperatures(data, cycles) : (data.heating_demand || []);
     const curves = [{key: metric.key, color: metric.color, tooltip: isTemperature ? 'előremenő' : 'hőigény'}];
@@ -82,27 +83,27 @@ function drawBoilerMetricPlot(data, setting) {
         step = 5;
         range = values.length ? [Math.floor(Math.min(...values) / 5) * 5 - 5, Math.ceil(Math.max(...values) / 5) * 5 + 5] : [0,80];
     } else {
-        const top = Math.max(1, ...values) * 1.05;
+        const extent = boilerDemandExtent(readings, end);
+        const top = extent[1] * 1.05;
         const magnitude = 10 ** Math.floor(Math.log10(top / 5));
         step = [1,2,5,10].find(value => value * magnitude >= top / 5) * magnitude;
-        range = [0, Math.ceil(top / step) * step];
+        range = [Math.floor(extent[0] / step) * step, Math.ceil(top / step) * step];
     }
     let emptyMessage = values.length ? '' : 'Az adott napra nincs adat.';
     if (isTemperature && cycles === null) emptyMessage = 'Az adott napra nincs kapcsolási adat.';
     else if (isTemperature && !cycles.length) emptyMessage = 'Nincs engedélyezett fűtési kör.';
-    const common = {parentId: 'graph', margins: {top: .1, right: .03, bottom: .15, left: .1},
+    const common = {parentId: 'graph', margins: {top: isTemperature ? .1 : .16, right: .03, bottom: .15, left: .1},
         domain: {bottom: [0,24], left: range}, dataKeys: {bottom: 'h_of_day_frac', left: metric.key},
         axesLabel: {bottom: 'óra', left: metric.axis}, tickVals: {left: d3.range(range[0], range[1] + step / 2, step)},
         smoothing: {bottom: 0, left: 0}, segment: {do: false}, plotLabel: '', curveEndText: {show: false},
         plotStyle: {joined: true, thickness: '1', smoothCurve: true, startCap: false, endCap: false}};
     const area = drawPlot([], {...common, emptyMessage,
         rects: {when: 'before', list: boilerHeatingPeriodRects(data.heating_state, setting.day, range)},
-        plotLabelTabs: {prefix: 'kazán — ', selected: setting.metric,
-        choices: Object.entries(BOILER_METRICS).map(([key, value]) => ({key, label: value.label, color: value.color})),
-        onSelect: selectBoilerMetricPlot},
+        plotLabelTabs: isTemperature ? boilerMetricTabs(setting) : false,
         plotDateNavigation: {day: setting.day, onDayChange: navigateMainPlotDay}});
     if (!isTemperature) {
-        drawLoggedPowerBars(area, readings, {...metric, unit: 'kW', precision: 2}, range);
+        drawPlotTitleSelector(area.plotElement.append('g').attr('transform', 'translate(0,-9)'), area.plotDims, boilerMetricTabs(setting), 7);
+        drawBoilerDemandBars(area, readings, {...metric, unit: 'kW', precision: 2}, range, end);
         return;
     }
     curves.forEach(curve => curve.segments.forEach((segment, index) => {
@@ -113,4 +114,10 @@ function drawBoilerMetricPlot(data, setting) {
             curveEndText: {show: last, fontSize: 6, col: curve.color, xOffset: 3, yOffset: 1.75,
                 text: Number(segment.at(-1)[curve.key].toFixed(isTemperature ? 1 : 2)) + metric.unit}});
     }));
+}
+
+function boilerMetricTabs(setting) {
+    return {prefix: 'kazán — ', selected: setting.metric,
+        choices: Object.entries(BOILER_METRICS).map(([key, value]) => ({key, label: value.label, color: value.color})),
+        onSelect: selectBoilerMetricPlot};
 }

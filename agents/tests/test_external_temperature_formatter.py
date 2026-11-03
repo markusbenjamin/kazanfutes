@@ -4,7 +4,7 @@ from pathlib import Path
 import unittest
 from unittest.mock import Mock
 
-from utils.external_temperature_formatter import format_ws90_external_temperatures, ws90_external_temperature
+from utils.external_temperature_formatter import format_ws90_external_temperatures, ws90_external_temperature, ws90_live_snapshot
 
 DAY = '2026-10-19'
 
@@ -83,11 +83,13 @@ class ExternalTemperatureFormatterTests(unittest.TestCase):
                     'SHELLY_RESOLVER': Mock(resolve_one=Mock(return_value={'ip': 'test-ip'})),
                     'get_weather_station_state': observe, 'log_data': Mock(), 'JSONNodeAtURL': firebase,
                     'ws90_external_temperature': ws90_external_temperature,
+                    'ws90_live_snapshot': ws90_live_snapshot,
                     'ModuleException': RuntimeError, 'ServiceException': Mock(),
                 }
                 exec(service_try('services/weather_station_logger.py'), namespace)
                 observe.assert_called_once_with(shelly_ip='test-ip', ws90_bt_addr='test-address')
-                firebase.return_value.write.assert_called_once_with({'external_temp': value}, 'state')
+                firebase.return_value.write.assert_called_once_with(
+                    {'external_temp': value, 'weather_station': ws90_live_snapshot(reading(value))}, 'state')
                 namespace['log_data'].assert_called_once_with(reading(value), 'weather_station/weather_station.json')
                 namespace['ServiceException'].assert_not_called()
 

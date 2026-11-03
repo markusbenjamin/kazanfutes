@@ -7,11 +7,13 @@ const draws = [], requests = [], barDraws = [];
 const context = require('./dashboard_test_context.cjs')({Number, Math, Date, Object, Map,
     dayStamp: () => '2026-10-27', getFractionalHourOfDay: () => 12, mainGraphSetting: {}, mainGraphContentLocked: false,
     elementToMainGraphSettingMapping: {boiler_body: {title: 'heating_state', day: '2026-10-27'}},
-    drawMainGraph: data => requests.push(data), drawPlot: (rows, options) => draws.push({rows, options}),
+    drawMainGraph: data => requests.push(data), drawPlot: (rows, options) => {draws.push({rows, options});
+        return {plotElement:{append(){return this;},attr(){return this;}},plotDims:{w:200,h:100}};}, drawPlotTitleSelector() {},
     navigateMainPlotDay() {}, d3: {range: (start,end,step) => Array.from({length: Math.ceil((end-start)/step)},(_,i) => start+i*step)}});
-for (const file of ['cycle_heat_plots','boiler_metric_plots'])
+for (const file of ['cycle_heat_plots','boiler_demand_bars','boiler_metric_plots'])
     vm.runInContext(fs.readFileSync(path.resolve(__dirname,'../../docs/'+file+'.js'),'utf8'),context);
-context.drawLoggedPowerBars = (area, rows, metric, range) => barDraws.push({rows,metric,range});
+context.drawBoilerDemandBars = (area, rows, metric, range) => barDraws.push({rows,metric,range});
+context.drawPlotTitleSelector = () => {};
 vm.runInContext(source.slice(source.indexOf('function extractHeatingPeriodsFromHeatingState('),
     source.indexOf('function convertTimestamps(')),context);
 const evaluate = code => JSON.parse(JSON.stringify(vm.runInContext(code,context)));

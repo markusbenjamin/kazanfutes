@@ -170,34 +170,23 @@ function splitCycleHeatReadings(readings, key, maxGapHours = 3 / 60) {
     return segments;
 }
 
-function drawLoggedPowerBars(area, readings, metric, range) {
+function drawLoggedPowerBars(area, readings, metric, range, end = 24) {
     const x = d3.scaleLinear().domain([0,24]).range([0,area.plotDims.w]);
     const y = d3.scaleLinear().domain(range).nice().range([area.plotDims.h,0]);
-    // One bar per logged value, not an integral or a resampled/smoothed signal.
-    // Keep unknown timestamps as neighbours so bars cannot spread across them.
-    const byHour = new Map();
-    readings.forEach(row => {
-        if (Number.isFinite(row.h_of_day_frac) && row.h_of_day_frac >= 0 && row.h_of_day_frac <= 24)
-            byHour.set(row.h_of_day_frac, row);
-    });
-    const sorted = [...byHour.values()].sort((a,b) => a.h_of_day_frac - b.h_of_day_frac);
+    const sorted = powerPlotBins(readings, [metric.key], end);
     const valueText = row => Number(row[metric.key].toFixed(metric.precision)) + ' ' + metric.unit;
     let last;
-    sorted.forEach((row, index) => {
+    sorted.forEach(row => {
         if (!Number.isFinite(row[metric.key])) return;
         const hour = row.h_of_day_frac;
-        const gaps = [sorted[index - 1], sorted[index + 1]]
-            .filter(Boolean).map(neighbour => Math.abs(neighbour.h_of_day_frac - hour));
-        const width = gaps.length ? Math.min(3 / 60, ...gaps) : 1 / 60;
-        const x1 = Math.max(0, hour - width * .44), x2 = Math.min(24, hour + width * .44);
+        const gap = (row.bin_end - row.bin_start) * .05;
+        const x1 = row.bin_start + gap, x2 = row.bin_end - gap;
         const rect = area.plotElement.append('rect').attr('class', 'logged-power-bar')
             .attr('data-hour', hour).attr('data-value', row[metric.key]).attr('data-metric', metric.key)
             .attr('x', x(x1)).attr('width', x(x2) - x(x1))
             .attr('y', Math.min(y(0), y(row[metric.key]))).attr('height', Math.abs(y(0) - y(row[metric.key])))
             .attr('fill', metric.color).attr('stroke', 'none');
-        const minutes = Math.min(1440, Math.floor(hour * 60 + 1e-7));
-        const time = String(Math.floor(minutes / 60)).padStart(2,'0') + ':' + String(minutes % 60).padStart(2,'0');
-        bindPlotCurveTooltip(rect, time + '\n' + valueText(row), 6, false);
+        bindPlotCurveTooltip(rect, powerBinTimeLabel(row) + '\n' + valueText(row), 6, false);
         last = row;
     });
     if (last) area.plotElement.append('text').attr('class', 'logged-power-end-label')
@@ -222,7 +211,9 @@ function drawCycleHeatPlot(data, setting) {
         range = temperatures.length ? [Math.floor(extent[0] / 5) * 5 - 5, Math.ceil(extent[1] / 5) * 5 + 5] : [0, 80];
         tickStep = 5;
     } else {
-        const top = Math.max(0, ...measured.map(reading => reading[metric.key]));
+        const powerEnd = setting.day === dayStamp() ? getFractionalHourOfDay() : 24;
+        const rangeReadings = metricName === 'power' ? powerPlotBins(data[type] || [], [metric.key], powerEnd) : measured;
+        const top = Math.max(0, ...rangeReadings.map(reading => reading[metric.key]));
         const roughStep = (top > 0 ? top * 1.05 : 1) / 5;
         const magnitude = 10 ** Math.floor(Math.log10(roughStep));
         const fraction = roughStep / magnitude;
@@ -251,8 +242,8 @@ function drawCycleHeatPlot(data, setting) {
             choices: Object.entries(CYCLE_HEAT_METRICS).map(([key, value]) => ({key, label: value.label, color: value.color})),
             onSelect: selectCycleHeatPlot } : false
     });
-    if (setting.detailed && metricName === 'power') {
-        drawLoggedPowerBars(area, data[type] || [], metric, range);
+    if (metricName === 'power') {
+        drawLoggedPowerBars(area, data[type] || [], metric, range, end);
         return;
     }
     curves.forEach(curve => curve.segments.forEach((segment, index) => {

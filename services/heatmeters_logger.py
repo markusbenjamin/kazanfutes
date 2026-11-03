@@ -9,6 +9,7 @@ system/state/heatmeters/1/power
 """
 
 from utils.project import *
+from utils.heat_delivery_formatter import heatmeter_live_snapshot
 
 success = False
 try:
@@ -28,16 +29,7 @@ try:
     ts = timestamp()
 
     # lean system-state write
-    heatmeters_state = {
-        "last_updated": ts,
-    }
-
-    for meter in [1, 2, 3, 4]:
-        heatmeters_state[str(meter)] = {
-            "temp": vals[meter].get("flow_temperature_c"),
-            "flow": vals[meter].get("volume_flow_m3h"),
-            "power": vals[meter].get("power_w")/1000,
-        }
+    heatmeters_state = heatmeter_live_snapshot(vals, ts)
 
     system_node = JSONNodeAtURL(node_relative_path="system")
     system_node.write(

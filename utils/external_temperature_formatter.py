@@ -74,3 +74,12 @@ def format_ws90_weather(entries, daystamp):
         row['rain_status'] = int(rain) if isinstance(rain, bool) else rain if type(rain) in (int, float) and rain in (0, 1) else None
         rows[stamp] = row
     return [rows[stamp] for stamp in sorted(rows)]
+
+
+def ws90_live_snapshot(entry):
+    """Reuse validated weather fields and their sensor timestamp, not the poll time."""
+    observed = _observed_at(entry) if isinstance(entry, dict) else None
+    if observed is None:
+        return None
+    rows = format_ws90_weather([entry], observed.strftime('%Y-%m-%d'))
+    return rows[0] if rows else None
