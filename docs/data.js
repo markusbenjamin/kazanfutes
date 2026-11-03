@@ -432,6 +432,7 @@ function getDataFromFirebase() {
                 //console.log(currentGasUsageRate)
                 //console.log(timeItTookToUpdateGasUsage)
             });
+            refreshMainPlotLiveEndpoint();
         })
         .catch(error => {
             console.error('Error fetching data from Firebase:', error);
@@ -2354,6 +2355,9 @@ function drawMainGraph(graphData = null) {
         );
     }
     else {
+        mainPlotLivePayload = {setting: mainGraphSetting, data: graphData};
+        graphData = withLivePlotReadings(graphData, mainGraphSetting,
+            typeof systemNode === 'undefined' ? null : systemNode);
         graphData = {...(graphData[mainGraphSetting.day] || {})};
         const ordinary = !['radiator', 'cycle_water_temp', 'room_metrics', 'weather_metrics', 'boiler_metrics'].includes(mainGraphSetting.title);
         const temperatureType = mainGraphSetting.title === 'room_plot' ? 'room_' + mainGraphSetting.roomNumToPlot + '_measurements' : null;
@@ -2436,9 +2440,7 @@ function drawMainGraph(graphData = null) {
                         })
                     );
 
-                    let currentPower = systemNode['state']['pumps']['power'][cycleNum];
-                    if (mainGraphSetting.day === dayStamp()) latestPowerDataForCycle.push({ 'power': currentPower, 'h_of_day_frac': getFractionalHourOfDay() });
-                    else currentPower = latestPowerDataForCycle.at(-1)?.power;
+                    let currentPower = latestPowerDataForCycle.at(-1)?.power;
 
                     const maxPower = Math.max(...latestPowerDataForCycle.map(item => item.power));
                     range = [0, maxPower + 1];
@@ -2556,15 +2558,12 @@ function drawMainGraph(graphData = null) {
                         let roomMeasurementData = graphData["room_" + mainGraphSetting.roomNumToPlot + "_measurements"];
                         let roomMeasurementDisplayData = prepareRoomTemperatureForDisplay(roomMeasurementData);
                         let roomMeasurementPastNDaysAverageDisplayData = resampleRoomTemperatureForDisplay(roomMeasurementPastNDaysAverageData);
-                        let roomCurrentTemp = systemNode['state']['measured_temps'][roomNum];
-                        //roomMeasurementData.push({ 'temp': roomCurrentTemp, 'h_of_day_frac': getFractionalHourOfDay() })
 
                         let hasValve = roomsDataAndState[roomNum].hasValve;
                         let roomValveStateData, roomValveCurrentState;
                         if (hasValve) {
                             roomValveStateData = (graphData["room_" + mainGraphSetting.roomNumToPlot + "_valve_state"] || []).slice();
-                            roomValveCurrentState = arrayMean(systemNode['state']['valve_states'][roomNum]) / 100; //DEV
-                            if (isToday) roomValveStateData.push({ 'valve': roomValveCurrentState, 'h_of_day_frac': getFractionalHourOfDay(dateFromTimestamp(systemNode['state']['last_updated'])) });
+                            roomValveCurrentState = roomValveStateData.at(-1)?.valve;
                             hasValve = roomValveStateData.length > 0;
                         }
 

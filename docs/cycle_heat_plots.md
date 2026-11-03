@@ -1,7 +1,7 @@
 # Cycle piping plot trial
 
 Hover a cycle's piping or numbered dial for the simple **fűtőteljesítmény**
-curve. Ctrl+click either to pin the detailed selector with plain-text choices:
+bar chart. Ctrl+click either to pin the detailed selector with plain-text choices:
 **fűtővíz hőm.**, **fűtőtelj.**, **átfolyás**, **szivattyú telj.** The active
 choice is underlined: temperature red, thermal power orange, flow blue,
 electrical pump power black. Ordinary click keeps its usual pin/unpin action.
@@ -13,12 +13,12 @@ Past dates sit beside `rögzítve` above the frame; today's date is omitted. The
 metric and cycle stay selected while navigating; future days are disabled.
 The ordinary hover title is `<n>. kör mai fűtőteljesítménye`.
 
-All four views retain the selected cycle's pump-on shading. Detailed thermal
+All four views retain the selected cycle's pump-on shading. Both ordinary and detailed thermal
 power uses borderless orange bars, one per logged instantaneous kW value,
 without averaging or smoothing. Bar widths follow nearby timestamps, capped
 at three minutes (one minute for an isolated reading); missing observations
 are not zero-filled or bridged. Tooltips show HH:MM and kW, and the last valid
-bar retains its value label. Ordinary hover keeps its thin power curve.
+bar retains its value label. Ordinary hover and detailed power share the same bars.
 Period rectangles show their fill only, with no borders.
 Pump power joins known observations even across time gaps; explicit unknown
 values still break it. Its black curve is rectangular (step-after), with no
@@ -44,7 +44,9 @@ The normal Pi `data_formatter` run ingests raw
 `data/logs/heat_delivery/heatmeters_state.json`, using the authoritative meter
 mapping from `config/heating_monitor.json`. It exports four daily heat/flow
 files; the existing data uploader publishes them normally. There is no new
-hardware polling, Firebase dependency, relay action, or collector change.
+hardware polling or relay action. A timestamped Firebase snapshot can extend
+today's display only; the archived formatter streams and energy integrals do
+not change. See live_plot_data.md for freshness and validation rules.
 
 Thermal power is each heatmeter's instantaneous `power_w`, converted to kW by
 dividing by 1000. It is not accumulated daily energy, net energy delivery, or
@@ -66,4 +68,9 @@ Values and right-aligned kWh units share a baseline and scale with the dial
 height. The units are larger for readability, with measured space reserved
 before fitting long totals so the value and unit cannot overlap.
 The raw energy counter is deliberately ignored because of observed unit/jump
-inconsistencies. Heating-power plots remain instantaneous kW, not kWh.
+inconsistencies. Heating-power bars show time-weighted ten-minute mean kW, not
+kWh, in both ordinary and detailed plots. Borderless bars fill 90% of each bin.
+Unknown samples stop the preceding hold, and holds expire after three minutes;
+empty bins remain empty. The last isolated sample contributes at most one minute.
+Today's partial bin ends at now. Binning is presentation-only; daily integrals
+remain unchanged.

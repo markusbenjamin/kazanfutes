@@ -17,7 +17,7 @@ assert.deepEqual(evaluate("extractRoomScheduleFromCondensedSchedule(1,targets,'2
 assert.deepEqual(evaluate("extractRoomScheduleFromCondensedSchedule(1,targets,'2026-10-20').roomScheduleRestOfDay"), []);
 assert.deepEqual(evaluate('extractRoomScheduleFromCondensedSchedule(1,[])').roomSchedule, []);
 assert.match(source, /primaryMainPlot \? \{day: mainGraphSetting.day, onDayChange: navigateMainPlotDay\}/);
-assert.match(source, /if \(isToday\) roomValveStateData.push/);
+assert.match(source, /withLivePlotReadings\(graphData, mainGraphSetting/);
 assert.match(source, /elem.timestamp\?\.slice\(0, 10\) === mainGraphSetting.day/);
 assert.match(source, /if \(isToday && requestLists\)/);
 assert.match(source, /Az adott napra nincs adat\./);

@@ -4,9 +4,12 @@ const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(path.resolve(__dirname, '../../docs/dashboard_i18n.js'), 'utf8');
 const loadingSource = fs.readFileSync(path.resolve(__dirname, '../../docs/plot_loading.js'), 'utf8');
+const liveSource = fs.readFileSync(path.resolve(__dirname, '../../docs/live_plot_data.js'), 'utf8');
 module.exports = sandbox => {
     const context = vm.createContext({URLSearchParams, ...sandbox});
     vm.runInContext(source, context);
     vm.runInContext(loadingSource, context);
+    vm.runInContext(liveSource, context);
+    vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../../docs/power_plot_bins.js'), 'utf8'), context);
     return context;
 };

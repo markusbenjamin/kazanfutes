@@ -25,6 +25,7 @@ const DASHBOARD_ENGLISH = {
     'Kör manuálisan lekapcsolva.': 'Circuit manually disabled.',
     'rögzítve': 'pinned', 'Adatok betöltése.': 'Loading data.',
     'Előző nap': 'Previous day', 'Következő nap': 'Next day', 'óra': 'hour', 'kör': 'circuit',
+    '1-es kör': 'circuit 1', '2-es kör': 'circuit 2', '3-as kör': 'circuit 3', '4-es kör': 'circuit 4',
     'alap': 'basic', 'részletes': 'details', 'analitika': 'analytics', 'Grafikon nézete': 'Chart view',
     'grafikon választása': 'chart selection', 'kazán': 'boiler', 'szobák': 'rooms',
     'fázissík': 'phase plane', 'statisztika': 'statistics', 'napi hiba': 'daily error',

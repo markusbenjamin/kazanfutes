@@ -10,12 +10,21 @@ current open periods end at now, historical ones at midnight. Shading is drawn
 once behind the curves and spans the current plot's full vertical range.
 
 Demand reads `demand_kw` directly from the Pi's `heating_demand.json`.
-It uses borderless orange bars, one per logged instantaneous kW value, with
-HH:MM/value tooltips and the latest valid value label. It shares the detailed
-cycle-power bar renderer: widths follow nearby timestamps, capped at three
-minutes (one minute for an isolated reading). No averaging or smoothing.
-Unknown values remain gaps, and real zero demand remains zero. No alternative
-demand calculation is performed by the dashboard.
+It uses borderless stacked bars from the same row's `cycle_demand_kw`, with a
+compact four-cycle colour legend and HH:MM/component/net-demand tooltips.
+Positive contributions stack above zero and negative contributions below it.
+A black tick marks the unchanged `demand_kw = max(0, sum(cycle_demand_kw))`, and
+the latest net value is labelled. Demand is not measured delivered heat.
+All four components must be finite and reconcile to the logged total; old files
+without a breakdown (or inconsistent breakdowns) retain an orange total bar.
+An unavailable total remains a gap, even if some components are known.
+Display bars are time-weighted ten-minute means, 90% of the bin width, without
+borders. Holds stop at unknown readings or after three minutes; empty bins stay
+empty. The final isolated observation contributes at most one minute, and today's
+last bin stops at now. Each raw breakdown is validated before averaging. The net
+is averaged separately because clipping and averaging do not commute. Incomplete
+breakdown coverage keeps an orange total bar. No daily energy totals or backend
+demand calculations are changed.
 
 The temperature view averages the existing `cycle_N_water_temps.json` supply
 and return series across circuits with at least one pump-on command in the
@@ -30,4 +39,6 @@ are held causally for at most three minutes. All enabled circuits must have a
 valid reading for a channel; no partial means or zero-filled missing values.
 Supply and return can independently be unavailable. Supply is red, return
 deep blue, both with curve tooltips and final-value markers. No backend,
-controller, device mapping or SVG changes are required.
+controller, device mapping or SVG changes are required. Fresh, timestamped live
+heatmeter endpoints are applied before these means are calculated; historical
+days still use archived observations only.

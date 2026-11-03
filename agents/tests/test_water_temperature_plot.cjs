@@ -150,11 +150,9 @@ assert.equal(calls[0].options.dataKeys.left, 'power_kw');
 assert.equal(calls[0].options.axesLabel.left, 'fűtőteljesítmény (kW)');
 assert.equal(calls[0].options.plotLabelTabs, false);
 assert.equal(calls[0].options.plotLabel, '2. kör mai fűtőteljesítménye');
-assert.equal(calls[1].options.plotLabel, '');
-assert.equal(calls[1].options.curveEndText.text, '16.67 kW');
-assert.equal(calls[1].options.plotStyle.col, 'rgb(230, 130, 0)');
-assert.equal(calls[1].options.curveEndText.col, 'rgb(230, 130, 0)');
-// Only the Ctrl/touch detailed power view becomes bars; ordinary hover above stays a curve.
+assert.equal(calls.length, 1, 'ordinary hover uses bars too, without a power curve');
+assert.ok(barNodes.some(node=>node.attrs.class==='logged-power-end-label' && node.value==='16.67 kW'));
+// Both ordinary hover and Ctrl/touch detailed power use the same logged bars.
 const powerData = [{h_of_day_frac:2,power_kw:16.672},{h_of_day_frac:1,power_kw:0},
     {h_of_day_frac:1.01,power_kw:null},{h_of_day_frac:1.02,power_kw:8}];
 const originalPowerData = JSON.stringify(powerData);
@@ -167,13 +165,13 @@ for (let cycle=1;cycle<=4;cycle++) {
     assert.equal(calls[0].options.plotLabelTabs.selected,'power');
     assert.ok(calls[0].options.rects.list.length,'pump-on shading stays behind the bars');
     const bars=barNodes.filter(node=>node.attrs.class==='logged-power-bar');
-    assert.equal(bars.length,3,'null remains absent while real zero remains a bar');
-    assert.deepEqual(bars.map(node=>node.attrs['data-value']),[0,8,16.672]);
-    assert.equal(bars[0].attrs.height,0);
+    assert.equal(bars.length,2,'nearby observations share a ten-minute bin; empty intervening bins stay empty');
+    assert.ok(Math.abs(bars[0].attrs['data-value']-8*5/6)<1e-8,'time-weighted average excludes the null interval');
+    assert.equal(bars[1].attrs['data-value'],16.672);
     assert.ok(bars.every(node=>node.attrs.width>0&&node.attrs.fill==='rgb(230, 130, 0)'&&node.attrs.stroke==='none'));
-    assert.ok(bars.every(node=>node.attrs.width<=240/24*(3/60)),'bar widths cannot fill long logging gaps');
+    assert.ok(bars.every(node=>Math.abs(node.attrs.width-1.5)<1e-8),'90% of each ten-minute bin');
     assert.equal(niceCalls,1,'bars use the same rounded domain as the axis');
-    assert.ok(barTooltips.includes('02:00\n16.67 kW'));
+    assert.ok(barTooltips.includes('02:00–02:10\n16.67 kW'));
     assert.equal(barNodes.find(node=>node.attrs.class==='logged-power-end-label').value,'16.67 kW');
 }
 assert.equal(JSON.stringify(powerData),originalPowerData,'no sorting or resampling mutates cached data');
@@ -185,7 +183,8 @@ vm.runInContext("drawLoggedPowerBars(barArea,[],{key:'power_kw',unit:'kW',precis
 assert.equal(barNodes.length,0,'empty data renders neither bars nor a latest label');
 vm.runInContext("drawLoggedPowerBars(barArea,isolatedPower,{key:'power_kw',unit:'kW',precision:2,color:'orange'},[0,20])",context);
 const edgeBars=barNodes.filter(node=>node.attrs.class==='logged-power-bar');
-assert.deepEqual(edgeBars.map(node=>node.attrs['data-value']),[6,7],'last duplicate wins; invalid times are ignored');
+assert.equal(edgeBars.length,1,'24:00 has no interval in this day');
+assert.ok(Math.abs(edgeBars[0].attrs['data-value']-6)<1e-8,'last duplicate wins');
 assert.ok(edgeBars.every(node=>node.attrs.x>=0&&node.attrs.x+node.attrs.width<=240),'bars stay inside day boundaries');
 barNodes.length=0;
 context.isolatedPower=[{h_of_day_frac:3,power_kw:9}];

@@ -40,6 +40,21 @@ def _validated_power(reading, min_flow_m3h, power_tolerance_w, power_tolerance_f
     return watts
 
 
+def heatmeter_live_snapshot(readings, observed_at):
+    """Publish the same corroborated power used in charts, plus return temperature."""
+    snapshot = {'last_updated': observed_at}
+    for meter, reading in readings.items():
+        reading = reading if isinstance(reading, dict) else {}
+        watts = _validated_power(reading, 0.005, 2000, 0.3)
+        snapshot[str(meter)] = {
+            'temp': _temperature(reading.get('flow_temperature_c')),
+            'return_temp': _temperature(reading.get('return_temperature_c')),
+            'flow': _number(reading.get('volume_flow_m3h')),
+            'power': watts / 1000 if watts is not None else None,
+        }
+    return snapshot
+
+
 def format_cycle_heat_delivery(entries, daystamp, meter_mapping, max_gap_seconds=180, *,
                                min_flow_m3h=0.005, power_tolerance_w=2000,
                                power_tolerance_fraction=0.3):
