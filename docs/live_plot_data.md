@@ -32,6 +32,12 @@ Historical plots, phase/statistical analytics, gas rates without a source
 timestamp, demand calculations and cumulative energy sums remain log-derived.
 Unknown/unpublished room CO₂/lux and learned occupancy are not guessed.
 
+Fresh live endpoints join the preceding valid curve even when the archived
+upload lags beyond the normal segment gap. Only this final live tail is joined;
+archived outages stay split and no stale or invalid reading is admitted. Derived
+boiler/radiator means retain the live marker only when all contributing sources
+are live at that timestamp. Historical plots and power-bar binning are unchanged.
+
 The heatmeter logger now publishes `return_temp` and corroborated `power` beside
 its existing supply/flow fields. The weather logger publishes a validated
 `weather_station` snapshot beside the existing `external_temp`. These service

@@ -54,7 +54,9 @@ function boilerAverageWaterTemperatures(data, cycles) {
             if (rows.some(row => !row || hour - row.h_of_day_frac > 3 / 60 || !Number.isFinite(row[key]))) return null;
             return rows.reduce((sum, row) => sum + row[key], 0) / cycles.length;
         };
-        return {h_of_day_frac: hour, water_temp: average('water_temp'), return_temp: average('return_temp')};
+        const live = cycles.every(cycle => latest.get(cycle)?.live === true && latest.get(cycle).h_of_day_frac === hour);
+        return {h_of_day_frac: hour, water_temp: average('water_temp'), return_temp: average('return_temp'),
+            ...(live ? {live: true} : {})};
     });
 }
 

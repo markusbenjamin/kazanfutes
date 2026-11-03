@@ -199,7 +199,7 @@ function radiatorSeries(rows, field, sources) {
             const row = sorted[++index];
             sources.forEach(source => {
                 const value = row[field]?.[source];
-                if (Number.isFinite(value)) latest.set(source, {value, time: row.h_of_day_frac});
+                if (Number.isFinite(value)) latest.set(source, {value, time: row.h_of_day_frac, live: row.live === true});
                 else if (field !== 'probes') latest.delete(source);
             });
         }
@@ -208,7 +208,8 @@ function radiatorSeries(rows, field, sources) {
             return sample && time - sample.time <= RADIATOR_SOURCE_GAP_HOURS + 1e-10 ? sample.value : null;
         });
         const value = readings.length && readings.every(Number.isFinite) ? radiatorMean(readings) : null;
-        return {h_of_day_frac: time, value};
+        const live = sources.length && sources.every(source => latest.get(source)?.live === true && latest.get(source).time === time);
+        return {h_of_day_frac: time, value, ...(live ? {live: true} : {})};
     });
 }
 

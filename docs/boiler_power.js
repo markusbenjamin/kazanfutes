@@ -74,7 +74,7 @@ function splitBoilerPowerSegments(readings) {
         segment.push(reading);
     });
     finish();
-    return segments;
+    return joinLivePlotTail(segments);
 }
 
 function boilerCommandPeriods(commands, lower, upper) {

@@ -104,6 +104,17 @@ function withLivePlotReadings(payload, setting, system, now = new Date()) {
 }
 
 let mainPlotLivePayload;
+
+// Live readings have already passed the source freshness/validity checks above.
+// Extend only that final display tail; keep all archived gap boundaries intact.
+function joinLivePlotTail(segments) {
+    const tail = segments.at(-1);
+    if (segments.length < 2 || tail[0]?.live !== true) return segments;
+    const previous = segments.at(-2);
+    if (!(tail[0].h_of_day_frac > previous.at(-1).h_of_day_frac)) return segments;
+    return [...segments.slice(0, -2), [...previous, ...tail]];
+}
+
 function refreshMainPlotLiveEndpoint() {
     if (mainPlotLivePayload?.setting === mainGraphSetting)
         drawMainGraph(mainPlotLivePayload.data);
