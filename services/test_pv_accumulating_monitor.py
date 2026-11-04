@@ -11,6 +11,7 @@ from services import pv_accumulating_monitor as service
 from services.test_pv_evidence import rows, model as evidence_model
 from services.test_pv_performance_monitor import samples_for
 from pv_evidence import identity
+from pv_inspections import visually_resolve
 from pv_performance import Policy, build_baseline, day_epoch
 from pv_performance_io import atomic_json, read_json
 
@@ -89,6 +90,20 @@ class AccumulatingServiceTests(unittest.TestCase):
         recovered = service.execute(self.args(), self.now(12))
         self.assertEqual(recovered["summary"]["array"]["last_processed_day"], "2025-07-05")
         self.assertFalse(recovered["events"])
+
+    def test_visual_resolution_ignores_array_backlog_and_reopens_from_new_days(self):
+        service.execute(self.args("shadow", "--from", "2025-07-01"), self.now())
+        state = read_json(self.state_path)
+        visually_resolve(state, ["array", "pv1"], self.now(), "Checked; no visible fault")
+        atomic_json(self.state_path, state)
+        report = service.execute(self.args(), self.now(14))
+        self.assertIsNone(report["summary"]["array"]["inspection"])
+        self.assertEqual(report["summary"]["array"]["inspection_status"], "visually_resolved")
+        self.assertEqual(report["summary"]["array"]["post_resolution_evidence_days"], 0)
+        self.assertEqual(report["summary"]["pv1"]["inspection"]["opened"], "2025-07-13")
+        report = service.execute(self.args(), self.now(20))
+        self.assertEqual(report["summary"]["array"]["inspection"]["first_evidence"], "2025-07-11")
+        self.assertEqual(report["summary"]["array"]["inspection"]["opened"], "2025-07-13")
 
     def test_incomplete_weather_waits_for_latest_day(self):
         site = Policy()

@@ -33,6 +33,7 @@ from pv_accumulating import build_model, daily_residuals, describe_pattern, evid
 from pv_array_weather import fetch_era5
 from pv_evidence import advance, identity, new_state
 from pv_history_export import load_history_exports
+from pv_inspections import evidence_after_inspection, inspection_details
 from pv_performance import Policy, Predictor, day_epoch, score_days
 from pv_performance_io import atomic_json, load_samples, read_json, state_lock
 
@@ -194,7 +195,7 @@ def execute(args, now=None):
                     daily[target] = [r for r in relative if r["target"] == target and r["day"] >= starts[target]]
         events, decisions = [], {}
         for target, evidence in calibrations.items():
-            target_days = daily.get(target, [])
+            target_days = evidence_after_inspection(daily.get(target, []), state["targets"][target])
             if target in simulation:
                 target_days = [{**row, "deficit": 1 - (1 - row["deficit"]) * (1 - simulation[target])}
                                if "deficit" in row else row for row in target_days]
@@ -213,6 +214,7 @@ def execute(args, now=None):
                                "last_processed_day": target_state["last_day"], "last_evidence_day": last,
                                "evidence_age_days": age,
                                "inspection": target_state["incident"], "latest_status": target_state.get("latest", {}).get("status")}
+            summary[target].update(inspection_details(target_state))
             if last is None or age >= calibrations[target]["policy"]["calendar_window_days"]:
                 gaps[target] = "No recent qualifying evidence; absence of an inspection is not a health assessment"
         report = {"mode": args.command, "model_id": model["model_id"], "notifications_enabled": False,

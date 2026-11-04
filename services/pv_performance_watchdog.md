@@ -56,6 +56,53 @@ runtime directory; do not delete the existing state to hide an open inspection.
 To stop scheduled checks, disable this timer. No other device or heating service
 needs to be stopped or restarted.
 
+## Record a visual inspection
+
+After actually inspecting the plant and finding no visible fault, an admin can
+resolve its open inspection requests. From the Pi project directory:
+
+```sh
+/home/pi/Kazanfutes_local/bin/python -B -m services.pv_performance_watchdog resolve --target all --inspected-by Beno --note "Visual inspection completed; no visible damage, dirt buildup or unexpected shading found"
+```
+
+Use `--target pv1 --target pv2` to resolve only those logged inputs, or
+`--target array` for the shared-production inspection. `all` selects all
+currently open inspections. A note is required. Add `--dry-run` to preview the
+action without saving it or sending email. Only record what was actually checked.
+
+**PV1/PV2 are FusionSolar inverter input names. Their mapping to the notebook's
+physical string labels, roof positions and panel counts is still unverified.**
+They must not be assumed to mean notebook strings S1/S2.
+
+The action records the time, inspector, note, previous incident and its rolling
+evidence in the canonical evidence state. It closes the selected inspection as
+`visually_resolved` and emails an acknowledgement. This outcome means **no
+visible fault was found**; it does not confirm that electrical performance has
+recovered. Production expectations and calibrated thresholds stay frozen.
+
+A new incident needs fresh evidence from calendar days strictly after the
+inspection date. Earlier observations, including weather-delayed array data,
+cannot reopen it. Normal persistence still applies: at least three new
+qualifying days. The inspection day is excluded because daily aggregates can
+contain measurements from before the inspection. There is no permanent mute.
+
+Resolving an already closed inspection does not discard newly accumulating
+evidence or add another resolution. The scheduled check resumes from its saved
+cursors. It can recover a notification if the process stopped after saving the
+resolution but before queuing its acknowledgement; failed emails remain pending.
+
+Read status without collecting new measurements or sending email:
+
+```sh
+/home/pi/Kazanfutes_local/bin/python -B -m services.pv_performance_watchdog status
+```
+
+Each channel reports its open/visually-resolved inspection status separately
+from measurement dates and the number of fresh qualifying evidence days since
+the visual resolution. The original observation logs remain the measurement
+record; visual resolutions and previous rolling evidence are retained in
+`evidence_state.json` under `visual_resolutions`.
+
 See `pv_accumulation_validation.md` for the known-event replay, limitations,
 previous failures, and measured alert burden. The March case influenced
 development and does not establish an unbiased fault-detection rate.
