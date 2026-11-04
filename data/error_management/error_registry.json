@@ -7887,24 +7887,13 @@
         "checked_timestamp": null
     },
     {
-        "message": "Error while trying to log open/close events",
-        "severity": 1,
-        "origin": "open_close_logger.py:85",
-        "origin_timestamp": "2026-11-04-15-38-24",
-        "registration_timestamp": "2026-11-04-15-38-24",
-        "reported": false,
-        "reported_timestamp": null,
-        "checked": false,
-        "checked_timestamp": null
-    },
-    {
         "message": "Module error while trying to acquire presence states: couldn't get rooms presence: couldn't read presence sensors: failed to connect to Deconz API due to unexpected error: Error requesting data from 127.0.0.1: [Errno 104] Connection reset by peer (RequestError) (ModuleException) (ModuleException).",
         "severity": 2,
         "origin": "presence_logger.py:10 --> project.py/get_presence_rooms:1467",
         "origin_timestamp": "2026-11-04-15-39-49",
         "registration_timestamp": "2026-11-04-15-39-49",
-        "reported": false,
-        "reported_timestamp": null,
+        "reported": true,
+        "reported_timestamp": "2026-11-04-15-40-49",
         "checked": false,
         "checked_timestamp": null
     },
@@ -7914,8 +7903,8 @@
         "origin": "thermostats_manager.py:23 --> project.py/read_thermostats:1917 --> project.py/read_deconz_state:1732",
         "origin_timestamp": "2026-11-04-15-39-49",
         "registration_timestamp": "2026-11-04-15-39-49",
-        "reported": false,
-        "reported_timestamp": null,
+        "reported": true,
+        "reported_timestamp": "2026-11-04-15-40-52",
         "checked": false,
         "checked_timestamp": null
     },
@@ -7925,8 +7914,8 @@
         "origin": "heating_control.py/get_system_state:241 --> project.py/get_room_temps_and_humidity:1392",
         "origin_timestamp": "2026-11-04-15-39-49",
         "registration_timestamp": "2026-11-04-15-39-49",
-        "reported": false,
-        "reported_timestamp": null,
+        "reported": true,
+        "reported_timestamp": "2026-11-04-15-40-53",
         "checked": false,
         "checked_timestamp": null
     },
@@ -7936,8 +7925,8 @@
         "origin": "heating_control.py/get_system_state:361 --> project.py/get_thermostat_state_by_id:1981 --> project.py/read_sensors:1768 --> project.py/read_deconz_state:1732",
         "origin_timestamp": "2026-11-04-15-39-50",
         "registration_timestamp": "2026-11-04-15-39-50",
-        "reported": false,
-        "reported_timestamp": null,
+        "reported": true,
+        "reported_timestamp": "2026-11-04-15-40-55",
         "checked": false,
         "checked_timestamp": null
     },
@@ -7947,8 +7936,8 @@
         "origin": "heating_control.py/compare_and_command:537",
         "origin_timestamp": "2026-11-04-15-39-50",
         "registration_timestamp": "2026-11-04-15-39-50",
-        "reported": false,
-        "reported_timestamp": null,
+        "reported": true,
+        "reported_timestamp": "2026-11-04-15-40-57",
         "checked": false,
         "checked_timestamp": null
     }
