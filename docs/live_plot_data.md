@@ -32,6 +32,11 @@ Historical plots, phase/statistical analytics, gas rates without a source
 timestamp, demand calculations and cumulative energy sums remain log-derived.
 Unknown/unpublished room CO₂/lux and learned occupancy are not guessed.
 
+Live values only extend an already loaded, valid historical series. Missing,
+empty, invalid or synthetic-only history never produces a standalone live point.
+This applies independently to every channel/probe/TRV/pump, so supply history
+does not enable a return curve and one loaded probe does not enable another.
+
 Fresh live endpoints join the preceding valid curve even when the archived
 upload lags beyond the normal segment gap. Only this final live tail is joined;
 archived outages stay split and no stale or invalid reading is admitted. Derived

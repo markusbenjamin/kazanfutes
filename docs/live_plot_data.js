@@ -30,11 +30,23 @@ function withLivePlotReadings(payload, setting, system, now = new Date()) {
     const hour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
     const add = (type, fields, observed, age) => {
         if (!requested(type) || !livePlotFresh(observed, age, now)) return;
-        const known = Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined));
-        if (!Object.keys(known).length) return;
-        const rows = data[type] || [];
+        const rows = data[type];
         if (!Array.isArray(rows)) return;
-        const latest = rows.reduce((last, row) => Number.isFinite(row.h_of_day_frac)
+        // A live value extends loaded history; it must never create a curve.
+        // Gate each channel/source separately (e.g. supply history is not return history).
+        const history = rows.filter(row => row?.live !== true && Number.isFinite(row?.h_of_day_frac)
+            && row.h_of_day_frac >= 0 && row.h_of_day_frac < hour);
+        const known = {};
+        Object.entries(fields).forEach(([key, value]) => {
+            if (value === undefined) return;
+            if (value !== null && typeof value === 'object') {
+                const sources = Object.fromEntries(Object.entries(value).filter(([source]) =>
+                    history.some(row => Number.isFinite(row[key]?.[source]))));
+                if (Object.keys(sources).length) known[key] = sources;
+            } else if (history.some(row => Number.isFinite(row[key]))) known[key] = value;
+        });
+        if (!Object.keys(known).length) return;
+        const latest = rows.reduce((last, row) => Number.isFinite(row?.h_of_day_frac)
             && (!last || row.h_of_day_frac > last.h_of_day_frac) ? row : last, null);
         // Never append out of order or replace a later archived observation with an older snapshot.
         if (latest && (latest.h_of_day_frac >= hour || livePlotDate(latest.timestamp) > livePlotDate(observed))) return;
