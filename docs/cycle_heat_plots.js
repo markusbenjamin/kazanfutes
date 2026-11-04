@@ -154,12 +154,19 @@ function drawPlotTitleSelector(plotElement, plotDims, options, fontSize) {
     }
 }
 
+function isValidCycleWaterTemperature(value) {
+    // Reject corrupt heatmeter fields before they can expand an axis into millions of ticks.
+    // Keep valid zero readings; never coerce missing values or numeric strings to zero.
+    return Number.isFinite(value) && value >= 0 && value <= 100;
+}
+
 function splitCycleHeatReadings(readings, key, maxGapHours = 3 / 60) {
     const segments = [];
     let segment = [];
     const finish = () => { if (segment.length) segments.push(segment); segment = []; };
     readings.forEach(reading => {
-        if (!Number.isFinite(reading[key]) || !Number.isFinite(reading.h_of_day_frac)) {
+        if (!Number.isFinite(reading[key]) || !Number.isFinite(reading.h_of_day_frac)
+            || (['water_temp', 'return_temp'].includes(key) && !isValidCycleWaterTemperature(reading[key]))) {
             finish();
             return;
         }

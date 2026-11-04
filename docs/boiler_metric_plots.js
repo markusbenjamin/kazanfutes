@@ -51,7 +51,7 @@ function boilerAverageWaterTemperatures(data, cycles) {
         updates.forEach((row, cycle) => latest.set(cycle, row));
         const average = key => {
             const rows = cycles.map(cycle => latest.get(cycle));
-            if (rows.some(row => !row || hour - row.h_of_day_frac > 3 / 60 || !Number.isFinite(row[key]))) return null;
+            if (rows.some(row => !row || hour - row.h_of_day_frac > 3 / 60 || !isValidCycleWaterTemperature(row[key]))) return null;
             return rows.reduce((sum, row) => sum + row[key], 0) / cycles.length;
         };
         const live = cycles.every(cycle => latest.get(cycle)?.live === true && latest.get(cycle).h_of_day_frac === hour);

@@ -86,6 +86,38 @@ draws.length = 0;
 vm.runInContext("drawBoilerMetricPlot({},createBoilerMetricPlotSetting('2026-10-26','temperature'))",context);
 assert.equal(draws.length,1);
 assert.equal(draws[0].options.emptyMessage,'Az adott napra nincs kapcsolási adat.');
+
+// Historical heatmeter corruption must not allocate millions of SVG axis ticks.
+// This return value was logged on circuit 2 at 2026-11-03 20:45:06.
+context.d3.range = (start,end,step) => {
+    const count = Math.ceil((end-start)/step);
+    assert.ok(Number.isFinite(count) && count <= 100, 'water-temperature axes must stay bounded');
+    return Array.from({length:count},(_,i)=>start+i*step);
+};
+context.corrupt = {heating_state:[{h_of_day_frac:0,cycle_states:{1:1,2:1,3:0,4:0}}],
+    cycle_1_water_temps:[{h_of_day_frac:1,water_temp:60,return_temp:40},
+        {h_of_day_frac:1.01,water_temp:60,return_temp:40},{h_of_day_frac:1.02,water_temp:60,return_temp:40}],
+    cycle_2_water_temps:[{h_of_day_frac:1,water_temp:49,return_temp:35},
+        {h_of_day_frac:1.01,water_temp:49,return_temp:60044000},
+        {h_of_day_frac:1.02,water_temp:49,return_temp:35}]};
+const corruptBefore = JSON.stringify(context.corrupt);
+draws.length = 0;
+vm.runInContext("drawBoilerMetricPlot(corrupt,createBoilerMetricPlotSetting('2026-11-03','temperature'))",context,{timeout:1000});
+assert.ok(draws[0].options.domain.left[1] <= 105);
+assert.equal(evaluate('boilerAverageWaterTemperatures(corrupt,[1,2])[1].return_temp'),null,
+    'reject the corrupt circuit before averaging, not just the resulting mean');
+assert.equal(evaluate('boilerAverageWaterTemperatures(corrupt,[1,2])[1].water_temp'),54.5,
+    'bad return must not remove valid supply');
+assert.equal(draws.filter(draw=>draw.options.curveTooltip==='visszatérő').length,2,
+    'bad observations split only the affected curve; later valid readings recover');
+assert.equal(JSON.stringify(context.corrupt),corruptBefore,'cached history is not rewritten');
+for (const value of [-1,101,60044000,Infinity,NaN,'40',true,null,undefined]) {
+    context.corrupt.cycle_2_water_temps[1].return_temp = value;
+    assert.equal(evaluate('boilerAverageWaterTemperatures(corrupt,[1,2])[1].return_temp'),null);
+}
+context.corrupt.cycle_2_water_temps[1].return_temp = 150;
+assert.equal(evaluate('boilerAverageWaterTemperatures(corrupt,[1,2])[1].return_temp'),null,
+    'even a bad circuit whose diluted mean would be below 100 C stays unknown');
 assert.match(source,/if \(openBoilerMetricPlot\(event, this.id\)\) return;/);
 assert.match(source,/case 'boiler_metrics':\s*drawBoilerMetricPlot/);
 assert.match(source,/type === 'heating_demand'/);

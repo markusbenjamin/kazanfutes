@@ -42,3 +42,9 @@ deep blue, both with curve tooltips and final-value markers. No backend,
 controller, device mapping or SVG changes are required. Fresh, timestamped live
 heatmeter endpoints are applied before these means are calculated; historical
 days still use archived observations only.
+
+Each circuit's supply/return value must be a finite number within 0–100 °C
+before averaging. A corrupt value makes only that channel unknown, not a
+partial mean. This also protects historical dates: an erroneous 60,044,000 °C
+return reading otherwise caused millions of axis ticks and froze the entire
+page. No logged/cached values are changed; valid readings resume afterward.
