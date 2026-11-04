@@ -1,4 +1,4 @@
-// Per-cycle demand is signed; the formatter clamps only the net boiler demand.
+// Keep signed source data/net demand intact, but show only nonnegative contributions.
 const BOILER_DEMAND_CYCLES = [
     {cycle: 1, label: '1-es kör', color: 'rgb(200,0,0)'},
     {cycle: 2, label: '2-es kör', color: 'rgb(230,130,0)'},
@@ -37,15 +37,14 @@ function boilerDemandBins(readings, end = 24) {
 }
 
 function boilerDemandExtent(readings, end = 24) {
-    let minimum = 0, maximum = 1;
+    let maximum = 1;
     boilerDemandBins(readings, end).forEach(row => {
         if (!Number.isFinite(row.h_of_day_frac) || row.h_of_day_frac < 0 || row.h_of_day_frac > 24) return;
         if (!Number.isFinite(row.demand_kw) || row.demand_kw < 0) return;
         const stack = boilerDemandStack(row, true);
-        minimum = Math.min(minimum, stack?.negative ?? 0);
         maximum = Math.max(maximum, stack?.positive ?? 0, row.demand_kw);
     });
-    return [minimum, maximum];
+    return [0, maximum];
 }
 
 function drawBoilerDemandBars(area, readings, metric, range, end = 24) {
@@ -62,6 +61,7 @@ function drawBoilerDemandBars(area, readings, metric, range, end = 24) {
         const stack = boilerDemandStack(row, true);
         const parts = stack?.parts || [{color:metric.color, value:row.demand_kw, start:0, end:row.demand_kw}];
         parts.forEach(part => {
+            if (part.value < 0) return;
             const bar = area.plotElement.append('rect').attr('class', 'boiler-demand-bar')
                 .attr('data-cycle', part.cycle ?? '').attr('data-value', part.value).attr('data-hour', row.h_of_day_frac)
                 .attr('x', left).attr('width', right - left).attr('y', Math.min(y(part.start), y(part.end)))
