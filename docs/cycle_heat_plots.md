@@ -35,6 +35,8 @@ activation do not bubble into the dashboard's outside-click unlock handler.
   return curves with hover labels `előremenő` and `visszatérő`; no extra legend.
   Their shared scale includes both series. Invalid values are null and split
   only the affected curve. Older supply-only files still render supply normally.
+  The browser also rejects temperatures outside 0–100 °C before scaling old
+  archived data, preventing corrupt heatmeter fields from creating huge axes.
 - Thermal power and flow: new `cycle_N_heat_delivery.json`, `power_kw` in kW
   and `flow_m3h` in m³/h; also `energy_kwh` and `energy_partial` for the dials.
 - Electrical pump power: existing `pumps_power.json`, only `pump_N_power` in W.

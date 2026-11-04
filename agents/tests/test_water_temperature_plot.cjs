@@ -102,6 +102,20 @@ plot(1, {cycle_1_water_temps:[{h_of_day_frac:1,water_temp:null,return_temp:0}]})
 assert.equal(calls.length,2);
 assert.equal(calls[1].options.curveTooltip,'visszatérő');
 assert.equal(calls[1].options.curveEndText.text,'0°C');
+const corruptWater = {cycle_1_water_temps:[{h_of_day_frac:1,water_temp:60,return_temp:30},
+    {h_of_day_frac:1.01,water_temp:61,return_temp:60044000},
+    {h_of_day_frac:1.02,water_temp:62,return_temp:31}]};
+const corruptWaterBefore = JSON.stringify(corruptWater);
+plot(1, corruptWater, '2026-11-03');
+assert.ok(calls[0].options.domain.left[1] <= 105,'a historical bad return cannot explode the cycle axis');
+assert.equal(calls.filter(call=>call.options.curveTooltip==='előremenő').length,1);
+assert.equal(calls.filter(call=>call.options.curveTooltip==='visszatérő').length,2);
+assert.equal(JSON.stringify(corruptWater),corruptWaterBefore,'keep original history unchanged');
+for (const value of [-1,101,60044000,Infinity,NaN,'40',true,null,undefined]) {
+    plot(1, {cycle_1_water_temps:[{h_of_day_frac:1,water_temp:value,return_temp:value}]});
+    assert.equal(calls.length,1,'all invalid temperature data must leave an empty, usable plot');
+    assert.deepEqual(Array.from(calls[0].options.domain.left),[0,80]);
+}
 plot(1, {cycle_1_water_temps:[{h_of_day_frac:1,water_temp:60,return_temp:30},
     {h_of_day_frac:1.01,water_temp:61,return_temp:null},{h_of_day_frac:1.02,water_temp:62,return_temp:31}]});
 assert.equal(calls.filter(call=>call.options.curveTooltip==='előremenő').length,1);
