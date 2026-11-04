@@ -25,7 +25,7 @@ const DASHBOARD_ENGLISH = {
     'Kör manuálisan lekapcsolva.': 'Circuit manually disabled.',
     'rögzítve': 'pinned', 'Adatok betöltése.': 'Loading data.',
     'Előző nap': 'Previous day', 'Következő nap': 'Next day', 'óra': 'hour', 'kör': 'circuit',
-    '1-es kör': 'circuit 1', '2-es kör': 'circuit 2', '3-as kör': 'circuit 3', '4-es kör': 'circuit 4',
+    '1-es kör': 'circuit 1', '2-es kör': 'circuit 2', '3-mas kör': 'circuit 3', '3-as kör': 'circuit 3', '4-es kör': 'circuit 4',
     'alap': 'basic', 'részletes': 'details', 'analitika': 'analytics', 'Grafikon nézete': 'Chart view',
     'grafikon választása': 'chart selection', 'kazán': 'boiler', 'szobák': 'rooms',
     'fázissík': 'phase plane', 'statisztika': 'statistics', 'napi hiba': 'daily error',
@@ -102,8 +102,8 @@ function dashboardEnglishLine(line) {
     let result = text;
     // Fixed phrases surrounding dynamic room names, dates and measured numbers.
     const patterns = [
-        [/^(\d+)\. kör (mai|napi) fűtőteljesítménye$/, (_,n,day) => (day === 'mai' ? "today's" : 'daily') + ' heat output on circuit ' + n],
-        [/^(\d+)\. kör(.*)$/, (_,n,tail) => 'Circuit ' + n + tail],
+        [/^(\d+)(?:\.|-(?:es|mas)) kör (mai|napi) fűtőteljesítménye$/, (_,n,day) => (day === 'mai' ? "today's" : 'daily') + ' heat output on circuit ' + n],
+        [/^(\d+)(?:\.|-(?:es|mas)) kör(.*)$/, (_,n,tail) => 'Circuit ' + n + tail],
         [/^(\d+)\. kazán (mai|napi) villamos teljesítménye$/, (_,n,day) => 'Boiler ' + n + (day === 'mai' ? " today's" : ' daily') + ' electrical power'],
         [/^(\d+)-(?:es|mas) szivattyú (mai|napi) teljesítménygörbéje$/, (_,n,day) => 'Pump ' + n + (day === 'mai' ? " today's" : ' daily') + ' power'],
         [/^(mai|napi) gázfogyasztás$/, (_,day) => day === 'mai' ? "today's gas usage" : 'daily gas usage'],

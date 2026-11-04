@@ -7,6 +7,10 @@ const CYCLE_HEAT_METRICS = {
 };
 const cycleHeatSelections = {};
 
+function cyclePlotName(cycle) {
+    return cycle + (Number(cycle) === 3 ? '-mas' : '-es') + ' kör';
+}
+
 function createCycleHeatPlotSetting(cycle, elementId, metric = 'power', day = dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), detailed = false) {
     if (!CYCLE_HEAT_METRICS[metric]) metric = 'power';
     return {
@@ -241,10 +245,10 @@ function drawCycleHeatPlot(data, setting) {
         tickVals: { left: d3.range(range[0], range[1] + tickStep / 2, tickStep) },
         plotStyle: { joined: true, col: metric.color, thickness: '1', startCap: false, endCap: true,
             smoothCurve: metricName !== 'pump', stepAfter: metricName === 'pump' },
-        segment: { do: false }, plotLabel: setting.detailed ? '' : setting.cycleNum + '. kör ' + (setting.day === dayStamp() ? 'mai ' : 'napi ') + 'fűtőteljesítménye', curveEndText: { show: false }
+        segment: { do: false }, plotLabel: setting.detailed ? '' : cyclePlotName(setting.cycleNum) + ' ' + (setting.day === dayStamp() ? 'mai ' : 'napi ') + 'fűtőteljesítménye', curveEndText: { show: false }
     };
     const area = drawPlot([], { ...common, rects: { when: 'before', list: periods },
-        plotLabelTabs: setting.detailed ? { prefix: setting.cycleNum + '. kör — ', selected: metricName,
+        plotLabelTabs: setting.detailed ? { prefix: cyclePlotName(setting.cycleNum) + ' — ', selected: metricName,
             day: setting.day, onDayChange: navigateSelectorPlotDay,
             choices: Object.entries(CYCLE_HEAT_METRICS).map(([key, value]) => ({key, label: value.label, color: value.color})),
             onSelect: selectCycleHeatPlot } : false

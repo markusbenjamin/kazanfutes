@@ -285,7 +285,7 @@ vm.runInContext('drawRoomPhasePlot(aggregateData,mainGraphSetting)',context);
 assert.deepEqual(markers.filter(node=>node.attrs.class==='room-phase-trajectory').map(node=>node.attrs['data-room']),[3]);
 assert.equal(markers.filter(node=>node.attrs.class==='room-phase-time-point').length,0,'cycle plots remain free of intermittent markers');
 assert.equal(markers.filter(node=>node.attrs.class==='room-phase-state').length,0,'cycle plots have no movement state');
-assert.equal(headings.at(-1).options.prefix,'2. kör — ');
+assert.equal(headings.at(-1).options.prefix,'2-es kör — ');
 vm.runInContext("selectRoomAnalyticView('summary')",context);
 assert.equal(context.mainGraphSetting.title,'room_control_daily');
 assert.equal(context.mainGraphSetting.day,'2026-10-26');

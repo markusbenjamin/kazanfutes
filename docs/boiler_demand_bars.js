@@ -2,7 +2,7 @@
 const BOILER_DEMAND_CYCLES = [
     {cycle: 1, label: '1-es kör', color: 'rgb(200,0,0)'},
     {cycle: 2, label: '2-es kör', color: 'rgb(230,130,0)'},
-    {cycle: 3, label: '3-as kör', color: 'rgb(28,3,252)'},
+    {cycle: 3, label: '3-mas kör', color: 'rgb(28,3,252)'},
     {cycle: 4, label: '4-es kör', color: 'rgb(0,130,0)'}
 ];
 

@@ -23,6 +23,8 @@ assert.equal(evaluate('boilerDemandStack(rows[5])'),null,'inconsistent breakdown
 context.area={plotElement:selection(),plotDims:{w:240,h:100}};
 vm.runInContext("drawBoilerDemandBars(area,rows,{color:'orange'},[0,20])",context);
 const bars=nodes.filter(node=>node.attrs.class==='boiler-demand-bar');
+assert.deepEqual(nodes.filter(node=>node.tag==='tspan').map(node=>node.textValue),
+    ['1-es kör',' · 2-es kör',' · 3-mas kör',' · 4-es kör']);
 assert.equal(bars.length,12,'negative components are omitted from three stacks; two fallback total bars remain');
 assert.ok(bars.every(node=>Number.isFinite(node.attrs.height)&&node.attrs.height>=0&&node.attrs.width>0));
 assert.ok(bars.every(node=>Math.abs(node.attrs.width-1.5)<1e-8&&node.attrs.stroke==='none'),'ten-minute bins have 10% gaps and no border');

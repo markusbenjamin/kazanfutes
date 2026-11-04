@@ -20,6 +20,11 @@ for (const search of ['?lang=en','?zoom=0.8&lang=en&demo=1']) {
     assert.equal(t('kazán — '),'boiler — ');
     assert.equal(t('2. kör — '),'Circuit 2 — ');
     for (const circuit of [1,2,3,4]) {
+        const name = ['1-es','2-es','3-mas','4-es'][circuit-1] + ' kör';
+        assert.equal(t(name + ' mai fűtőteljesítménye'),"today's heat output on circuit " + circuit);
+        assert.equal(t(name + ' napi fűtőteljesítménye'),'daily heat output on circuit ' + circuit);
+        assert.equal(t(name + ' — '),'Circuit ' + circuit + ' — ');
+        assert.equal(t(name),'circuit ' + circuit);
         assert.equal(t(circuit + '. kör mai fűtőteljesítménye'),"today's heat output on circuit " + circuit);
         assert.equal(t(circuit + '. kör napi fűtőteljesítménye'),'daily heat output on circuit ' + circuit);
     }

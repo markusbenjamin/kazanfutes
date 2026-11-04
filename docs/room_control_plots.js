@@ -65,7 +65,7 @@ function selectRoomAnalyticView(metric) {
 
 function roomAnalyticTabs(setting) {
     const room = setting.roomNumToPlot;
-    const name = room != null ? roomsDataAndState[room].name : setting.cycleNum ? setting.cycleNum + '. kör' : 'szobák';
+    const name = room != null ? roomsDataAndState[room].name : setting.cycleNum ? cyclePlotName(setting.cycleNum) : 'szobák';
     return {prefix: name + ' — ',
         selected: setting.title === 'room_control_phase' ? 'phase' : 'summary',
         choices: [{key: 'phase', label: 'fázissík', color: 'black'}, {key: 'summary', label: room != null ? 'statisztika' : 'napi hiba', color: 'black'}],
