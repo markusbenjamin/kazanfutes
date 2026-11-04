@@ -12,7 +12,9 @@ once behind the curves and spans the current plot's full vertical range.
 Demand reads `demand_kw` directly from the Pi's `heating_demand.json`.
 It uses borderless stacked bars from the same row's `cycle_demand_kw`, with a
 compact four-cycle colour legend and HH:MM/component/net-demand tooltips.
-Positive contributions stack above zero and negative contributions below it.
+Positive contributions stack above zero; negative contributions are hidden and
+the vertical axis starts at zero. Signed source values remain unchanged for
+validation and ten-minute averaging; hiding them is display-only.
 A black tick marks the unchanged `demand_kw = max(0, sum(cycle_demand_kw))`, and
 the latest net value is labelled. Demand is not measured delivered heat.
 All four components must be finite and reconcile to the logged total; old files
