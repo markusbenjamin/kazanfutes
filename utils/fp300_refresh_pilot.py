@@ -9,10 +9,13 @@ only Aqara15 gains 900-second temperature/humidity attribute reads when awake.
 No timestamps, parsers, reporting bindings, or device settings are changed.
 
 This utility never calls deCONZ or operates a service. Activation is separate:
-deCONZ 2.33.2's /devices/<MAC>/ddf/reload reloads ALL devices of that model,
-despite its device-specific URL. Obtain approval for that interruption first.
-Backups contain exact pre-install bytes; restore both definitions together
-before another approved reload to roll back. Do not rerun the older presence
+deCONZ 2.33.2's /devices/<MAC>/ddf/reload reinitializes ALL devices of that
+model, despite its device-specific URL. It also retains previously loaded raw
+definitions in memory, which can shadow these files: on the deployed 2.33.2
+gateway a separately approved service restart is needed for activation.
+Backups contain exact pre-install bytes. To roll back the first installation,
+restore the common backup and move the new pilot outside the .json scan before
+another approved restart. Do not rerun the older presence
 installer against the pilot file (it is a separate MAC-specific definition).
 """
 from __future__ import annotations
@@ -153,7 +156,7 @@ def main() -> int:
     for backup in backups:
         print(f"Exact original backup: {backup}")
     print(f"Definitions: {args.common} and {args.pilot}")
-    print("No gateway/API/service operation performed. Approved model-wide reload is required for activation.")
+    print("No gateway/API/service operation performed. Activation on deCONZ 2.33.2 requires a separately approved restart.")
     return 0
 
 
