@@ -3645,9 +3645,9 @@ def export_json_list_to_ndjson(json_array, relative_path: str):
     
 def export_json_list_to_json_file(json_array, relative_path: str):
     """
-    Saves an array of JSON entries into a single JSON array file.
-    Suitable for exporting structured data in a standard JSON format.
+    Atomically publish a complete JSON array, so readers/Git never see half a file.
     """
+    temporary_path = None
     try:
         # Get the full path by combining project root and relative path
         full_path = os.path.join(get_project_root(), relative_path)
@@ -3655,12 +3655,29 @@ def export_json_list_to_json_file(json_array, relative_path: str):
         # Ensure the directory exists
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
 
-        # Do the write
-        with open(full_path, 'w', encoding='utf-8') as file:
+        # Same directory guarantees the rename stays on one filesystem. The
+        # existing *.lock ignore rule keeps in-progress exports out of Git.
+        with tempfile.NamedTemporaryFile(
+            mode='w', encoding='utf-8', dir=os.path.dirname(full_path),
+            prefix='.' + os.path.basename(full_path) + '.', suffix='.lock', delete=False,
+        ) as file:
+            temporary_path = file.name
             json.dump(json_array, file, indent=2)
+            file.flush()
+            os.fsync(file.fileno())
+        # Preserve existing permissions when replacing an already published file.
+        try:
+            os.chmod(temporary_path, os.stat(full_path).st_mode & 0o777)
+        except FileNotFoundError:
+            pass
+        os.replace(temporary_path, full_path)
+        temporary_path = None
 
-    except Exception:
-        raise ModuleException(f"unexpected error while saving array of JSONs to {relative_path}")
+    except Exception as error:
+        raise ModuleException(f"unexpected error while saving array of JSONs to {relative_path}") from error
+    finally:
+        if temporary_path and os.path.exists(temporary_path):
+            os.remove(temporary_path)
 
 def transpose_dict(nested: Dict[Any, Dict[Any, Any]]) -> Dict[Any, Dict[Any, Any]]:
     """
