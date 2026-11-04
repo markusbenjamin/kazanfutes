@@ -74,6 +74,7 @@ for (let cycle = 1; cycle <= 4; cycle++) {
     assert.equal(options.plotStyle.col, 'rgb(200, 0, 0)');
     assert.deepEqual(JSON.parse(JSON.stringify(options.plotLabelTabs.choices.map(choice => choice.label))),
         ['fűtővíz hőm.', 'fűtőtelj.', 'átfolyás', 'szivattyú telj.']);
+    assert.equal(options.plotLabelTabs.prefix, ['1-es','2-es','3-mas','4-es'][cycle-1] + ' kör — ');
     assert.equal(options.rects.when, 'before');
     assert.deepEqual(JSON.parse(JSON.stringify(options.rects.list.map(({x1,x2}) => ({x1,x2})))), intervals(cycle, samples));
     options.rects.list.forEach(period => {
@@ -163,8 +164,17 @@ vm.runInContext('drawCycleHeatPlot(graphData, mainGraphSetting)', context);
 assert.equal(calls[0].options.dataKeys.left, 'power_kw');
 assert.equal(calls[0].options.axesLabel.left, 'fűtőteljesítmény (kW)');
 assert.equal(calls[0].options.plotLabelTabs, false);
-assert.equal(calls[0].options.plotLabel, '2. kör mai fűtőteljesítménye');
+assert.equal(calls[0].options.plotLabel, '2-es kör mai fűtőteljesítménye');
 assert.equal(calls.length, 1, 'ordinary hover uses bars too, without a power curve');
+for (let cycle=1;cycle<=4;cycle++) {
+    for (const [day, adjective] of [['2026-10-21','mai'],['2026-10-20','napi']]) {
+        context.mainGraphSetting = {cycleNum:cycle,day,metric:'power',detailed:false};
+        calls.length = 0;
+        vm.runInContext('drawCycleHeatPlot(graphData,mainGraphSetting)',context);
+        assert.equal(calls[0].options.plotLabel,
+            ['1-es','2-es','3-mas','4-es'][cycle-1] + ' kör ' + adjective + ' fűtőteljesítménye');
+    }
+}
 assert.ok(barNodes.some(node=>node.attrs.class==='logged-power-end-label' && node.value==='16.67 kW'));
 // Both ordinary hover and Ctrl/touch detailed power use the same logged bars.
 const powerData = [{h_of_day_frac:2,power_kw:16.672},{h_of_day_frac:1,power_kw:0},

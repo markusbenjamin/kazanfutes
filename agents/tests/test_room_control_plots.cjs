@@ -208,7 +208,12 @@ assert.equal(cycleDraws.length,2);
 assert.equal(cycleDraws[1].options.curveTooltip,'Gólyafészek');
 assert.equal(cycleDraws[1].options.plotStyle.col,'room-color-2');
 assert.deepEqual(nodes.slice(cycleNodesBefore).filter(node=>node.attrs['data-room']).map(node=>node.attrs['data-room']),[2]);
-assert.equal(headings.at(-1).options.prefix,'2. kör — ');
+assert.equal(headings.at(-1).options.prefix,'2-es kör — ');
+for (const cycle of [1,2,3,4]) {
+    context.labelCycle = cycle;
+    assert.equal(evaluate('roomAnalyticTabs({cycleNum:labelCycle,roomNumToPlot:null}).prefix'),
+        ['1-es','2-es','3-mas','4-es'][cycle-1] + ' kör — ');
+}
 const savedRooms=context.allControlledRooms, savedRoomInfo=context.roomsDataAndState;
 context.allControlledRooms=Array.from({length:12},(_,i)=>i+1);
 context.roomsDataAndState=Object.fromEntries(context.allControlledRooms.map(room=>[room,{name:'Room '+room,cycle:1}]));

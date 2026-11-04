@@ -11,7 +11,9 @@ session only, shared by its dial and piping. They never change ordinary hover.
 All cycle plots have previous/next-day arrows at the frame's top corners.
 Past dates sit beside `rögzítve` above the frame; today's date is omitted. The
 metric and cycle stay selected while navigating; future days are disabled.
-The ordinary hover title is `<n>. kör mai fűtőteljesítménye`.
+The ordinary hover title is `1-es kör mai fűtőteljesítménye` (likewise `2-es`,
+`3-mas`, `4-es`; historical dates use `napi`). Detailed cycle selectors and
+cycle-scoped analytics use the same suffixed circuit names, not ordinal dots.
 
 All four views retain the selected cycle's pump-on shading. Both ordinary and detailed thermal
 power uses borderless orange bars, one per logged instantaneous kW value,
