@@ -173,6 +173,40 @@ def apply_pid_overlay(thermostat, result, measured_temp, PID_state):
     return confirmed
 #endregion
 
+class HeatingStatusPublisher:
+    """Collect status locally; upload once after the physical control work."""
+    def __init__(self):
+        self.pending = {}
+
+    def write(self, data, write_subpath):
+        # A multi-location PATCH preserves other publishers' state fields and
+        # replaces each supplied child map just as the old per-node PATCH did.
+        self.pending.update({f'{write_subpath}/{key}': value
+                             for key, value in data.items()})
+
+    def publish(self):
+        if not self.pending:
+            return True
+        success = False
+        response = None
+        detail = None
+        try:
+            response = requests.patch(
+                settings['firebase_url'].rstrip('/') + '/system.json',
+                json=self.pending, timeout=3,
+            )
+            response.raise_for_status()
+            success = True
+        except Exception as error:
+            detail = (f'HTTP {response.status_code}: {response.text[:300]}'
+                      if response is not None else str(error))
+            report(f'Firebase status upload failed; local control completed: {detail}')
+            ServiceException('Firebase status upload failed; local control completed',
+                             original_exception=error, severity=1)
+        log({'success_firebase_publish': success, 'firebase_error': detail})
+        return success
+
+
 if True:
     settings["log"] = True
     settings["verbosity"] = False
@@ -180,14 +214,14 @@ if True:
 #region Initialize
 report('\nINITIALIZE')
 success = False
+system_node = HeatingStatusPublisher()
 try:
     rooms = get_rooms_info()
     cycles = get_cycles_info()
     heating_config = load_json_to_dict('config/heating_control_config.json')
     condensed_schedule = load_json_to_dict('config/scheduling/condensed_schedule.json')
-    system_node = JSONNodeAtURL(node_relative_path='system')
     system_node.write({'last_updated':timestamp(),'error':False,'where':None},'control/error')
-    report('Successfully loaded config files and initialized Firebase connection.')
+    report('Successfully loaded config files.')
 
     COMMANDS_PATH = os.path.join(get_project_root(), "data", "heating_control", "commands.json")
     COMMANDS_ARCHIVE_PATH = os.path.join(get_project_root(), "data", "heating_control", "commands_archive.json")
@@ -884,6 +918,7 @@ def execute_commands():
 #region Export final state
 
 def export_system_state():
+    success = False
     try:
         log(system_state)
         system_state['last_updated'] = timestamp()
@@ -928,8 +963,10 @@ if __name__ == '__main__':
                 ServiceException(f"Unexpected error while shutting down heating", severity = 3)
 
         export_system_state()
+        system_node.publish()
         exit()
 
     compare_and_command(heating_switch, system_state)
     execute_commands()
     export_system_state()
+    system_node.publish()
