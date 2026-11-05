@@ -8061,5 +8061,27 @@
         "reported_timestamp": "2026-11-05-20-35-57",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to initialize heating control: unexpected error while loading config/scheduling/condensed_schedule.json to dict: Expecting value: line 1441 column 19 (char 32745) (JSONDecodeError).",
+        "severity": 3,
+        "origin": "heating_control.py:222 --> project.py/load_json_to_dict:3582",
+        "origin_timestamp": "2026-11-05-22-40-09",
+        "registration_timestamp": "2026-11-05-22-40-09",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while acquiring set temps: name 'condensed_schedule' is not defined.",
+        "severity": 3,
+        "origin": "heating_control.py/get_system_state:361",
+        "origin_timestamp": "2026-11-05-22-40-13",
+        "registration_timestamp": "2026-11-05-22-40-13",
+        "reported": false,
+        "reported_timestamp": null,
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
