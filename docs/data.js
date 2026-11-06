@@ -337,19 +337,16 @@ function getDataFromFirebase() {
                 drawMainGraph();
             }
 
-            let timeSinceLastRequest = Math.min(
-                timePassedSince(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp)),
-                timePassedSince(dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp))
-            )
+            // QR is retired: legacy webhook writes must not affect this notification.
+            let timeSinceLastRequest = timePassedSince(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp));
             lastRequestGranularity = 'perce'
             if (timeSinceLastRequest > 90) {
                 timeSinceLastRequest = roundTo(timeSinceLastRequest / 60, 0.5);
                 lastRequestGranularity = 'órája'
             }
 
-            let requestOrigin = timePassedSince(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp))
-                > timePassedSince(dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp)) ? "QR" : "form"
-            let requestTarget = requestOrigin == "QR" ? updateJSON.override_rooms_qr.room_name : updateJSON.override_rooms.room_name
+            let requestOrigin = "form";
+            let requestTarget = updateJSON.override_rooms.room_name;
 
             if (fromRequest && !initialLockDone) {
                 mainGraphContentLocked = true;
@@ -357,7 +354,7 @@ function getDataFromFirebase() {
                 initialLockDone = true;
             }
 
-            let lastRequestHourStamp = hourStamp(requestOrigin == "QR" ? dateFromTimestamp(updateJSON.override_rooms_qr.last_update_timestamp) : dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp));
+            let lastRequestHourStamp = hourStamp(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp));
 
             externalTemp = Number.isFinite(systemJSON.state.external_temp) ? systemJSON.state.external_temp : null;
 
@@ -2840,7 +2837,7 @@ let fromRequest, centeredId, isMobile, forcedZoom;
 
 function extractURLParams() {
     let params = new URLSearchParams(window.location.search);
-    fromRequest = params.get("ref_source") == "qr" || params.get("ref_source") == "form";
+    fromRequest = params.get("ref_source") == "form";
     centeredId = params.get("centered_id") || "background";
     console.log(params.get("centered_id"));
     isMobile = params.get("mobile") == "true" || getIsMobile();

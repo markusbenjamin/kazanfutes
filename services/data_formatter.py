@@ -220,19 +220,17 @@ for digestion_day in digestion_days:
     if 'room_overrides' in data_types_to_digest:
         success = False
         log_file_path_1 = r"config/scheduling/local_scheduling_files/override_rooms.csv"
-        log_file_path_2 = r"config/scheduling/local_scheduling_files/override_rooms_qr.csv"
         action_string = f'formatting daily room overrides for {digestion_daystamp}'
 
         rooms_info = get_rooms_info()
 
         try:
             loaded_log_1 = load_csv_to_2D_array(log_file_path_1)
-            loaded_log_2 = load_csv_to_2D_array(log_file_path_2)
             
             formatted_data = {}
             for room, info in rooms_info.items():
                 formatted_room_data = []
-                for raw_entry in itertools.chain(loaded_log_1, loaded_log_2):
+                for raw_entry in loaded_log_1:
                     if info['name'] in raw_entry:
                         request_datetime = datetime.strptime(raw_entry[0], "%d/%m/%Y %H:%M:%S")
                         request_timestamp = request_datetime.strftime(settings['timestamp_format'])

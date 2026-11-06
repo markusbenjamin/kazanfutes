@@ -22,25 +22,23 @@ rooms_info = get_rooms_info()
 heating_config = load_json_to_dict(f'{export_path_prefix}config/heating_control_config.json')
 heating_config_update_info = {'update_needed':True,'last_updated':None}
 
-update_needed = {'weekly_cycle':{},'override_rooms':True,'override_rooms_qr':True,'override_cycles':True}
-last_update = {'weekly_cycle':{},'override_rooms':None,'override_rooms_qr':None,'override_cycles':None}
+# QR requests are retired. Old Sheets/webhooks may still exist, but are not inputs.
+update_needed = {'weekly_cycle':{},'override_rooms':True,'override_cycles':True}
+last_update = {'weekly_cycle':{},'override_rooms':None,'override_cycles':None}
 update_ids = {
     'weekly_cycle':{},
     'override_rooms':heating_config['override_rooms_id'],
-    'override_rooms_qr':heating_config['override_rooms_qr_id'],
     'override_cycles':heating_config['override_cycles_id']
     }
 update_sheet_names = {
     'weekly_cycle':{},
     'override_rooms':None,
-    'override_rooms_qr':None,
     'override_cycles':None
     }
 local_scheduling_files_relative_path = f'{export_path_prefix}config/scheduling/local_scheduling_files'
 export_paths = {
     'weekly_cycle':{},
     'override_rooms':local_scheduling_files_relative_path + '/override_rooms.csv',
-    'override_rooms_qr':local_scheduling_files_relative_path + '/override_rooms_qr.csv',
     'override_cycles':local_scheduling_files_relative_path + '/override_cycles.csv'
     }
 for room in rooms_info:
@@ -61,18 +59,21 @@ def update_detected(relative_path,change_contents):
     Custom callback for changes on update node.
     Sets the update_needed dict accordingly.
     """
-    change = change_contents[0]
-    report(f"Update detected at {change['path']}: {change['data']}")
-    report(f"Setting {update_needed,change['path']} to True.",verbose=True)
-    update_keys = change['path'].split('/')
-    if 'heating_control_config' in update_keys:
-        heating_config_update_info['update_needed'] = True
-    else:
-        if 'weekly_cycle' in update_keys:
-            room = room_name_to_num(update_keys[1])
-            update_nested_dict(update_needed,f'weekly_cycle/{room}',True)
+    for change in change_contents:
+        update_keys = change['path'].strip('/').split('/')
+        if update_keys[0] not in ('heating_control_config', 'weekly_cycle', 'override_rooms', 'override_cycles'):
+            # In particular, deprecated QR notifications cannot dirty scheduling state.
+            continue
+        report(f"Update detected at {change['path']}: {change['data']}")
+        report(f"Setting {update_needed,change['path']} to True.",verbose=True)
+        if 'heating_control_config' in update_keys:
+            heating_config_update_info['update_needed'] = True
         else:
-            update_nested_dict(update_needed,change['path'],True)
+            if 'weekly_cycle' in update_keys:
+                room = room_name_to_num(update_keys[1])
+                update_nested_dict(update_needed,f'weekly_cycle/{room}',True)
+            else:
+                update_nested_dict(update_needed,change['path'].strip('/'),True)
 
 update_node = JSONNodeAtURL(node_relative_path='update')
 update_node.poll_periodically(interval=5,callback=update_detected)
@@ -314,14 +315,6 @@ def generate_schedule(for_how_many_days : int):
     success = False
     try:
         override_commands_for_rooms = [
-            command
-            for command 
-            in response_table_to_dict_list(
-                select_subtable_from_table(load_csv_to_2D_array(local_scheduling_files_relative_path + '/override_rooms_qr.csv'),row_selection=[1,-0]),
-                ["google_timestamp","room_name","date","hour_of_day","duration","on"]
-                )
-            if datetime.strptime(command['date']+'-'+command['hour_of_day'],'%d/%m/%Y-%H')+timedelta(hours=int(command['duration'])) >= datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-            ] + [
             command
             for command 
             in response_table_to_dict_list(
@@ -570,19 +563,17 @@ def update_valid_requests_on_firebase():
             return list(latest_by_time.values())
        
         log_file_path_1 = f"{export_path_prefix}config/scheduling/local_scheduling_files/override_rooms.csv"
-        log_file_path_2 = f"{export_path_prefix}config/scheduling/local_scheduling_files/override_rooms_qr.csv"
         action_string = f'updating daily room overrides on Firebase'
 
         rooms_info = get_rooms_info()
 
         digestion_day = datetime.now()
         loaded_log_1 = load_csv_to_2D_array(log_file_path_1)
-        loaded_log_2 = load_csv_to_2D_array(log_file_path_2)
         
         request_lists = {}
         for room, info in rooms_info.items():
             request_lists_for_room = []
-            for raw_entry in itertools.chain(loaded_log_1, loaded_log_2):
+            for raw_entry in loaded_log_1:
                 if info['name'] in raw_entry:
                     request_datetime = datetime.strptime(raw_entry[0], "%d/%m/%Y %H:%M:%S")
                     request_timestamp = request_datetime.strftime(settings['timestamp_format'])
