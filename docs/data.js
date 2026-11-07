@@ -2567,7 +2567,10 @@ function drawMainGraph(graphData = null) {
                     break;
                 case "all_rooms":
                     Object.keys(graphData).forEach(k => Array.isArray(graphData[k]) && (graphData[k] = graphData[k].filter(elem => elem.timestamp?.slice(0, 10) === mainGraphSetting.day)));
-                    range = d3.extent(Object.values(graphData).map(value => value.map(elem => elem['temp'])).flat());
+                    const overviewGroups = roomOverviewGroups(graphData, allMeasuredRooms,
+                        roomsDataAndState, mainGraphSetting.roomNumsToPlot, prepareRoomTemperatureForDisplay);
+                    const overviewValues = overviewGroups.flatMap(group => group.data.map(row => row.temp));
+                    range = overviewValues.length ? d3.extent(overviewValues) : [15, 25];
 
                     let drawForSingleCycle = mainGraphSetting.hoveredCycle > 0;
                     let heatingState = graphData["heating_state"];
@@ -2585,7 +2588,7 @@ function drawMainGraph(graphData = null) {
                     }
 
                     drawPlot(
-                        graphData["room_1_measurements"],//Placeholder, really, should be empty or something
+                        [],
                         {
                             axes: { left: true, bottom: true },
                             axesLabel: { bottom: "óra", left: "°C" },
@@ -2600,9 +2603,10 @@ function drawMainGraph(graphData = null) {
                             rects: drawForSingleCycle ? { when: "before", list: heatingPeriods } : false
                         }
                     );
-                    allMeasuredRooms.forEach(roomNum => {
-                        let emphasis = mainGraphSetting.roomNumsToPlot.includes(roomNum);
-                        let plotColor = d3.color(roomsColorScale(roomColorValue(roomNum)));
+                    overviewGroups.forEach(group => {
+                        if (!group.data.length) return;
+                        let emphasis = group.emphasis;
+                        let plotColor = d3.color(roomsColorScale(roomColorValue(group.colorRoom)));
                         let showEndText = true;
                         let endTextColor = "rgba(0,0,0,1)";
                         if (!emphasis) {
@@ -2612,7 +2616,7 @@ function drawMainGraph(graphData = null) {
                         }
                         plotColor = plotColor.toString();
                         drawPlot(
-                            prepareRoomTemperatureForDisplay(graphData["room_" + roomNum + "_measurements"]),
+                            group.data,
                             {
                                 axes: { left: false, bottom: false },
                                 axesLabel: { bottom: false, left: false },
@@ -2623,7 +2627,7 @@ function drawMainGraph(graphData = null) {
                                 domain: { bottom: [0, 24], left: [Math.floor(range[0]), Math.ceil(range[1])] },
                                 dataKeys: { bottom: "h_of_day_frac", left: "temp" },
                                 plotStyle: { joined: true, col: plotColor, thickness: "1.25", startCap: true, endCap: true, hoverableCurve: emphasis },
-                                curveEndText: { show: showEndText, fontSize: 5, text: roomsDataAndState[roomNum].name, col: plotColor, xOffset: 2.5, yOffset: 1.5 },
+                                curveEndText: { show: showEndText, fontSize: 5, text: group.name, col: plotColor, xOffset: 2.5, yOffset: 1.5 },
                                 segment: { do: false }
                             }
                         );
