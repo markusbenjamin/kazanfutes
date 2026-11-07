@@ -2567,12 +2567,13 @@ function drawMainGraph(graphData = null) {
                     break;
                 case "all_rooms":
                     Object.keys(graphData).forEach(k => Array.isArray(graphData[k]) && (graphData[k] = graphData[k].filter(elem => elem.timestamp?.slice(0, 10) === mainGraphSetting.day)));
-                    const overviewGroups = roomOverviewGroups(graphData, allMeasuredRooms,
+                    let drawForSingleCycle = mainGraphSetting.hoveredCycle > 0;
+                    const overviewRoomIds = drawForSingleCycle ? allControlledRooms : allMeasuredRooms;
+                    const overviewGroups = roomOverviewGroups(graphData, overviewRoomIds,
                         roomsDataAndState, mainGraphSetting.roomNumsToPlot, prepareRoomTemperatureForDisplay);
                     const overviewValues = overviewGroups.flatMap(group => group.data.map(row => row.temp));
                     range = overviewValues.length ? d3.extent(overviewValues) : [15, 25];
 
-                    let drawForSingleCycle = mainGraphSetting.hoveredCycle > 0;
                     let heatingState = graphData["heating_state"];
                     let heatingPeriods
                     if (drawForSingleCycle) {
