@@ -32,6 +32,7 @@ function insertCanvasFromFile(fileData) {
         }
         newGroup.appendChild(child.cloneNode(true));
     });
+    initializeAmbientAreas(newGroup);
 
     // Room fills belong below the circuit pipes, including shapes added later.
     const children = Array.from(newGroup.children);
@@ -187,6 +188,7 @@ function getDataFromFirebase() {
             updateBoilerColor(states > 0 ? 1 : 0);
 
             const controlDiffs = roomV2UpdateRooms(systemJSON);
+            updateAmbientAreas(systemJSON);
             const validDiffs = Object.entries(controlDiffs).filter(([id,value]) => id !== '10' && Number.isFinite(value)).map(([,value])=>value);
             const averageControlDiff = validDiffs.length ? d3.mean(validDiffs) : 0;
 
