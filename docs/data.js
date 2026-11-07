@@ -33,6 +33,18 @@ function insertCanvasFromFile(fileData) {
         newGroup.appendChild(child.cloneNode(true));
     });
 
+    // Room fills belong below the circuit pipes, including shapes added later.
+    const children = Array.from(newGroup.children);
+    const firstPipe = children.find(node => /^cycle[1-4](?:_2)?$/.test(node.id));
+    if (firstPipe) {
+        const pipeIndex = children.indexOf(firstPipe);
+        children.forEach((node, index) => {
+            if (index > pipeIndex && (/^room_\d+$/.test(node.id) || node.id === 'controlled_rooms')) {
+                newGroup.insertBefore(node, firstPipe);
+            }
+        });
+    }
+
     // Append the cleaned group to the new SVG
     newDrawingGroup.appendChild(newGroup);
     // Localise static SVG lettering without changing IDs or drawing geometry.
@@ -2803,7 +2815,7 @@ function addSpringyEasterEgg(elementId, textId, topLayerId, tooltipId) {
 
 extractURLParams();
 trackHoveredElementId();
-d3.xml("canvas.svg").then(fileData => {
+d3.xml("canvas.svg?updated=" + Date.now()).then(fileData => {
     insertCanvasFromFile(fileData);
     setViewParameters();
     centerAndZoomRelativePointOfCanvas(initialPos.x, initialPos.y, initialZoom);
