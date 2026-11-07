@@ -21,6 +21,7 @@ Data types:
 import argparse
 
 from utils.project import *
+from utils.room_registry import request_marker_rows, room_measurement_rows
 from utils.set_temperature import room_control_set_temperature
 from utils.water_temperature_formatter import format_cycle_water_temperatures
 from utils.boiler_power_formatter import format_boiler_power, format_boiler_commands
@@ -129,16 +130,8 @@ for digestion_day in digestion_days:
             for room, info in rooms_info.items():
                 formatted_data = []
                 
-                for log_entry in loaded_log:
-                    if room in log_entry and log_entry[room]['temp'] and log_entry[room]['hum']:
-                        formatted_entry = {
-                            'timestamp':log_entry[room]['last_updated'],
-                            'temp':log_entry[room]['temp']/100,
-                            'hum':log_entry[room]['hum']/100
-                            }
-                        if formatted_entry not in formatted_data:
-                            formatted_data.append(formatted_entry)
-                
+                formatted_data = room_measurement_rows(loaded_log, room)
+
                 export_json_list_to_json_file(formatted_data,f"{export_path_prefix}data/formatted/{digestion_daystamp}/room_{room}_measurements.json")
 
             report(f"Done: {action_string}.",verbose=True)
@@ -225,13 +218,13 @@ for digestion_day in digestion_days:
         rooms_info = get_rooms_info()
 
         try:
-            loaded_log_1 = load_csv_to_2D_array(log_file_path_1)
+            loaded_log_1 = request_marker_rows(load_csv_to_2D_array(log_file_path_1), rooms_info)
             
             formatted_data = {}
             for room, info in rooms_info.items():
                 formatted_room_data = []
                 for raw_entry in loaded_log_1:
-                    if info['name'] in raw_entry:
+                    if str(room) == raw_entry[1]:
                         request_datetime = datetime.strptime(raw_entry[0], "%d/%m/%Y %H:%M:%S")
                         request_timestamp = request_datetime.strftime(settings['timestamp_format'])
                         time_datetime = datetime.strptime(f"{raw_entry[2]}-{raw_entry[3]}", "%d/%m/%Y-%H")

@@ -3,6 +3,11 @@ Common toolkit for the entire project.
 Import with: from utils.project import *
 """
 
+
+from utils.room_registry import load_room_configuration, runtime_rooms, effective_setup, fresh_sensor_average
+from utils.room_source_policy import averaging_sources
+from utils.room_presence import room_presence_observations, calculate_room_occupancy
+
 #region Imports
 import asyncio
 import bisect
@@ -1311,87 +1316,49 @@ def get_room_temps_and_humidity_dev():
                 }
     return room_temps_and_hums
 
-def get_room_temps_and_humidity(just_controlled:bool = True):
-    """
-    Returns dated temperature and humidity readings for controlled rooms in config,
-    unless just_controlled = False, in that case, it returns it for all rooms.
-    """
-
-    try:
-        sensors_state = read_sensors()
-
-        sensor_temps_and_hums = {}
-        for sensor_id, sensor in sensors_state:
-            try:
-                last_updated = datetime.strptime(sensor.raw['state']['lastupdated'], "%Y-%m-%dT%H:%M:%S.%f").replace(tzinfo=pytz.UTC).astimezone(tzlocal.get_localzone()).strftime(settings['timestamp_format'])
-            except:
-                last_updated = None
-            if sensor.type == "ZHATemperature":
-                if sensor.name not in sensor_temps_and_hums:
-                    sensor_temps_and_hums[sensor.name] = {'temp':None,'hum':None,'last_updated':None}
-                sensor_temps_and_hums[sensor.name]['temp'] = sensor.temperature
-                sensor_temps_and_hums[sensor.name]['last_updated'] = last_updated
-            elif sensor.type == "ZHAHumidity":
-                if sensor.name not in sensor_temps_and_hums:
-                    sensor_temps_and_hums[sensor.name] = {'temp':None,'hum':None,'last_updated':None}
-                sensor_temps_and_hums[sensor.name]['hum'] = sensor.humidity
-                sensor_temps_and_hums[sensor.name]['last_updated'] = last_updated
-            elif sensor.type == "ZHAThermostat":
-                if sensor.name not in sensor_temps_and_hums:
-                    sensor_temps_and_hums[sensor.name] = {'temp':None,'last_updated':None}
-                sensor_temps_and_hums[sensor.name]['temp'] = sensor.raw['state']['temperature']
-                sensor_temps_and_hums[sensor.name]['last_updated'] = last_updated
-
-        rooms_info = get_rooms_info(just_controlled)
-        heating_config = load_json_to_dict('config/heating_control_config.json')
-
-        room_temps_and_hums = {}
-        for room in rooms_info:
-            room_temp = None
-            room_hum = None
-            room_last_updated = None
-            room_thermostat_temp = None
-            room_thermostat_last_updated = None
-            if rooms_info[room]['sensor'] in sensor_temps_and_hums:
-                room_temp = sensor_temps_and_hums[rooms_info[room]['sensor']]['temp']
-                room_hum = sensor_temps_and_hums[rooms_info[room]['sensor']]['hum']
-                room_last_updated = sensor_temps_and_hums[rooms_info[room]['sensor']]['last_updated']
-            
-            if isinstance(rooms_info[room]["thermostats"], str):
-                temps, stamps = [], []                              # collect rooms_info[room]["thermostats"]id readings
-
-                for th in (t.strip() for t in rooms_info[room]["thermostats"].split(";") if t.strip()):
-                    rec = sensor_temps_and_hums.get(th)
-                    if not rec:
-                        continue
-
-                    ts = datetime.strptime(rec["last_updated"], settings["timestamp_format"])
-                    age_min = (datetime.now(timezone.utc) - ts.replace(tzinfo=timezone.utc)).total_seconds() / 60
-
-                    if age_min < float(heating_config["temp_data_expiry"]):                 # keep only fresh readings
-                        temps.append(rec["temp"])
-                        stamps.append(ts.timestamp())
-
-                if temps:                                           # average of selected sensors
-                    room_thermostat_temp = sum(temps) / len(temps)
-                    avg_stamp = sum(stamps) / len(stamps)
-                    room_thermostat_last_updated = datetime.fromtimestamp(
-                        avg_stamp, tz=timezone.utc
-                    ).strftime(settings["timestamp_format"])
-
-            room_temps_and_hums[room] = {
-                "temp":room_temp,
-                "hum":room_hum,
-                "last_updated":room_last_updated,
-                "thermostat_temp":room_thermostat_temp,
-                "thermostat_last_updated":room_thermostat_last_updated
-                }
-        
-        return room_temps_and_hums
-    except ModuleException:
-        raise ModuleException("couldn't read temp and humidity due to", severity = 2)
-    except Exception:
-        raise ModuleException("unexpected error while reading temp and humidity", severity = 2)
+def get_room_temps_and_humidity(just_controlled=True):
+    sensors = {}
+    local_zone = tzlocal.get_localzone()
+    for sensor_id, sensor in read_sensors():
+        raw = sensor.raw
+        name = raw.get('name')
+        try:
+            stamp = datetime.fromisoformat(raw['state']['lastupdated'].replace('Z', '+00:00'))
+            if stamp.tzinfo is None:
+                stamp = stamp.replace(tzinfo=timezone.utc)
+            stamp = stamp.astimezone(local_zone)
+        except (KeyError, ValueError, TypeError):
+            stamp = None
+        state = raw.get('state') or {}
+        if sensor.type in ('ZHATemperature', 'ZHAHumidity', 'ZHAThermostat'):
+            reading = sensors.setdefault(name, {})
+            if sensor.type in ('ZHATemperature', 'ZHAThermostat'):
+                reading.update(temp=state.get('temperature'), last_updated=stamp)
+            if sensor.type == 'ZHAHumidity':
+                reading.update(hum=state.get('humidity'), humidity_updated=stamp)
+            # TRV identities are API resource IDs, not device display names.
+            if sensor.type == 'ZHAThermostat':
+                sensors[str(sensor_id)] = reading
+    config = load_json_to_dict('config/heating_control_config.json')
+    expiry = float(config['temp_data_expiry'])
+    now = datetime.now(timezone.utc)
+    result = {}
+    for room, info in get_rooms_info(just_controlled).items():
+        names = info.get('temperature_sensors') or []
+        temperature, updated = fresh_sensor_average(names, sensors, expiry, now)
+        humidity_rows = [sensors.get(name) or {} for name in averaging_sources(names)]
+        humidity_rows = [row for row in humidity_rows if isinstance(row.get('hum'), (int, float))
+            and not isinstance(row.get('hum'), bool) and math.isfinite(row['hum'])
+            and row.get('humidity_updated') is not None
+            and -5 <= (now - row['humidity_updated']).total_seconds() <= expiry * 60]
+        humidity = sum(row['hum'] for row in humidity_rows) / len(humidity_rows) if humidity_rows else None
+        trv_temp, trv_updated = fresh_sensor_average(info.get('trv_ids') or [], sensors, expiry, now)
+        result[room] = {'temp': temperature, 'hum': humidity,
+            'last_updated': updated.strftime(settings['timestamp_format']) if updated else None,
+            'humidity_last_updated': min(row['humidity_updated'] for row in humidity_rows).strftime(settings['timestamp_format']) if humidity_rows else None,
+            'thermostat_temp': trv_temp / 100 if trv_temp is not None else None,
+            'thermostat_last_updated': trv_updated.strftime(settings['timestamp_format']) if trv_updated else None}
+    return result
 
 def get_presence():
     """
@@ -1448,25 +1415,7 @@ def get_presence_all(names: list[str] | None = None) -> dict:
         raise ModuleException(f"unexpected error while reading presence sensors: {e}", severity=3)
 
 def get_presence_rooms():
-    """
-    Return current motion sensor state for all rooms.
-    """
-    try:
-        presence_sensors = get_presence_all()
-        rooms = get_rooms_info()
-        presence_rooms = {}  
-
-        for room, info in rooms.items():
-            sensor_name = info['pres']
-            if sensor_name in presence_sensors:
-                presence_rooms[room] = presence_sensors[sensor_name]
-        
-        return presence_rooms
-
-    except ModuleException:
-        raise ModuleException("couldn't get rooms presence", severity=2)
-    except Exception as e:
-        raise ModuleException(f"unexpected error while getting rooms presence: {e}", severity=2)
+    return room_presence_observations(get_rooms_info(False), get_presence_all())
     
 def load_recent_presence_log(now=None):
     """Load presence data across the current midnight log boundary.
@@ -1520,7 +1469,7 @@ def get_rooms_occupancy(log = None, threshold = None, minutes = [0], timestamps 
         local_tz = tzlocal.get_localzone()
         targets = [datetime.strptime(ts, settings['timestamp_format']).replace(tzinfo=local_tz)
                    for ts in timestamps_to_check]
-        evaluated = calculate_occupancy(
+        evaluated = calculate_room_occupancy(
             presence_log, rooms, targets,
             presence_window=float(config['presence_window']),
             minimum_separation=float(config['presence_min_sep']) if threshold is None else float(threshold),
@@ -3286,18 +3235,9 @@ def read_pin_state(pin:int):
 #region Config
 """Utility functions related to config."""
 
-def get_rooms_info(just_controlled:bool = True):
-    """
-    Returns the rooms node of the system config.
-    If just_controlled is set to false, returns all rooms,
-    else just the controlled rooms.
-    """
-    all_rooms_info = get_system_setup("rooms")
-    if just_controlled:
-        rooms_info = {room: info for room, info in all_rooms_info.items() if info["controlled"]}
-    else:
-        rooms_info = all_rooms_info
-    return rooms_info
+def get_rooms_info(just_controlled=True):
+    definitions, registry = load_room_configuration(get_project_root())
+    return runtime_rooms(definitions, registry, controlled_only=just_controlled)
 
 def get_cycles_info():
     return get_system_setup("cycles")
@@ -3308,9 +3248,11 @@ def get_pumps_info():
         pumps_info[cycle] = info['pump']
     return pumps_info
 
-def get_system_setup(subdict_key: str=''):
-    system = load_json_to_dict(os.path.join('system', 'setup.json'))
-    return system if subdict_key == '' else system[subdict_key]
+def get_system_setup(subdict_key=''):
+    setup = load_json_to_dict(os.path.join('system', 'setup.json'))
+    definitions, registry = load_room_configuration(get_project_root())
+    setup = effective_setup(setup, definitions, registry)
+    return setup if subdict_key == '' else setup[subdict_key]
 
 def room_to_cycle(room):
     if not isinstance(room,str):

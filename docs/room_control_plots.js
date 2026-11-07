@@ -37,7 +37,7 @@ function createRoomControlPlotSetting(elementId, day = dayStamp()) {
     const base = elementToMainGraphSettingMapping[elementId];
     const cycleMatch = elementId.match(/^cycle([1-4])_infobox$/);
     const overview = elementId === 'general_infobox' || Boolean(cycleMatch);
-    const diagnostic = base?.title === 'room_plot';
+    const diagnostic = base?.title === 'room_plot' && roomsDataAndState[base.roomNumToPlot]?.controlled;
     if (!overview && !diagnostic) return null;
     const scope = {roomNumToPlot: diagnostic ? base.roomNumToPlot : null, cycleNum: cycleMatch ? Number(cycleMatch[1]) : null};
     const phase = (roomAnalyticSelections[roomAnalyticKey(scope)] || 'phase') === 'phase';
@@ -210,7 +210,7 @@ function drawRoomControlDaily(data, setting) {
         .sort((a,b) => a.h_of_day_frac - b.h_of_day_frac);
     const rooms = roomControlPlotRooms(setting);
     const curves = rooms.map(room => ({room, name: roomsDataAndState[room].name,
-        color: roomsColorScale(roomsColorRemap[room - 1]), segments: roomControlErrorSegments(readings, room)}));
+        color: roomsColorScale(roomColorValue(room)), segments: roomControlErrorSegments(readings, room)}));
     const legendRows = roomAnalyticLegendLayout(curves).rows;
     const errors = curves.flatMap(curve => curve.segments.flat().map(row => row.error_k));
     const top = Math.max(1, Math.ceil(Math.max(0, ...errors.map(Math.abs)) * 2) / 2);

@@ -24,12 +24,12 @@
             let loadParams;
             params = new URLSearchParams(window.location.search);
             loadParams = {
-                ref_source: params.get("ref_source") || 'qr'
+                ref_source: params.get("ref_source") || 'form'
             }
             fetchJSONEndpoint('https://raw.githubusercontent.com/markusbenjamin/kazanfutes/refs/heads/main/utils/settings.json').then(data => {
                 let heatingControlConfig = data;
                 fetchJSONEndpoint(heatingControlConfig["firebase_url"] + "/update.json").then(data => {
-                    let postFix = loadParams['ref_source'] == 'form' ? '' : '_qr'
+                    let postFix = ''
                     let secondsSinceLastFormEntry = timePassedSince(dateFromTimestamp(data['override_rooms' + postFix]['last_update_timestamp']), granularity = 'seconds')
                     console.log("secondsSinceLastFormEntry: " + secondsSinceLastFormEntry)
                     if (secondsSinceLastFormEntry < 60) {

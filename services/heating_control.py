@@ -294,7 +294,7 @@ def get_system_state():
 
             if vals['hum'] is not None:
                 measured_humidity[room] = vals['hum'] / 100
-                humidity_last_updated[room] = vals['last_updated']
+                humidity_last_updated[room] = vals.get('humidity_last_updated') or vals['last_updated']
             else:
                 measured_humidity[room] = None
                 humidity_last_updated[room] = None

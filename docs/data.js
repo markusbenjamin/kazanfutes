@@ -115,70 +115,7 @@ function centerAndZoomRelativePointOfCanvas(targetX, targetY, zoomLevel, duratio
     );
 }
 
-function setupTooltip() {
-    // Setup tooltip
-    const tooltip = d3.select("#tooltip");
-
-    // Attach tooltip functionality to all path elements during initialization
-    Object.keys(roomsDataAndState).forEach(key => {
-        const roomTooltipData = roomsDataAndState[key]; // Access the value using the key
-
-        d3.select("#" + roomTooltipData.roomID)
-            .on("mouseover.tooltip", function (event) {
-                if (roomTooltipData.temp) {
-                    tooltip.transition().duration(200).style("visibility", "visible");
-                    let cycleOn = systemNode['switch']['cycles'][roomTooltipData.cycle] == -1 ? false : true;
-                    if (systemOn) {
-                        tooltip.html(dashboardText(
-                            roomTooltipData.name + (roomTooltipData.vote ? ": " + dashboardText(["nem kér", "kér"][roomTooltipData.vote]) : "") + "<br>" +
-                            roomTooltipData.temp + (!isNaN(roomTooltipData.temp) ? " °C" : "") +
-                            (roomTooltipData.set && cycleOn ? " / [" + Number(roomTooltipData.set).toFixed(1) + (!isNaN(roomTooltipData.set) ? " °C]" : "]") : "") +
-                            (roomTooltipData.reason ? "<br>" + roomTooltipData.reason + "" : "") +
-                            (
-                                roomTooltipData.above ? "<br>" : ""
-                            ) +
-                            (
-                                roomTooltipData.above ?
-                                    "<br>Túlfűtés: " + roundTo(roomTooltipData.above.today, 0.1) + " Kh (átl.: " + roundTo(roomTooltipData.above.avg, 0.1) + " Kh)"
-                                    : ""
-                            ) +
-                            (
-                                roomTooltipData.below ?
-                                    "<br>Alulfűtés: " + roundTo(roomTooltipData.below.today, 0.1) + " Kh (átl.: " + roundTo(roomTooltipData.below.avg, 0.1) + " Kh)"
-                                    : ""
-                            )
-                            // +
-                            //(
-                            //    roomTooltipData.turnon ?
-                            //        "<br>Körindítás: " + roundTo(100 * roomTooltipData.turnon.today, 1) + " (átl.: " + roundTo(100 * roomTooltipData.turnon.avg, 1) + ")"
-                            //        : ""
-                            //)
-                        ))
-                            .style("left", (event.pageX + 5) + "px")
-                            .style("top", (event.pageY - 28) + "px");
-                    }
-                    else {
-                        tooltip.html(dashboardText(
-                            roomTooltipData.name + "<br>" +
-                            roomTooltipData.temp + (!isNaN(roomTooltipData.temp) ? " °C" : "")
-                        ))
-                            .style("left", (event.pageX + 5) + "px")
-                            .style("top", (event.pageY - 28) + "px");
-                    }
-                }
-                else {
-                    tooltip.transition().duration(200).style("visibility", "hidden");
-                }
-            })
-            .on("mousemove.tooltip", function (event) {
-                tooltip.style("left", (event.pageX + 5) + "px")
-                    .style("top", (event.pageY - 28) + "px");
-            })
-            .on("mouseout.tooltip", function () {
-                tooltip.transition().duration(500).style("visibility", "hidden");
-            })
-    });
-}
+function setupTooltip() { setupRoomV2Tooltip(); }
 
 let condensedSchedule, requestLists;
 
@@ -237,71 +174,9 @@ function getDataFromFirebase() {
             );
             updateBoilerColor(states > 0 ? 1 : 0);
 
-            // Update rooms
-            const roomNums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13];
-            let controlDiffs = {};
-            let totalControlDiff = 0;
-            let averagerCount = 0;
-            roomNums.forEach(roomNum => {
-                const roomLastUpdated = systemJSON.state['sensor_last_updated'][roomNum];
-                roomsDataAndState[roomNum].lastUpdated = roomLastUpdated;
-
-                const cycleNum = roomsDataAndState[roomNum].cycle;
-                const cycleState = systemJSON.state.pump_states[cycleNum];
-
-                const roomTemp = roundTo(systemJSON.state['measured_temps'][roomNum], 0.1);
-                const timeSinceLastSensorUpdate = timePassedSince(dateFromTimestamp(roomLastUpdated));
-                if (timeSinceLastSensorUpdate > 2 * 60) {
-                    roomsDataAndState[roomNum].temp = "szenzor hiba";
-                }
-                else {
-                    roomsDataAndState[roomNum].temp = (roomTemp.toFixed(2).slice(0, 4));
-                }
-
-                roomValveNames = typeof systemJSON.setup.rooms[roomNum].thermostats === 'string' ?
-                    (systemJSON.setup.rooms[roomNum].thermostats).split(";") :
-                    ["dumb_valve"]
-                roomValveStates = systemNode['state']['valve_states'][roomNum];
-                let roomValveInfo = {}
-                for (let i = 0; i < roomValveNames.length; i++) {
-                    roomValveInfo[roomValveNames[i]] = roomValveStates[i] * cycleState;
-                }
-
-                let roomOccupancyState = systemJSON.state['occupancy'][roomNum];
-
-                updateRoomColor(systemJSON.setup.rooms[roomNum].name, roomTemp, roomLastUpdated, roomValveInfo, roomOccupancyState);
-
-                const roomSet = roomControlSetTemperature(systemJSON.state, roomNum);
-                roomsDataAndState[roomNum].set = roomSet;
-
-                if (timeSinceLastSensorUpdate > 2 * 60) {
-                    controlDiffs[roomNum] = "missing";
-
-                }
-                else {
-                    controlDiffs[roomNum] = roomTemp - roomSet;
-                    totalControlDiff += controlDiffs[roomNum];
-                    averagerCount++;
-                }
-
-                const roomVote = systemJSON.control.rooms[roomNum].vote;
-                roomsDataAndState[roomNum].vote = roomVote;
-                const reason = reasonMapping[systemJSON.control.rooms[roomNum].reason].message;
-                roomsDataAndState[roomNum].reason = reason;
-            });
-            let averageControlDiff = (totalControlDiff - (isValidNumber(controlDiffs[10]) ? controlDiffs[10] : 0)) / (averagerCount - 1);
-
-            const oktopuszKeramiaLastUpdated = systemJSON.state['sensor_last_updated'][11];
-            const oktopuszKeramiaTemp = systemJSON.state['measured_temps'][11];
-
-            updateRoomColor(
-                "OktopuszKeramia",
-                oktopuszKeramiaTemp,
-                oktopuszKeramiaLastUpdated,
-                { "dumb_valve": 0 },
-                false
-            );
-            roomsDataAndState[11].temp = oktopuszKeramiaTemp == 0 ? "szenzor hiba" : oktopuszKeramiaTemp;
+            const controlDiffs = roomV2UpdateRooms(systemJSON);
+            const validDiffs = Object.entries(controlDiffs).filter(([id,value]) => id !== '10' && Number.isFinite(value)).map(([,value])=>value);
+            const averageControlDiff = validDiffs.length ? d3.mean(validDiffs) : 0;
 
             // Update general infobox
             let cyclesOn = [];
@@ -338,7 +213,8 @@ function getDataFromFirebase() {
             }
 
             // QR is retired: legacy webhook writes must not affect this notification.
-            let timeSinceLastRequest = timePassedSince(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp));
+            const requestedRoom = String(updateJSON.override_rooms?.room_id || '');
+            let timeSinceLastRequest = roomsDataAndState[requestedRoom] ? timePassedSince(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp)) : Infinity;
             lastRequestGranularity = 'perce'
             if (timeSinceLastRequest > 90) {
                 timeSinceLastRequest = roundTo(timeSinceLastRequest / 60, 0.5);
@@ -346,15 +222,15 @@ function getDataFromFirebase() {
             }
 
             let requestOrigin = "form";
-            let requestTarget = updateJSON.override_rooms.room_name;
+            let requestTarget = roomV2Name(requestedRoom);
 
-            if (fromRequest && !initialLockDone) {
+            if (fromRequest && !initialLockDone && roomsDataAndState[requestedRoom]) {
                 mainGraphContentLocked = true;
-                mainGraphSetting = elementToMainGraphSettingMapping[requestTarget];
+                mainGraphSetting = elementToMainGraphSettingMapping['room_' + requestedRoom];
                 initialLockDone = true;
             }
 
-            let lastRequestHourStamp = hourStamp(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp));
+            let lastRequestHourStamp = roomsDataAndState[requestedRoom] ? hourStamp(dateFromTimestamp(updateJSON.override_rooms.last_update_timestamp)) : '';
 
             externalTemp = Number.isFinite(systemJSON.state.external_temp) ? systemJSON.state.external_temp : null;
 
@@ -385,11 +261,11 @@ function getDataFromFirebase() {
 
             // Update cycle infoboxes
             cycles.forEach(cycleNum => {
-                let roomsOnCycle = systemJSON.setup.cycles[cycleNum].rooms;
+                let roomsOnCycle = allControlledRooms.filter(id => roomsDataAndState[id].cycle === cycleNum);
                 let roomsThatWantHeating = [];
                 let totalControlDiffOnCycle = 0;
                 roomsOnCycle.forEach(roomNum => {
-                    if (roomNum != 11) {
+                    if (roomsDataAndState[roomNum].controlled) {
                         systemJSON.control.rooms[roomNum].vote == 1 ? roomsThatWantHeating.push({ type: roomsDataAndState[roomNum].type, name: roomsDataAndState[roomNum].name, reason: roomsDataAndState[roomNum].reason }) : "";
                         totalControlDiffOnCycle = controlDiffs[roomNum] == "missing" ? totalControlDiffOnCycle : totalControlDiffOnCycle + controlDiffs[roomNum];
                     }
@@ -1356,21 +1232,7 @@ function clearMainGraphs() {
     d3.selectAll(".main-graph-instance").remove();
 }
 
-const roomsDataAndState = {
-    1: { roomID: "Oktopusz", name: "Oktopusz szita", cycle: 1, hasValve: true },
-    2: { roomID: "Gólyafészek", name: "Gólyafészek", cycle: 1, hasValve: true },
-    3: { roomID: "PK", name: "PK", cycle: 2, hasValve: true },
-    4: { roomID: "SZGK", name: "SZGK", cycle: 2, hasValve: true },
-    5: { roomID: "Mérce", name: "Mérce", cycle: 2, hasValve: true },
-    6: { roomID: "Lahmacun", name: "Lahmacun", cycle: 1, hasValve: true },
-    7: { roomID: "Gólyairoda", name: "Gólyairoda", cycle: 1, hasValve: true },
-    8: { roomID: "kisterem", name: "kisterem", cycle: 3, hasValve: false },
-    9: { roomID: "vendégtér", name: "vendégtér", cycle: 3, hasValve: false },
-    10: { roomID: "Trafóház", name: "Trafóház", cycle: 4, hasValve: false },
-    11: { roomID: "OktopuszKeramia", name: "Oktopusz kerámia", cycle: 2, hasValve: true },
-    12: { roomID: "DiósEdit", name: "Diós Edit", cycle: 2, hasValve: true },
-    13: { roomID: "GÉPműhely", name: "GÉP műhely", cycle: 1, hasValve: true }
-};
+const roomsDataAndState = roomV2RuntimeStates();
 
 function updateRoomColor(roomId, temp, lastUpdated, roomValveInfo, roomOccupancy) {
     // Reconcile occupancy on every refresh, independently of temperature freshness.
@@ -1379,7 +1241,7 @@ function updateRoomColor(roomId, temp, lastUpdated, roomValveInfo, roomOccupancy
         ? "repeating-linear-gradient(125deg, rgba(0,0,0,0.8) 0 0.25px, rgba(0,0,0,1) 0.05px 4px)"
         : null;
     d3.select("#" + roomId).style("mask", maskDef).style("-webkit-mask", maskDef);
-    if (timePassedSince(dateFromTimestamp(lastUpdated)) > 2 * 60) {
+    if (!Number.isFinite(temp) || !lastUpdated || timePassedSince(dateFromTimestamp(lastUpdated)) > 2 * 60) {
         //console.log(d3.select("#" + roomId).style("fill", "rgb(31, 31, 32, 0.8)"));
     }
     else {
@@ -1844,7 +1706,7 @@ function updateGeneralInfobox(info) {
                 lastRequestLine = "Ma még nem érkezett kérés.";
             }
             if (lastRequestLine.length > 36) {
-                lastRequestLine = "Utolsó kérés: " + info.lastRequest.hourStamp + ", " + info.lastRequest.origin + ", " + roomAbbreviations[info.lastRequest.target] + ".";
+                lastRequestLine = "Utolsó kérés: " + info.lastRequest.hourStamp + ", " + info.lastRequest.origin + ", " + (roomAbbreviations[info.lastRequest.target] || info.lastRequest.target) + ".";
             }
             lines.push(
                 {
@@ -2077,9 +1939,9 @@ function updateCycleInfobox(cycle, info) {
 let dataWaitTime = 10;
 let dayDataNotAvailable = false;
 
-let allMeasuredRooms = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
-let allControlledRooms = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13];
-let allEmphasisRooms = allControlledRooms;
+let allMeasuredRooms = roomV2IncludedRooms();
+let allControlledRooms = roomV2ControlledRooms();
+let allEmphasisRooms = allMeasuredRooms;
 
 const elementToMainGraphSettingMapping = {
     "gas_dial": { title: "gas_usage", types: ["gas_usage", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), conditionals: [] },
@@ -2088,19 +1950,6 @@ const elementToMainGraphSettingMapping = {
     "cycle3_marker": { title: "pumps_power", types: ["pumps_power", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), conditionals: [], hoveredPump: 3 },
     "cycle4_marker": { title: "pumps_power", types: ["pumps_power", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), conditionals: [], hoveredPump: 4 },
     "external_thermometer": { title: "external_temp", types: ["external_temp"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), conditionals: [] },
-    "Oktopusz": { title: "room_plot", types: ["room_1_valve_state", "room_1_measurements", "room_1_set_temps", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 1, conditionals: [] },
-    "Gólyafészek": { title: "room_plot", types: ["room_2_valve_state", "room_2_measurements", "room_2_set_temps", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 2, conditionals: [] },
-    "PK": { title: "room_plot", types: ["room_3_valve_state", "room_3_measurements", "room_3_set_temps", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 3, conditionals: [] },
-    "SZGK": { title: "room_plot", types: ["room_4_valve_state", "room_4_measurements", "room_4_set_temps", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 4, conditionals: [] },
-    "Mérce": { title: "room_plot", types: ["room_5_valve_state", "room_5_measurements", "room_5_set_temps", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 5, conditionals: [] },
-    "Lahmacun": { title: "room_plot", types: ["room_6_valve_state", "room_6_measurements", "room_6_set_temps", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 6, conditionals: [] },
-    "Gólyairoda": { title: "room_plot", types: ["room_7_valve_state", "room_7_measurements", "room_7_set_temps", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 7, conditionals: [] },
-    "kisterem": { title: "room_plot", types: ["room_8_valve_state", "room_8_measurements", "room_8_set_temps", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 8, conditionals: [] },
-    "vendégtér": { title: "room_plot", types: ["room_9_valve_state", "room_9_measurements", "room_9_set_temps", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 9, conditionals: [] },
-    "Trafóház": { title: "room_plot", types: ["room_10_valve_state", "room_10_measurements", "room_10_set_temps", "heating_state", "override_requests"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 10, conditionals: [] },
-    "OktopuszKeramia": { title: "room_plot", types: ["room_11_measurements"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 11, conditionals: [] },
-    "DiósEdit": { title: "room_plot", types: ["room_12_valve_state", "room_12_measurements", "room_12_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 12, conditionals: [] },
-    "GÉPműhely": { title: "room_plot", types: ["room_13_valve_state", "room_13_measurements", "room_13_set_temps", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), roomNumToPlot: 13, conditionals: [] },
     "boiler_body": {
         title: "heating_state",
         types: ["heating_state"],
@@ -2116,6 +1965,8 @@ const elementToMainGraphSettingMapping = {
         conditionals: []
     }
 };
+
+Object.assign(elementToMainGraphSettingMapping, roomV2PlotSettings());
 
 for (let cycle = 1; cycle <= 4; cycle++) {
     const waterTemperatureSetting = createCycleHeatPlotSetting(cycle, "cycle" + cycle);
@@ -2170,12 +2021,7 @@ function joinMainGrapDataSourceToElements() {
         });
 }
 
-let cyclesDataAndState = { //DEV: configból töltse be
-    1: { rooms: [1, 2, 6, 7, 13] },
-    2: { rooms: [3, 4, 5, 12] },
-    3: { rooms: [8, 9] },
-    4: { rooms: [10] }
-}
+let cyclesDataAndState = Object.fromEntries([1,2,3,4].map(cycle => [cycle, {rooms: allMeasuredRooms.filter(id => roomsDataAndState[id].cycle === cycle)}]));
 
 function resetAllRoomsPlotToAllCycles(showAllRoomHovers = false) {
     clearMobilePlotContext();
@@ -2240,35 +2086,22 @@ function setInfoboxHovers() {
 const roomsColorScale = d3.scaleLinear().domain([1, 12]).range(["green", "orange"]); // Ha újabb szobát kell hozzáadni, akkor kell majd egy mapping a szobaszámok és a szín között, ami nem lineáris
 const roomsColorRemap = [4, 5, 6, 7, 8, 1, 2, 10, 11, 12, -1, 9, 3]
 
-let roomTextOffsets = {
-    "Oktopusz": { x: 0.05, y: 0 },
-    "OktopuszKeramia": { x: 0.05, y: 0 },
-    "Gólyafészek": { x: 0, y: 0 },
-    "PK": { x: 0, y: 0 },
-    "SZGK": { x: 0, y: 0 },
-    "Mérce": { x: 0.15, y: 0.15 },
-    "Lahmacun": { x: 0.05, y: 0.1 },
-    "Gólyairoda": { x: -0.05, y: 0 },
-    "kisterem": { x: 0, y: 0.12 },
-    "vendégtér": { x: 0.05, y: 0.07 },
-    "Trafóház": { x: -0.05, y: 0.16 },
-    "DiósEdit": { x: 0, y: 0.25 },
-    "GÉPműhely": { x: -0.1, y: 0 }
-}
+let roomTextOffsets = roomV2TextOffsets();
 
 function redrawRoomHovers(rooms, emphasis) {
     d3.selectAll(".room-emphasis").remove();
     rooms.forEach(roomNum => {
-        if (roomNum != 15) {
+        if (roomsDataAndState[roomNum]) {
             let roomID = roomsDataAndState[roomNum].roomID;
-            let roomName = roomsDataAndState[roomNum].roomName;
+            let roomName = roomsDataAndState[roomNum].name;
             let roomTemp = roomsDataAndState[roomNum].temp;
-            let roomColor = d3.color(roomsColorScale(roomsColorRemap[roomNum - 1]));
+            let roomColor = d3.color(roomsColorScale(roomColorValue(roomNum)));
             let roomElement = d3.select("#" + roomID);
+            if (roomElement.empty()) return;
             let roomBox = getBBoxDrawingDimensions(roomID);
-            let parentParentElement = d3.select(roomElement.node().parentNode.parentNode);
+            let parentParentElement = d3.select("#drawing");
             // Clone the roomElement
-            let clonedElement = parentParentElement.append(() => roomElement.node().cloneNode(true));
+            let clonedElement = parentParentElement.append(() => roomV2CloneForEmphasis(roomElement.node()));
 
             // Style the cloned element
             clonedElement
@@ -2301,13 +2134,14 @@ function redrawRoomHovers(rooms, emphasis) {
 
 function drawRoomInfo(roomNum) {//IN DEVELOPMENT
     let roomID = roomsDataAndState[roomNum].roomID;
-    let roomName = roomsDataAndState[roomNum].roomName;
+    let roomName = roomsDataAndState[roomNum].name;
     let roomTemp = roomsDataAndState[roomNum].temp;
-    let roomColor = d3.color(roomsColorScale(roomsColorRemap[roomNum - 1]));
+    let roomColor = d3.color(roomsColorScale(roomColorValue(roomNum)));
     let roomElement = d3.select("#" + roomID);
+            if (roomElement.empty()) return;
     let roomBox = getBBoxDrawingDimensions(roomID);
     let parentElement = d3.select(roomElement.node().parentNode);
-    let parentParentElement = d3.select(roomElement.node().parentNode.parentNode);
+    let parentParentElement = d3.select("#drawing");
 
     let roomInfo = roomName;
     //roomElement.raise();
@@ -2540,7 +2374,7 @@ function drawMainGraph(graphData = null) {
                     drawRoomMetricPlot(graphData, mainGraphSetting);
                     break;
                 case "room_plot":
-                    if (mainGraphSetting.roomNumToPlot != 11) {
+                    if (roomsDataAndState[mainGraphSetting.roomNumToPlot].controlled) {
                         let roomNum = mainGraphSetting.roomNumToPlot;
                         let cycleNum = roomsDataAndState[roomNum].cycle;
                         const isToday = mainGraphSetting.day === dayStamp();
@@ -2712,28 +2546,7 @@ function drawMainGraph(graphData = null) {
                             );
                         }
                     }
-                    else if (mainGraphSetting.roomNumToPlot == 11) { // Oktopusz kerámia
-                        //let roomMeasurementData = graphData["room_11_measurements"].concat(graphData["room_12_measurements"]).sort((a, b) => a.h_of_day_frac - b.h_of_day_frac);
-                        let roomMeasurementData = graphData["room_11_measurements"].sort((a, b) => a.h_of_day_frac - b.h_of_day_frac);
-                        range = d3.extent(roomMeasurementData.map(elem => elem['temp']));
-                        drawPlot(
-                            roomMeasurementData,
-                            {
-                                parentId: "graph",
-                                background: { show: true },
-                                smoothing: { bottom: 0, left: 100 },
-                                domain: { bottom: [0, 24], left: [Math.floor(range[0]) - 1, Math.ceil(range[1]) + 1] },
-                                dataKeys: { bottom: "h_of_day_frac", left: "temp" },
-                                tickVals: { left: d3.range(Math.floor(range[0]) - 1, Math.ceil(range[1]) + 2, 1) },
-                                axesLabel: { bottom: "óra", left: "°C" },
-                                plotStyle: { joined: true, col: "rgba(255,0,0,1)", thickness: "2", startCap: false, endCap: true },
-                                curveTooltip: "mért hőmérséklet",
-                                plotLabel: roomsDataAndState[mainGraphSetting.roomNumToPlot].name + " mért hőmérséklet",
-                                segment: { do: false },
-                                curveEndText: { show: true, fontSize: 6, text: ((roomMeasurementData.at(-1).temp).toFixed(1).replace(/\.0$/, '')) + "°C", col: "rgba(255,0,0,1)", xOffset: 3, yOffset: 1.75 }
-                            }
-                        );
-                    }
+                    else { drawRoomV2MeasuredPlot(graphData, mainGraphSetting); }
                     break;
                 case "all_rooms":
                     Object.keys(graphData).forEach(k => Array.isArray(graphData[k]) && (graphData[k] = graphData[k].filter(elem => elem.timestamp?.slice(0, 10) === mainGraphSetting.day)));
@@ -2772,7 +2585,7 @@ function drawMainGraph(graphData = null) {
                     );
                     allMeasuredRooms.forEach(roomNum => {
                         let emphasis = mainGraphSetting.roomNumsToPlot.includes(roomNum);
-                        let plotColor = d3.color(roomsColorScale(roomsColorRemap[roomNum - 1]));
+                        let plotColor = d3.color(roomsColorScale(roomColorValue(roomNum)));
                         let showEndText = true;
                         let endTextColor = "rgba(0,0,0,1)";
                         if (!emphasis) {
@@ -2985,7 +2798,7 @@ function addSpringyEasterEgg(elementId, textId, topLayerId, tooltipId) {
 
 extractURLParams();
 trackHoveredElementId();
-d3.xml(isMobile ? "canvas_mobile.svg" : "canvas.svg").then(fileData => {
+d3.xml("canvas.svg").then(fileData => {
     insertCanvasFromFile(fileData);
     setViewParameters();
     centerAndZoomRelativePointOfCanvas(initialPos.x, initialPos.y, initialZoom);
@@ -2999,7 +2812,7 @@ d3.xml(isMobile ? "canvas_mobile.svg" : "canvas.svg").then(fileData => {
     initializeRadiators();
     setInfoboxHovers();
     if (!isMobile) { // For now only in desktop view
-        addSpringyEasterEgg("OktopuszKeramia", "kövek", "drawing", "tooltip");
+        addSpringyEasterEgg("room_11", "kövek", "drawing", "tooltip");
     }
 
     runOnceThenSetInterval(joinMainGrapDataSourceToElements, 10);

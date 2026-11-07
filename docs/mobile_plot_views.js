@@ -16,7 +16,7 @@ function mobilePlotTarget(elementId) {
     if (!base) return null;
     const modes = ['alap'];
     if (['room_plot', 'cycle_water_temp', 'external_temp'].includes(base.title) || elementId === 'boiler_body') modes.push('részletes');
-    if (base.title === 'room_plot' || elementId === 'boiler_body' || elementId === 'general_infobox' || cycle) modes.push('analitika');
+    if ((base.title === 'room_plot' && roomsDataAndState[base.roomNumToPlot]?.controlled) || elementId === 'boiler_body' || elementId === 'general_infobox' || cycle) modes.push('analitika');
     return modes.length > 1 ? {elementId, base, modes} : null;
 }
 

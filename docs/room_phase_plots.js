@@ -131,7 +131,7 @@ function drawRoomPhasePlot(data, setting) {
         const payload = data[setting.day]?.['room_' + room + '_phase_points'];
         const offsetK = Number.isFinite(payload?.offset_k) ? payload.offset_k : 0;
         const points = payload?.schema_version === 1 ? roomPhaseSegments(payload.points || [], setting.day, offsetK).flat() : [];
-        return {room, name: roomsDataAndState[room].name, color: roomsColorScale(roomsColorRemap[room - 1]),
+        return {room, name: roomsDataAndState[room].name, color: roomsColorScale(roomColorValue(room)),
             points, smoothedPoints: roomPhaseSmoothedPoints(points)};
     }).filter(curve => curve.points.length);
     const points = curves.flatMap(curve => curve.points);

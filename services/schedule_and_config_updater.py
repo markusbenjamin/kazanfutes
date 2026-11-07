@@ -9,6 +9,9 @@ Usual logging and reporting.
 """
 
 from utils.project import *
+from utils.room_registry import read_request_rows, request_marker_rows, load_room_configuration
+from utils.weekly_cycle_config import weekly_presence
+from services.room_id_scheduler import LocalWeeklyBaseline, refresh_registry
 from utils.scheduling_temperature import get_scheduling_external_temperature
 
 export_path_prefix = ""
@@ -23,30 +26,14 @@ heating_config = load_json_to_dict(f'{export_path_prefix}config/heating_control_
 heating_config_update_info = {'update_needed':True,'last_updated':None}
 
 # QR requests are retired. Old Sheets/webhooks may still exist, but are not inputs.
-update_needed = {'weekly_cycle':{},'override_rooms':True,'override_cycles':True}
-last_update = {'weekly_cycle':{},'override_rooms':None,'override_cycles':None}
-update_ids = {
-    'weekly_cycle':{},
-    'override_rooms':heating_config['override_rooms_id'],
-    'override_cycles':heating_config['override_cycles_id']
-    }
-update_sheet_names = {
-    'weekly_cycle':{},
-    'override_rooms':None,
-    'override_cycles':None
-    }
+update_needed = {'override_rooms': True, 'override_cycles': True}
+last_update = {'override_rooms': None, 'override_cycles': None}
+update_ids = {key: heating_config[key + '_id'] for key in update_needed}
 local_scheduling_files_relative_path = f'{export_path_prefix}config/scheduling/local_scheduling_files'
-export_paths = {
-    'weekly_cycle':{},
-    'override_rooms':local_scheduling_files_relative_path + '/override_rooms.csv',
-    'override_cycles':local_scheduling_files_relative_path + '/override_cycles.csv'
-    }
-for room in rooms_info:
-    update_needed['weekly_cycle'][room] = False
-    last_update['weekly_cycle'][room] = None
-    update_ids['weekly_cycle'][room] = heating_config['weekly_cycle_id']
-    update_sheet_names['weekly_cycle'][room] = rooms_info[room]['name']
-    export_paths['weekly_cycle'][room] = f"{export_path_prefix}config/scheduling/local_scheduling_files/weekly_cycle_room_{room}.csv"
+export_paths = {key: local_scheduling_files_relative_path + '/' + key + '.csv' for key in update_needed}
+room_registry_update_info = {'update_needed': True}
+weekly_baseline = LocalWeeklyBaseline(os.path.join(get_project_root(), 'config/weekly_cycle.json'), rooms_info)
+weekly_baseline.refresh()
 
 schedule = None
 presence_with_override = None
@@ -54,26 +41,40 @@ schedule_update_info = {'update_needed':True,'last_updated':None}
 #endregion
 
 #region Set up Firebase
-def update_detected(relative_path,change_contents):
-    """
-    Custom callback for changes on update node.
-    Sets the update_needed dict accordingly.
-    """
+def update_detected(relative_path, change_contents):
     for change in change_contents:
-        update_keys = change['path'].strip('/').split('/')
-        if update_keys[0] not in ('heating_control_config', 'weekly_cycle', 'override_rooms', 'override_cycles'):
-            # In particular, deprecated QR notifications cannot dirty scheduling state.
-            continue
-        report(f"Update detected at {change['path']}: {change['data']}")
-        report(f"Setting {update_needed,change['path']} to True.",verbose=True)
-        if 'heating_control_config' in update_keys:
-            heating_config_update_info['update_needed'] = True
-        else:
-            if 'weekly_cycle' in update_keys:
-                room = room_name_to_num(update_keys[1])
-                update_nested_dict(update_needed,f'weekly_cycle/{room}',True)
-            else:
-                update_nested_dict(update_needed,change['path'].strip('/'),True)
+        path = change.get('path', '').strip('/')
+        # JSONNodeAtURL emits a root-level addition as path='', data={key:...}.
+        roots = [path.split('/')[0]] if path else list((change.get('data') or {}).keys())
+        for root in roots:
+            if root == 'heating_control_config':
+                heating_config_update_info['update_needed'] = True
+                room_registry_update_info['update_needed'] = True
+            elif root == 'room_registry':
+                room_registry_update_info['update_needed'] = True
+            elif root in ('override_rooms', 'override_cycles'):
+                update_needed[root] = True
+
+def refresh_local_room_inputs():
+    try:
+        if weekly_baseline.refresh():
+            schedule_update_info['update_needed'] = True
+    except Exception as error:
+        ServiceException('Could not refresh local weekly baseline', original_exception=error, severity=2)
+    try:
+        if room_registry_update_info['update_needed']:
+            definitions, _ = load_room_configuration(get_project_root())
+            def publish(registry):
+                system_node.write(registry, 'room_registry')
+                system_node.write({'rooms': get_rooms_info(False)}, 'setup')
+            refresh_registry(download_google_sheet_to_2D_array,
+                heating_config.get('room_registry_id') or heating_config['heating_control_config_id'],
+                definitions['rooms'], os.path.join(get_project_root(), 'system/room_registry.json'), publish)
+            room_registry_update_info['update_needed'] = False
+            update_node.write({'seen_by_updater': True}, 'room_registry')
+    except Exception as error:
+        # The previous validated registry/weekly snapshot remains operational.
+        ServiceException('Could not refresh local room configuration', original_exception=error, severity=2)
 
 update_node = JSONNodeAtURL(node_relative_path='update')
 update_node.poll_periodically(interval=5,callback=update_detected)
@@ -137,8 +138,7 @@ def generate_and_export_heating_switch(heating_config:dict = None):
         heating_switch = {}
         heating_switch['system'] = int(heating_config['system_on'])
         heating_switch['cycles'] = {cycle:int(heating_config['cycle_'+str(cycle)+'_on']) for cycle in range(1,5)}
-        room_num = len(get_rooms_info())+2
-        heating_switch['rooms'] = {room:int(heating_config['room_'+str(room)+'_on']) for room in range(1,room_num)}
+        heating_switch['rooms'] = {room: int(heating_config[f'room_{room}_on']) for room in get_rooms_info()}
 
         system_node.write(heating_switch,'switch')
         system_node.write({'last_updated':timestamp()},'switch')
@@ -179,32 +179,12 @@ def check_scheduling_files_expiry(duration:float):
     log({f"success_update_expiry_check":success})
 
 def update_local_scheduling_files():
-    for update_path in find_val_in_dict(update_needed, True):
-        report('\nUPDATE LOCAL SCHEDULING FILES')
-        success = False
-        try:
-            update_id = read_nested_dict(update_ids, update_path)
-            update_sheet_name = read_nested_dict(update_sheet_names, update_path)
-            export_path = read_nested_dict(export_paths, update_path)
-            export_2D_array_to_csv(download_google_sheet_to_2D_array(update_id,update_sheet_name),export_path)
-            update_nested_dict(update_needed,update_path,False)
-            update_nested_dict(last_update,update_path,datetime.now())
-            schedule_update_info['update_needed'] = True
-
-            success = True
-            update_keys = update_path.split('/')
-            if 'weekly_cycle' in update_keys:
-                update_node.write({'seen_by_updater':True},f'weekly_cycle/{rooms_info[update_keys[1]]["name"]}')
-                report(f'Successfully updated local copy of weekly_cycle/{rooms_info[update_keys[1]]["name"]}.')
-            else:
-                update_node.write({'seen_by_updater':True},update_path)
-                report(f'Successfully updated local copy of {update_path}.')
-        except ModuleException as e:
-            ServiceException(f"Module error while trying to update local copy of {update_path}", original_exception=e, severity = 3)
-        except Exception:
-            ServiceException(f"Unexpected error while trying to update local copy of {update_path}", severity = 3)
-
-        log({f"success_room_{update_path}_update":success})
+    for path in find_val_in_dict(update_needed, True):
+        export_2D_array_to_csv(download_google_sheet_to_2D_array(update_ids[path]), export_paths[path])
+        update_needed[path] = False
+        last_update[path] = datetime.now()
+        schedule_update_info['update_needed'] = True
+        update_node.write({'seen_by_updater': True}, path)
 #endregion
 
 #region Generate condensed schedule for next n days
@@ -220,59 +200,33 @@ Pipeline:
     - condensed schedule, calculated from heating by subtracting no presence offset clipped to Tmin
 """
 def extract_warming_params():
-    # Extract warming params from csv
-    warming_params_table = response_table_to_dict_list(
-            select_subtable_from_table(load_csv_to_2D_array(f'{export_path_prefix}config/warming_params.csv'),row_selection=[1,-0]),
-            ["room_name","a","b","start_factor","end_factor","t_min","t_max"]
-            )
-    warming_params = {}
-    for room_params in warming_params_table:
-        warming_params[room_name_to_num(room_params['room_name'])] = {
-            'a':float(room_params['a']),
-            'b':float(room_params['b']),
-            'start_factor':float(room_params['start_factor']),
-            'end_factor':float(room_params['end_factor']),
-            't_min':float(room_params['t_min']),
-            't_max':float(room_params['t_max'])
-        }
-    return warming_params
+    rows = load_csv_to_2D_array(f'{export_path_prefix}config/warming_params.csv')
+    if not rows or rows[0][0] != 'room_id':
+        raise ValueError('Warming parameters require stable room_id keys')
+    result = {}
+    fields = ['a', 'b', 'start_factor', 'end_factor', 't_min', 't_max']
+    for row in rows[1:]:
+        key = str(row[0]).strip()
+        if key in result or key not in rooms_info:
+            raise ValueError('Unexpected or duplicate warming-parameter room ID')
+        result[key] = {field: float(value) for field, value in zip(fields, row[1:])}
+        if len(result[key]) != len(fields):
+            raise ValueError('Incomplete warming-parameter row')
+        if len(row) != len(fields) + 1 or not all(math.isfinite(value) for value in result[key].values()):
+            raise ValueError('Invalid warming-parameter coefficient')
+    if set(result) != set(rooms_info):
+        raise ValueError('Warming parameters must cover the controlled rooms')
+    return result
 
 def get_presence_patterns_with_weekly_cycle_weighted_average(room, day, hour):
-    def sort_nested_dict(node):
-        """
-        Recursively return a copy of *node* whose dict keys
-        that are numeric strings are ordered by their numeric value.
-        """
-        if not isinstance(node, dict):
-            return node
-
-        # sort current level, then recurse
-        return {
-            k: sort_nested_dict(v)
-            for k, v in sorted(node.items(), key=lambda kv: int(kv[0]))
-        }
-
-    weekly_cycle = transpose_2D_array(select_subtable_from_table(
-        load_csv_to_2D_array(f"{local_scheduling_files_relative_path}/weekly_cycle_room_{room}.csv"),
-        row_selection=[1,-0],
-        col_selection=[1,-0]
-        ))
-    
-    presence_patterns = load_json_to_dict(f"{export_path_prefix}config/scheduling/local_scheduling_files/occupancy.json")
-    presence_pattern = {}
-
-    presence_prob = float(weekly_cycle[int(day)-1][int(hour)])
-    if room in presence_patterns:
-        presence_pattern = sort_nested_dict(presence_patterns[room])
-    
-        set_presence = float(weekly_cycle[int(day)-1][int(hour)])
-        in_threshold = float(heating_config[f"room_{room}_in_threshold"])
-        weekly_cycle_weight = float(heating_config[f"room_{room}_weekly_cycle_weight"])
-        observed_presence = presence_pattern.get(str(day), {}).get(str(hour))
-        # Unknown sensor history is not evidence of absence. Fall back to the
-        # configured weekly cycle when no trustworthy observations exist.
-        if observed_presence is not None:
-            presence_prob = max(0, min(1, weekly_cycle_weight * set_presence + (1 - weekly_cycle_weight) * math.floor((observed_presence/in_threshold))))
+    presence_prob = weekly_presence(weekly_baseline.config, room, int(day), int(hour))
+    patterns = load_json_to_dict(f'{export_path_prefix}config/scheduling/local_scheduling_files/occupancy.json')
+    observed = patterns.get(room, {}).get(str(day), {}).get(str(hour))
+    if observed is not None:
+        threshold = float(heating_config[f'room_{room}_in_threshold'])
+        weight = float(heating_config[f'room_{room}_weekly_cycle_weight'])
+        presence_prob = max(0, min(1, weight * presence_prob +
+            (1 - weight) * math.floor(observed / threshold)))
     return presence_prob
         
 def generate_condensed_schedule(already_existing_presence_with_override = None, already_existing_schedule = None, for_how_many_days:int = 7):
@@ -314,15 +268,10 @@ def generate_condensed_schedule(already_existing_presence_with_override = None, 
 def generate_schedule(for_how_many_days : int):
     success = False
     try:
-        override_commands_for_rooms = [
-            command
-            for command 
-            in response_table_to_dict_list(
-                select_subtable_from_table(load_csv_to_2D_array(local_scheduling_files_relative_path + '/override_rooms.csv'),row_selection=[1,-0]),
-                ["google_timestamp","room_name","date","hour_of_day","duration","on"]
-                )
-            if datetime.strptime(command['date']+'-'+command['hour_of_day'],'%d/%m/%Y-%H')+timedelta(hours=int(command['duration'])) >= datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-            ]
+        override_commands_for_rooms = [command for command in read_request_rows(
+            load_csv_to_2D_array(local_scheduling_files_relative_path + '/override_rooms.csv'), rooms_info)
+            if datetime.strptime(command['date'] + '-' + command['hour_of_day'], '%d/%m/%Y-%H')
+            + timedelta(hours=int(command['duration'])) >= datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)]
 
         override_commands_for_cycles = [
             command
@@ -359,7 +308,7 @@ def generate_schedule(for_how_many_days : int):
                         for command
                         in override_commands_for_rooms
                         if 
-                        command['room_name'] == room_num_to_name(room) # room matches
+                        command['room_id'] == room # room matches
                         and
                         datetime.strptime(command['date']+'-'+command['hour_of_day'],'%d/%m/%Y-%H') # start of override period is
                         < # before
@@ -568,13 +517,13 @@ def update_valid_requests_on_firebase():
         rooms_info = get_rooms_info()
 
         digestion_day = datetime.now()
-        loaded_log_1 = load_csv_to_2D_array(log_file_path_1)
+        loaded_log_1 = request_marker_rows(load_csv_to_2D_array(log_file_path_1), rooms_info)
         
         request_lists = {}
         for room, info in rooms_info.items():
             request_lists_for_room = []
             for raw_entry in loaded_log_1:
-                if info['name'] in raw_entry:
+                if str(room) == raw_entry[1]:
                     request_datetime = datetime.strptime(raw_entry[0], "%d/%m/%Y %H:%M:%S")
                     request_timestamp = request_datetime.strftime(settings['timestamp_format'])
                     time_datetime = datetime.strptime(f"{raw_entry[2]}-{raw_entry[3]}", "%d/%m/%Y-%H")
@@ -613,6 +562,7 @@ if __name__ == "__main__":
         updated_heating_config = update_local_heating_control_config()
         if updated_heating_config:
             heating_config = updated_heating_config
+        refresh_local_room_inputs()
         warming_params = extract_warming_params()
         check_scheduling_files_expiry(6) # Refresh files older than 6 hours, no matter what
         update_local_scheduling_files()

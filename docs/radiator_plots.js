@@ -56,7 +56,7 @@ function radiatorTargetFromElement(element, mapping) {
     if (probes.some(probe => !unitProbes.includes(probe))) throw new Error('Radiator probe outside mapped unit: ' + element.id);
     const cycleGroup = element.closest('[id^="cycle"][id$="_radiators"]');
     const cycle = Number(cycleGroup?.id.match(/^cycle([1-4])_radiators$/)?.[1]) || null;
-    return {id: element.id, location, label: element.getAttribute('data-display-label') || unit?.location_label || location,
+    return {id: element.id, location, label: (unit?.legacy_room_numbers || []).map(id => roomV2Name(id)).filter(Boolean)[0] || location,
         probes, trvs: parse('data-trvs') || [], cycle};
 }
 
@@ -136,7 +136,7 @@ function updateRadiatorLiveState(system) {
 
 async function initializeRadiators() {
     const local = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-    const url = local ? '/radiator-mapping.json' : 'https://raw.githubusercontent.com/markusbenjamin/kazanfutes/main/system/radiator_mapping.json';
+    const url = 'radiator_mapping.json';
     try {
         radiatorUnitMapping = await fetchJSONEndpoint(url + '?updated=' + Date.now());
         document.querySelectorAll('[id*="_radiator_"]').forEach(element => {

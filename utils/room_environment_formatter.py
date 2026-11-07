@@ -39,18 +39,10 @@ def _sensor(sensors, *names):
 
 def load_room_environment_sensors():
     """Reread editable room assignments every run; no dev database dependency."""
-    path = Path(__file__).resolve().parent.parent / 'config' / 'nous_and_aqara_mapping.json'
-    with path.open(encoding='utf-8-sig') as source:
-        config = json.load(source)
-    if config.get('schema_version') != 1 or not isinstance(config.get('rooms'), dict):
-        raise ValueError('Invalid nous_and_aqara_mapping configuration')
-    for room, metrics in config['rooms'].items():
-        if not isinstance(metrics, dict):
-            raise ValueError(f'Invalid room sensor assignments: {room}')
-        for metric, sensors in metrics.items():
-            if metric not in ('co2', 'lux') or not isinstance(sensors, list) or any(not isinstance(s, str) or not s.strip() for s in sensors):
-                raise ValueError(f'Invalid {metric} sensor list for room {room}')
-    return config['rooms']
+    from utils.room_registry import load_room_configuration, runtime_rooms
+    definitions, registry = load_room_configuration(Path(__file__).resolve().parents[1])
+    return {key: {'co2': room.get('co2_sensors') or [], 'lux': room.get('lux_sensors') or []}
+            for key, room in runtime_rooms(definitions, registry).items()}
 
 
 def _average(sensors, names, key):
@@ -78,8 +70,10 @@ def format_room_environment(air_entries, control_entries, daystamp, rooms, senso
             explicit = sensor_mapping.get(str(room), {})
             co2_names = explicit.get('co2', (info.get('sensor'),))
             lux_names = explicit.get('lux', (info.get('sensor'), info.get('pres')))
+            if len(co2_names) > 1:
+                raise ValueError('Select one CO2 source; Nous sources are never averaged')
             reading = result[str(room)].setdefault(observed, {})
-            reading.update(co2=_average(nous, co2_names, 'co2'), lux=_average(aqara, lux_names, 'lux'))
+            reading.update(co2=_number(_sensor(nous, next(iter(co2_names), None)).get('co2')), lux=_average(aqara, lux_names, 'lux'))
     for observed, entry in _day_entries(control_entries, daystamp):
         occupancy = entry.get('occupancy')
         if not isinstance(occupancy, dict):
