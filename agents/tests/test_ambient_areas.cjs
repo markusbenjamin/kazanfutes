@@ -17,4 +17,19 @@ run(`state.measured_temps[13]=null;`);
 assert.equal(run(`ambientAreaTemperature({rooms:['13','25']},system,now)`),null);
 run(`state.weather_station.timestamp='2026-11-07-11-50-00';`);
 assert.equal(run(`ambientAreaTemperature({source:'ws90',rooms:[]},system,now)`),null);
-console.log('Area colours: assigned-room means, valid zero, stale/missing sources and WS90-only origin passed.');
+run(`const estimateSystem={state:{measured_temps:{9:20,10:null,2:22,25:18},
+ sensor_last_updated:{9:'2026-11-07-12-00-00',10:'2026-11-07-12-00-00',2:'2026-11-07-12-00-00',25:'2026-11-07-12-00-00'},
+ weather_station:{temperature_c:10,timestamp:'2026-11-07-12-00-00'}}};`);
+assert.equal(run(`ambientAreaTemperature(ambientAreaMappings.pult,estimateSystem,now)`),18);
+assert.equal(run(`ambientAreaTemperature(ambientAreaMappings.lepcso_1,estimateSystem,now)`),20);
+assert.equal(run(`ambientAreaTemperature(ambientAreaMappings.lepcso_2,estimateSystem,now)`),20);
+assert.equal(run(`ambientAreaTemperature(ambientAreaMappings.lepcsohaz,estimateSystem,now)`),16);
+run(`estimateSystem.state.weather_station.temperature_c=17.5;`);
+assert.equal(run(`ambientAreaTemperature(ambientAreaMappings.pult,estimateSystem,now)`),20);
+run(`estimateSystem.state.weather_station.temperature_c=40; estimateSystem.state.measured_temps[10]=24;`);
+assert.equal(run(`ambientAreaTemperature(ambientAreaMappings.pult,estimateSystem,now)`),22);
+assert.equal(run(`ambientAreaTemperature(ambientAreaMappings.lepcso_1,estimateSystem,now)`),22);
+assert.equal(run(`ambientAreaTemperature(ambientAreaMappings.lepcsohaz,estimateSystem,now)`),24);
+run(`estimateSystem.state.weather_station.timestamp='2026-11-07-11-50-00';`);
+assert.equal(run(`ambientAreaTemperature(ambientAreaMappings.pult,estimateSystem,now)`),20);
+console.log('Area colours passed: room means, missing/stale sources, WS90, shared stairs and gradual outdoor adjustments.');
