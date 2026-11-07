@@ -109,7 +109,7 @@ function drawExternalThermometer() {
 
 function drawBoiler() {
     let maxGasUsage = 10.5;
-    let mappedGasUsage = constrain(currentGasUsageRate, 0, maxGasUsage - 0.5) / (maxGasUsage - 0.5);
+    let mappedGasUsage = boilerColdWaterError ? 0 : constrain(currentGasUsageRate, 0, maxGasUsage - 0.5) / (maxGasUsage - 0.5);
     if (boilerState != null) {
         const boxDims = getBBoxP5jsDimensions("flame_nest");
         let p = { x: boxDims.cx, y: boxDims.cy }
@@ -117,7 +117,7 @@ function drawBoiler() {
 
         //mappedGasUsage = 0;
         let flameSize = 0.3 + mappedGasUsage * 0.7;
-        if (boilerState == 1) {
+        if (boilerState == 1 && !boilerColdWaterError) {
             let wiggleAmount = 0.06;
             extraFlameNum = 2;
             if (true) {
@@ -133,7 +133,7 @@ function drawBoiler() {
                     );
                 }
             }
-        } else {
+        } else if (!boilerColdWaterError) {
             let wiggleAmount = 0.035;
             for (let i = -3; i < 4; i++) {
                 drawFlame(
@@ -158,7 +158,8 @@ function drawBoiler() {
             let r = s / 2;
 
             let gasUsageDialOffset = PI / 4;
-            let dialAngle = (PI / 2 + gasUsageDialOffset + (TWO_PI - 2 * gasUsageDialOffset) * mappedGasUsage) * random(0.997, 1.003);
+            let dialAngle = (PI / 2 + gasUsageDialOffset + (TWO_PI - 2 * gasUsageDialOffset) * mappedGasUsage)
+                * (boilerColdWaterError ? 1 : random(0.997, 1.003));
             let dialLength = s * 0.039;
 
             let gasUsageDialTickNum = 100;
