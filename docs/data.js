@@ -1981,6 +1981,8 @@ const elementToMainGraphSettingMapping = {
 };
 
 Object.assign(elementToMainGraphSettingMapping, roomV2PlotSettings());
+// Kisudvar shares the outdoor thermometer's plots and detailed weather access.
+elementToMainGraphSettingMapping.kisudvar = elementToMainGraphSettingMapping.external_thermometer;
 
 for (let cycle = 1; cycle <= 4; cycle++) {
     const waterTemperatureSetting = createCycleHeatPlotSetting(cycle, "cycle" + cycle);
@@ -2013,16 +2015,17 @@ function joinMainGrapDataSourceToElements() {
         })
         .on("click.maingraph", function (event) {
             event.stopPropagation();
-            if (openRoomControlPlot(event, this.id)) return;
-            if (openWeatherMetricPlot(event, this.id)) return;
-            if (openCycleHeatPlot(event, this.id)) return;
-            if (openRoomMetricPlot(event, this.id)) return;
-            if (openBoilerMetricPlot(event, this.id)) return;
-            if (openMobilePlotTarget(event, this.id)) return;
+            const elementId = this.id === 'kisudvar' ? 'external_thermometer' : this.id;
+            if (openRoomControlPlot(event, elementId)) return;
+            if (openWeatherMetricPlot(event, elementId)) return;
+            if (openCycleHeatPlot(event, elementId)) return;
+            if (openRoomMetricPlot(event, elementId)) return;
+            if (openBoilerMetricPlot(event, elementId)) return;
+            if (openMobilePlotTarget(event, elementId)) return;
             mainGraphContentLocked = !mainGraphContentLocked;
             resetAllRoomsPlotToAllCycles(); // Workaround so that all_rooms plot is reset to default even if a mouseout was not activated on the cycle infoboxes
 
-            mainGraphSetting = elementToMainGraphSettingMapping[this.id];
+            mainGraphSetting = elementToMainGraphSettingMapping[elementId];
             drawMainGraph();
         });
     d3.select("body")

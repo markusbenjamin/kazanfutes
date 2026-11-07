@@ -1,4 +1,4 @@
-// SVG-only areas: no room registration, interaction, control vote or plot series.
+// SVG-only areas: no room registration, control vote or independent plot series.
 let ambientAreaTargets = [];
 
 function ambientAreaTemperature(target, system, now = new Date()) {
@@ -27,7 +27,8 @@ function initializeAmbientAreas(drawing) {
             const rooms = [...new Set(assigned.map(String))];
             if (source !== 'ws90' && !rooms.length) throw Error('Area has no temperature sources');
             const shapes = [node,...node.querySelectorAll('path,rect,circle,ellipse,polygon,polyline')];
-            [node,...node.querySelectorAll('*')].forEach(child => child.style.pointerEvents = 'none');
+            const interactive = node.id === 'kisudvar' && source === 'ws90';
+            [node,...node.querySelectorAll('*')].forEach(child => child.style.pointerEvents = interactive ? 'visiblePainted' : 'none');
             ambientAreaTargets.push({node,shapes,source,rooms});
             // Background areas must never obscure building objects or piping.
             if (node.parentNode === drawing && node !== foreground) drawing.insertBefore(node,foreground);
