@@ -1941,7 +1941,7 @@ let dayDataNotAvailable = false;
 
 let allMeasuredRooms = roomV2IncludedRooms();
 let allControlledRooms = roomV2ControlledRooms();
-let allEmphasisRooms = allMeasuredRooms;
+let allEmphasisRooms = allControlledRooms;
 
 const elementToMainGraphSettingMapping = {
     "gas_dial": { title: "gas_usage", types: ["gas_usage", "heating_state"], day: dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), conditionals: [] },
@@ -2031,6 +2031,10 @@ function resetAllRoomsPlotToAllCycles(showAllRoomHovers = false) {
     redrawRoomHovers(allEmphasisRooms, showAllRoomHovers);
 }
 
+function redrawInfoboxRoomHovers(rooms, emphasis) {
+    redrawRoomHovers(rooms.filter(room => roomsDataAndState[room]?.controlled), emphasis);
+}
+
 function setInfoboxHovers() {
     for (let cycleNum = 1; cycleNum < 5; cycleNum++) {
         d3.select("#cycle" + cycleNum + "_infobox")
@@ -2039,7 +2043,7 @@ function setInfoboxHovers() {
                     mainGraphSetting.hoveredCycle = cycleNum;
                     mainGraphSetting.roomNumsToPlot = cyclesDataAndState[cycleNum].rooms
                     drawMainGraph();
-                    redrawRoomHovers(mainGraphSetting.roomNumsToPlot, true);
+                    redrawInfoboxRoomHovers(mainGraphSetting.roomNumsToPlot, true);
                 }
             })
             .on("mouseout", function () {
@@ -2053,10 +2057,10 @@ function setInfoboxHovers() {
                 if (openRoomControlPlot(event, this.id)) return;
                 if (openMobilePlotTarget(event, this.id)) return;
                 mainGraphContentLocked = !mainGraphContentLocked;
-                redrawRoomHovers(mainGraphSetting.roomNumsToPlot, false);
+                redrawInfoboxRoomHovers(mainGraphSetting.roomNumsToPlot, false);
                 mainGraphSetting.hoveredCycle = cycleNum;
                 mainGraphSetting.roomNumsToPlot = cyclesDataAndState[cycleNum].rooms
-                redrawRoomHovers(mainGraphSetting.roomNumsToPlot, true);
+                redrawInfoboxRoomHovers(mainGraphSetting.roomNumsToPlot, true);
                 drawMainGraph();
             });
     }
