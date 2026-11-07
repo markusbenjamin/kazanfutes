@@ -118,11 +118,11 @@ function setupRoomV2Tooltip() {
     }
 }
 function drawRoomV2MeasuredPlot(data, setting) {
-    const rows = (data[`room_${setting.roomNumToPlot}_measurements`] || []).filter(row => Number.isFinite(row.temp));
+    const rows = prepareRoomTemperatureForDisplay(data[`room_${setting.roomNumToPlot}_measurements`] || []);
     const extent = rows.length ? d3.extent(rows, row=>row.temp) : [15,25];
     const result = drawPlot(rows, {parentId:'graph',background:{show:true},domain:{bottom:[0,24],
         left:[Math.floor(extent[0])-1,Math.ceil(extent[1])+1]},dataKeys:{bottom:'h_of_day_frac',left:'temp'},
-        axesLabel:{bottom:'óra',left:'°C'},smoothing:{bottom:0,left:100},
+        axesLabel:{bottom:'óra',left:'°C'},smoothing:{bottom:0,left:25},
         plotStyle:{joined:true,col:'rgba(255,0,0,1)',thickness:'2',startCap:false,endCap:true},
         curveTooltip:'mért hőmérséklet',plotLabel:roomV2Name(setting.roomNumToPlot)+' mért hőmérséklet',
         curveEndText:{show:rows.length>0,fontSize:6,text:rows.length?rows.at(-1).temp.toFixed(1)+' °C':'',
