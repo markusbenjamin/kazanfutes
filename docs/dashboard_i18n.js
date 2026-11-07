@@ -13,6 +13,9 @@ const DASHBOARD_ENGLISH = {
     'Senki nem kér fűtést.': 'No heat requested.', 'Ma még nem érkezett kérés.': 'No requests today.',
     'Fűtés kikapcsolva.': 'Heating disabled.', 'Nem kér fűtést.': 'No heat requested.',
     'Fűtést kér.': 'Heat requested.', 'Fűtést kér:': 'Heat requested:',
+    'kering': 'running', 'áll': 'idle',
+    'kör ki': 'off',
+    'kazán hiba!': 'boiler fault!',
     'Átlagos eltérés:': 'Mean deviation:', 'Eltérés:': 'Deviation:',
     'Idővezérelt be.': 'Timed on.', 'Idővezérelt ki.': 'Timed off.',
     'Beállított alatt.': 'Below setpoint.', 'Beállított felett.': 'Above setpoint.',
@@ -78,8 +81,10 @@ const DASHBOARD_ENGLISH = {
 };
 
 const DASHBOARD_ENGLISH_PREFIXES = {
+    'Szobák:': 'Rooms:', 'Fűtővíz:': 'Water:',
+    'Keringetett fűtővíz:': 'Circulating water:',
     'Átlagos eltérés: ': 'Mean deviation: ', 'Eltérés: ': 'Deviation: ',
-    'Keringetett körök: ': 'Circulating circuits: ', 'Utolsó kérés:': 'Last request:',
+    'Keringetett körök: ': 'Running circuits: ', 'Utolsó kérés:': 'Last request:',
     'Beállítások frissítve:': 'Settings updated:', 'Vezérlés lefutott:': 'Last control run:',
     'Külső hőmérséklet:': 'Outdoor temperature:', 'Gázfogyasztási ráta:': 'Gas usage rate:',
     'Összes elégett gáz:': 'Total gas burnt:', 'Összköltség kb.': 'Estimated cost:',

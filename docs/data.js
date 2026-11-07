@@ -185,12 +185,10 @@ function getDataFromFirebase() {
                 updateCycleColor(cycleNum, cycleState, cycleSupplyTemperature(systemJSON, cycleNum));
             }
             );
-            updateBoilerColor(states > 0 ? 1 : 0);
+            updateBoilerColor(states > 0 ? 1 : 0, boilerWaterTooCold(systemJSON));
 
-            const controlDiffs = roomV2UpdateRooms(systemJSON);
+            roomV2UpdateRooms(systemJSON);
             updateAmbientAreas(systemJSON);
-            const validDiffs = Object.entries(controlDiffs).filter(([id,value]) => id !== '10' && Number.isFinite(value)).map(([,value])=>value);
-            const averageControlDiff = validDiffs.length ? d3.mean(validDiffs) : 0;
 
             // Update general infobox
             let cyclesOn = [];
@@ -268,7 +266,8 @@ function getDataFromFirebase() {
                     lastControlRun: { timeSince: timeSinceLastControlRun, granularity: lastControlRunGranularity },
                     lastRequest: { target: requestTarget, origin: requestOrigin, timeSince: timeSinceLastRequest, granularity: lastRequestGranularity, hourStamp: lastRequestHourStamp },
                     scheduleLastUpdated: lastScheduleUpdate,
-                    averageControlDiff: averageControlDiff,
+                    waterTemp: infoboxCirculatedWaterTemperature(systemJSON),
+                    boilerError: boilerColdWaterError,
                     error: { error: controlError, timeSince: secondsSinceControlError, granularity: lastErrorGranularity, source: controlErrorSource }
                 }
             );
@@ -277,11 +276,9 @@ function getDataFromFirebase() {
             cycles.forEach(cycleNum => {
                 let roomsOnCycle = allControlledRooms.filter(id => roomsDataAndState[id].cycle === cycleNum);
                 let roomsThatWantHeating = [];
-                let totalControlDiffOnCycle = 0;
                 roomsOnCycle.forEach(roomNum => {
                     if (roomsDataAndState[roomNum].controlled) {
                         systemJSON.control.rooms[roomNum].vote == 1 ? roomsThatWantHeating.push({ type: roomsDataAndState[roomNum].type, name: roomsDataAndState[roomNum].name, reason: roomsDataAndState[roomNum].reason }) : "";
-                        totalControlDiffOnCycle = controlDiffs[roomNum] == "missing" ? totalControlDiffOnCycle : totalControlDiffOnCycle + controlDiffs[roomNum];
                     }
                 });
 
@@ -291,11 +288,12 @@ function getDataFromFirebase() {
                     cycleNum,
                     {
                         state: cyclesDataAndState[cycleNum].state,
-                        waterTemp: systemJSON.state.heatmeters?.[cycleNum]?.temp,
+                        enabled: systemJSON.switch.cycles[cycleNum] !== -1,
+                        waterTemp: cycleSupplyTemperature(systemJSON, cycleNum),
+                        roomTemp: infoboxRoomTemperature(systemJSON, roomsOnCycle),
                         set: systemJSON.control.cycles[cycleNum],
                         rooms: roomsOnCycle,
                         wantHeating: roomsThatWantHeating,
-                        totalControlDiff: totalControlDiffOnCycle
                     }
                 );
 
@@ -1280,8 +1278,16 @@ function updateCycleColor(cycle, state, supplyTemperature) {
 }
 
 let boilerState = null;
+let boilerColdWaterError = false;
 
-function updateBoilerColor(state) {
+function boilerWaterTooCold(system) {
+    const temperatures = [1,2,3,4].map(cycle=>cycleSupplyTemperature(system,cycle))
+        .filter(value=>Number.isFinite(value) && value>0 && value<100);
+    return temperatures.length>0 && Math.max(...temperatures)<25;
+}
+
+function updateBoilerColor(state, coldWaterError = false) {
+    boilerColdWaterError = coldWaterError;
     d3.select("#boiler_body")
         .style("stroke-opacity", "0")
         .style("fill", "white")
@@ -1289,7 +1295,7 @@ function updateBoilerColor(state) {
     d3.select("#flame_nest").style("fill", "rgba(0.2,0.2,0.2,1)");
     d3.select("#flame_nest").style("fill-opacity", "1");
 
-    d3.select("#boiler_body").style("stroke", state == 1 ? "rgba(255,0,0,1)" : "rgba(0,0,255,1)");
+    d3.select("#boiler_body").style("stroke", coldWaterError ? "black" : state == 1 ? "rgba(255,0,0,1)" : "rgba(0,0,255,1)");
     d3.select("#boiler_body").style("stroke-opacity", "1");
     boilerState = state;
 }
@@ -1632,6 +1638,21 @@ function addLineToBox(boxId, message, xPosFactor, yPosFactor, fontSize, centered
         .style("font-size", fontSize + "px");
 }
 
+function infoboxRoomTemperature(system, rooms, now = new Date()) {
+    const state = system.state || {};
+    const values = rooms.filter(room => livePlotFresh(state.sensor_last_updated?.[room],7200,now))
+        .map(room => state.measured_temps?.[room]).filter(Number.isFinite);
+    return values.length ? d3.mean(values) : null;
+}
+
+function infoboxCirculatedWaterTemperature(system) {
+    const cycles = [1,2,3,4];
+    const running = cycles.filter(cycle => system.state?.pump_states?.[cycle] === 1);
+    const values = (running.length ? running : cycles)
+        .map(cycle => cycleSupplyTemperature(system,cycle)).filter(Number.isFinite);
+    return values.length ? d3.mean(values) : null;
+}
+
 function updateGeneralInfobox(info) {
     d3.selectAll(".general_infobox-content").remove();
     let boxDims = getBBoxDrawingDimensions("general_infobox");
@@ -1647,6 +1668,12 @@ function updateGeneralInfobox(info) {
     let titleXPos = isMobile ? 0.015 : 0.025;
     let titleYPos = isMobile ? 0.1 : 0.065;
     let titleLine = addLineToBox("general_infobox", "Rendszerállapot", lineXOffset + titleXPos, lineYOffset + titleYPos, lineFontSize * 1.1, allCentered);
+    if (info.boilerError) {
+        addLineToBox("general_infobox", "kazán hiba!",
+            lineXOffset + titleXPos + (titleLine.node().getComputedTextLength() + lineFontSize*.6) / boxDims.w,
+            lineYOffset + titleYPos, lineFontSize * 1.1, false)
+            .style('fill','red').style('font-weight','normal').classed('boiler-error-warning',true);
+    }
     if (isMobile) {
         titleLine.style("font-weight", "bold");
     }
@@ -1658,17 +1685,8 @@ function updateGeneralInfobox(info) {
     if (info.heatingOn == 1) {
         // Generate lines from incoming info
         if (!isMobile) {
-            if (info.averageControlDiff != 0.0) {
-                let reportedControlDiff = roundTo(info.averageControlDiff, 0.1);
-                let averageControlDiffPre = reportedControlDiff == 0.0 ? " " : (reportedControlDiff < 0 ? "" : "+");
-                let averageControlDiffLine = "Átlagos eltérés: " + averageControlDiffPre + reportedControlDiff + " K.";
-                lines.push(
-                    {
-                        lineXOffset: 0,
-                        text: averageControlDiffLine
-                    }
-                );
-            }
+            lines.push({lineXOffset:0, text:"Keringetett fűtővíz: "
+                + (Number.isFinite(info.waterTemp) ? Math.round(info.waterTemp) + " °C" : "—")});
             let cyclesOnLine = info.cyclesOn.length > 0 ? "Keringetett körök: " + info.cyclesOn.join(", ") + "." : "Senki nem kér fűtést.";
             lines.push(
                 {
@@ -1844,7 +1862,7 @@ function updateGeneralInfobox(info) {
                     }
                 );
 
-                let totalCost = currentGasTotal * 350;
+                let totalCost = currentGasTotal * 580;
                 lines.push(
                     {
                         lineXOffset: 0,
@@ -1898,34 +1916,23 @@ function updateCycleInfobox(cycle, info) {
     else {
         titleLine.style("text-decoration", "underline");
     }
-    const waterTempText = Number.isFinite(info.waterTemp) ? Math.round(info.waterTemp) + "°C" : "?°C";
-    const statusLine = addLineToBox("cycle" + cycle + "_infobox", ["ki", "be"][info.state] + ", " + waterTempText,
-        1 - xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize * 1.1, false)
-        .style("text-anchor", "end");
-    // Keep the temperature beside the status without overlapping the title.
-    const headerWidth = titleLine.node().getComputedTextLength() + statusLine.node().getComputedTextLength();
-    const availableHeaderWidth = boxDims.w * (1 - 2 * xOffset) - (isMobile ? 8 : 2);
-    if (headerWidth > availableHeaderWidth) {
-        const headerFontSize = lineFontSize * 1.1 * availableHeaderWidth / headerWidth;
-        titleLine.style("font-size", headerFontSize + "px");
-        statusLine.style("font-size", headerFontSize + "px");
-    }
+    const cycleStatus = info.enabled === false ? "kör ki" : info.state === 1 ? "kering" : "áll";
+    addLineToBox("cycle" + cycle + "_infobox", "\u00a0" + cycleStatus,
+        xOffset + titleLine.node().getComputedTextLength() / boxDims.w,
+        yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize * 1.1, false);
     lineNum++;
 
     // Draw cycle details
     lineNumShift += 0.2;
     if (!isMobile) {
-        addLineToBox("cycle" + cycle + "_infobox", cycle < 4 ? "Átlagos eltérés:" : "Eltérés:", xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
+        const roomText = Number.isFinite(info.roomTemp) ? Number(info.roomTemp.toFixed(1)) + " °C" : "—";
+        const waterText = Number.isFinite(info.waterTemp) ? Math.round(info.waterTemp) + " °C" : "—";
+        addLineToBox("cycle" + cycle + "_infobox", "Szobák: " + roomText,
+            xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
         lineNum++;
         lineNumShift += 0.05;
-        if (isValidNumber(info.totalControlDiff)) {
-            let reportedControlDiff = roundTo(info.totalControlDiff / info.rooms.length, 0.1)
-            let reportedeControlDiffPre = reportedControlDiff == 0.0 ? "" : (reportedControlDiff < 0 ? "" : "+");
-            addLineToBox("cycle" + cycle + "_infobox", reportedeControlDiffPre + reportedControlDiff + " K", xOffset + 0.2, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered)
-        }
-        else {
-            addLineToBox("cycle" + cycle + "_infobox", "?", xOffset + 0.2, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered)
-        }
+        addLineToBox("cycle" + cycle + "_infobox", "Fűtővíz: " + waterText,
+            xOffset, yOffset + lineHeight * (lineNum + lineNumShift), lineFontSize, allCentered);
     }
 
     lineNumShift = isMobile ? 0.25 : 1.5;
