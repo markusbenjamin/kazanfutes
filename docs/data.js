@@ -2109,13 +2109,14 @@ function redrawRoomHovers(rooms, emphasis) {
 
             // Style the cloned element
             clonedElement
+                .style("fill", "none")
                 .style("fill-opacity", "0")
                 .style("stroke", emphasis ? roomColor : "black")
                 .style("stroke-width", emphasis ? "2.5" : "0.25")
                 .attr("class", "room-emphasis clickthrough")
                 .raise();
+            clonedElement.selectAll('*').style('fill', 'none').style('fill-opacity', '0');
             if (emphasis) {
-                roomElement.raise();
                 parentParentElement.append("text")
                     .attr("x", roomBox.x + roomBox.w / 2 + roomBox.w * roomTextOffsets[roomID].x) // Center horizontally
                     .attr("y", roomBox.y + roomBox.h / 2 + roomBox.h * roomTextOffsets[roomID].y) // Center vertically
