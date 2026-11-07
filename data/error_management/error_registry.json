@@ -8116,5 +8116,49 @@
         "reported_timestamp": "2026-11-05-22-41-19",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while trying to generate schedule: '7'.",
+        "severity": 3,
+        "origin": "schedule_and_config_updater.py/presence_enforcer:497",
+        "origin_timestamp": "2026-11-07-01-56-09",
+        "registration_timestamp": "2026-11-07-01-56-09",
+        "reported": true,
+        "reported_timestamp": "2026-11-07-02-00-56",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to set light state pult: light pult unreachable, cannot set state.",
+        "severity": 2,
+        "origin": "light_state_manager.py:43 --> project.py/set_light_state:1828",
+        "origin_timestamp": "2026-11-07-01-56-11",
+        "registration_timestamp": "2026-11-07-01-56-11",
+        "reported": true,
+        "reported_timestamp": "2026-11-07-02-00-56",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to sync data and config with repo: Git command failed with exit code -1: git -C /media/pi/program_stick/kazanfutes add -A -- ':(literal)data' ':(literal)config' ':(literal)system/state.json' ':(literal)system/GPIO_state.json' ':(literal)system/PID_state.json' ':(literal)system/control.json'\nGit command timed out after 300 seconds.: Git command failed with exit code -1: git -C /media/pi/program_stick/kazanfutes add -A -- ':(literal)data' ':(literal)config' ':(literal)system/state.json' ':(literal)system/GPIO_state.json' ':(literal)system/PID_state.json' ':(literal)system/control.json'\nGit command timed out after 300 seconds. (GitCommandError).",
+        "severity": 2,
+        "origin": "data_and_config_uploader.py:39 --> project.py/sync_paths_with_repo:783",
+        "origin_timestamp": "2026-11-07-02-15-15",
+        "registration_timestamp": "2026-11-07-02-15-15",
+        "reported": true,
+        "reported_timestamp": "2026-11-07-02-15-46",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Module error while trying to sync data and config with repo: Git sync blocked to protect local changes: changes outside the selected sync paths were not approved:\n   M 'docs/data.js': changes outside the selected sync paths were not approved:\n   M 'docs/data.js' (GitSyncBlocked).",
+        "severity": 2,
+        "origin": "data_and_config_uploader.py:39 --> project.py/sync_paths_with_repo:779",
+        "origin_timestamp": "2026-11-07-02-20-10",
+        "registration_timestamp": "2026-11-07-02-20-10",
+        "reported": true,
+        "reported_timestamp": "2026-11-07-02-20-49",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
