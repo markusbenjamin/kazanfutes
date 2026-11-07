@@ -11,6 +11,7 @@ SYNC_PATHS = [
     'system/GPIO_state.json',
     'system/PID_state.json',
     'system/control.json',
+    'system/room_registry.json',
 ]
 COMMIT_MESSAGE = 'Automatic data and config push.'
 
