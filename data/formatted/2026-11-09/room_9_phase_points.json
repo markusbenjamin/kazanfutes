@@ -1,0 +1,100 @@
+{
+    "schema_version": 1,
+    "day": "2026-11-09",
+    "offset_k": 20.0,
+    "limits": {
+        "room_sensor_age_s": 3600,
+        "probe_age_s": 180,
+        "water_age_s": 180,
+        "model_gap_s": 180
+    },
+    "room": "9",
+    "points": [
+        {
+            "timestamp": "2026-11-09-00-00-41",
+            "error_k": -6.96,
+            "intensity_k": 7.896,
+            "source": "estimated",
+            "reason": null,
+            "model_quality": "shared",
+            "room_temp_c": 20.96,
+            "set_temp_c": 14.0,
+            "radiator_temp_c": 48.856,
+            "room_sensor_age_s": 553.0,
+            "pump_on": 1,
+            "valve_fraction": 1.0
+        },
+        {
+            "timestamp": "2026-11-09-00-01-19",
+            "error_k": -6.96,
+            "intensity_k": 7.9317,
+            "source": "estimated",
+            "reason": null,
+            "model_quality": "shared",
+            "room_temp_c": 20.96,
+            "set_temp_c": 14.0,
+            "radiator_temp_c": 48.8917,
+            "room_sensor_age_s": 591.0,
+            "pump_on": 1,
+            "valve_fraction": 1.0
+        },
+        {
+            "timestamp": "2026-11-09-00-02-22",
+            "error_k": -7.09,
+            "intensity_k": 7.9095,
+            "source": "estimated",
+            "reason": null,
+            "model_quality": "shared",
+            "room_temp_c": 21.09,
+            "set_temp_c": 14.0,
+            "radiator_temp_c": 48.9995,
+            "room_sensor_age_s": 54.0,
+            "pump_on": 1,
+            "valve_fraction": 1.0
+        },
+        {
+            "timestamp": "2026-11-09-00-03-19",
+            "error_k": -7.09,
+            "intensity_k": 8.0023,
+            "source": "estimated",
+            "reason": null,
+            "model_quality": "shared",
+            "room_temp_c": 21.09,
+            "set_temp_c": 14.0,
+            "radiator_temp_c": 49.0923,
+            "room_sensor_age_s": 111.0,
+            "pump_on": 1,
+            "valve_fraction": 1.0
+        },
+        {
+            "timestamp": "2026-11-09-00-04-20",
+            "error_k": -7.09,
+            "intensity_k": 8.1712,
+            "source": "estimated",
+            "reason": null,
+            "model_quality": "shared",
+            "room_temp_c": 21.09,
+            "set_temp_c": 14.0,
+            "radiator_temp_c": 49.2612,
+            "room_sensor_age_s": 172.0,
+            "pump_on": 1,
+            "valve_fraction": 1.0
+        }
+    ],
+    "coverage": {
+        "measured": 0,
+        "estimated": 5,
+        "unavailable": 0
+    },
+    "model": {
+        "heat_tau_s": 1200.0,
+        "cool_tau_s": 3600.0,
+        "gain": 1.0,
+        "valve_exponent": 0.35,
+        "quality": "shared",
+        "fitted_parts": [],
+        "heating_samples": 0,
+        "cooling_samples": 0
+    },
+    "probe_sources": []
+}
