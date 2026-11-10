@@ -6004,5 +6004,16 @@
         "reported_timestamp": "2026-11-10-18-51-11",
         "checked": true,
         "checked_timestamp": "2026-11-10-18-51-11"
+    },
+    {
+        "message": "Firebase status upload failed; local control completed: HTTPSConnectionPool(host='kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app', port=443): Max retries exceeded with url: /system.json (Caused by NewConnectionError(\"HTTPSConnection(host='kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable\")).",
+        "severity": 1,
+        "origin": "heating_control.py/publish:194 --> api.py/patch:145 --> api.py/request:59 --> sessions.py/request:589 --> sessions.py/send:703 --> adapters.py/send:700",
+        "origin_timestamp": "2026-11-10-20-45-42",
+        "registration_timestamp": "2026-11-10-20-45-43",
+        "reported": true,
+        "reported_timestamp": "2026-11-10-20-45-58",
+        "checked": true,
+        "checked_timestamp": "2026-11-10-20-45-58"
     }
 ]
