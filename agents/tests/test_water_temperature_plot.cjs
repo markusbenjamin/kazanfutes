@@ -29,6 +29,7 @@ const context = require('./dashboard_test_context.cjs')({
         const values = rows.map(accessor); return [Math.min(...values), Math.max(...values)];
     }, range: (start, end, step) => Array.from({length: Math.ceil((end-start)/step)}, (_, i) => start+i*step) },
 });
+vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../../docs/boiler_demand_bars.js'), 'utf8'), context);
 vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../../docs/cycle_heat_plots.js'), 'utf8'), context);
 vm.runInContext(helper + mapping, context);
 const evaluate = code => JSON.parse(JSON.stringify(vm.runInContext(code, context)));
@@ -192,11 +193,14 @@ for (let cycle=1;cycle<=4;cycle++) {
     assert.equal(bars.length,2,'nearby observations share a ten-minute bin; empty intervening bins stay empty');
     assert.ok(Math.abs(bars[0].attrs['data-value']-8*5/6)<1e-8,'time-weighted average excludes the null interval');
     assert.equal(bars[1].attrs['data-value'],16.672);
-    assert.ok(bars.every(node=>node.attrs.width>0&&node.attrs.fill==='rgb(230, 130, 0)'&&node.attrs.stroke==='none'));
+    const cycleColor=evaluate(`BOILER_DEMAND_CYCLES.find(part=>part.cycle===${cycle}).color`);
+    assert.ok(bars.every(node=>node.attrs.width>0&&node.attrs.fill===cycleColor&&node.attrs.stroke==='none'));
+    assert.equal(calls[0].options.plotLabelTabs.choices.find(choice=>choice.key==='power').color,cycleColor);
     assert.ok(bars.every(node=>Math.abs(node.attrs.width-1.5)<1e-8),'90% of each ten-minute bin');
     assert.equal(niceCalls,1,'bars use the same rounded domain as the axis');
     assert.ok(barTooltips.includes('02:00–02:10\n16.67 kW'));
     assert.equal(barNodes.find(node=>node.attrs.class==='logged-power-end-label').value,'16.67 kW');
+    assert.equal(barNodes.find(node=>node.attrs.class==='logged-power-end-label').styles.fill,cycleColor);
 }
 assert.equal(JSON.stringify(powerData),originalPowerData,'no sorting or resampling mutates cached data');
 context.isolatedPower=[{h_of_day_frac:-1,power_kw:3},{h_of_day_frac:0,power_kw:5},
