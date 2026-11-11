@@ -8226,5 +8226,27 @@
         "reported_timestamp": "2026-11-11-06-51-11",
         "checked": false,
         "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while voting: '<' not supported between instances of 'NoneType' and 'float'.",
+        "severity": 3,
+        "origin": "heating_control.py/compare_and_command:667",
+        "origin_timestamp": "2026-11-11-14-23-20",
+        "registration_timestamp": "2026-11-11-14-23-20",
+        "reported": true,
+        "reported_timestamp": "2026-11-11-14-25-57",
+        "checked": false,
+        "checked_timestamp": null
+    },
+    {
+        "message": "Unexpected error while issuing commands: cannot access local variable 'pump_votes' where it is not associated with a value.",
+        "severity": 3,
+        "origin": "heating_control.py/compare_and_command:798",
+        "origin_timestamp": "2026-11-11-14-23-20",
+        "registration_timestamp": "2026-11-11-14-23-20",
+        "reported": true,
+        "reported_timestamp": "2026-11-11-14-25-59",
+        "checked": false,
+        "checked_timestamp": null
     }
 ]
