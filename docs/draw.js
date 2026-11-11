@@ -109,7 +109,8 @@ function drawExternalThermometer() {
 
 function drawBoiler() {
     let maxGasUsage = 10.5;
-    let mappedGasUsage = boilerColdWaterError ? 0 : constrain(currentGasUsageRate, 0, maxGasUsage - 0.5) / (maxGasUsage - 0.5);
+    const visualGasUsage = typeof replayVisualGasUsageRate === 'function' ? replayVisualGasUsageRate() : currentGasUsageRate;
+    let mappedGasUsage = boilerColdWaterError ? 0 : constrain(visualGasUsage, 0, maxGasUsage - 0.5) / (maxGasUsage - 0.5);
     if (boilerState != null) {
         const boxDims = getBBoxP5jsDimensions("flame_nest");
         let p = { x: boxDims.cx, y: boxDims.cy }
@@ -148,7 +149,7 @@ function drawBoiler() {
             }
         }
 
-        if (isValidNumber(currentGasUsageRate)) {
+        if (isValidNumber(visualGasUsage)) {
             //console.log(currentGasUsageRate);
             const dialDims = getBBoxP5jsDimensions("gas_rate_gauge");
             //console.log(dialDims)

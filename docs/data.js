@@ -1703,8 +1703,8 @@ function updateGeneralInfobox(info) {
         // Generate lines from incoming info
         if (!isMobile) {
             lines.push({lineXOffset:0, text:(info.cyclesOn.length ? "Keringetett fűtővíz: " : "Készenléti fűtővíz: ")
-                + (Number.isFinite(info.waterTemp) ? Math.round(info.waterTemp) + " °C" : "—")});
-            let cyclesOnLine = info.cyclesOn.length === 4 ? "Keringetett körök: mind"
+                + (Number.isFinite(info.waterTemp) ? Math.round(info.waterTemp) + " °C." : "—")});
+            let cyclesOnLine = info.cyclesOn.length === 4 ? "Keringetett körök: mind."
                 : info.cyclesOn.length > 0 ? "Keringetett körök: " + info.cyclesOn.join(", ") + "." : "Senki nem kér fűtést.";
             lines.push(
                 {
