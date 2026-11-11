@@ -46,7 +46,7 @@ try:
                 if h not in occupancy_patterns[room][day_of_week]:
                     occupancy_patterns[room][day_of_week][h] = []
                 occupancy_patterns[room][day_of_week][h].append(
-                    known_presence_fraction(occ_for_hour[room])
+                    known_presence_fraction(occ_for_hour[room].values())
                 )
 
     for room, days in occupancy_patterns.items():
