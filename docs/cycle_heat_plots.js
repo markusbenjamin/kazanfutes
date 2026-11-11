@@ -7,6 +7,14 @@ const CYCLE_HEAT_METRICS = {
 };
 const cycleHeatSelections = {};
 
+function cycleHeatMetric(cycle, name) {
+    const metric = {...CYCLE_HEAT_METRICS[name]};
+    if (name === 'power') {
+        metric.color = BOILER_DEMAND_CYCLES.find(part => part.cycle === Number(cycle))?.color || metric.color;
+    }
+    return metric;
+}
+
 function cyclePlotName(cycle) {
     return cycle + (Number(cycle) === 3 ? '-mas' : '-es') + ' kör';
 }
@@ -208,7 +216,7 @@ function drawLoggedPowerBars(area, readings, metric, range, end = 24) {
 
 function drawCycleHeatPlot(data, setting) {
     const metricName = CYCLE_HEAT_METRICS[setting.metric] ? setting.metric : 'power';
-    const metric = { ...CYCLE_HEAT_METRICS[metricName] };
+    const metric = cycleHeatMetric(setting.cycleNum, metricName);
     if (metricName === 'pump') metric.key = 'pump_' + setting.cycleNum + '_power';
     const type = metricName === 'pump' ? 'pumps_power' : 'cycle_' + setting.cycleNum + (metricName === 'temperature' ? '_water_temps' : '_heat_delivery');
     const curves = [{key: metric.key, color: metric.color, tooltip: metricName === 'temperature' ? 'előremenő' : ''}];
@@ -250,7 +258,7 @@ function drawCycleHeatPlot(data, setting) {
     const area = drawPlot([], { ...common, rects: { when: 'before', list: periods },
         plotLabelTabs: setting.detailed ? { prefix: cyclePlotName(setting.cycleNum) + ' — ', selected: metricName,
             day: setting.day, onDayChange: navigateSelectorPlotDay,
-            choices: Object.entries(CYCLE_HEAT_METRICS).map(([key, value]) => ({key, label: value.label, color: value.color})),
+            choices: Object.entries(CYCLE_HEAT_METRICS).map(([key, value]) => ({key, label: value.label, color: cycleHeatMetric(setting.cycleNum,key).color})),
             onSelect: selectCycleHeatPlot } : false
     });
     if (metricName === 'power') {
