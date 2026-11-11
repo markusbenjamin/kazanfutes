@@ -1,6 +1,7 @@
 const fs = require('node:fs'), vm = require('node:vm'), assert = require('node:assert/strict');
 const context = vm.createContext({console, Date, Number, Math, Map, Object, structuredClone});
 vm.runInContext(fs.readFileSync('docs/live_plot_data.js','utf8'), context);
+vm.runInContext(fs.readFileSync('docs/replay_temperatures.js','utf8'), context);
 vm.runInContext(fs.readFileSync('docs/dashboard_replay.js','utf8'), context);
 const run = code => vm.runInContext(code, context);
 run(`

@@ -34,6 +34,8 @@ for (const search of ['?lang=en','?zoom=0.8&lang=en&demo=1']) {
     assert.equal(t('átlagos szerdai jelenlét (%)'),'average Wednesday occupancy (%)');
     assert.equal(t('2026-11-02 (hétfő)'),'2026-11-02 (Monday)');
     assert.equal(t('Vezérlés lefutott: 32  másodperce.'),'Last control run: 32 seconds ago.');
+    assert.equal(t('Keringetett körök: mind.'),'Running circuits: all.');
+    assert.equal(t('Keringetett fűtővíz: 52 °C.'),'Circulating water: 52 °C.');
     assert.equal(t('szoba jó de hűl, radiátor meleg és melegszik'),'room comfortable but cooling, radiator hot and warming');
     assert.equal(t('Mérce<br>Beállított felett.'),'Mérce<br>Above setpoint.');
     assert.equal(t('2026-11-02\nleadott: 80,0 kWh\ngázenergia: 94,4 kWh\n84,7%'),

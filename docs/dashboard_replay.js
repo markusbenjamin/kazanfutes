@@ -27,6 +27,10 @@ class DashboardReplayDay {
         this.plots = plots;
         this.streams = Object.fromEntries(Object.entries(plots).filter(([,rows]) => Array.isArray(rows))
             .map(([type, rows]) => [type, replayIndex([...(seeds[type] || []), ...rows])]));
+        const end = history.control.filter(row => row.timestamp.startsWith(day + '-'))
+            .map(row => livePlotDate(row.timestamp)?.getTime()).filter(Number.isFinite);
+        this.endTime = end.length ? Math.max(...end) : livePlotDate(day + '-00-00-00').getTime();
+        this.temperatures = new ReplayTemperatureTimeline(this.control,this.streams);
         // Explicit day-level inference agreed for replay, independent of cursor time.
         this.enabled = [1,2,3,4].filter(cycle => history.control.some(row => row.state.pump_states?.[cycle] === 1));
     }
@@ -87,7 +91,8 @@ class DashboardReplayDay {
 }
 
 let replayDay = null, replayLatestLive = null, replayPlaying = false, replaySpeed = 5;
-let replayLoadNumber = 0, replayFrame = 0, replayLastFrame = 0, replayLastPaint = 0, replayLastPlot = 0;
+let replayLoadNumber = 0, replayFrame = 0, replayLastFrame = 0, replayLastPaint = 0, replayLastPlot = 0, replayLastColour = 0;
+let replayLastSystem = null;
 let replayWorker = null, replaySavedPlot = null, replayResumeState = null, replayLoadingDay = null;
 const replayDayCache = new Map();
 
@@ -135,9 +140,17 @@ function replayPaint(redrawPlot = true) {
         return [type, row?.timestamp.startsWith(day + '-') ? [row] : [{energy_kwh: 0}]];
     }));
     writeCycleEnergyToMarkers({[day]: energy}, true);
-    renderDashboardState(replayDay.snapshot(date), {replay: true});
+    const payload = replayDay.snapshot(date);
+    replayLastSystem = payload.system;
+    renderDashboardState(payload, {replay: true});
+    replayPaintColours();
     if (redrawPlot) { mainPlotLivePayload = null; drawMainGraph(); }
     updateDashboardClock(); updateReplayPane();
+}
+
+function replayPaintColours() {
+    if (dashboardReplayActive() && replayDay?.temperatures && replayLastSystem)
+        paintReplayTemperatureColours(replayDay.temperatures,replayLastSystem,dashboardNow());
 }
 
 async function loadReplayDay(day) {
@@ -201,24 +214,27 @@ async function loadReplayDay(day) {
 function pauseReplay() {
     replayPlaying = false;
     cancelAnimationFrame(replayFrame);
+    replayPaintColours();
     updateReplayPane();
 }
 
 function playReplay() {
     if (replayPlaying || !replayDay || !dashboardReplayActive()) return;
-    replayPlaying = true; replayLastFrame = performance.now(); replayLastPaint = 0; replayLastPlot = 0;
+    replayPlaying = true; replayLastFrame = performance.now(); replayLastPaint = 0; replayLastPlot = 0; replayLastColour = 0;
     const tick = time => {
         if (!replayPlaying) return;
         // Clamp wall-clock pauses when the browser tab is backgrounded.
         const elapsed = Math.min(time - replayLastFrame, 1000);
         replayLastFrame = time;
-        const end = dateFromTimestamp(replayDay.day + '-23-59-59').getTime();
-        const available = Math.min(end, Date.now());
+        const available = replayDay.endTime;
         dashboardReplayTime = Math.min(available, dashboardReplayTime + elapsed * replaySpeed * 60);
         if (time - replayLastPaint >= 250) {
             const plotDue = time - replayLastPlot >= 1000 || !replayLastPlot;
             replayPaint(plotDue); replayLastPaint = time;
+            replayLastColour = time;
             if (plotDue) replayLastPlot = time;
+        } else if (time - replayLastColour >= 40) {
+            replayPaintColours(); replayLastColour = time;
         }
         updateDashboardClock(); updateReplayPane();
         if (dashboardReplayTime >= available) { replayPaint(); pauseReplay(); return; }
@@ -230,8 +246,9 @@ function playReplay() {
 function seekReplay(seconds) {
     if (!replayDay) return;
     const start = dateFromTimestamp(replayDay.day + '-00-00-00').getTime();
-    dashboardReplayTime = Math.min(Date.now(), start + Math.max(0, Math.min(86399, seconds)) * 1000);
+    dashboardReplayTime = Math.min(replayDay.endTime, start + Math.max(0, Math.min(86399, seconds)) * 1000);
     replayPaint();
+    if (dashboardReplayTime >= replayDay.endTime) pauseReplay();
 }
 
 function stopReplay() {
@@ -251,7 +268,7 @@ function leaveReplay() {
     }
     ++replayLoadNumber; replayWorker?.terminate(); replayWorker = null;
     replayLoadingDay = null;
-    pauseReplay(); dashboardReplayTime = null; replayDay = null;
+    pauseReplay(); dashboardReplayTime = null; replayDay = null; replayLastSystem = null;
     document.getElementById('replay-controls').disabled = true;
     document.getElementById('replay-status').textContent = '';
     replaySyncPlotDay(dayStamp(new Date()));
@@ -267,7 +284,7 @@ function updateReplayPane() {
     const button = document.getElementById('replay-play');
     if (!button) return;
     const ready = dashboardReplayActive() && !!replayDay && !document.getElementById('replay-controls').disabled;
-    button.disabled = !ready || replayPlaying;
+    button.disabled = !ready || replayPlaying || dashboardReplayTime >= replayDay.endTime;
     document.getElementById('replay-pause').disabled = !ready || !replayPlaying;
     document.getElementById('replay-stop').disabled = !ready;
     document.getElementById('replay-restart').disabled = !ready;
@@ -278,6 +295,8 @@ function updateReplayPane() {
     document.getElementById('replay-compact-date').textContent = dashboardPageOptions().language === 'en'
         ? date : date.replaceAll('-', '.') + '.';
     document.getElementById('replay-time').textContent = hourStamp(now, true);
+    document.getElementById('replay-timeline').max = ready
+        ? getFractionalHourOfDay(new Date(replayDay.endTime)) * 3600 : 86399;
     document.getElementById('replay-timeline').value = getFractionalHourOfDay(now) * 3600;
     updateReplayWeekday();
 }

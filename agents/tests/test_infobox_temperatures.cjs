@@ -44,4 +44,17 @@ for (const [enabled,state,status] of [[true,0,'áll'],[false,0,'kör ki'],[false
     run('updateCycleInfobox(1,statusInfo)');
     assert.equal(lines[1].trim(),status,'Heating-switch disable takes precedence over pump state');
 }
-console.log('Infobox temperatures: running-only mean, enabled-circuit standby mean, missing/stale sensors, room averaging and separate temperature rows passed.');
+context.d3.select=()=>({style(){return this;}});
+Object.assign(context,{getFractionalHourOfDay:()=>12,hourStamp:()=>'12:00',externalTemp:10,
+    currentGasUsageRate:null,currentGasTotal:null,isValidNumber:Number.isFinite});
+vm.runInContext(source.slice(source.indexOf('function updateGeneralInfobox('),source.indexOf('function updateCycleInfobox(')),context);
+run(`const info={heatingOn:1,cyclesOn:[1,2,3,4],waterTemp:52,lastRequest:{granularity:'órája',timeSince:99},
+ scheduleLastUpdated:new Date(),lastControlRun:{timeSince:0,granularity:'másodperce'},error:{error:false}};`);
+lines.length=0;
+run('updateGeneralInfobox(info)');
+assert.ok(lines.includes('Keringetett fűtővíz: 52 °C.'));
+assert.ok(lines.includes('Keringetett körök: mind.'));
+lines.length=0;
+run('info.cyclesOn=[];updateGeneralInfobox(info)');
+assert.ok(lines.includes('Készenléti fűtővíz: 52 °C.'));
+console.log('Infobox temperatures: running/standby selection, sensor freshness, room averaging, cycle rows and sentence punctuation passed.');
