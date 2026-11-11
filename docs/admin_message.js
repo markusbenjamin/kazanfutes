@@ -78,7 +78,7 @@ function dismissAdminMessage() {
     hideAdminMessage();
 }
 
-function updateAdminMessage(value) {
+function updateAdminMessage(value, conditionMet = false) {
     // Returning from the request form should go straight to the dashboard.
     if (dashboardPageOptions().demo || new URLSearchParams(window.location.search).get("ref_source") === "form") {
         hideAdminMessage();
@@ -88,6 +88,11 @@ function updateAdminMessage(value) {
     if (!message) {
         currentAdminMessage = "";
         dismissedAdminMessage = "";
+        hideAdminMessage();
+        return;
+    }
+    if (conditionMet !== true) {
+        // A disappearing condition hides the dialog without acknowledging it.
         hideAdminMessage();
         return;
     }
