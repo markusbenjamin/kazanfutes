@@ -11,6 +11,7 @@ const DASHBOARD_ENGLISH = {
     'Adminisztrátori üzenet': 'Admin message', 'Üzenet bezárása': 'Close message',
     'Kérdésem van': 'I have a question', 'Rendszerállapot': 'System status',
     'Senki nem kér fűtést.': 'No heat requested.', 'Ma még nem érkezett kérés.': 'No requests today.',
+    'Keringetett körök: mind': 'Running circuits: all',
     'Fűtés kikapcsolva.': 'Heating disabled.', 'Nem kér fűtést.': 'No heat requested.',
     'Fűtést kér.': 'Heat requested.', 'Fűtést kér:': 'Heat requested:',
     'kering': 'running', 'áll': 'idle',
