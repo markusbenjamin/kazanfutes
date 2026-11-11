@@ -223,7 +223,8 @@ class PIDTests(unittest.TestCase):
 
 class ControlIntegrationTests(unittest.TestCase):
     def run_control(self, failed_trv=None, disabled_room=None, state_missing=False,
-                    sample_offset=0, temp=20, valve=10, previous_vote=0):
+                    sample_offset=0, temp=20, valve=10, previous_vote=0,
+                    room_updates=None, state_updates=None, switch_updates=None):
         env = load_calculations()
         logs, errors, writes, saved = [], [], [], {}
         class Clock(datetime):
@@ -244,12 +245,15 @@ class ControlIntegrationTests(unittest.TestCase):
             return th != failed_trv
         rooms = {r: {'name': r, 'thermostats': str(70 + int(r)), 'cycle': '1'}
                  for r in ('1', '2')}
+        for room, values in (room_updates or {}).items():
+            rooms[room].update(values)
         config = dict(GAINS, hysteresis_buffer='0.25', demand_hysteresis_open_max='40',
                       demand_hysteresis_open_min='2', demand_hysteresis_close='2',
-                      error_max='5', error_min='0.5', temp_data_expiry='60')
+                      error_max='5', error_min='0.5', temp_data_expiry='60',
+                      room_1_threshold_temp='14', room_2_threshold_temp='14')
         env.update(datetime=Clock, heating_config=config, report=lambda *a, **kw: None,
                    get_rooms_info=lambda: rooms, load_json_to_dict=load_state,
-                   room_to_cycle=lambda r: '1', timestamp=lambda t=None: (t or NOW).strftime(FMT),
+                   room_to_cycle=lambda r: rooms[r]['cycle'], timestamp=lambda t=None: (t or NOW).strftime(FMT),
                    timestamp_to_datetime=lambda t: datetime.strptime(t, FMT),
                    log=logs.append, set_thermostat_state_by_id=write,
                    export_dict_as_json=lambda data, path: saved.update({path: copy.deepcopy(data)}),
@@ -269,8 +273,71 @@ class ControlIntegrationTests(unittest.TestCase):
                  'occupancy': {r: True for r in rooms}}
         switch = {'cycles': {str(i): 0 for i in range(1, 5)},
                   'rooms': {r: -1 if r == disabled_room else 0 for r in rooms}}
+        for field, values in (state_updates or {}).items():
+            state[field].update(values)
+        for field, values in (switch_updates or {}).items():
+            switch[field].update(values)
         env['compare_and_command'](switch, state)
         return logs, errors, writes, saved
+
+    def test_missing_temperature_restores_timed_fallback_and_other_cycle_commands(self):
+        for thermostats in (True, '71'):
+            for target, vote, reason in ((14, 0, 't_off'), (20, 1, 't_on'),
+                                         (-1, 0, 'c_s_m_off'), (0, 0, 't_off'), (1, 1, 't_on')):
+                with self.subTest(thermostats=thermostats, target=target):
+                    logs, errors, writes, saved = self.run_control(
+                        room_updates={'1': {'thermostats': thermostats, 'cycle': '4'}},
+                        state_updates={'measured_temps': {'1': None},
+                                       'sensor_last_updated': {'1': None},
+                                       'set_temps': {'1': target}, 'set_temps_interp': {'1': target}})
+                    control = saved['system/control.json']
+                    self.assertEqual(control['rooms']['1'], {'vote': vote, 'reason': reason})
+                    self.assertEqual(control['cycles']['4'], vote)
+                    self.assertEqual(control['cycles']['1'], 1)
+                    self.assertIn({'command_issuance': {'device': 'pump_1', 'state': 1}}, logs)
+                    if vote:
+                        self.assertIn({'command_issuance': {'device': 'pump_4', 'state': 1}}, logs)
+                    self.assertEqual(writes, ['72'])
+                    self.assertEqual(set(saved['system/PID_state.json']), {'72'})
+                    self.assertIn({'success_voting': True}, logs)
+                    self.assertIn({'success_issuing_command': True}, logs)
+                    self.assertFalse(errors)
+
+    def test_missing_either_temperature_or_timestamp_uses_fallback(self):
+        for temp, stamp in ((None, NOW.strftime(FMT)), (20, None)):
+            with self.subTest(temp=temp, stamp=stamp):
+                logs, errors, writes, saved = self.run_control(state_updates={
+                    'measured_temps': {'1': temp}, 'sensor_last_updated': {'1': stamp}})
+                self.assertEqual(saved['system/control.json']['rooms']['1'],
+                                 {'vote': 1, 'reason': 't_on'})
+                self.assertEqual(writes, ['72'])
+                self.assertFalse(errors)
+
+    def test_expired_temperature_keeps_existing_fallback(self):
+        logs, errors, writes, saved = self.run_control(sample_offset=-7200)
+        self.assertEqual(saved['system/control.json']['rooms']['1'], {'vote': 1, 'reason': 't_on'})
+        self.assertEqual(writes, [])
+        self.assertFalse(errors)
+
+    def test_missing_temperature_fallback_uses_interpolated_target(self):
+        logs, errors, writes, saved = self.run_control(state_updates={
+            'measured_temps': {'1': None}, 'sensor_last_updated': {'1': None},
+            'set_temps': {'1': 14}, 'set_temps_interp': {'1': 14.5}})
+        self.assertEqual(saved['system/control.json']['rooms']['1'], {'vote': 1, 'reason': 't_on'})
+        self.assertFalse(errors)
+
+    def test_missing_temperature_preserves_manual_overrides(self):
+        for switch_updates, vote, reason in (({'cycles': {'1': -1}}, 0, 'c_m_off'),
+                                             ({'cycles': {'1': 1}}, 1, 'c_m_on'),
+                                             ({'rooms': {'1': -1}}, 0, 'r_m_off'),
+                                             ({'rooms': {'1': 1}}, 1, 'r_m_on')):
+            with self.subTest(switch=switch_updates):
+                logs, errors, writes, saved = self.run_control(
+                    switch_updates=switch_updates, state_updates={
+                        'measured_temps': {'1': None}, 'sensor_last_updated': {'1': None}})
+                self.assertEqual(saved['system/control.json']['rooms']['1'],
+                                 {'vote': vote, 'reason': reason})
+                self.assertFalse(errors)
 
     def test_overshoot_overrides_previous_yes_at_exact_demand_threshold(self):
         logs, errors, writes, saved = self.run_control(temp=21.3, valve=2, previous_vote=1)

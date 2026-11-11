@@ -580,9 +580,14 @@ def compare_and_command(heating_switch:dict, system_state:dict):
             set_PID = None
             PID_log[room] = {}
 
-            if minutes_since_update and int(heating_config['temp_data_expiry']) < minutes_since_update:
+            # The sensor reader discards expired samples, including their timestamps.
+            temperature_missing = measured_temp is None or minutes_since_update is None
+            temperature_expired = (minutes_since_update is not None
+                                   and int(heating_config['temp_data_expiry']) < minutes_since_update)
+            if set_temp not in (-1, 0, 1) and (temperature_missing or temperature_expired):
                 set_temp = 0 if set_temp <= int(heating_config[f'room_{room}_threshold_temp']) else 1 # Turn set temp to binary on/off
-                relation = f"data expired, last data {minutes_since_update} mins ago"
+                relation = ("temperature data unavailable, using timed fallback" if temperature_missing
+                            else f"data expired, last data {minutes_since_update} mins ago")
 
             if set_temp != -1 and heating_switch['cycles'][cycle] == 0: # Cycle is room controlled
                 if heating_switch['rooms'][room] == 0: # Room is schedule controlled
