@@ -19,7 +19,7 @@ function cyclePlotName(cycle) {
     return cycle + (Number(cycle) === 3 ? '-mas' : '-es') + ' kör';
 }
 
-function createCycleHeatPlotSetting(cycle, elementId, metric = 'power', day = dayStamp(new Date(), dayDataNotAvailable, dataWaitTime), detailed = false) {
+function createCycleHeatPlotSetting(cycle, elementId, metric = 'power', day = dayStamp(null, dayDataNotAvailable, dataWaitTime), detailed = false) {
     if (!CYCLE_HEAT_METRICS[metric]) metric = 'power';
     return {
         title: 'cycle_water_temp', cycleNum: cycle, sourceElementId: elementId, metric, day, detailed,
@@ -67,6 +67,7 @@ function shiftedSelectorDay(day, delta) {
 }
 
 function navigateSelectorPlotDay(delta) {
+    if (typeof navigateReplayDay === 'function' && navigateReplayDay(delta)) return;
     const current = mainGraphSetting;
     if (!['room_metrics', 'weather_metrics'].includes(current.title) && !(current.title === 'cycle_water_temp' && current.detailed)) return;
     const day = shiftedSelectorDay(current.day, delta);
@@ -78,6 +79,7 @@ function navigateSelectorPlotDay(delta) {
 }
 
 function navigateMainPlotDay(delta) {
+    if (typeof navigateReplayDay === 'function' && navigateReplayDay(delta)) return;
     const day = shiftedSelectorDay(mainGraphSetting.day, delta);
     if (day > dayStamp()) return;
     mainGraphSetting = {...mainGraphSetting, day};
@@ -115,7 +117,7 @@ function drawPlotDateNavigation(container, dimensions, options, fontSize, locked
                 .style('text-anchor', 'start').style('fill', 'rgba(230,230,230,1)').text(dashboardText('rögzítve'));
             labelX += lock.node().getComputedTextLength() + fontSize;
         }
-        if (options.day !== dayStamp()) {
+        if (options.day !== dayStamp(new Date())) {
             const dateLabel = date.append('text').attr('class', 'selector-date-label')
                 .attr('x', labelX).attr('y', labelY).style('text-anchor', 'start').style('fill', '#777')
                 .text(dashboardText(options.day + ' (' + selectorWeekday(options.day) + ')'));
@@ -123,7 +125,7 @@ function drawPlotDateNavigation(container, dimensions, options, fontSize, locked
             const availableDateWidth = Math.max(fontSize, (dimensions.labelRight ?? dimensions.w) - padding - fontSize - labelX);
             if (dateWidth > availableDateWidth) dateLabel.style('font-size', fontSize * availableDateWidth / dateWidth + 'px');
         }
-        arrow('›', 'Következő nap', 1, options.day < dayStamp());
+        arrow('›', 'Következő nap', 1, options.day < dayStamp(new Date()));
 }
 
 function drawPlotTitleSelector(plotElement, plotDims, options, fontSize) {
@@ -283,8 +285,9 @@ function formatCycleEnergyDisplay(readings) {
     return { text: String(Math.round(latest.energy_kwh)) };
 }
 
-function writeCycleEnergyToMarkers(data = null) {
-    const day = dayStamp(new Date(), dayDataNotAvailable, dataWaitTime);
+function writeCycleEnergyToMarkers(data = null, replaying = false) {
+    if (typeof dashboardReplayActive === 'function' && dashboardReplayActive() && !replaying) return;
+    const day = dayStamp(replaying ? dashboardNow() : new Date(), !replaying && dayDataNotAvailable, dataWaitTime);
     if (data === null) {
         collectDataFromGitHub([1, 2, 3, 4].map(cycle => ({ day, type: 'cycle_' + cycle + '_heat_delivery' })), writeCycleEnergyToMarkers);
         return;

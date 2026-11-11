@@ -5,7 +5,7 @@ const BOILER_POWER_DISPLAYS = [
 ];
 const BOILER_POWER_FRESH_SECONDS = 180;
 
-function freshBoilerPower(reading, now = new Date()) {
+function freshBoilerPower(reading, now = typeof dashboardNow === 'function' ? dashboardNow() : new Date()) {
     if (reading?.reachable !== true || !Number.isFinite(reading.power_w) || reading.power_w < 0) return null;
     if (typeof reading.timestamp !== 'string') return null;
     const observed = dateFromTimestamp(reading.timestamp);

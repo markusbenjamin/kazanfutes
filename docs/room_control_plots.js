@@ -95,6 +95,7 @@ function selectRoomControlOverviewState(state) {
 }
 
 function navigateRoomControlDay(delta) {
+    if (typeof navigateReplayDay === 'function' && navigateReplayDay(delta)) return;
     if (!isRoomControlView(mainGraphSetting)) return;
     const day = shiftedSelectorDay(mainGraphSetting.day, delta);
     if (day > dayStamp()) return;

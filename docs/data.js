@@ -162,11 +162,20 @@ function getDataFromFirebase() {
     const url = "https://kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app/.json";
     fetchJSONEndpoint(url)
         .then(fullFirebaseDataJSON => {
+            replayLatestLive = fullFirebaseDataJSON;
+            if (!dashboardReplayActive()) renderDashboardState(fullFirebaseDataJSON);
+        })
+        .catch(error => {
+            console.error('Error fetching data from Firebase:', error);
+        });
+}
+
+function renderDashboardState(fullFirebaseDataJSON, options = {}) {
             const systemJSON = fullFirebaseDataJSON.system;
             const scheduleJSON = fullFirebaseDataJSON.schedule;
             const updateJSON = fullFirebaseDataJSON.update;
 
-            updateAdminMessage(dashboardAdminMessage(systemJSON.dashboard));
+            if (!options.replay) updateAdminMessage(dashboardAdminMessage(systemJSON.dashboard));
 
             systemOn = systemJSON['switch']['system'] == 1 ? true : false;
             systemNode = systemJSON;
@@ -220,7 +229,7 @@ function getDataFromFirebase() {
                 schedLastUpdateGranularity = ' órája'
             }
 
-            if (timeSinceLastScheduleUpdate < 1) { // Urge redraw if a schedule update is recent
+            if (!options.replay && timeSinceLastScheduleUpdate < 1) { // Urge redraw if a schedule update is recent
                 drawMainGraph();
             }
 
@@ -236,7 +245,7 @@ function getDataFromFirebase() {
             let requestOrigin = "form";
             let requestTarget = roomV2Name(requestedRoom);
 
-            if (fromRequest && !initialLockDone && roomsDataAndState[requestedRoom]) {
+            if (!options.replay && fromRequest && !initialLockDone && roomsDataAndState[requestedRoom]) {
                 mainGraphContentLocked = true;
                 mainGraphSetting = elementToMainGraphSettingMapping['room_' + requestedRoom];
                 initialLockDone = true;
@@ -278,7 +287,7 @@ function getDataFromFirebase() {
                 let roomsThatWantHeating = [];
                 roomsOnCycle.forEach(roomNum => {
                     if (roomsDataAndState[roomNum].controlled) {
-                        systemJSON.control.rooms[roomNum].vote == 1 ? roomsThatWantHeating.push({ type: roomsDataAndState[roomNum].type, name: roomsDataAndState[roomNum].name, reason: roomsDataAndState[roomNum].reason }) : "";
+                        systemJSON.control.rooms?.[roomNum]?.vote == 1 ? roomsThatWantHeating.push({ type: roomsDataAndState[roomNum].type, name: roomsDataAndState[roomNum].name, reason: roomsDataAndState[roomNum].reason }) : "";
                     }
                 });
 
@@ -298,7 +307,7 @@ function getDataFromFirebase() {
                 );
 
                 // Update misc data
-                newGasUsageRate = roundTo(0.1 / (systemJSON.state.gas.dial_turn_secs / 3600), 0.1);
+                newGasUsageRate = options.replay ? currentGasUsageRate : roundTo(0.1 / (systemJSON.state.gas.dial_turn_secs / 3600), 0.1);
                 if (!currentGasUsageRate) {
                     currentGasUsageRate = newGasUsageRate;
                 }
@@ -317,11 +326,7 @@ function getDataFromFirebase() {
                 //console.log(currentGasUsageRate)
                 //console.log(timeItTookToUpdateGasUsage)
             });
-            refreshMainPlotLiveEndpoint();
-        })
-        .catch(error => {
-            console.error('Error fetching data from Firebase:', error);
-        });
+            if (!options.replay) refreshMainPlotLiveEndpoint();
 }
 
 let lastGasUpdate, timeItTookToUpdateGasUsage, prevGasUsageRate;
@@ -502,7 +507,7 @@ function convertTimestamps(dataJSON, day) {
 let loadedData = {};
 let dataExpiry = 5; //Minutes
 
-function collectDataFromGitHub(dataToCollect, drawFunction) {
+function collectDataFromGitHub(dataToCollect, drawFunction, options = {}) {
     // We'll collect final results here in the same shape as loadedData => dataCollected[day][type]
     const dataCollected = {};
 
@@ -510,7 +515,7 @@ function collectDataFromGitHub(dataToCollect, drawFunction) {
     function fetchNext(index) {
         if (index >= dataToCollect.length) {
             // Once all data is fetched/collected, call the draw function
-            drawFunction(dataCollected);
+            drawFunction(options.unclipped ? dataCollected : replayPlotPayload(dataCollected));
             return;
         }
 
@@ -527,6 +532,11 @@ function collectDataFromGitHub(dataToCollect, drawFunction) {
 
         const existingDataEntry = loadedData[day][type];
         const now = new Date();
+        if (!options.unclipped && dashboardReplayActive() && replayDay?.day === day && Object.hasOwn(replayDay.plots, type)) {
+            dataCollected[day][type] = replayDay.plots[type];
+            fetchNext(index + 1);
+            return;
+        }
 
         // Determine if existing data is "fresh"
         let isFresh = false;
@@ -1253,8 +1263,11 @@ function updateRoomColor(roomId, temp, lastUpdated, roomValveInfo, roomOccupancy
         ? "repeating-linear-gradient(125deg, rgba(0,0,0,0.8) 0 0.25px, rgba(0,0,0,1) 0.05px 4px)"
         : null;
     d3.select("#" + roomId).style("mask", maskDef).style("-webkit-mask", maskDef);
-    if (!Number.isFinite(temp) || !lastUpdated || timePassedSince(dateFromTimestamp(lastUpdated)) > 2 * 60) {
-        //console.log(d3.select("#" + roomId).style("fill", "rgb(31, 31, 32, 0.8)"));
+    const readingAge = lastUpdated == null ? NaN : timePassedSince(dateFromTimestamp(lastUpdated), 'seconds');
+    if (!Number.isFinite(temp) || !Number.isFinite(readingAge) || readingAge < -5 || readingAge > 7200) {
+        // Always clear an earlier temperature colour, including on backwards
+        // replay seeks. Retaining a live/SVG fill falsely suggests valid data.
+        d3.select("#" + roomId).style("fill", "rgba(31,31,32,0.8)").style("fill-opacity", "1");
     }
     else {
         // Create a color scale
@@ -1395,7 +1408,8 @@ function addKPIsToTooltip(kpiData = null) {
 
 let currentGasUsageRate, currentGasTotal;
 
-function writeGasUsageToDial(gasData = null) {
+function writeGasUsageToDial(gasData = null, replaying = false) {
+    if (dashboardReplayActive() && !replaying) return;
     if (gasData == null) {
         collectDataFromGitHub(
             [
@@ -1408,7 +1422,8 @@ function writeGasUsageToDial(gasData = null) {
         );
     }
     else {
-        gasData = gasData[dayStamp(new Date(), dayDataNotAvailable, dataWaitTime)]["gas_usage"];
+        gasData = gasData[dayStamp(replaying ? dashboardNow() : new Date(), !replaying && dayDataNotAvailable, dataWaitTime)]?.gas_usage;
+        if (!gasData?.length) return;
         d3.select("#gas_piping").style("stroke", "rgba(0.2,0.2,0.2,1)");
         d3.select("#gas_piping").style("stroke-opacity", "1");
         d3.select("#gas_meter").style("fill", "rgba(0.2,0.2,0.2,1)");
@@ -1638,7 +1653,7 @@ function addLineToBox(boxId, message, xPosFactor, yPosFactor, fontSize, centered
         .style("font-size", fontSize + "px");
 }
 
-function infoboxRoomTemperature(system, rooms, now = new Date()) {
+function infoboxRoomTemperature(system, rooms, now = typeof dashboardNow === 'function' ? dashboardNow() : new Date()) {
     const state = system.state || {};
     const values = rooms.filter(room => livePlotFresh(state.sensor_last_updated?.[room],7200,now))
         .map(room => state.measured_temps?.[room]).filter(Number.isFinite);
@@ -1685,7 +1700,7 @@ function updateGeneralInfobox(info) {
     if (info.heatingOn == 1) {
         // Generate lines from incoming info
         if (!isMobile) {
-            lines.push({lineXOffset:0, text:"Keringetett fűtővíz: "
+            lines.push({lineXOffset:0, text:(info.cyclesOn.length ? "Keringetett fűtővíz: " : "Készenléti fűtővíz: ")
                 + (Number.isFinite(info.waterTemp) ? Math.round(info.waterTemp) + " °C" : "—")});
             let cyclesOnLine = info.cyclesOn.length > 0 ? "Keringetett körök: " + info.cyclesOn.join(", ") + "." : "Senki nem kér fűtést.";
             lines.push(
@@ -1842,7 +1857,7 @@ function updateGeneralInfobox(info) {
                 }
             );
 
-            let gasUsageLine = "Gázfogyasztási ráta: " + (isValidNumber(currentGasUsageRate) ? currentGasUsageRate : "") + (isValidNumber(currentGasUsageRate) ? " m³/h." : "");
+            let gasUsageLine = "Gázfogyasztási ráta: " + (isValidNumber(currentGasUsageRate) ? roundTo(currentGasUsageRate, 0.1) : "") + (isValidNumber(currentGasUsageRate) ? " m³/h." : "");
             lines.push(
                 {
                     lineXOffset: 0,
@@ -2217,7 +2232,7 @@ function drawMainGraph(graphData = null) {
     }
     else {
         mainPlotLivePayload = {setting: mainGraphSetting, data: graphData};
-        graphData = withLivePlotReadings(graphData, mainGraphSetting,
+        graphData = dashboardReplayActive() ? replayPlotPayload(graphData) : withLivePlotReadings(graphData, mainGraphSetting,
             typeof systemNode === 'undefined' ? null : systemNode);
         graphData = {...(graphData[mainGraphSetting.day] || {})};
         const ordinary = !['radiator', 'cycle_water_temp', 'room_metrics', 'weather_metrics', 'boiler_metrics'].includes(mainGraphSetting.title);
@@ -2843,6 +2858,8 @@ d3.xml("canvas.svg?updated=" + Date.now()).then(fileData => {
     initializeBoilerPowerMarkers();
     initializeInfoboxes();
     initializeMainGraphArea();
+    initializeReplayPane();
+    initializeReplayClock();
     initializeRadiators();
     setInfoboxHovers();
     if (!isMobile) { // For now only in desktop view
@@ -2858,5 +2875,5 @@ d3.xml("canvas.svg?updated=" + Date.now()).then(fileData => {
     runOnceThenSetInterval(getDataFromFirebase, 5 * 1000);
     runOnceThenSetInterval(drawMainGraph, 60 * 1000);
     runOnceThenSetInterval(rescueMainGraph, 100);
-    setTimeout(() => location.reload(), new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() + 1, 0, 0, 1) - Date.now());
+    setTimeout(() => { if (!dashboardReplayActive()) location.reload(); }, new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() + 1, 0, 0, 1) - Date.now());
 });

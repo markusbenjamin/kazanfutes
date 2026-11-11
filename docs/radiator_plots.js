@@ -12,7 +12,7 @@ function radiatorMean(values) {
     return known.length ? known.reduce((sum, value) => sum + value, 0) / known.length : null;
 }
 
-function radiatorFresh(timestamp, seconds = 1200, now = new Date()) {
+function radiatorFresh(timestamp, seconds = 1200, now = typeof dashboardNow === 'function' ? dashboardNow() : new Date()) {
     if (typeof timestamp !== 'string') return false;
     const age = (now - dateFromTimestamp(timestamp)) / 1000;
     return Number.isFinite(age) && age >= -30 && age <= seconds;
@@ -60,7 +60,7 @@ function radiatorTargetFromElement(element, mapping) {
         probes, trvs: parse('data-trvs') || [], cycle};
 }
 
-function radiatorLiveValues(target, now = new Date()) {
+function radiatorLiveValues(target, now = typeof dashboardNow === 'function' ? dashboardNow() : new Date()) {
     const state = radiatorSystem?.state || {};
     const snapshot = state.radiator_probes;
     const fallbackProbeRow = radiatorHistory.probes.at(-1);
