@@ -1862,7 +1862,7 @@ function updateGeneralInfobox(info) {
                     }
                 );
 
-                let totalCost = currentGasTotal * 580;
+                let totalCost = currentGasTotal * 650;
                 lines.push(
                     {
                         lineXOffset: 0,
