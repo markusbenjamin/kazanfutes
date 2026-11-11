@@ -83,6 +83,7 @@ const DASHBOARD_ENGLISH = {
 const DASHBOARD_ENGLISH_PREFIXES = {
     'Szobák:': 'Rooms:', 'Fűtővíz:': 'Water:',
     'Keringetett fűtővíz:': 'Circulating water:',
+    'Készenléti fűtővíz:': 'Standby water:',
     'Átlagos eltérés: ': 'Mean deviation: ', 'Eltérés: ': 'Deviation: ',
     'Keringetett körök: ': 'Running circuits: ', 'Utolsó kérés:': 'Last request:',
     'Beállítások frissítve:': 'Settings updated:', 'Vezérlés lefutott:': 'Last control run:',

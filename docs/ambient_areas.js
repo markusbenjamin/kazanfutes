@@ -8,7 +8,7 @@ const ambientAreaMappings = {
     lepcsohaz: {rooms: [2,25], outdoorOffset: 4}
 };
 
-function ambientAreaTemperature(target, system, now = new Date()) {
+function ambientAreaTemperature(target, system, now = typeof dashboardNow === 'function' ? dashboardNow() : new Date()) {
     const state = system?.state || {};
     if (target.source === 'ws90') {
         const weather = state.weather_station;

@@ -40,7 +40,7 @@ function roomV2ControlledRooms() { return roomV2Model.ids(true); }
 function roomV2Name(id) { return roomV2Model.name(id); }
 function roomV2Fresh(stamp, seconds = 180) {
     if (typeof stamp !== 'string') return false;
-    const age = (new Date() - dateFromTimestamp(stamp)) / 1000;
+    const age = ((typeof dashboardNow === 'function' ? dashboardNow() : new Date()) - dateFromTimestamp(stamp)) / 1000;
     return Number.isFinite(age) && age >= -5 && age <= seconds;
 }
 function roomV2RefreshRegistry(registry) {

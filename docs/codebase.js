@@ -47,7 +47,7 @@ function humanTimestamp(date = null) {
 
 function hourStamp(date = null, withSeconds = false) {
     if (date == null) {
-        date = new Date()
+        date = typeof dashboardNow === 'function' ? dashboardNow() : new Date()
     }
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');  // Months are 0-indexed
@@ -61,7 +61,7 @@ function hourStamp(date = null, withSeconds = false) {
 
 function dayStamp(date = null, useYesterdayBeforeNMinutes = false, nMinutes = 0) {
     if (date == null) {
-        date = new Date();
+        date = typeof dashboardNow === 'function' ? dashboardNow() : new Date();
     }
 
     const currentMinutes = date.getHours() * 60 + date.getMinutes();
@@ -109,7 +109,7 @@ function dateFromTimestamp(timestampString) {
 }
 
 function timePassedSince(date, granularity = 'minutes') {
-    const now = new Date();  // Current date and time
+    const now = typeof dashboardNow === 'function' ? dashboardNow() : new Date();
     const difference = now - date;  // Difference in milliseconds
 
     switch (granularity) {
@@ -246,14 +246,14 @@ function getUnixDay(date = null) {
 
 function getHourOfDay(date = null) {
     if (date == null) {
-        date = new Date()
+        date = typeof dashboardNow === 'function' ? dashboardNow() : new Date()
     }
     return Number(date.toTimeString().slice(0, 2));
 }
 
 function getFractionalHourOfDay(date = null) {
     if (date == null) {
-        date = new Date()
+        date = typeof dashboardNow === 'function' ? dashboardNow() : new Date()
     }
 
     return date.getHours() + date.getMinutes() / 60 + date.getSeconds() / 3600;

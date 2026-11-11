@@ -16,7 +16,7 @@ const select = id => {
 };
 const context = require('./dashboard_test_context.cjs')({
     d3: {select, interpolateRgb: () => {}, scaleSequential: () => ({domain: () => temp => 'room-' + temp})},
-    timePassedSince: age => age, dateFromTimestamp: age => age
+    timePassedSince: (age, unit) => unit === 'seconds' ? age * 60 : age, dateFromTimestamp: age => age
 });
 vm.runInContext(render, context);
 const update = (occupancy, age = 0, room = 'PK') => context.updateRoomColor(room, 21, age, {}, occupancy);
