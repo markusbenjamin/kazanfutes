@@ -11,10 +11,18 @@ vm.runInContext(source.slice(source.indexOf('let boilerState ='),source.indexOf(
 const draw=fs.readFileSync('docs/draw.js','utf8');
 vm.runInContext(draw.slice(draw.indexOf('function drawBoiler('),draw.indexOf('function textOnArcUprightWeighted(')),context);
 const run=source=>vm.runInContext(source,context);
-assert.equal(run('boilerWaterTooCold({1:20,2:24.9,3:19,4:22})'),true);
-assert.equal(run('boilerWaterTooCold({1:20,2:25,3:19})'),false,'25 °C is outside the below-threshold condition');
-assert.equal(run('boilerWaterTooCold({1:20,2:60})'),false,'The hottest measured circuit determines the result');
-assert.equal(run('boilerWaterTooCold({1:null,2:NaN,3:0})'),false,'Unavailable or invalid readings cannot establish cold water');
+const cold = (temperatures, switches = {1:0,2:1,3:0,4:0}) => {
+    context.sample = {...temperatures,switch:{cycles:switches}};
+    return run('boilerWaterTooCold(sample)');
+};
+assert.equal(cold({1:20,2:27.9,3:19,4:22}),true);
+assert.equal(cold({1:20,2:28,3:19}),false,'28 °C is outside the below-threshold condition');
+assert.equal(cold({1:20,2:60}),false,'The hottest enabled circuit determines the result');
+assert.equal(cold({1:20,2:27,3:80},{1:0,2:1,3:-1,4:-1}),true,'Hot disabled circuits cannot suppress the warning');
+assert.equal(cold({1:40,2:20},{1:0,2:-1,3:-1,4:-1}),false,'Cold disabled circuits do not count');
+assert.equal(cold({1:20,2:24},{1:-1,2:-1,3:-1,4:-1}),false,'No enabled circuits means no cold-boiler inference');
+assert.equal(cold({1:20},{}),false,'Missing switch states must not be guessed enabled');
+assert.equal(cold({1:null,2:NaN,3:0}),false,'Unavailable or invalid readings cannot establish cold water');
 run('updateBoilerColor(1,true); drawBoiler()');
 assert.equal(styles['#boiler_body'].stroke,'black');
 assert.equal(styles['#flame_nest'].fill,'rgba(0.2,0.2,0.2,1)');
@@ -50,4 +58,4 @@ const warning=messages.find(row=>row.text==='kazán hiba!');
 assert.equal(warning.styles.fill,'red');
 assert.equal(warning.styles['font-weight'],'normal');
 assert.equal(warning.y,messages[0].y,'The warning stays on the title row');
-console.log('Cold boiler: hottest-circuit threshold, invalid readings, black outline, empty flame area and recovery passed.');
+console.log('Cold boiler: enabled-circuit selection, 28 °C threshold, invalid readings, black outline, empty flame area and recovery passed.');

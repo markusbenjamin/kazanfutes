@@ -175,8 +175,6 @@ function renderDashboardState(fullFirebaseDataJSON, options = {}) {
             const scheduleJSON = fullFirebaseDataJSON.schedule;
             const updateJSON = fullFirebaseDataJSON.update;
 
-            if (!options.replay) updateAdminMessage(dashboardAdminMessage(systemJSON.dashboard));
-
             systemOn = systemJSON['switch']['system'] == 1 ? true : false;
             systemNode = systemJSON;
             updateRadiatorLiveState(systemJSON);
@@ -195,6 +193,7 @@ function renderDashboardState(fullFirebaseDataJSON, options = {}) {
             }
             );
             updateBoilerColor(states > 0 ? 1 : 0, boilerWaterTooCold(systemJSON));
+            if (!options.replay) updateAdminMessage(dashboardAdminMessage(systemJSON.dashboard), boilerColdWaterError);
 
             roomV2UpdateRooms(systemJSON);
             updateAmbientAreas(systemJSON);
@@ -1294,9 +1293,11 @@ let boilerState = null;
 let boilerColdWaterError = false;
 
 function boilerWaterTooCold(system) {
-    const temperatures = [1,2,3,4].map(cycle=>cycleSupplyTemperature(system,cycle))
+    const temperatures = [1,2,3,4]
+        .filter(cycle => [0,1].includes(system?.switch?.cycles?.[cycle]))
+        .map(cycle=>cycleSupplyTemperature(system,cycle))
         .filter(value=>Number.isFinite(value) && value>0 && value<100);
-    return temperatures.length>0 && Math.max(...temperatures)<25;
+    return temperatures.length>0 && Math.max(...temperatures)<28;
 }
 
 function updateBoilerColor(state, coldWaterError = false) {
@@ -1663,7 +1664,8 @@ function infoboxRoomTemperature(system, rooms, now = typeof dashboardNow === 'fu
 function infoboxCirculatedWaterTemperature(system) {
     const cycles = [1,2,3,4];
     const running = cycles.filter(cycle => system.state?.pump_states?.[cycle] === 1);
-    const values = (running.length ? running : cycles)
+    const enabled = cycles.filter(cycle => [0,1].includes(system?.switch?.cycles?.[cycle]));
+    const values = (running.length ? running : enabled)
         .map(cycle => cycleSupplyTemperature(system,cycle)).filter(Number.isFinite);
     return values.length ? d3.mean(values) : null;
 }

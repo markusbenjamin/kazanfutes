@@ -36,7 +36,7 @@ function page(search) {
     const context=createContext({URL,URLSearchParams,window:{location:{search,href:'http://localhost/dashboard.html'+search}},document});
     for(const file of ['admin_message','dashboard_help'])
         vm.runInContext(fs.readFileSync(path.resolve(__dirname,'../../docs/'+file+'.js'),'utf8'),context);
-    return {context,nodes,document,link,update(value){context.message=value;vm.runInContext('updateAdminMessage(message)',context);}};
+    return {context,nodes,document,link,update(value){context.message=value;vm.runInContext('updateAdminMessage(message, true)',context);}};
 }
 for(const query of ['?lang=en&demo=1','?lang=en&demo=true&ref_source=form']) {
     const {nodes,context,document,update}=page(query);
