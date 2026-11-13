@@ -382,6 +382,7 @@ function updateDashboardClock() {
     };
     hand('hour', (now.getHours() % 12 + now.getMinutes() / 60) / 12, .57);
     hand('minute', (now.getMinutes() + now.getSeconds() / 60) / 60, .83);
+    hand('second', (now.getSeconds() + now.getMilliseconds() / 1000) / 60, .92);
     group.querySelector('circle').setAttribute('cx',x); group.querySelector('circle').setAttribute('cy',y);
     face.setAttribute('aria-label',replayText('Visszajátszás', 'Replay') + ' ' + hourStamp(now));
     updateReplayPane();
@@ -408,10 +409,10 @@ function initializeReplayClock() {
         Object.entries({x1:x+Math.sin(angle)*r*.92,y1:y-Math.cos(angle)*r*.92,x2:x+Math.sin(angle)*r,y2:y-Math.cos(angle)*r,
             stroke:'#777','stroke-width':r*.035}).forEach(([key,value])=>line.setAttribute(key,value)); group.append(line);
     }
-    for (const name of ['hour','minute']) {
+    for (const name of ['hour','minute','second']) {
         const line = document.createElementNS(svg,'line');
-        line.setAttribute('data-hand',name); line.setAttribute('stroke','black');
-        line.setAttribute('stroke-width',r*(name === 'hour' ? .09 : .055)); line.setAttribute('stroke-linecap','round'); group.append(line);
+        line.setAttribute('data-hand',name); line.setAttribute('stroke',name === 'second' ? 'red' : 'black');
+        line.setAttribute('stroke-width',r*(name === 'hour' ? .09 : name === 'minute' ? .055 : .025)); line.setAttribute('stroke-linecap','round'); group.append(line);
     }
     const centre = document.createElementNS(svg,'circle'); centre.setAttribute('r',r*.09); centre.setAttribute('fill','black'); group.append(centre);
     face.parentNode.append(group);
