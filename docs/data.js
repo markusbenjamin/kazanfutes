@@ -163,6 +163,8 @@ function getDataFromFirebase() {
     fetchJSONEndpoint(url)
         .then(fullFirebaseDataJSON => {
             replayLatestLive = fullFirebaseDataJSON;
+            // Notices follow the current config, independently of heating or replay.
+            updateAdminMessage(dashboardAdminMessage(fullFirebaseDataJSON.system?.dashboard));
             if (!dashboardReplayActive()) renderDashboardState(fullFirebaseDataJSON);
         })
         .catch(error => {
@@ -193,7 +195,6 @@ function renderDashboardState(fullFirebaseDataJSON, options = {}) {
             }
             );
             updateBoilerColor(states > 0 ? 1 : 0, boilerWaterTooCold(systemJSON));
-            if (!options.replay) updateAdminMessage(dashboardAdminMessage(systemJSON.dashboard), boilerColdWaterError);
 
             roomV2UpdateRooms(systemJSON);
             updateAmbientAreas(systemJSON);

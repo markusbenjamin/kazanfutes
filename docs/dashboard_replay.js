@@ -197,7 +197,6 @@ async function loadReplayDay(day) {
         replayDay = result;
         replayResumeState = null;
         dashboardReplayTime = dateFromTimestamp(day + '-00-00-00').getTime();
-        document.getElementById('admin-message').hidden = true;
         replaySyncPlotDay(day);
         document.getElementById('replay-controls').disabled = false;
         status.textContent = '';
@@ -336,7 +335,6 @@ function openReplayPane() {
         date.value = replayDay.day;
         document.getElementById('replay-controls').disabled = false;
         document.getElementById('replay-status').textContent = '';
-        document.getElementById('admin-message').hidden = true;
         replayPaint();
     } else if (!dashboardReplayActive() && !replayLoadingDay) {
         date.value = dayStamp(new Date());

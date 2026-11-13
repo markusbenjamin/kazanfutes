@@ -35,7 +35,7 @@ async function run() {
         await page.goto(`http://127.0.0.1:${server.address().port}/`);
         const box = page.locator('#admin-message');
         const content = page.locator('#admin-message-content');
-        const update = value => page.evaluate(value => updateAdminMessage(value, true), value);
+        const update = value => page.evaluate(value => updateAdminMessage(value), value);
         assert.equal(await box.isVisible(), false);
         for (const value of [undefined, null, '', ' \r\n\t ']) {
             await update(value);
@@ -124,9 +124,9 @@ async function run() {
             Object.defineProperty(window, 'sessionStorage', { get() { throw new Error('Storage blocked'); } });
         });
         await blockedStoragePage.goto(`http://127.0.0.1:${server.address().port}/`);
-        await blockedStoragePage.evaluate(() => updateAdminMessage('Üzenet tárhely nélkül', true));
+        await blockedStoragePage.evaluate(() => updateAdminMessage('Üzenet tárhely nélkül'));
         await blockedStoragePage.locator('#admin-message-ok').click();
-        await blockedStoragePage.evaluate(() => updateAdminMessage('Üzenet tárhely nélkül', true));
+        await blockedStoragePage.evaluate(() => updateAdminMessage('Üzenet tárhely nélkül'));
         assert.equal(await blockedStoragePage.locator('#admin-message').isVisible(), false);
         console.log('Dashboard message browser checks passed (desktop, mobile, formatting, hover-only highlight, dismissal, reload, safe rendering).');
     } finally {

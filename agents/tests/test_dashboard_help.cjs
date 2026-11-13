@@ -36,7 +36,7 @@ function page(search) {
     const context=createContext({URL,URLSearchParams,window:{location:{search,href:'http://localhost/dashboard.html'+search}},document});
     for(const file of ['admin_message','dashboard_help'])
         vm.runInContext(fs.readFileSync(path.resolve(__dirname,'../../docs/'+file+'.js'),'utf8'),context);
-    return {context,nodes,document,link,update(value){context.message=value;vm.runInContext('updateAdminMessage(message, true)',context);}};
+    return {context,nodes,document,link,update(value){context.message=value;vm.runInContext('updateAdminMessage(message)',context);}};
 }
 for(const query of ['?lang=en&demo=1','?lang=en&demo=true&ref_source=form']) {
     const {nodes,context,document,update}=page(query);
@@ -48,12 +48,12 @@ for(const query of ['?lang=en&demo=1','?lang=en&demo=true&ref_source=form']) {
     assert.ok(helpContent[1].includes(query.includes('lang=en') ? 'real operating data' : 'valós üzemi adatokon'));
     assert.ok(helpContent[2].includes(query.includes('lang=en') ? 'Using the dashboard' : 'A dashboard használata'));
     update('An actual admin message');
-    assert.equal(nodes['admin-message'].hidden,true,'demo always suppresses the real admin message');
+    assert.equal(nodes['admin-message'].hidden,false,'demo help does not suppress the admin message');
     nodes['demo-help-ok'].click();
     assert.equal(nodes['demo-help'].hidden,true);
     update('Changed actual admin message');
     assert.equal(nodes['demo-help'].hidden,true,'polling never reopens help');
-    assert.equal(nodes['admin-message'].hidden,true);
+    assert.equal(nodes['admin-message'].hidden,false);
     nodes['demo-help-launcher'].click();
     assert.equal(nodes['demo-help'].hidden,false,'help can be reopened');
     nodes['demo-help-close'].click();
@@ -81,7 +81,7 @@ for(const query of ['','?lang=en','?demo=0','?ref_source=form','?demo=1','?lang=
     view.nodes['demo-help-ok'].click();
     assert.equal(view.nodes['demo-help'].hidden,true);
     view.update('Message');
-    assert.equal(view.nodes['admin-message'].hidden,query.includes('ref_source=form') || query.includes('demo=1'));
+    assert.equal(view.nodes['admin-message'].hidden,false,'Page mode never suppresses configured messages');
 }
 for (const query of ['?zoom=0.8&demo=1&lang=en&ref_source=form#plot','?mobile=1&lang=hu']) {
     const {nodes}=page(query);
