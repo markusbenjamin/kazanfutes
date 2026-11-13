@@ -194,7 +194,7 @@ function renderDashboardState(fullFirebaseDataJSON, options = {}) {
                 updateCycleColor(cycleNum, cycleState, cycleSupplyTemperature(systemJSON, cycleNum));
             }
             );
-            updateBoilerColor(states > 0 ? 1 : 0, boilerWaterTooCold(systemJSON));
+            updateBoilerColor(states > 0 ? 1 : 0, boilerWaterTooCold(systemJSON), systemOn);
 
             roomV2UpdateRooms(systemJSON);
             updateAmbientAreas(systemJSON);
@@ -1292,6 +1292,7 @@ function updateCycleColor(cycle, state, supplyTemperature) {
 
 let boilerState = null;
 let boilerColdWaterError = false;
+let boilerHeatingEnabled = true;
 
 function boilerWaterTooCold(system) {
     const temperatures = [1,2,3,4]
@@ -1301,8 +1302,9 @@ function boilerWaterTooCold(system) {
     return temperatures.length>0 && Math.max(...temperatures)<28;
 }
 
-function updateBoilerColor(state, coldWaterError = false) {
+function updateBoilerColor(state, coldWaterError = false, heatingEnabled = true) {
     boilerColdWaterError = coldWaterError;
+    boilerHeatingEnabled = heatingEnabled;
     d3.select("#boiler_body")
         .style("stroke-opacity", "0")
         .style("fill", "white")
@@ -1310,7 +1312,7 @@ function updateBoilerColor(state, coldWaterError = false) {
     d3.select("#flame_nest").style("fill", "rgba(0.2,0.2,0.2,1)");
     d3.select("#flame_nest").style("fill-opacity", "1");
 
-    d3.select("#boiler_body").style("stroke", coldWaterError ? "black" : state == 1 ? "rgba(255,0,0,1)" : "rgba(0,0,255,1)");
+    d3.select("#boiler_body").style("stroke", coldWaterError || !heatingEnabled ? "black" : state == 1 ? "rgba(255,0,0,1)" : "rgba(0,0,255,1)");
     d3.select("#boiler_body").style("stroke-opacity", "1");
     boilerState = state;
 }

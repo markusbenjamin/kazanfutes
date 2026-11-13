@@ -43,6 +43,22 @@ for(const name of ['strokeWeight','stroke','line','fill','noStroke','noFill','el
 run('updateBoilerColor(1,true); drawBoiler()');
 assert.ok(Math.abs(hands.at(-1)[4]-Math.PI*1.25)<1e-10,'The boiler gas dial points exactly to zero in the error state');
 assert.equal(context.currentGasUsageRate,5,'The total measured gas usage remains untouched');
+for (const pumpState of [0,1]) {
+    const count=flames.length;
+    run(`updateBoilerColor(${pumpState},false,false); drawBoiler()`);
+    assert.equal(styles['#boiler_body'].stroke,'black','Main switch off takes precedence over circulation');
+    assert.equal(styles['#flame_nest']['fill-opacity'],'1','The empty flame area remains visible');
+    assert.equal(flames.length,count,'Switching heating off removes both active and pilot flames');
+    assert.ok(Math.abs(hands.at(-1)[4]-Math.PI*1.25)<1e-10,'The dial points exactly to zero while heating is off');
+    assert.equal(run('boilerColdWaterError'),false,'Heating off is not itself a boiler fault');
+    assert.equal(context.currentGasUsageRate,5,'Other gas use remains measured');
+}
+const offFlames=flames.length;
+run('updateBoilerColor(0,false,true); drawBoiler()');
+assert.equal(styles['#boiler_body'].stroke,'rgba(0,0,255,1)','Enabled standby returns to blue');
+assert.ok(flames.length>offFlames,'Enabled standby restores the pilot flames');
+run('updateBoilerColor(1,false,true); drawBoiler()');
+assert.equal(styles['#boiler_body'].stroke,'rgba(255,0,0,1)','Heating returns to its active red appearance');
 const messages=[];
 context.isMobile=false;
 context.getBBoxDrawingDimensions=()=>({w:130,h:167});
