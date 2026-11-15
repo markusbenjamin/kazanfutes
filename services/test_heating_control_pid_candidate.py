@@ -22,7 +22,8 @@ GAINS = {'gain_P_lag': '0.4', 'gain_I': '0.00033',
 def load_calculations():
     tree = ast.parse(SOURCE.read_text(encoding='utf-8'))
     names = {'read_pid_gains', 'calculate_pid_overlay', 'apply_pid_overlay',
-             'compare_and_command'}
+             'compare_and_command', 'usable_control_number', 'complete_sensor_state',
+             'binary_room_vote', 'get_system_state', 'execute_commands'}
     nodes = [n for n in tree.body if
              (isinstance(n, ast.FunctionDef) and n.name in names) or
              (isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and
@@ -224,7 +225,8 @@ class PIDTests(unittest.TestCase):
 class ControlIntegrationTests(unittest.TestCase):
     def run_control(self, failed_trv=None, disabled_room=None, state_missing=False,
                     sample_offset=0, temp=20, valve=10, previous_vote=0,
-                    room_updates=None, state_updates=None, switch_updates=None):
+                    room_updates=None, state_updates=None, switch_updates=None,
+                    state_transform=None, env_updates=None):
         env = load_calculations()
         logs, errors, writes, saved = [], [], [], {}
         class Clock(datetime):
@@ -277,6 +279,9 @@ class ControlIntegrationTests(unittest.TestCase):
             state[field].update(values)
         for field, values in (switch_updates or {}).items():
             switch[field].update(values)
+        if state_transform:
+            state_transform(state)
+        env.update(env_updates or {})
         env['compare_and_command'](switch, state)
         return logs, errors, writes, saved
 
@@ -388,12 +393,13 @@ class ControlIntegrationTests(unittest.TestCase):
         # command/voting implementation and all PID constants.
         def pid_nodes(tree):
             names = {'read_pid_gains', 'calculate_pid_overlay', 'apply_pid_overlay',
-                     'compare_and_command'}
+                     'compare_and_command', 'usable_control_number', 'complete_sensor_state',
+                     'binary_room_vote', 'get_system_state', 'execute_commands'}
             return [ast.dump(node) for node in tree.body if
                     (isinstance(node, ast.FunctionDef) and node.name in names) or
                     (isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and
                      t.id.startswith('PID_') for t in node.targets))]
-        self.assertEqual(pid_nodes(production), pid_nodes(candidate))
+        self.assertEqual(sorted(pid_nodes(production)), sorted(pid_nodes(candidate)))
 
 
 if __name__ == '__main__':

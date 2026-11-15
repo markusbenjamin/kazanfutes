@@ -173,6 +173,41 @@ def apply_pid_overlay(thermostat, result, measured_temp, PID_state):
     return confirmed
 #endregion
 
+def usable_control_number(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+def complete_sensor_state(state, room_ids):
+    """Keep unavailable inputs explicit; schedules and switches remain required."""
+    for field in ('measured_temps', 'measured_humidity', 'sensor_last_updated',
+                  'humidity_last_updated', 'occupancy', 'valve_states', 'room_states'):
+        if not isinstance(state.get(field), dict):
+            state[field] = {}
+        for room in room_ids:
+            state[field].setdefault(room, None)
+    if not isinstance(state.get('pump_states'), dict):
+        state['pump_states'] = {}
+    for cycle in ('1', '2', '3', '4'):
+        state['pump_states'].setdefault(cycle, None)
+    state.setdefault('boiler_state', None)
+    return state
+
+
+def binary_room_vote(room, cycle, set_temp, heating_switch):
+    """Base vote and override precedence, without reading any sensor inputs."""
+    if set_temp == -1:
+        return 0, 'c_s_m_off', False
+    cycle_switch = heating_switch['cycles'][cycle]
+    if cycle_switch != 0:
+        return int(cycle_switch == 1), 'c_m_on' if cycle_switch == 1 else 'c_m_off', False
+    room_switch = heating_switch['rooms'][room]
+    if room_switch != 0:
+        return int(room_switch == 1), 'r_m_on' if room_switch == 1 else 'r_m_off', False
+    vote = int(set_temp == 1) if set_temp in (0, 1) else int(
+        set_temp > float(heating_config[f'room_{room}_threshold_temp']))
+    return vote, 't_on' if vote else 't_off', set_temp not in (0, 1)
+
+
 class HeatingStatusPublisher:
     """Collect status locally; upload once after the physical control work."""
     def __init__(self):
@@ -267,34 +302,36 @@ def acquire_heating_switch():
 
 def get_system_state():
     report('\nACQUIRING SYSTEM STATE')
-    system_state = {}
+    system_state = complete_sensor_state({}, rooms)
 
     success = False
     try:
         report("Acquiring measured temps and humidity.",verbose=True)
         room_temps_and_humidity = get_room_temps_and_humidity(just_controlled=False)
 
-        measured_temps = {}
-        measured_humidity = {}
-        sensor_last_updated = {}
-        humidity_last_updated = {}
+        measured_temps = system_state['measured_temps']
+        measured_humidity = system_state['measured_humidity']
+        sensor_last_updated = system_state['sensor_last_updated']
+        humidity_last_updated = system_state['humidity_last_updated']
 
         for room, vals in room_temps_and_humidity.items():
             #print(f"{room}, {vals['temp']}, {vals['hum']}, {vals['last_updated']}, {vals['thermostat_temp']}, {vals['thermostat_last_updated']}")
 
-            if vals['temp'] is not None:
+            if not isinstance(vals, dict):
+                continue
+            if usable_control_number(vals.get('temp')):
                 measured_temps[room] = vals['temp'] / 100
-                sensor_last_updated[room] = vals['last_updated']
-            elif vals['thermostat_temp'] is not None:
+                sensor_last_updated[room] = vals.get('last_updated')
+            elif usable_control_number(vals.get('thermostat_temp')):
                 measured_temps[room] = vals['thermostat_temp']
-                sensor_last_updated[room] = vals['thermostat_last_updated']
+                sensor_last_updated[room] = vals.get('thermostat_last_updated')
             else:
                 measured_temps[room] = None
                 sensor_last_updated[room] = None
 
-            if vals['hum'] is not None:
+            if usable_control_number(vals.get('hum')):
                 measured_humidity[room] = vals['hum'] / 100
-                humidity_last_updated[room] = vals.get('humidity_last_updated') or vals['last_updated']
+                humidity_last_updated[room] = vals.get('humidity_last_updated') or vals.get('last_updated')
             else:
                 measured_humidity[room] = None
                 humidity_last_updated[room] = None
@@ -387,12 +424,18 @@ def get_system_state():
     success = False
     try:
         report("Acquiring valve states.",verbose=True)
-        valve_states = {}
+        valve_states = system_state['valve_states']
+        valve_reads_succeeded = True
         for room, info in rooms.items():
             valve_states_for_room = []
             if isinstance(info["thermostats"], str):
                 for th in (t.strip() for t in info["thermostats"].split(";") if t.strip()):
-                    valve_states_for_room.append(get_thermostat_state_by_id(th,["valve"])["valve"])
+                    try:
+                        valve_states_for_room.append(get_thermostat_state_by_id(th,["valve"])["valve"])
+                    except Exception as error:
+                        valve_states_for_room.append(None)
+                        valve_reads_succeeded = False
+                        ServiceException(f"Could not read valve {th} for room {room}", original_exception=error, severity=2)
             else:
                 if info['thermostats']:
                     valve_states_for_room.append(100)
@@ -402,8 +445,8 @@ def get_system_state():
             valve_states[room] = valve_states_for_room
 
         system_state['valve_states'] = valve_states
-        report("Successfully acquired valve states.")
-        success = True
+        report("Acquired valve states; unavailable readings remain unknown.")
+        success = valve_reads_succeeded
     except ModuleException as e:
         system_node.write({'last_updated':timestamp(),'error':True,'where':'valve'},'control/error')
         ServiceException(f"Module error while acquiring valve states", original_exception=e, severity = 3)
@@ -430,10 +473,14 @@ def get_system_state():
     success = False
     try:
         report("Acquiring pump states.",verbose=True)
-        system_state['pump_states'] = get_pump_states()
-
-        report("Successfully acquired pump states.")
         success = True
+        for cycle in system_state['pump_states']:
+            try:
+                system_state['pump_states'][cycle] = get_pump_state(cycle)
+            except Exception as error:
+                success = False
+                ServiceException(f"Could not read pump {cycle}; its state is unknown", original_exception=error, severity=2)
+        report("Acquired pump states; unavailable states remain unknown.")
     except ModuleException as e:
         system_node.write({'last_updated':timestamp(),'error':True,'where':'pump_states'},'control/error')
         ServiceException(f"Module error while acquiring pump states", original_exception=e, severity = 3)
@@ -458,94 +505,22 @@ def get_system_state():
         ServiceException(f"Unexpected error while acquiring boiler state", severity = 3)
 
     log({f"success_acquire_boiler_state":success})
-    return system_state
+    return complete_sensor_state(system_state, rooms)
 #endregion
 
 #region Compare and command
 def compare_and_command(heating_switch:dict, system_state:dict):
-    """
-    Types:
-        temp    pres    valve   logic
-        1       1       1       aNorm
-        1       0       1       aPSD
-        0       1       1       aTSD
-        0       0       1       aPTSD
-        1       0       0       bNorm
-        0       0       0       bTSD
+    """Start from schedule/override votes; refine each room using usable inputs.
 
-    Logic: https://docs.google.com/presentation/d/1JVkR888i549N9s0fq-km47kBXYoeGFToBFRARagczR4/edit?slide=id.g7309d6401d1e61ac_185#slide=id.g7309d6401d1e61ac_185
-        Core:
-            Give heat to room based on learned presence patterns, actual presence and measured temp.
-            If possible, turn on room only, if not, entire cycle.
-            Preparatory heating based on warming characteristics.
-
-        Elements: for each controlled room
-            > sheet - manually set presence probabilities
-            > override - override request, from:
-                - QR: set override requests
-                - form: freeform override requests
-            > presence - integrated current best knowledge of presence probabilities, based on:
-                - sheet with decreasing weight since last modification?
-                - recorded presence data for room
-            > presence with override - presence with overrides pasted over
-            > temperature - presence with override mapped to T_min, T_max range, represents the requested temperature settings
-                - T_min, T_max: based on warming characteristics from recorded data
-            > heating - temperature with preparatory heating based on warming characteristics
-                - warming curve: T_end*end_factor + (T_start*start_factor - T_end*end_factor) * np.exp(-t / tau(T_ext))
-                - heating constant: tau, in minutes, tau(T_ext) = a + b*T_ext
-                - fitted params for each room: a, b, start_factor, end_factor
-            > schedule - heating capped to T_max - no_presence_offset
-            > condensed schedule - schedule with applied actual presence input:
-                - if presence at time t_pres and t - t_pres > presence_min, add offset for t_pres + presence_persistence hours
-                - saved locally
-                - posted to Firebase
-            > measured temp: primary: sensor, secondary: valve
-            > commands:
-                - if room has valve and valve is available:
-                    - compare valve set temp to c. schedule, update valve if different
-                    - send measured room temp to valve
-                    - sync heating with valves
-                    Rooms:
-                        - for each room collect demand on given cycle
-                        - if max(demand) > d_on%: pump vote 1
-                        - if d_off% < max(demand) < d_on%: pump vote is current state of pump
-                        - if max(demand) < d_off%: pump vote 0
-                - else: usual voting logic for pump & boiler: if at least one room requires heating on a given cycle, the cycle should be turned on and therefore the boiler too.
-                    Rooms:
-                        - for each room:
-                            - if a room is below the set temp it votes with 1 (need to turn pump on)
-                            - if a room is in the buffered range, it votes with whatever the current cycle's pump's state is (no opinion)
-                            - if a room is above the set temp it votes with 0 (no need to turn pump on)
-                Pumps:
-                    - for each pump:
-                        - if differs from pump state issue command and log decision
-                        - unless cycle-wise off is set
-                Boiler: if differs from boiler state issue command and log decision
-
-        Cases:
-            aNorm: normal control flow for rooms with a valve
-                - flow above
-            aPSD: degraded control flow with no current presence data for rooms with a valve
-                - schedule --> c. schedule step with presumed presence (no_presence_offset is re-added)
-                - log degradation error
-            aTSD: degraded control flow with no current temp data for rooms with a valve [can only happen if valve is inaccessible]:
-                - turn pumps and boiler based on presence with override
-                - log degradation error
-            [aPTSD: degraded control flow with no current presence and temp data for rooms with a valve [can only happen if valve is inaccessible]:
-                - schedule --> c. schedule step with presumed presence (no_presence_offset is re-added)
-                - turn pumps and boiler based on presence with override
-                - log degradation error] -- NOT A SEPARATE CASE, combination of the above two, handled independently
-            bNorm: normal control flow for rooms without a valve
-                - flow above but:
-                    - no_presence_offset = 0
-                    - no valve interaction at the end
-            bTSD: degraded control flow with no current temp data for rooms without a valve
-                - turn pumps and boiler based on presence with override
-                - log degradation error
+    Unknown temperatures use the room's configured binary threshold. Missing
+    valve feedback uses temperature hysteresis. Room failures retain the base
+    vote, while available rooms and actuators continue independently.
     """
     report('\nCOMPARING SET TEMPS TO ACTUAL TEMPS TO DETERMINE VOTES')
     success = False
     control = {}
+    pump_votes = None
+    boiler_vote = None
     try:
         rooms_info = get_rooms_info()
         room_votes = {}
@@ -564,148 +539,94 @@ def compare_and_command(heating_switch:dict, system_state:dict):
         pid_commands_confirmed = True
         PID_log = {}
 
-        for room in rooms_info:
-            #set_temp = system_state['set_temps'][room]
-            set_temp = max(system_state['set_temps'][room],system_state['set_temps_interp'][room])
-            hysteresis_buffer = float(heating_config['hysteresis_buffer'])
+        complete_sensor_state(system_state, rooms_info)
+        room_failures = False
+
+        def refine_room_vote(room, set_temp, fallback_vote, fallback_reason):
+            nonlocal pid_commands_confirmed
             measured_temp = system_state['measured_temps'][room]
             sensor_last_updated = system_state['sensor_last_updated'][room]
-            set_low = set_temp - hysteresis_buffer
-            set_high = set_temp + hysteresis_buffer
-            demand = max(system_state['valve_states'][room])
-            demand_open_max = int(heating_config['demand_hysteresis_open_max'])
-            demand_open_min = int(heating_config['demand_hysteresis_open_min'])
-            demand_close = int(heating_config['demand_hysteresis_close'])
-            error_max = float(heating_config['error_max'])
-            error_min = float(heating_config['error_min'])
+            try:
+                minutes_since_update = round((datetime.now() - datetime.strptime(
+                    sensor_last_updated, settings['timestamp_format'])).total_seconds() / 60)
+            except (TypeError, ValueError):
+                minutes_since_update = None
+            if (not usable_control_number(measured_temp) or minutes_since_update is None
+                    or minutes_since_update > float(heating_config['temp_data_expiry'])):
+                return fallback_vote, fallback_reason, 'temperature unavailable/expired; timed fallback'
 
-            thermostats = rooms_info[room]["thermostats"].split(";") if isinstance(rooms_info[room]["thermostats"], str) else False
-            room_vote = 0
-            reason = 'None given'
-            reason_control = 'none'
-            minutes_since_update = round((datetime.now() - datetime.strptime(sensor_last_updated,settings['timestamp_format'])).total_seconds()/60) if sensor_last_updated else None
-            relation = f"{measured_temp} °C, {minutes_since_update} mins ago" if minutes_since_update else f"time controlled room"
+            previous_vote = system_state['room_states'][room]
+            if previous_vote not in (0, 1):
+                previous_vote = fallback_vote
+            thermostat_ids = rooms_info[room]['thermostats']
+            thermostats = [th.strip() for th in thermostat_ids.split(';') if th.strip()] if isinstance(thermostat_ids, str) else []
+            valves = system_state['valve_states'][room]
+            valves_usable = (bool(thermostats) and isinstance(valves, (list, tuple))
+                             and len(valves) == len(thermostats)
+                             and all(usable_control_number(v) and 0 <= v <= 100 for v in valves))
+            if not valves_usable:
+                # Use existing temperature hysteresis when valve feedback is unavailable.
+                # Do not invent a TRV demand or send a fallback TRV command.
+                buffer = float(heating_config['hysteresis_buffer'])
+                upper = PID_OVERSHOOT_VOTE_THRESHOLD if thermostats else buffer
+                relation = f'{measured_temp} °C vs {set_temp} °C; temperature control'
+                if thermostats:
+                    relation += '; valve feedback unavailable'
+                if measured_temp < set_temp - buffer:
+                    return 1, 'below', relation
+                if measured_temp > set_temp + upper:
+                    return 0, 'above', relation
+                return previous_vote, 'h_on' if previous_vote else 'h_off', relation
+
+            demand_open = int(heating_config['demand_hysteresis_open_min'] if previous_vote == 0
+                              else heating_config['demand_hysteresis_close'])
+            demand = max(valves)
+            room_overshoot = False
+            bias_report = []
+            for thermostat, valve in zip(thermostats, valves):
+                result = calculate_pid_overlay(set_temp, measured_temp, sensor_last_updated,
+                                               valve, demand_open, PID_state.get(thermostat),
+                                               gains, datetime.now())
+                active_PID_thermostats.add(thermostat)
+                room_overshoot = room_overshoot or result['room_overshoot']
+                bias_report.append(result['log']['outputs']['net_bias'])
+                confirmed = apply_pid_overlay(thermostat, result, measured_temp, PID_state)
+                pid_commands_confirmed = confirmed and pid_commands_confirmed
+                PID_log[room][thermostat] = result['log']
+            relation = f'{demand}% demand, {measured_temp} °C vs {set_temp} °C, bias: {bias_report}'
+            if room_overshoot:
+                return 0, 'above', relation
+            if demand < demand_open:
+                return 0, 'd_low', relation
+            if demand > demand_open:
+                return 1, 'd_high', relation
+            return previous_vote, 'd_h_on' if previous_vote else 'd_h_off', relation
+
+        for room in rooms_info:
+            set_temp = max(system_state['set_temps'][room], system_state['set_temps_interp'][room])
             cycle = room_to_cycle(room)
-            set_PID = None
+            # Establish the sensor-independent vote before attempting any refinement.
+            room_vote, reason_control, automatic = binary_room_vote(room, cycle, set_temp, heating_switch)
+            relation = 'scheduled or manual on/off control'
             PID_log[room] = {}
-
-            # The sensor reader discards expired samples, including their timestamps.
-            temperature_missing = measured_temp is None or minutes_since_update is None
-            temperature_expired = (minutes_since_update is not None
-                                   and int(heating_config['temp_data_expiry']) < minutes_since_update)
-            if set_temp not in (-1, 0, 1) and (temperature_missing or temperature_expired):
-                set_temp = 0 if set_temp <= int(heating_config[f'room_{room}_threshold_temp']) else 1 # Turn set temp to binary on/off
-                relation = ("temperature data unavailable, using timed fallback" if temperature_missing
-                            else f"data expired, last data {minutes_since_update} mins ago")
-
-            if set_temp != -1 and heating_switch['cycles'][cycle] == 0: # Cycle is room controlled
-                if heating_switch['rooms'][room] == 0: # Room is schedule controlled
-                    if set_temp in [0,1]: # Room is time controlled or temp sensor degradation
-                        if set_temp:
-                            room_vote = 1
-                            reason = 'Timed on'
-                            reason_control = 't_on'
-                        else:
-                            room_vote = 0
-                            reason = 'Timed off'
-                            reason_control = 't_off'
-                    else: # Room is temp controlled
-                        if thermostats: # Room valve data is available
-                            error_raw =  set_temp - measured_temp
-                            error_pos = max(0, error_raw)
-
-                            """demand_open = min( # Calculate demand on cycle for decision to start or stop water circulation
-                                            max(
-                                                demand_open_min
-                                                + (1 - ((error_pos + error_max) / (error_max - error_min)))
-                                                * (demand_open_max - demand_open_min),
-                                                demand_open_min
-                                            ),
-                                            demand_open_max
-                                        )"""
-                            demand_open = demand_open_min if system_state['room_states'][room] == 0 else demand_close
-                            room_overshoot = False
-
-                            bias_report = []
-                            thermostat_i = 0
-                            for thermostat in thermostats:
-                                active_PID_thermostats.add(thermostat)
-                                result = calculate_pid_overlay(
-                                    set_temp, measured_temp, sensor_last_updated,
-                                    system_state['valve_states'][room][thermostat_i],
-                                    demand_open, PID_state.get(thermostat), gains,
-                                    datetime.now())
-                                set_PID = result['setpoint']
-                                regime = result['log']['regime']
-                                room_overshoot = room_overshoot or result['room_overshoot']
-                                bias_report.append(result['log']['outputs']['net_bias'])
-                                confirmed = apply_pid_overlay(
-                                    thermostat, result, measured_temp, PID_state)
-                                pid_commands_confirmed = confirmed and pid_commands_confirmed
-                                PID_log[room][thermostat] = result['log']
-
-                                thermostat_i += 1
-
-                            PID_report = f", (error: {format_to_decimals(error_raw, 2)}, {regime}, bias: {[format_to_decimals(bias, 2) for bias in bias_report]})"
-
-                            if  demand < demand_open:
-                                room_vote = 0 # Does nothing in current vote-additive logic just included for completeness
-                                reason = 'Closed valves'
-                                reason_control = 'd_low'
-                                relation = f"{demand} < {demand_open} %{PID_report}"
-                            elif demand_open < demand:
-                                room_vote = 1
-                                reason = 'Open valves'
-                                reason_control = 'd_high'
-                                relation = f"{demand_open} < {demand} %{PID_report}"
-                            else:
-                                room_vote = system_state['room_states'][room]
-                                reason = 'Closed hysteresis' if system_state['room_states'][room] == 0 else 'Open hysteresis'
-                                reason_control = 'd_h_off' if system_state['room_states'][room] == 0 else 'd_h_on'
-                                relation = f"{demand_close} <= {demand} <= {demand_open} %{PID_report}"
-                            if room_overshoot:  # Do not start heating at all if above demand regime
-                                room_vote = 0 # Does nothing in current vote-additive logic just included for completeness
-                                reason = 'Above set temp'
-                                reason_control = 'above'
-                                relation = f"{set_temp + PID_OVERSHOOT_VOTE_THRESHOLD} < {measured_temp} {PID_report} °C"
-                        else:
-                            if  measured_temp < set_low:
-                                room_vote = 1
-                                reason = 'Below set temp'
-                                reason_control = 'below'
-                                relation = f"{measured_temp} < {set_low} °C, {minutes_since_update} mins ago"
-                            elif set_high < measured_temp:
-                                room_vote = 0 # Does nothing in current vote-additive logic just included for completeness
-                                reason = 'Above set temp'
-                                reason_control = 'above'
-                                relation = f"{set_high} < {measured_temp} °C, {minutes_since_update} mins ago"
-                            else:
-                                room_vote = system_state['room_states'][room]
-                                reason = 'Off hysteresis' if system_state['room_states'][room] == 0 else 'On hysteresis'
-                                reason_control = 'h_off' if system_state['room_states'][room] == 0 else 'h_on'
-                                relation = f"{set_low} <= {measured_temp} <= {set_high} °C, {minutes_since_update} mins ago"
-                elif heating_switch['rooms'][room] == 1: #DEV probably useless, remove?
-                    room_vote = 1
-                    reason = 'Room master ON'
-                    reason_control = 'r_m_on'
-                elif heating_switch['rooms'][room] == -1:
-                    room_vote = 0
-                    reason = 'Room master OFF'
-                    reason_control = 'r_m_off'
-            elif set_temp == -1:
-                room_vote = 0
-                reason = f"Cycle {cycle} scheduled master OFF"
-                reason_control = 'c_s_m_off'
-            elif heating_switch['cycles'][cycle] == 1:
-                room_vote = 1
-                reason = f"Cycle {cycle} master ON"
-                reason_control = 'c_m_on'
-            elif heating_switch['cycles'][cycle] == -1:
-                room_vote = 0
-                reason = f"Cycle {cycle} master OFF"
-                reason_control = 'c_m_off'
-
-            report(f"\t{reason} ({relation}): {'['+rooms_info[room]['name']+']' if system_state['occupancy'][room] else rooms_info[room]['name']} voting {['OFF','ON'][room_vote]} for cycle {cycle}.",verbose=True)
+            if automatic:
+                try:
+                    room_vote, reason_control, relation = refine_room_vote(room, set_temp, room_vote, reason_control)
+                except Exception as error:
+                    # Assignment above is atomic: on failure the base vote is retained.
+                    room_failures = True
+                    relation = 'room calculation failed; retaining timed fallback'
+                    thermostat_ids = rooms_info[room]['thermostats']
+                    if isinstance(thermostat_ids, str):
+                        for thermostat in thermostat_ids.split(';'):
+                            active_PID_thermostats.discard(thermostat.strip())
+                    system_node.write({'last_updated':timestamp(), 'error':True,
+                                       'where':f'room_{room}'}, 'control/error')
+                    ServiceException(f'Room {room} control failed; using its schedule fallback',
+                                     original_exception=error, severity=3)
+            name = rooms_info[room]['name']
+            label = '[' + name + ']' if system_state['occupancy'][room] else name
+            report(f"\t{reason_control} ({relation}): {label} voting {['OFF','ON'][room_vote]} for cycle {cycle}.", verbose=True)
             control['rooms'][room] = {'vote':room_vote,'reason':reason_control}
             room_votes[room] = room_vote
             system_state['room_states'][room] = room_vote
@@ -748,18 +669,18 @@ def compare_and_command(heating_switch:dict, system_state:dict):
             ]) + ".", verbose=True)
         report(f"Pump states: " +
             ', '.join([
-                f"{pump}: {['OFF', 'ON'][state]}"
+                f"{pump}: {'ON' if state == 1 else 'OFF' if state == 0 else 'UNKNOWN'}"
                 for pump, state
                 in system_state['pump_states'].items()
             ]) + ".", verbose=True)
         report(f"Boiler vote: {['OFF','ON'][boiler_vote]}",verbose=True)
-        report(f"Boiler state: {['OFF','ON'][system_state['boiler_state']]}",verbose=True)
+        report(f"Boiler state: {system_state['boiler_state']} (None means unknown)",verbose=True)
 
         control['pid_commands_confirmed'] = pid_commands_confirmed
         control['last_updated'] = timestamp()
         system_node.write(control,'control')
         export_dict_as_json(control,'system/control.json')
-        success = pid_commands_confirmed
+        success = pid_commands_confirmed and not room_failures
     except ModuleException as e:
         system_node.write({'last_updated':timestamp(),'error':True,'where':'voting'},'control/error')
         ServiceException(f"Module error while voting", original_exception=e, severity = 3)
@@ -768,6 +689,10 @@ def compare_and_command(heating_switch:dict, system_state:dict):
         ServiceException(f"Unexpected error while voting", severity = 3)
 
     log({f"success_voting":success})
+
+    if pump_votes is None or boiler_vote is None:
+        log({'success_issuing_command': False})
+        return
 
     report('\nISSUING COMMANDS')
     def issue_command(existing_commands, device:str, delay:float, setting:int):
@@ -796,6 +721,12 @@ def compare_and_command(heating_switch:dict, system_state:dict):
     success = False
     try:
         existing_commands = load_commands(COMMANDS_PATH)
+        desired = {f'pump_{cycle}': vote for cycle, vote in pump_votes.items()}
+        desired['boiler'] = boiler_vote
+        # A failed command must not survive a later opposite decision.
+        existing_commands = [command for command in existing_commands
+                             if command['executed'] or command['device'] not in desired
+                             or command['setting'] == desired[command['device']]]
         new_commands = []
         cycles_info = get_cycles_info()
         append_valid_command = (lambda command: new_commands.append(command) if command else None)
@@ -883,23 +814,28 @@ def execute_commands():
                 latest_unexecuted_commands_past_due.append(latest_unexecuted_command_past_due) # Does not copy, just creates new reference so the list of loaded commands is still directly affected (which is good)
             except IndexError: pass
 
-        boiler_switch_success = True
-        pumps_switch_successes = []
+        command_successes = []
+        complete_sensor_state(system_state, [])
         for command in latest_unexecuted_commands_past_due:
-            if command['device'] == 'boiler':
-                boiler_switch_success = set_boiler_state(command['setting'])
-                if boiler_switch_success:
+            try:
+                if command['device'] == 'boiler':
+                    confirmed = bool(set_boiler_state(command['setting']))
+                    if confirmed:
+                        system_state['boiler_state'] = command['setting']
+                else:
+                    pump = command['device'][-1]
+                    confirmed = bool(set_pump_state(pump, command['setting']))
+                    if confirmed:
+                        system_state['pump_states'][pump] = command['setting']
+                if confirmed:
                     report(f"Command executed: '{command['device']}': {['OFF','ON'][command['setting']]}.",verbose=True)
                     command['executed'] = True
                     command['execution_timestamp'] = timestamp()
-                    system_state['boiler_state'] = command['setting']
-            else:
-                pumps_switch_successes.append(set_pump_state(command['device'][-1],command['setting']))
-                if pumps_switch_successes[-1]:
-                    report(f"Command executed: '{command['device']}': {['OFF','ON'][command['setting']]}.",verbose=True)
-                    command['executed'] = True
-                    command['execution_timestamp'] = timestamp()
-                    system_state['pump_states'][command['device'][-1]] = command['setting']
+                command_successes.append(confirmed)
+            except Exception as error:
+                command_successes.append(False)
+                ServiceException(f"Command failed for {command['device']}; continuing other devices",
+                                 original_exception=error, severity=3)
 
         newly_executed_commands = list(filter(lambda command:command['executed'],latest_unexecuted_commands_past_due))
         still_unexecuted_commands = list(filter(lambda command:not command['executed'],latest_unexecuted_commands_past_due))
@@ -907,8 +843,7 @@ def execute_commands():
         refresh_commands(future_commands + still_unexecuted_commands)
         archive_commands(executed_commands + newly_executed_commands)
 
-        if False not in pumps_switch_successes and boiler_switch_success:
-            success = True
+        success = all(command_successes)
     except ModuleException as e:
         system_node.write({'last_updated':timestamp(),'error':True,'where':'execute_commands'},'control/error')
         ServiceException(f"Module error while executing commands", original_exception=e, severity = 3)
