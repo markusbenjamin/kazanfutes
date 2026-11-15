@@ -6,6 +6,7 @@ PID history is bounded and advances only after confirmed thermostat commands.
 from utils.project import *
 from utils.set_temperature import (interpolate_set_temperature,
                                    schedule_with_recent_history)
+from utils.boiler_temperature_diagnostic import read_boiler_error
 
 #region PID calculation
 PID_STATE_VERSION = 2
@@ -859,6 +860,13 @@ def execute_commands():
 
 def export_system_state():
     success = False
+    # Reporting only, after actuation. Always clear an earlier diagnostic first.
+    system_state['boiler_error'] = ''
+    try:
+        system_state['boiler_error'] = read_boiler_error(get_project_root(), heating_switch, datetime.now())
+    except Exception as error:
+        # A diagnostic failure must not alter control/error or prevent publication.
+        report(f"Boiler temperature diagnostic unavailable: {error}", verbose=True)
     try:
         log(system_state)
         system_state['last_updated'] = timestamp()
