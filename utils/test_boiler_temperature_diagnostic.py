@@ -1,13 +1,20 @@
 """Offline boiler diagnostics: synthetic readings and temporary files only."""
 import json
+import importlib.util
 from datetime import datetime, timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-from utils.boiler_temperature_diagnostic import (
-    STAMP_FORMAT, boiler_error_from_snapshot, read_boiler_error)
+# Load the pure helper directly: utils.__init__ imports hardware-facing project.
+_spec = importlib.util.spec_from_file_location(
+    'boiler_temperature_diagnostic', Path(__file__).with_name('boiler_temperature_diagnostic.py'))
+_diagnostic = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_diagnostic)
+STAMP_FORMAT = _diagnostic.STAMP_FORMAT
+boiler_error_from_snapshot = _diagnostic.boiler_error_from_snapshot
+read_boiler_error = _diagnostic.read_boiler_error
 
 
 class BoilerTemperatureTests(unittest.TestCase):
