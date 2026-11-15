@@ -352,7 +352,10 @@ def candidates_for(device: dict[str, Any], config: dict[str, Any], now: datetime
             )
             candidate["open_after_runs"] = 2
             return [candidate]
-        if facts["output_on"] is False:
+        if facts.get("switch_errors"):
+            return [issue(device, "switch_fault", "Shelly protection fault: " +
+                          ", ".join(str(error) for error in facts["switch_errors"]), policy)]
+        if facts["output_on"] is False and not facts.get("rain_off_expected"):
             source = facts.get("switch_source") or "unknown"
             return [issue(
                 device, "output_off", f"Relay output is OFF (last source: {source})",

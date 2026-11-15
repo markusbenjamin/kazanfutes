@@ -9,6 +9,7 @@ from typing import Any
 import requests
 
 from utils.shelly_discovery import build_shelly_resolver, load_shelly_config, normalize_mac
+from utils.rain_plug_control import off_expected
 
 
 def _reading(value: Any) -> float | None:
@@ -82,6 +83,9 @@ def collect_boiler_plugs(project_root: str, now: datetime | None = None) -> list
                     f"Status read failed: {type(error).__name__}: {error}"
                 )
         devices.append(device)
+        device['facts']['rain_off_expected'] = off_expected(
+            name, mac, (now or datetime.now().astimezone()).timestamp(),
+        )
     return devices
 
 

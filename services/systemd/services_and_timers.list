@@ -8,6 +8,7 @@ device_watchdog.service
 device_watchdog.timer
 boiler_power_monitor.service
 boiler_power_monitor.timer
+shelly_plug_manager.service
 service_data_watchdog.service
 service_data_watchdog.timer
 humidity_monitor.service
@@ -47,3 +48,4 @@ pv_performance_watchdog.timer
 open_close_logger.service
 aqara_and_nous_logger.service
 aqara_and_nous_logger.timer
+

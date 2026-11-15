@@ -1,0 +1,24 @@
+[Unit]
+Description=Shelly boiler plug rain shutdown and recovery
+After=network-online.target
+Wants=network-online.target
+BindsTo=media-pi-program_stick.mount
+After=media-pi-program_stick.mount
+PartOf=kazanfutes.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/media/pi/program_stick/kazanfutes
+Environment="HOME=/home/pi"
+Environment="PYTHONPATH=/media/pi/program_stick/kazanfutes"
+Environment="PYTHONUNBUFFERED=1"
+StateDirectory=kazanfutes-rain-plugs
+StateDirectoryMode=0755
+ExecStart=/home/pi/Kazanfutes_local/bin/python /media/pi/program_stick/kazanfutes/services/shelly_plug_manager.py
+Restart=on-failure
+RestartSec=30
+TimeoutStopSec=110
+
+[Install]
+WantedBy=kazanfutes.target
