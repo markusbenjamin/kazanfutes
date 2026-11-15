@@ -11,20 +11,20 @@
     "rooms": {
         "1": {
             "coverage": {
-                "measured": 1141,
+                "measured": 1151,
                 "estimated": 0,
                 "unavailable": 4
             },
             "model": {
-                "heat_tau_s": 600.0,
+                "heat_tau_s": 1200.0,
                 "cool_tau_s": 3600.0,
                 "gain": 1.0,
-                "valve_exponent": 0.7,
+                "valve_exponent": 0.35,
                 "quality": "partly_fitted",
                 "fitted_parts": [
                     "cooling"
                 ],
-                "heating_samples": 48,
+                "heating_samples": 58,
                 "cooling_samples": 2446
             },
             "probe_sources": [
@@ -35,13 +35,13 @@
             "coverage": {
                 "measured": 0,
                 "estimated": 888,
-                "unavailable": 257
+                "unavailable": 267
             },
             "model": {
-                "heat_tau_s": 600.0,
+                "heat_tau_s": 1200.0,
                 "cool_tau_s": 3600.0,
                 "gain": 1.0,
-                "valve_exponent": 0.7,
+                "valve_exponent": 0.35,
                 "quality": "shared",
                 "fitted_parts": [],
                 "heating_samples": 0,
@@ -56,15 +56,15 @@
         },
         "3": {
             "coverage": {
-                "measured": 1141,
+                "measured": 1151,
                 "estimated": 0,
                 "unavailable": 4
             },
             "model": {
-                "heat_tau_s": 600.0,
+                "heat_tau_s": 1200.0,
                 "cool_tau_s": 3600.0,
                 "gain": 1.0,
-                "valve_exponent": 0.7,
+                "valve_exponent": 0.35,
                 "quality": "partly_fitted",
                 "fitted_parts": [
                     "cooling"
@@ -79,20 +79,21 @@
         },
         "4": {
             "coverage": {
-                "measured": 1141,
+                "measured": 1151,
                 "estimated": 0,
                 "unavailable": 4
             },
             "model": {
-                "heat_tau_s": 600.0,
+                "heat_tau_s": 1200.0,
                 "cool_tau_s": 3600.0,
                 "gain": 1.0,
-                "valve_exponent": 0.7,
-                "quality": "partly_fitted",
+                "valve_exponent": 0.35,
+                "quality": "fitted",
                 "fitted_parts": [
+                    "heating",
                     "cooling"
                 ],
-                "heating_samples": 52,
+                "heating_samples": 62,
                 "cooling_samples": 2531
             },
             "probe_sources": [
@@ -101,21 +102,21 @@
         },
         "5": {
             "coverage": {
-                "measured": 1111,
+                "measured": 1121,
                 "estimated": 30,
                 "unavailable": 4
             },
             "model": {
-                "heat_tau_s": 600.0,
+                "heat_tau_s": 1200.0,
                 "cool_tau_s": 3600.0,
                 "gain": 1.0,
-                "valve_exponent": 0.7,
+                "valve_exponent": 0.35,
                 "quality": "partly_fitted",
                 "fitted_parts": [
                     "cooling"
                 ],
                 "heating_samples": 0,
-                "cooling_samples": 2484
+                "cooling_samples": 2494
             },
             "probe_sources": [
                 "merce_radiatorok_2_shelly/temperature:101",
@@ -124,15 +125,15 @@
         },
         "6": {
             "coverage": {
-                "measured": 1140,
+                "measured": 1150,
                 "estimated": 0,
                 "unavailable": 5
             },
             "model": {
-                "heat_tau_s": 600.0,
+                "heat_tau_s": 1200.0,
                 "cool_tau_s": 3600.0,
                 "gain": 1.0,
-                "valve_exponent": 0.7,
+                "valve_exponent": 0.35,
                 "quality": "partly_fitted",
                 "fitted_parts": [
                     "cooling"
@@ -146,15 +147,15 @@
         },
         "7": {
             "coverage": {
-                "measured": 1141,
+                "measured": 1151,
                 "estimated": 0,
                 "unavailable": 4
             },
             "model": {
-                "heat_tau_s": 600.0,
+                "heat_tau_s": 1200.0,
                 "cool_tau_s": 3600.0,
                 "gain": 1.0,
-                "valve_exponent": 0.7,
+                "valve_exponent": 0.35,
                 "quality": "partly_fitted",
                 "fitted_parts": [
                     "cooling"
@@ -170,14 +171,14 @@
         "8": {
             "coverage": {
                 "measured": 0,
-                "estimated": 1141,
+                "estimated": 1151,
                 "unavailable": 4
             },
             "model": {
-                "heat_tau_s": 600.0,
+                "heat_tau_s": 1200.0,
                 "cool_tau_s": 3600.0,
                 "gain": 1.0,
-                "valve_exponent": 0.7,
+                "valve_exponent": 0.35,
                 "quality": "shared",
                 "fitted_parts": [],
                 "heating_samples": 0,
@@ -188,14 +189,14 @@
         "9": {
             "coverage": {
                 "measured": 0,
-                "estimated": 1141,
+                "estimated": 1151,
                 "unavailable": 4
             },
             "model": {
-                "heat_tau_s": 600.0,
+                "heat_tau_s": 1200.0,
                 "cool_tau_s": 3600.0,
                 "gain": 1.0,
-                "valve_exponent": 0.7,
+                "valve_exponent": 0.35,
                 "quality": "shared",
                 "fitted_parts": [],
                 "heating_samples": 0,
@@ -206,14 +207,14 @@
         "10": {
             "coverage": {
                 "measured": 0,
-                "estimated": 1141,
+                "estimated": 1151,
                 "unavailable": 4
             },
             "model": {
-                "heat_tau_s": 600.0,
+                "heat_tau_s": 1200.0,
                 "cool_tau_s": 3600.0,
                 "gain": 1.0,
-                "valve_exponent": 0.7,
+                "valve_exponent": 0.35,
                 "quality": "shared",
                 "fitted_parts": [],
                 "heating_samples": 0,
@@ -223,15 +224,15 @@
         },
         "12": {
             "coverage": {
-                "measured": 1111,
+                "measured": 1121,
                 "estimated": 30,
                 "unavailable": 4
             },
             "model": {
-                "heat_tau_s": 600.0,
+                "heat_tau_s": 1200.0,
                 "cool_tau_s": 3600.0,
                 "gain": 1.0,
-                "valve_exponent": 0.7,
+                "valve_exponent": 0.35,
                 "quality": "partly_fitted",
                 "fitted_parts": [
                     "cooling"
@@ -245,15 +246,15 @@
         },
         "13": {
             "coverage": {
-                "measured": 1141,
+                "measured": 1151,
                 "estimated": 0,
                 "unavailable": 4
             },
             "model": {
-                "heat_tau_s": 600.0,
+                "heat_tau_s": 1200.0,
                 "cool_tau_s": 3600.0,
                 "gain": 1.0,
-                "valve_exponent": 0.7,
+                "valve_exponent": 0.35,
                 "quality": "partly_fitted",
                 "fitted_parts": [
                     "cooling"
