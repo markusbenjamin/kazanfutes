@@ -2,6 +2,7 @@
 
 import ast
 import copy
+from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 import unittest
@@ -25,7 +26,9 @@ def load_reporting():
            'requests': Mock(), 'report': Mock(), 'log': Mock(),
            'ServiceException': Mock(), 'ModuleException': ModuleError,
            'timestamp': lambda: '2026-11-05-21-00-00',
-           'export_dict_as_json': Mock(), 'system_state': {'boiler_state': 1}}
+           'export_dict_as_json': Mock(), 'system_state': {'boiler_state': 1},
+           'read_boiler_error': Mock(return_value=''), 'get_project_root': lambda: '/project',
+           'heating_switch': {'system': 1, 'cycles': {'1': 0}}, 'datetime': datetime}
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(SOURCE), 'exec'), env)
     env['system_node'] = env['HeatingStatusPublisher']()
     return env
@@ -128,6 +131,30 @@ class HeatingReportingTests(unittest.TestCase):
         self.assertEqual(env['system_node'].pending['control/error/where'], 'system_state_export')
         env['log'].assert_any_call({'success_export_system_state': False})
 
+    def test_boiler_diagnostic_uses_normal_state_publication_and_clears(self):
+        env = load_reporting()
+        env['system_node'].write({'error': True, 'where': 'existing_error'}, 'control/error')
+        control_errors = dict(env['system_node'].pending)
+        env['read_boiler_error'].side_effect = ['kazán hiba!', '']
+        for expected in ('kazán hiba!', ''):
+            env['export_system_state']()
+            self.assertEqual(env['system_state']['boiler_error'], expected)
+            self.assertEqual(env['system_node'].pending['state/boiler_error'], expected)
+            self.assertEqual(env['export_dict_as_json'].call_args.args[0]['boiler_error'], expected)
+            for key, value in control_errors.items():
+                self.assertEqual(env['system_node'].pending[key], value)
+        env['ServiceException'].assert_not_called()
+
+    def test_diagnostic_failure_clears_string_without_control_error_or_failed_export(self):
+        env = load_reporting()
+        env['system_state']['boiler_error'] = 'kazán hiba!'
+        env['read_boiler_error'].side_effect = RuntimeError('unavailable')
+        env['export_system_state']()
+        self.assertEqual(env['system_node'].pending['state/boiler_error'], '')
+        self.assertFalse(any(key.startswith('control/error') for key in env['system_node'].pending))
+        env['ServiceException'].assert_not_called()
+        env['log'].assert_any_call({'success_export_system_state': True})
+
     def test_main_actuates_and_saves_before_attempting_cloud_upload(self):
         self.run_main(heating_on=True)
 
@@ -143,6 +170,11 @@ class HeatingReportingTests(unittest.TestCase):
                    compare_and_command=lambda *args: events.append('compare'),
                    execute_commands=lambda: events.append('actuate'),
                    shutdown_heating=lambda: events.append('shutdown'))
+        def diagnostic(root, switch, now):
+            self.assertEqual(switch['system'], int(heating_on))
+            self.assertIn('actuate' if heating_on else 'shutdown', events)
+            return 'kazán hiba!' if heating_on else ''
+        env['read_boiler_error'].side_effect = diagnostic
         env['export_dict_as_json'] = lambda data, path: events.append('save:' + path)
         def fail_upload(*args, **kwargs):
             events.append('upload')
@@ -163,6 +195,8 @@ class HeatingReportingTests(unittest.TestCase):
             self.assertEqual(events, ['shutdown', 'save:system/PID_state.json',
                                       'save:system/state.json', 'upload'])
         env['requests'].patch.assert_called_once()
+        self.assertEqual(env['requests'].patch.call_args.kwargs['json']['state/boiler_error'],
+                         'kazán hiba!' if heating_on else '')
         env['log'].assert_any_call({'success_export_system_state': True})
         self.assertFalse(env['log'].call_args.args[0]['success_firebase_publish'])
 
