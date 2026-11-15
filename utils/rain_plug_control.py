@@ -188,7 +188,10 @@ def advance(previous, weather, now, *, restarted=False):
 def update_issue(state, key, message, now):
     """One notification per active incident, with failed deliveries retryable."""
     if message is None:
-        state['issues'].pop(key, None)
+        previous = state['issues'].pop(key, None)
+        if previous and not previous['sent']:
+            state.setdefault('pending_notifications', []).append(
+                dict(previous, key=key, resolved=True))
     elif key not in state['issues']:
         state['issues'][key] = {'message': message, 'opened_at': now,
                                 'sent': False, 'last_attempt': None}

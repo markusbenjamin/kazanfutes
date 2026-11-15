@@ -273,6 +273,20 @@ class RelayTests(unittest.TestCase):
         deliver_alerts(state, NOW + 700, saved, sender)
         self.assertEqual(sender.call_count, 3)
 
+    def test_failed_outage_email_survives_weather_recovery_and_reload(self):
+        state = wet_state(); sender = Mock(return_value=False)
+        update_issue(state, 'weather', 'both sources failed', NOW)
+        deliver_alerts(state, NOW, Mock(), sender)
+        update_issue(state, 'weather', None, NOW + 60)
+        state = json.loads(json.dumps(state))  # Persisted/reloaded runtime state.
+        self.assertNotIn('weather', state['issues'])
+        self.assertEqual(len(state['pending_notifications']), 1)
+        sender.return_value = True
+        deliver_alerts(state, NOW + 300, Mock(), sender)
+        self.assertEqual(sender.call_count, 2)
+        self.assertIn('since cleared', sender.call_args.args[1])
+        self.assertEqual(state['pending_notifications'], [])
+
 
 class WatchdogTests(unittest.TestCase):
     def test_suppression_requires_fresh_intent_and_matching_mac(self):

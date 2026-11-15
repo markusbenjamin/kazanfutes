@@ -130,20 +130,27 @@ def control_plugs(state, config, shelly_config, client, now, *, dry_run=False, s
 
 
 def deliver_alerts(state, now, save, sender):
-    for key, issue in state['issues'].items():
+    pending = state.get('pending_notifications', [])
+    deliveries = list(state['issues'].items()) + [(issue['key'], issue) for issue in pending]
+    for key, issue in deliveries:
         if issue['sent'] or (issue['last_attempt'] is not None and 0 <= now - issue['last_attempt'] < 300):
             continue
         issue['last_attempt'] = now
         save()
         try:
             accepted = sender('[Shelly rain control] ' + key,
-                              issue['message'] + '\n\nController mode: ' + state['mode'])
+                              issue['message'] +
+                              ('\n\nThis condition has since cleared; email delivery was delayed.'
+                               if issue.get('resolved') else '') +
+                              '\n\nController mode: ' + state['mode'])
             if not accepted:
                 raise RuntimeError('Notification was not accepted')
             issue['sent'] = True
         except Exception as error:
             print('Email delivery failed; will retry: ' + str(error), flush=True)
         save()
+    state['pending_notifications'] = [issue for issue in pending if not issue['sent']]
+    save()
 
 
 def load_state(path):
