@@ -2,7 +2,7 @@
 const CYCLE_HEAT_METRICS = {
     temperature: { label: 'fűtővíz hőm.', key: 'water_temp', unit: '°C', axis: '°C', precision: 0, color: 'rgb(200, 0, 0)' },
     power: { label: 'fűtőtelj.', key: 'power_kw', unit: 'kW', axis: 'fűtőteljesítmény (kW)', precision: 2, color: 'rgb(230, 130, 0)' },
-    flow: { label: 'átfolyás', key: 'flow_m3h', unit: 'm³/h', axis: 'térfogatáram (m³/h)', precision: 3, color: 'rgb(28, 3, 252)' },
+    flow: { label: 'térfogatáram', key: 'flow_m3h', unit: 'm³/h', axis: 'térfogatáram (m³/h)', precision: 3, color: 'rgb(28, 3, 252)' },
     pump: { label: 'szivattyú telj.', unit: 'W', axis: 'szivattyú teljesítmény (W)', precision: 0, color: 'rgb(0, 0, 0)' }
 };
 const cycleHeatSelections = {};
@@ -237,7 +237,12 @@ function drawCycleHeatPlot(data, setting) {
     const type = metricName === 'pump' ? 'pumps_power' : 'cycle_' + setting.cycleNum + (metricName === 'temperature' ? '_water_temps' : '_heat_delivery');
     const curves = [{key: metric.key, color: metric.color, tooltip: metricName === 'temperature' ? 'előremenő' : ''}];
     if (metricName === 'temperature') curves.push({key: 'return_temp', color: 'rgb(0, 40, 150)', tooltip: 'visszatérő'});
-    curves.forEach(curve => curve.segments = splitCycleHeatReadings(data[type] || [], curve.key, metricName === 'pump' ? Infinity : 3 / 60));
+    curves.forEach(curve => {
+        const segments = splitCycleHeatReadings(data[type] || [], curve.key, metricName === 'pump' ? Infinity : 3 / 60);
+        // Flow meters can intermittently reject readings (including reverse
+        // flow). Join the valid observations without replacing missing ones.
+        curve.segments = metricName === 'flow' && segments.length ? [segments.flat()] : segments;
+    });
     const temperatures = curves.flatMap(curve => curve.segments.flat().map(reading => reading[curve.key]));
     const measured = curves[0].segments.flat();
     let range, tickStep;

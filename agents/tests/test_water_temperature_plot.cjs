@@ -74,7 +74,7 @@ for (let cycle = 1; cycle <= 4; cycle++) {
     assert.equal(options.plotStyle.thickness, '1');
     assert.equal(options.plotStyle.col, 'rgb(200, 0, 0)');
     assert.deepEqual(JSON.parse(JSON.stringify(options.plotLabelTabs.choices.map(choice => choice.label))),
-        ['fűtővíz hőm.', 'fűtőtelj.', 'átfolyás', 'szivattyú telj.']);
+        ['fűtővíz hőm.', 'fűtőtelj.', 'térfogatáram', 'szivattyú telj.']);
     assert.equal(options.plotLabelTabs.prefix, ['1-es','2-es','3-mas','4-es'][cycle-1] + ' kör — ');
     assert.equal(options.rects.when, 'before');
     assert.deepEqual(JSON.parse(JSON.stringify(options.rects.list.map(({x1,x2}) => ({x1,x2})))), intervals(cycle, samples));
@@ -158,6 +158,17 @@ assert.equal(calls[1].data[0].flow_m3h, 0);
 assert.equal(calls[1].options.curveEndText.text, '0.8 m³/h');
 assert.equal(calls[1].options.plotStyle.col, 'rgb(28, 3, 252)');
 assert.equal(calls[1].options.curveEndText.col, 'rgb(28, 3, 252)');
+context.graphData = {cycle_2_heat_delivery:[{h_of_day_frac:1,flow_m3h:0},
+    {h_of_day_frac:1.01,flow_m3h:null},{h_of_day_frac:1.02,flow_m3h:.8},
+    {h_of_day_frac:2,flow_m3h:.5}]};
+const joinedFlowBefore=JSON.stringify(context.graphData);
+calls.length=0;
+vm.runInContext('drawCycleHeatPlot(graphData,mainGraphSetting)',context);
+assert.equal(calls.length,2,'flow has one continuous curve despite rejected readings and long gaps');
+assert.deepEqual(Array.from(calls[1].data,row=>row.flow_m3h),[0,.8,.5],
+    'retain actual zeros and valid readings without converting missing data to zero');
+assert.equal(calls[1].options.curveEndText.text,'0.5 m³/h');
+assert.equal(JSON.stringify(context.graphData),joinedFlowBefore);
 context.mainGraphSetting.metric = 'power';
 context.graphData = {cycle_2_heat_delivery: [{h_of_day_frac: 1, power_kw: 16.672}]};
 calls.length = 0;

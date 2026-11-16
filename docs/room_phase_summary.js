@@ -97,6 +97,7 @@ function roomPhaseSummaryData(data, setting) {
 }
 
 function drawRoomPhaseSummaryView(data = null, setting = mainGraphSetting) {
+    if (typeof cacheDashboardPlotLanguage === 'function') cacheDashboardPlotLanguage(data, setting);
     if (data === null) {
         const types = roomPhaseSummaryTypes(setting.roomNumToPlot);
         collectDataFromGitHub(roomPhaseSummaryDays(setting).flatMap(day => types.map(type => ({day, type}))), loaded => {

@@ -55,7 +55,9 @@ def format_heating_demand(entries, daystamp, meter_mapping, *,
     four observations, remain within the temperature tolerance, have positive
     supply-return difference, and contain no gap over ``max_gap_seconds``.
 
-    Where reported watts are available, a substantial disagreement with positive
+    Negative flow with a reported zero heating power is reverse/idle flow, not
+    an unknown forward demand. Negative flow without that evidence stays unknown.
+    Where reported watts are available, a substantial disagreement with signed
     flow-derived delivered heat invalidates that circuit for both inference and
     demand. This catches corrupt flow as well as corrupt power without deciding
     which register is right. The tolerances allow rounding/asynchronous updates.
@@ -109,7 +111,9 @@ def format_heating_demand(entries, daystamp, meter_mapping, *,
             reading = states.get(str(meter), states.get(meter))
             reading = reading if isinstance(reading, dict) else {}
             flow = _number(reading.get('volume_flow_m3h'))
-            flow = flow if flow is not None and flow >= 0 else None
+            reported_w = _number(reading.get('power_w'))
+            if flow is not None and flow < 0:
+                flow = 0.0 if reported_w == 0 else None
             supply = _temperature(reading.get('flow_temperature_c'))
             returned = _temperature(reading.get('return_temperature_c'))
             readings[cycle] = (flow, supply, returned)
@@ -119,11 +123,10 @@ def format_heating_demand(entries, daystamp, meter_mapping, *,
                 active.append(cycle)
                 if returned is None:
                     unknown.append(cycle)
-                reported_kw = _number(reading.get('power_w'))
-                if reported_kw is not None and reported_kw >= 0 and supply is not None and returned is not None:
+                if reported_w is not None and reported_w >= 0 and supply is not None and returned is not None:
                     delivered_kw = WATER_KW_PER_M3H_K * flow * (supply - returned)
                     tolerance = max(power_tolerance_kw, power_tolerance_fraction * abs(delivered_kw))
-                    if delivered_kw > power_tolerance_kw and abs(delivered_kw - reported_kw / 1000) > tolerance:
+                    if abs(delivered_kw - reported_w / 1000) > tolerance:
                         inconsistent.append(cycle)
                         unknown.append(cycle)
 

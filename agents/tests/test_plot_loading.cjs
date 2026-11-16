@@ -72,7 +72,8 @@ for (const language of ['hu', 'en']) {
     const source = fs.readFileSync(path.resolve(__dirname, '../../docs/data.js'), 'utf8');
     vm.runInContext(source.slice(source.indexOf('function drawMainGraph('), source.indexOf('function rescueMainGraph(')), context);
     const draws = [], loads = [];
-    Object.assign(context, {isRoomControlView: () => false, clearMainGraphs() {},
+    Object.assign(context, {isRoomControlView: () => false, dashboardReplayActive: () => false,
+        withLivePlotReadings: data => data, clearMainGraphs() {},
         drawPlot: (data, options) => {draws.push({data, options});},
         collectDataFromGitHub: (requests, callback) => loads.push({requests, callback})});
     run("mainGraphSetting = {title:'external_temp',day:'2026-10-31',types:['external_temp']}; drawMainGraph()");

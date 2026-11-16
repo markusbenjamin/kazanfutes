@@ -1,22 +1,23 @@
 # Boiler analytics
 
-Alt+click the boiler, or use `analitika` on touch. `hőhasznosítás` retains the
-existing daily ratio chart. The trial `napi pontok` view has one point per day in
-the same seven-calendar-day window ending on the selected day.
+Alt+click the boiler, or use `analitika` on touch. The separate heading is
+`kazán analitika`. The selector contains `hatásfok` and
+`előremenő / visszatérő fázissík`; the old `napi pontok` view is retired.
 
-X is daily delivered heat (the four cycle energy counters summed, kWh); Y is
-100 times that sum divided by the day's gas energy. Both views reuse
-`boilerDailyKPI`, its common cycle cutoff and gas reading at or before that
-cutoff, and the existing 34 MJ/m³ gas conversion. This is a ratio of accumulated
-energies, never an average of instantaneous ratios. Today is partial-day data.
-Missing cycle streams are not zero. A zero/absent gas denominator yields no
-point; a real zero delivered heat with positive gas is a valid zero-percent
-point. Values above 100% are not clipped.
+`hatásfok` shows borderless daily bars over thirty calendar days ending on the
+selected date. Daily efficiency is summed delivered circuit heat divided by gas
+energy, using the existing 34 MJ/m³ conversion and common measurement cutoff.
+The window statistic divides summed energies, rather than averaging daily
+percentages. Missing circuit energy and zero/missing gas remain unavailable;
+valid zeros and ratios above 100% are retained. Four daily fetches run in
+parallel through the normal GitHub cache, with stale-view cancellation.
 
-Points are black, except the selected day's larger red point, drawn last. Hover
-shows date, delivered heat, gas energy and the ratio. There are no connecting
-lines or density interpolation. The faint dashed horizontal guide marks 100%.
-Shared date arrows shift the window; switching analytics tabs preserves the
-selected day/window, and the chosen tab is remembered within the page session.
-Late responses cannot repaint another date or analytics tab. No new formatter,
-logs, polling stream or Firebase fields are introduced.
+The phase-plane view has an `átlag`, `összes`, and individual-circuit selector.
+X is return temperature; Y is supply temperature. Both scatter and the
+continuous chronological trajectory use observations where the associated
+pump's measured electrical power is positive. Power is held between actual
+change-log entries; synthetic plot changepoints, flow and on/off commands do
+not determine activity. Average-view observations require at least one member
+pump drawing power. The trajectory uses five-minute-sigma Gaussian smoothing
+in time (±15-minute support), then curved interpolation. Scatter is unsmoothed.
+Dates, selected views and canonical circuit colours are retained when switching.

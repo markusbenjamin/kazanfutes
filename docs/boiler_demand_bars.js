@@ -67,7 +67,7 @@ function drawBoilerDemandBars(area, readings, metric, range, end = 24) {
                 .attr('x', left).attr('width', right - left).attr('y', Math.min(y(part.start), y(part.end)))
                 .attr('height', Math.abs(y(part.start) - y(part.end))).attr('fill', part.color).attr('stroke', 'none');
             bindPlotCurveTooltip(bar, time + (part.label ? '\n' + dashboardText(part.label) + ': ' + text(part.value) : '')
-                + '\n' + dashboardText('hőigény') + ': ' + text(row.demand_kw), 6, false);
+                + '\n' + dashboardText(metric.tooltip || 'hőigény') + ': ' + text(row.demand_kw), 6, false);
         });
         if (stack) area.plotElement.append('line').attr('class', 'boiler-demand-net')
             .attr('x1', left).attr('x2', right).attr('y1', y(row.demand_kw)).attr('y2', y(row.demand_kw))

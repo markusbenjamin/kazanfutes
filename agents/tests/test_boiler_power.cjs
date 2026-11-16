@@ -53,7 +53,9 @@ vm.runInContext(`drawCycleHeatPlot({pumps_power:[{h_of_day_frac:1,pump_1_power:0
  {h_of_day_frac:2,pump_1_power:150},{h_of_day_frac:3,pump_1_power:0}],heating_state:[]},
  {cycleNum:1,metric:'pump',day:'2026-10-19',detailed:true})`,context);
 for (const key of ['margins','domain','tickVals','plotStyle','segment'])
-    assert.deepEqual(boiler[0].options[key],calls[0].options[key],'Boiler and pump share '+key);
+    assert.deepEqual(JSON.parse(JSON.stringify(boiler[0].options[key])),
+        JSON.parse(JSON.stringify(key === 'plotStyle' ? {...calls[0].options[key],thickness:'.5'} : calls[0].options[key])),
+        'Boiler shares pump styling, with its requested thinner curve: '+key);
 assert.deepEqual(JSON.parse(JSON.stringify(boiler[0].options.rects)),JSON.parse(JSON.stringify(calls[0].options.rects)),
     'Command and circulation shading match');
 assert.deepEqual(boiler[1].options.curveEndText,calls[1].options.curveEndText,'Endpoint text styling matches');

@@ -68,6 +68,31 @@ class HeatingDemandTests(unittest.TestCase):
         self.assertIsNone(result['cycle_demand_kw']['2'])
         self.assertEqual(result['active_cycles'], ['1', '2'])
 
+    def test_reverse_flow_with_zero_heat_is_inactive_not_missing(self):
+        idle = {'volume_flow_m3h': -.205, 'power_w': 0,
+                'flow_temperature_c': 23, 'return_temperature_c': 40}
+        result = calculate([row(0, second=idle)], target_temperature_c=70)[0]
+        self.assertEqual(result['demand_kw'], 17.445)
+        self.assertEqual(result['cycle_demand_kw']['2'], 0)
+        self.assertEqual(result['unknown_cycles'], [])
+        for watts in [None, 500, -1, True]:
+            idle['power_w'] = watts
+            self.assertIsNone(calculate([row(0, second=idle)], target_temperature_c=70)[0]['demand_kw'])
+
+    def test_shifted_registers_with_negative_temperature_difference_are_rejected(self):
+        # Actual corrupt sample: a power register appeared as flow, volume as power.
+        corrupt = row(0, supply=1.1549999713897705, returned=37, flow=11302)
+        corrupt['states']['1']['power_w'] = 7370.56787109375
+        result = calculate([corrupt], target_temperature_c=55)[0]
+        self.assertIsNone(result['demand_kw'])
+        self.assertEqual(result['inconsistent_cycles'], ['1'])
+        self.assertIsNone(result['cycle_demand_kw']['1'])
+
+    def test_equal_temperatures_cannot_validate_large_reported_power(self):
+        sample = row(0, supply=40, returned=40)
+        sample['states']['1']['power_w'] = 50000
+        self.assertEqual(calculate([sample], target_temperature_c=70)[0]['status'], 'inconsistent_data')
+
     def test_supply_is_not_needed_to_compute_demand_at_an_existing_target(self):
         result = calculate([row(0, supply=None)], target_temperature_c=70)[0]
         self.assertEqual(result['demand_kw'], 17.445)

@@ -2,7 +2,7 @@
 
 Hover a cycle's piping or numbered dial for the simple **fűtőteljesítmény**
 bar chart. Ctrl+click either to pin the detailed selector with plain-text choices:
-**fűtővíz hőm.**, **fűtőtelj.**, **átfolyás**, **szivattyú telj.** The active
+**fűtővíz hőm.**, **fűtőtelj.**, **térfogatáram**, **szivattyú telj.** The active
 choice is underlined: temperature red, thermal power orange, flow blue,
 electrical pump power black. Ordinary click keeps its usual pin/unpin action.
 Selecting a metric keeps the chart pinned; the existing outside-click unlock
@@ -24,7 +24,8 @@ bar retains its value label. Ordinary hover and detailed power share the same ba
 Period rectangles show their fill only, with no borders.
 Pump power joins known observations even across time gaps; explicit unknown
 values still break it. Its black curve is rectangular (step-after), with no
-smoothing. Heatmeter curves retain their missing-interval breaks.
+smoothing. Water-temperature curves retain their missing-interval breaks;
+flow joins all valid observations into one continuous curve.
 Metric selection replaces the setting object so a late response for the old
 metric cannot overwrite the newly selected chart. Heading clicks/keyboard
 activation do not bubble into the dashboard's outside-click unlock handler.
@@ -57,7 +58,8 @@ dividing by 1000. It is not accumulated daily energy, net energy delivery, or
 the boiler plug's electrical power. The raw `energy_kwh` counter is not used.
 
 Flow is read directly from `volume_flow_m3h`. Valid zero is retained. Missing
-values are null, never zero; rendered curves break across them and long gaps.
+values are null, never zero. The displayed flow curve joins valid readings
+across missing observations and long gaps without inserting replacement values.
 
 ## Daily energy dials
 

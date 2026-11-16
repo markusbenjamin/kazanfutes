@@ -66,4 +66,10 @@ frame(350); // A lightweight colour frame between full renders.
 assert.equal(renders.length,paintCount+1);
 assert.equal(colours.length,colourCount+2,'Colours update between full dashboard renders');
 run('pauseReplay()');
+context.performance.now=()=>100;
+run('seekReplay(0);playReplay()');
+const midnightTime=run('dashboardReplayTime');
+frame(90);
+assert.equal(run('dashboardReplayTime'),midnightTime,'an earlier animation-frame timestamp must not rewind into the preceding day');
+run('pauseReplay()');
 console.log('Replay data edge: fixed loaded endpoint, bounded seeking/timeline, exact final infobox render, automatic pause, restart and lightweight colour cadence passed.');

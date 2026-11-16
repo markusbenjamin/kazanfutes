@@ -145,6 +145,7 @@ function drawRoomControlHeader(area, setting, title, titleY = -13) {
 
 function drawRoomControlView(data = null) {
     const setting = mainGraphSetting;
+    if (typeof cacheDashboardPlotLanguage === 'function') cacheDashboardPlotLanguage(data, setting);
     if (setting.title === 'room_control_diagnostic' && setting.roomNumToPlot != null) {
         drawRoomPhaseSummaryView(data, setting);
         return;
