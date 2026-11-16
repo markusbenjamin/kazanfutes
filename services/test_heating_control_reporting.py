@@ -165,6 +165,7 @@ class HeatingReportingTests(unittest.TestCase):
         env = load_reporting()
         events = []
         env.update(__name__='__main__',
+                   HeatingRainInterlock=Mock(return_value=SimpleNamespace(enabled=False)),
                    acquire_heating_switch=lambda: {'system': int(heating_on)},
                    get_system_state=lambda: {'boiler_state': int(heating_on)},
                    compare_and_command=lambda *args: events.append('compare'),

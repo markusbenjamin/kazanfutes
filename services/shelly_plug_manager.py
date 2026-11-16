@@ -27,6 +27,10 @@ from utils.rain_plug_control import (
     number, MAX_AGE, OFF_ABOVE_MM, RETURN_BELOW_MM, RECOVERY_SECONDS,
 )
 from utils.shelly_discovery import build_shelly_resolver, load_shelly_config, normalize_mac
+from utils.heating_rain_interlock import (
+    coordinate, finish_restoration, read_json, permission_lock, fresh,
+    acknowledgement_valid, HeatingRainInterlock,
+)
 
 
 class PlugClient:
@@ -178,7 +182,7 @@ def publish_status(state, now, firebase_url, *, running=True, session=requests):
         'updated_at': datetime.fromtimestamp(now, timezone.utc).isoformat(),
         'checked_at_epoch': state['last_check'], 'fresh_for_seconds': MAX_AGE,
         'mode': state['mode'] if running else 'stopped',
-        'rain_shutdown': state['rain_latched'],
+        'rain_shutdown': state['rain_latched'] or state.get('heating_interlock', {}).get('inhibit', False),
         'automatic_turn_on_allowed': running and state['desired_on'] is True,
         'rain_30min_mm': state.get('weather', {}).get('amount_mm'),
         'weather_source': state.get('source'),
@@ -194,6 +198,8 @@ def publish_status(state, now, firebase_url, *, running=True, session=requests):
                          'protection_latched', 'error')}
                   for name, plug in state['plugs'].items()},
         'issues': {key: issue['message'] for key, issue in state['issues'].items()},
+        'heating_interlock': state.get('heating_interlock'),
+        'heating_controller': state.get('heating_controller'),
     }
     response = session.patch(firebase_url.rstrip('/') + '/system/state.json',
                              json={'rain_protection': payload}, timeout=3)
@@ -212,9 +218,42 @@ def run_once(state, reader, config, shelly_config, client, now, *, restarted=Fal
                   'The one-hour recovery timer has been reset.\n' + json.dumps(weather['source_errors']))
                  if unavailable else None, now)
     # Save the rain latch before any relay command, including after a crash.
-    if not dry_run:
+    enabled = config.get('heating_interlock', {}).get('enabled', False)
+    if enabled:
+        ack_path = RUNTIME_DIR / 'heating_status.json'
+        ack = read_json(ack_path, {})
+        if dry_run or result['rain_latched']:
+            # A restrictive stop is atomic and immediate, even if a GPIO writer
+            # holds the permission lock. Mains OFF takes priority; permission
+            # can only be granted again under the lock and with a fresh OFF ack.
+            coordinate(result, state, ack, now)
+            if not dry_run:
+                save_result()
+        else:
+            with permission_lock(RUNTIME_DIR):
+                coordinate(result, state, ack, now)
+                save_result()
+    elif not dry_run:
         save_result()
     control_plugs(result, config, shelly_config, client, now, dry_run=dry_run, save=save_result)
+    if enabled:
+        ack = read_json(ack_path, {})
+        if dry_run:
+            finish_restoration(result, config, ack, now)
+        elif result['heating_interlock']['phase'] == 'restoring_power':
+            with permission_lock(RUNTIME_DIR):
+                finish_restoration(result, config, ack, now)
+                save_result()
+        result['heating_controller'] = dict(ack, fresh=fresh(ack.get('checked_at'), now))
+        policy = result['heating_interlock']
+        waiting_since = policy.get('requested_at', policy.get('inhibit_since', now))
+        waiting_for_restore = policy['phase'] in ('restore_pending', 'restoring_power')
+        ack_ok = acknowledgement_valid(policy, ack, now) if waiting_for_restore else (
+            fresh(ack.get('checked_at'), now) and ack.get('boiler_off_confirmed') is True)
+        failed = policy['inhibit'] and now - waiting_since > 180 and not ack_ok
+        update_issue(result, 'heating_interlock',
+                     'Heating controller has not supplied a fresh confirmed boiler-OFF acknowledgement; power restoration is blocked.'
+                     if failed else None, now)
     if not dry_run:
         save_result()
         if publisher:
@@ -235,8 +274,24 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--dry-run', action='store_true', help='One check; no relay commands, state writes or emails')
     parser.add_argument('--show-state', action='store_true')
+    parser.add_argument('--preview-heating', action='store_true', help='Local decision-only current/rain comparison; no writes or device calls')
     parser.add_argument('--clear-protection', metavar='PLUG', help='After inspection, with the service stopped')
     args = parser.parse_args()
+    if args.preview_heating:
+        interlock = HeatingRainInterlock(ROOT, readonly=True)
+        physical = read_json(ROOT / 'system/state.json', {})
+        control = read_json(ROOT / 'system/control.json', {})
+        switch = read_json(ROOT / 'config/heating_switch.json', {})
+        demand = control.get('heat_requests', control.get('cycles', {}))
+        interlock.prepare(physical.get('pump_states', {}), switch.get('system') == 1)
+        policy = dict(interlock.prepared_policy)
+        pumps, boiler = interlock.decide(demand)
+        current = dict(interlock.status, boiler_command=boiler)
+        interlock.prepared_policy = dict(policy, inhibit=True, phase='simulated_rain')
+        pumps, boiler = interlock.decide(demand)
+        print(json.dumps({'policy': policy, 'current': current,
+                          'simulated_rain': dict(interlock.status, boiler_command=boiler)}, indent=2))
+        return
     if args.show_state:
         print(json.dumps(load_state(STATE_PATH), indent=2))
         return

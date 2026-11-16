@@ -204,6 +204,7 @@ def off_expected(name, mac, now, path=STATE_PATH):
         plug = state['plugs'][name]
         return (state['version'] == 1 and 0 <= now - state['last_check'] <= MAX_AGE
                 and plug['mac'] == mac and
-                (state.get('rain_latched') is True or state.get('recovery_required') is True))
-    except (OSError, ValueError, KeyError, TypeError):
+                (state.get('rain_latched') is True or state.get('recovery_required') is True
+                 or state.get('heating_interlock', {}).get('inhibit') is True))
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
         return False
