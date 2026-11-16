@@ -369,6 +369,14 @@ class ControllerIntegrationTests(Fixture):
         self.assertEqual(self.gpio, 0)
         self.assertTrue(json.loads((self.runtime / 'heating_status.json').read_text())['boiler_off_confirmed'])
 
+    def test_cold_circuits_stop_even_if_command_file_cannot_be_read(self):
+        self.write_state(policy_state(RAIN)); self.w = water(39); self.prepare()
+        env = self.execution_env([]); env['load_commands'].side_effect = RuntimeError('invalid queue')
+        env['execute_commands']()
+        for cycle in CYCLES:
+            self.assertIn(('pump', cycle, 0), self.calls)
+            self.assertEqual(env['system_state']['pump_states'][cycle], 0)
+
     def test_old_generation_queue_cannot_reactivate_boiler_after_dry_recovery(self):
         self.write_state(policy_state(dict(NORMAL, generation='new'))); self.prepare()
         env = self.execution_env([self.command()]); env['execute_commands']()

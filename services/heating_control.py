@@ -906,6 +906,21 @@ def execute_commands():
             except Exception as error:
                 interlock.boiler_off_confirmed = False
                 ServiceException('Could not confirm rain boiler-OFF', original_exception=error, severity=3)
+            # Safety OFF decisions must survive an unreadable/failed command queue.
+            # Each pump remains isolated: a failure cannot stop the next circuit.
+            if interlock.policy()['inhibit']:
+                for cycle, decision in interlock.status.get('cycles', {}).items():
+                    if decision['pump_command'] != 0 or system_state['pump_states'].get(cycle) == 0:
+                        continue
+                    try:
+                        actual, confirmed = interlock.actuate(
+                            'pump_' + cycle, 0, set_boiler_state, get_boiler_state, set_pump_state)
+                        if confirmed:
+                            system_state['pump_states'][cycle] = actual
+                        else:
+                            raise RuntimeError('Pump OFF was not confirmed')
+                    except Exception as error:
+                        ServiceException(f'Rain pump-OFF failed for circuit {cycle}', original_exception=error, severity=3)
             try:
                 interlock.publish_ack(system_state)
                 control = getattr(interlock, 'control', None)
