@@ -241,7 +241,11 @@ function drawCycleHeatPlot(data, setting) {
         const segments = splitCycleHeatReadings(data[type] || [], curve.key, metricName === 'pump' ? Infinity : 3 / 60);
         // Flow meters can intermittently reject readings (including reverse
         // flow). Join the valid observations without replacing missing ones.
-        curve.segments = metricName === 'flow' && segments.length ? [segments.flat()] : segments;
+        const joined = metricName === 'flow' && segments.length ? [segments.flat()] : segments;
+        // Match drawPlot's midnight clipping before calculating the domain or
+        // endpoint labels. Hidden previous-day context must not stretch axes.
+        curve.segments = joined.map(segment => trimPlotHistory(segment,
+            'h_of_day_frac', curve.key, [0, 24])).filter(segment => segment.length);
     });
     const temperatures = curves.flatMap(curve => curve.segments.flat().map(reading => reading[curve.key]));
     const measured = curves[0].segments.flat();
