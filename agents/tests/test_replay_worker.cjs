@@ -1,7 +1,8 @@
 const fs = require('node:fs'), vm = require('node:vm'), assert = require('node:assert/strict');
 const script = fs.readFileSync('docs/replay_worker.js','utf8');
 const day = '2026-11-10', previous = '2026-11-09';
-const state = (stamp,temp) => ({timestamp:stamp,measured_temps:{1:temp},pump_states:{1:1},room_states:{1:1}});
+const state = (stamp,temp) => ({timestamp:stamp,measured_temps:{1:temp},pump_states:{1:1},room_states:{1:1},
+ boiler_error:temp===21?'kazán hiba!':'',rain_protection:temp===21?{rain_shutdown:true}:undefined});
 const logs = {
  [day]: [JSON.stringify({timestamp:day+'-00-00-00',PID_state:{unused:'large diagnostic'}}),
   JSON.stringify(state(day+'-00-01-00',20)), 'malformed', JSON.stringify(state(day+'-00-02-00',21)),
@@ -28,6 +29,9 @@ vm.runInContext(script, context);
  assert.equal(self.result.control.length,2,'Only complete control snapshots are retained');
  assert.equal(self.result.control[0].state.measured_temps[1],20.5,'The later duplicate replaces its earlier value');
  assert.equal(self.result.control[1].state.measured_temps[1],21);
+ assert.equal(self.result.control[0].state.boiler_error,'','Preserve diagnostic clearing in historical state');
+ assert.equal(self.result.control[1].state.boiler_error,'kazán hiba!');
+ assert.equal(self.result.control[1].state.rain_protection.rain_shutdown,true,'Retain published rain status when present in logs');
  assert.equal(self.result.seed.length,1,'Only the last previous-day snapshot is kept');
  assert.equal(self.result.seed[0].state.measured_temps[1],19);
  assert.equal(self.result.schedule[0].timestamp,day+'-00-00-30');

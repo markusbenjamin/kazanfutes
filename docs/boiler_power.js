@@ -70,7 +70,6 @@ function splitBoilerPowerSegments(readings) {
             finish();
             return;
         }
-        if (segment.length && reading.h_of_day_frac - segment.at(-1).h_of_day_frac > 3 / 60) finish();
         segment.push(reading);
     });
     finish();
@@ -85,7 +84,7 @@ function boilerCommandPeriods(commands, lower, upper) {
         if (start.command_on !== 1 || !Number.isFinite(start.h_of_day_frac) || !Number.isFinite(end.h_of_day_frac)) continue;
         if (end.h_of_day_frac <= start.h_of_day_frac) continue;
         periods.push({ x1: start.h_of_day_frac, x2: end.h_of_day_frac, y1: lower, y2: upper,
-            fill: 'rgba(255,0,0,0.05)', stroke: 'rgba(255,0,0,0)', strokeWeight: 0, dashed: false });
+            fill: 'rgba(255,0,0,0.025)', stroke: 'none', strokeWeight: 0, dashed: false });
     }
     return periods;
 }
@@ -94,25 +93,24 @@ function drawBoilerPowerPlot(data, setting) {
     const readings = data[setting.boilerSource + '_power'] || [];
     const segments = splitBoilerPowerSegments(readings);
     const measured = segments.flat();
-    const maxPower = measured.length ? d3.max(measured, item => item.power_w) : 0;
-    const step = maxPower < 10 ? 1 : maxPower < 100 ? 10 : Math.ceil(maxPower / 500) * 100;
-    const upper = Math.max(step, Math.ceil(maxPower / step) * step);
+    const {range,tickStep} = positivePlotRange(measured.map(item => item.power_w));
     const common = {
         parentId: 'graph', smoothing: { bottom: 0, left: 0 },
-        domain: { bottom: [0, 24], left: [0, upper] },
+        margins: { top: .1, right: .03, bottom: .15, left: .1 },
+        domain: { bottom: [0, 24], left: range },
         dataKeys: { bottom: 'h_of_day_frac', left: 'power_w' },
         axesLabel: { bottom: 'óra', left: 'teljesítmény (W)' },
-        tickVals: { left: d3.range(0, upper + step / 2, step) },
-        plotStyle: { joined: true, col: 'rgb(40,40,40)', thickness: '1.5', smoothCurve: false, startCap: false, endCap: true },
+        tickVals: { left: d3.range(range[0], range[1] + tickStep / 2, tickStep) },
+        plotStyle: electricalPowerPlotStyle(), segment: { do: false }, curveEndText: { show: false },
         plotLabel: setting.boilerNumber + '. kazán ' + (setting.day === dayStamp() ? 'mai' : 'napi') + ' villamos teljesítménye'
     };
-    drawPlot([], { ...common, rects: { when: 'before', list: boilerCommandPeriods(data.boiler_commands || [], 0, upper) } });
+    drawPlot([], { ...common, rects: { when: 'before', list: boilerCommandPeriods(data.boiler_commands || [], range[0], range[1]) } });
     segments.forEach((segment, index) => {
         const last = index === segments.length - 1;
         drawPlot(segment, { ...common,
-            background: { show: false }, axes: { left: false, bottom: false }, plotLabel: '',
-            curveEndText: { show: last, fontSize: 5, text: Math.round(segment.at(-1).power_w) + ' W',
-                col: 'rgb(40,40,40)', xOffset: 1.5, yOffset: 1.75 }
+            background: { show: false }, axes: { left: false, bottom: false }, plotLabel: '', showLockLabel: false,
+            curveEndText: { show: last, fontSize: 6, text: Math.round(segment.at(-1).power_w) + ' W',
+                col: common.plotStyle.col, xOffset: 3, yOffset: 1.75 }
         });
     });
 }

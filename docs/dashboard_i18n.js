@@ -17,6 +17,7 @@ const DASHBOARD_ENGLISH = {
     'kering': 'running', 'áll': 'idle',
     'kör ki': 'off',
     'kazán hiba!': 'boiler fault!',
+    'esővédelem!': 'rain protection!',
     'Átlagos eltérés:': 'Mean deviation:', 'Eltérés:': 'Deviation:',
     'Idővezérelt be.': 'Timed on.', 'Idővezérelt ki.': 'Timed off.',
     'Beállított alatt.': 'Below setpoint.', 'Beállított felett.': 'Above setpoint.',
@@ -151,7 +152,11 @@ function dashboardText(value) {
 }
 
 function dashboardAdminMessage(dashboard) {
-    return dashboard?.[dashboardPageOptions().language === 'en' ? 'admin_message_en' : 'admin_message'];
+    return dashboardConfigMessage(dashboard, 'admin_message');
+}
+
+function dashboardConfigMessage(dashboard, key) {
+    return dashboard?.[key + (dashboardPageOptions().language === 'en' ? '_en' : '')];
 }
 
 function dashboardCompassLabel(label) {

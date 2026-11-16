@@ -7,15 +7,18 @@ async function main() {
     for (const language of ['hu','en']) for (const replay of [false,true]) for (const heating of [0,1]) {
         let rendered=0;
         const messages=[];
-        const payload={system:{switch:{system:heating},dashboard:{admin_message:'Üzenet',admin_message_en:'Notice'}}};
+        const config={admin_message:'Üzenet',admin_message_en:'Notice',admin_message_priority:'1',
+            rain_protection_message:'Eső',rain_protection_message_priority:'3',
+            boiler_fault_message:'Kazán',boiler_fault_message_priority:'2'};
+        const payload={system:{switch:{system:heating},dashboard:config}};
         const context=createContext({window:{location:{search:'?lang='+language+'&demo=1&ref_source=form'}},
             fetchJSONEndpoint:()=>Promise.resolve(payload),dashboardReplayActive:()=>replay,
-            updateAdminMessage:value=>messages.push(value),renderDashboardState:()=>{rendered++;},
+            updateDashboardMessageConfig:value=>messages.push(value),renderDashboardState:()=>{rendered++;},
             replayLatestLive:null,console});
         vm.runInContext(polling,context);
         vm.runInContext('getDataFromFirebase()',context);
         await new Promise(setImmediate);
-        assert.deepEqual(messages,[language==='hu'?'Üzenet':'Notice'],'Polling displays the live notice regardless of heating, page mode or replay');
+        assert.deepEqual(messages,[config],'Polling forwards all message texts and priorities regardless of heating, page mode or replay');
         assert.equal(rendered,replay?0:1,'Replay still protects the historical dashboard from live-state rendering');
         assert.equal(context.replayLatestLive,payload);
     }
