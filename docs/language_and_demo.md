@@ -3,7 +3,7 @@
 Default: Hungarian, with the existing admin-message behaviour.
 
 - `dashboard.html?lang=en`: English interface.
-- `dashboard.html?demo=1`: demo help and no admin message.
+- `dashboard.html?demo=1`: demo help where enabled.
 - `dashboard.html?lang=en&demo=1`: English demo.
 
 Existing query parameters (zoom, centered element, mobile, ref_source) may be
@@ -16,8 +16,8 @@ demo mode. Its content/code is retained behind `HUNGARIAN_DASHBOARD_HELP_ENABLED
 in dashboard_help.js. English help opens automatically only in demo
 mode. The help box is yellow, in the admin message's position, but is a separate
 dialog; admin messages remain pink. Ok, X or Escape closes help, and the button
-reopens it by keyboard/touch. Firebase polling cannot reopen dismissed help or
-show the real admin message in demo. No storage permissions are needed.
+reopens it by keyboard/touch. Firebase polling cannot reopen dismissed help.
+Messages also work in demo and form-referral views. No storage permissions are needed.
 
 The `hu` and `en` text links next to help switch the whole dashboard by
 reloading with `lang=hu` or `lang=en`. All other URL parameters and the fragment
@@ -33,11 +33,32 @@ Kazán 1 and Kazán 2 are proper names of heating circuits on the Kazán side of
 the building, not names of the boilers; they remain unchanged in English.
 Wind compass letters are localized separately, so the Kelvin unit K stays K.
 
-The config updater publishes both admin_message and admin_message_en from the
-same existing Sheet download to system/dashboard in Firebase. Add admin_message_en
-as an optional Sheet key/value for English admin text. No automatic translation
-or Hungarian fallback is used when that field is absent/blank. Demo and
-ref_source=form suppress admin text regardless of language.
+## Configured dashboard messages
+
+The config updater publishes these fields from the existing heating-control
+config Sheet to `system/dashboard` in Firebase:
+
+| Message | Text | Priority |
+| --- | --- | --- |
+| Admin | `admin_message` | `admin_message_priority` |
+| Rain protection | `rain_protection_message` | `rain_protection_message_priority` |
+| Boiler error | `boiler_fault_message` | `boiler_fault_message_priority` |
+
+English text uses `admin_message_en`, `rain_protection_message_en` and
+`boiler_fault_message_en`. There is no automatic translation or Hungarian fallback;
+an absent/blank text in the selected language is hidden, with no built-in replacement.
+
+All messages share the centered pink dialog, formatting and Ok/X/Escape controls.
+The lowest numeric priority among active, nonempty messages wins (1 before 2 before 3).
+Missing or invalid priorities rank last; equal priorities use rain, boiler, admin order. Admin
+messages are always eligible. Boiler errors follow the nonempty `system/state/boiler_error`
+string; rain protection follows the fresh, running `system/state/rain_protection.rain_shutdown` latch.
+Both conditions make the boiler black independently of message text or priority.
+
+Acknowledging a message keeps it closed across polling and does not reveal
+lower-priority messages while it remains the selected condition. A changed text,
+reload, or cleared-and-recurring error permits it to show again. Pending admin
+text returns after higher-priority errors clear, unless already acknowledged.
 
 ## Plot loading messages
 

@@ -164,7 +164,7 @@ function getDataFromFirebase() {
         .then(fullFirebaseDataJSON => {
             replayLatestLive = fullFirebaseDataJSON;
             // Notices follow the current config, independently of heating or replay.
-            updateAdminMessage(dashboardAdminMessage(fullFirebaseDataJSON.system?.dashboard));
+            updateDashboardMessageConfig(fullFirebaseDataJSON.system?.dashboard);
             if (!dashboardReplayActive()) renderDashboardState(fullFirebaseDataJSON);
         })
         .catch(error => {
@@ -194,7 +194,9 @@ function renderDashboardState(fullFirebaseDataJSON, options = {}) {
                 updateCycleColor(cycleNum, cycleState, cycleSupplyTemperature(systemJSON, cycleNum));
             }
             );
-            updateBoilerColor(states > 0 ? 1 : 0, boilerWaterTooCold(systemJSON), systemOn);
+            const boilerWarnings = dashboardBoilerWarnings(systemJSON);
+            updateBoilerColor(states > 0 ? 1 : 0, boilerWarnings.boilerError || boilerWarnings.rainProtection, systemOn);
+            updateDashboardWarnings(boilerWarnings);
 
             roomV2UpdateRooms(systemJSON);
             updateAmbientAreas(systemJSON);
@@ -276,7 +278,6 @@ function renderDashboardState(fullFirebaseDataJSON, options = {}) {
                     lastRequest: { target: requestTarget, origin: requestOrigin, timeSince: timeSinceLastRequest, granularity: lastRequestGranularity, hourStamp: lastRequestHourStamp },
                     scheduleLastUpdated: lastScheduleUpdate,
                     waterTemp: infoboxCirculatedWaterTemperature(systemJSON),
-                    boilerError: boilerColdWaterError,
                     error: { error: controlError, timeSince: secondsSinceControlError, granularity: lastErrorGranularity, source: controlErrorSource }
                 }
             );
@@ -1291,19 +1292,25 @@ function updateCycleColor(cycle, state, supplyTemperature) {
 }
 
 let boilerState = null;
-let boilerColdWaterError = false;
+let boilerWarningActive = false;
 let boilerHeatingEnabled = true;
 
-function boilerWaterTooCold(system) {
-    const temperatures = [1,2,3,4]
-        .filter(cycle => [0,1].includes(system?.switch?.cycles?.[cycle]))
-        .map(cycle=>cycleSupplyTemperature(system,cycle))
-        .filter(value=>Number.isFinite(value) && value>0 && value<100);
-    return temperatures.length>0 && Math.max(...temperatures)<28;
+function dashboardBoilerWarnings(system, now = dashboardNow()) {
+    const error = system?.state?.boiler_error;
+    const rain = system?.state?.rain_protection;
+    const age = Number.isFinite(rain?.checked_at_epoch) ? now.getTime() / 1000 - rain.checked_at_epoch : NaN;
+    return {
+        boilerError: typeof error === 'string' && error.trim().length > 0,
+        // The manager publishes a status object even during normal operation.
+        // Only its fresh, running rain-shutdown latch represents rain protection.
+        rainProtection: rain?.enabled === true && rain.running === true && rain.rain_shutdown === true
+            && Number.isFinite(rain.fresh_for_seconds) && rain.fresh_for_seconds > 0
+            && Number.isFinite(age) && age >= -30 && age <= rain.fresh_for_seconds
+    };
 }
 
-function updateBoilerColor(state, coldWaterError = false, heatingEnabled = true) {
-    boilerColdWaterError = coldWaterError;
+function updateBoilerColor(state, warningActive = false, heatingEnabled = true) {
+    boilerWarningActive = warningActive;
     boilerHeatingEnabled = heatingEnabled;
     d3.select("#boiler_body")
         .style("stroke-opacity", "0")
@@ -1312,7 +1319,7 @@ function updateBoilerColor(state, coldWaterError = false, heatingEnabled = true)
     d3.select("#flame_nest").style("fill", "rgba(0.2,0.2,0.2,1)");
     d3.select("#flame_nest").style("fill-opacity", "1");
 
-    d3.select("#boiler_body").style("stroke", coldWaterError || !heatingEnabled ? "black" : state == 1 ? "rgba(255,0,0,1)" : "rgba(0,0,255,1)");
+    d3.select("#boiler_body").style("stroke", warningActive || !heatingEnabled ? "black" : state == 1 ? "rgba(255,0,0,1)" : "rgba(0,0,255,1)");
     d3.select("#boiler_body").style("stroke-opacity", "1");
     boilerState = state;
 }
@@ -1688,12 +1695,6 @@ function updateGeneralInfobox(info) {
     let titleXPos = isMobile ? 0.015 : 0.025;
     let titleYPos = isMobile ? 0.1 : 0.065;
     let titleLine = addLineToBox("general_infobox", "Rendszerállapot", lineXOffset + titleXPos, lineYOffset + titleYPos, lineFontSize * 1.1, allCentered);
-    if (info.boilerError) {
-        addLineToBox("general_infobox", "kazán hiba!",
-            lineXOffset + titleXPos + (titleLine.node().getComputedTextLength() + lineFontSize*.6) / boxDims.w,
-            lineYOffset + titleYPos, lineFontSize * 1.1, false)
-            .style('fill','red').style('font-weight','normal').classed('boiler-error-warning',true);
-    }
     if (isMobile) {
         titleLine.style("font-weight", "bold");
     }

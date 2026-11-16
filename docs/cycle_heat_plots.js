@@ -216,6 +216,20 @@ function drawLoggedPowerBars(area, readings, metric, range, end = 24) {
         .text(valueText(last));
 }
 
+function positivePlotRange(values) {
+    const top = values.reduce((maximum,value) => Number.isFinite(value) ? Math.max(maximum,value) : maximum,0);
+    const roughStep = (top > 0 ? top * 1.05 : 1) / 5;
+    const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+    const fraction = roughStep / magnitude;
+    const tickStep = (fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10) * magnitude;
+    return {range: [0,Math.ceil((top > 0 ? top * 1.05 : 1) / tickStep) * tickStep],tickStep};
+}
+
+function electricalPowerPlotStyle() {
+    return {joined: true, col: 'rgb(0, 0, 0)', thickness: '1', startCap: false, endCap: true,
+        smoothCurve: false, stepAfter: true};
+}
+
 function drawCycleHeatPlot(data, setting) {
     const metricName = CYCLE_HEAT_METRICS[setting.metric] ? setting.metric : 'power';
     const metric = cycleHeatMetric(setting.cycleNum, metricName);
@@ -234,12 +248,7 @@ function drawCycleHeatPlot(data, setting) {
     } else {
         const powerEnd = setting.day === dayStamp() ? getFractionalHourOfDay() : 24;
         const rangeReadings = metricName === 'power' ? powerPlotBins(data[type] || [], [metric.key], powerEnd) : measured;
-        const top = Math.max(0, ...rangeReadings.map(reading => reading[metric.key]));
-        const roughStep = (top > 0 ? top * 1.05 : 1) / 5;
-        const magnitude = 10 ** Math.floor(Math.log10(roughStep));
-        const fraction = roughStep / magnitude;
-        tickStep = (fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10) * magnitude;
-        range = [0, Math.ceil((top > 0 ? top * 1.05 : 1) / tickStep) * tickStep];
+        ({range,tickStep} = positivePlotRange(rangeReadings.map(reading => reading[metric.key])));
     }
     const end = setting.day === dayStamp() ? getFractionalHourOfDay() : 24;
     const periods = extractCyclePumpOnPeriods(setting.cycleNum, data.heating_state, end)
@@ -253,8 +262,8 @@ function drawCycleHeatPlot(data, setting) {
         dataKeys: { bottom: 'h_of_day_frac', left: metric.key },
         axesLabel: { bottom: 'óra', left: metric.axis },
         tickVals: { left: d3.range(range[0], range[1] + tickStep / 2, tickStep) },
-        plotStyle: { joined: true, col: metric.color, thickness: '1', startCap: false, endCap: true,
-            smoothCurve: metricName !== 'pump', stepAfter: metricName === 'pump' },
+        plotStyle: metricName === 'pump' ? electricalPowerPlotStyle()
+            : { joined: true, col: metric.color, thickness: '1', startCap: false, endCap: true, smoothCurve: true, stepAfter: false },
         segment: { do: false }, plotLabel: setting.detailed ? '' : cyclePlotName(setting.cycleNum) + ' ' + (setting.day === dayStamp() ? 'mai ' : 'napi ') + 'fűtőteljesítménye', curveEndText: { show: false }
     };
     const area = drawPlot([], { ...common, rects: { when: 'before', list: periods },

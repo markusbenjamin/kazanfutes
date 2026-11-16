@@ -15,6 +15,8 @@ const context = require('./dashboard_test_context.cjs')({
     drawPlot: (data, options) => calls.push({ data, options }),
 });
 vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../../docs/boiler_power.js'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../../docs/boiler_demand_bars.js'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../../docs/cycle_heat_plots.js'), 'utf8'), context);
 const evaluate = code => JSON.parse(JSON.stringify(vm.runInContext(code, context)));
 assert.equal(evaluate("freshBoilerPower({reachable:true,power_w:0,timestamp:'2026-10-19-12-00-00'},new Date('2026-10-19T12:01:00'))"), 0);
 for (const reading of ["{reachable:false,power_w:100}", "{reachable:true,power_w:100}",
@@ -29,7 +31,7 @@ assert.deepEqual(mapping.boiler2_marker.types, ['boiler_2_plug_power', 'boiler_c
 assert.deepEqual(evaluate(`splitBoilerPowerSegments([
     {h_of_day_frac:1,power_w:0},{h_of_day_frac:1.01,power_w:100},
     {h_of_day_frac:1.02,power_w:null},{h_of_day_frac:1.03,power_w:50},
-    {h_of_day_frac:2,power_w:60}]).map(segment=>segment.map(row=>row.power_w))`), [[0,100],[50],[60]]);
+    {h_of_day_frac:2,power_w:60}]).map(segment=>segment.map(row=>row.power_w))`), [[0,100],[50,60]]);
 const periods = evaluate(`boilerCommandPeriods([{h_of_day_frac:0,command_on:1},{h_of_day_frac:2,command_on:0},{h_of_day_frac:3,command_on:1},{h_of_day_frac:4,command_on:1}],0,200)`);
 assert.deepEqual(periods.map(row => [row.x1,row.x2]), [[0,2],[3,4]]);
 vm.runInContext("drawBoilerPowerPlot({boiler_1_plug_power:[],boiler_commands:[]},mapping.boiler1_marker)", context);
@@ -40,4 +42,21 @@ calls.length = 0;
 vm.runInContext(`drawBoilerPowerPlot({boiler_1_plug_power:[{h_of_day_frac:1,power_w:0}],boiler_2_plug_power:[{h_of_day_frac:1,power_w:999}],boiler_commands:[]},mapping.boiler1_marker)`, context);
 assert.equal(calls.length, 2);
 assert.equal(calls[1].data[0].power_w, 0);
+calls.length=0;
+vm.runInContext(`drawBoilerPowerPlot({boiler_1_plug_power:[{h_of_day_frac:1,power_w:0},
+ {h_of_day_frac:2,power_w:150},{h_of_day_frac:3,power_w:0}],
+ boiler_commands:[{h_of_day_frac:1,command_on:1},{h_of_day_frac:3,command_on:0}]},mapping.boiler1_marker)`,context);
+const boiler=calls.slice();calls.length=0;
+context.getFractionalHourOfDay=()=>24;
+context.extractCyclePumpOnPeriods=()=>[{x1:1,x2:3}];
+vm.runInContext(`drawCycleHeatPlot({pumps_power:[{h_of_day_frac:1,pump_1_power:0},
+ {h_of_day_frac:2,pump_1_power:150},{h_of_day_frac:3,pump_1_power:0}],heating_state:[]},
+ {cycleNum:1,metric:'pump',day:'2026-10-19',detailed:true})`,context);
+for (const key of ['margins','domain','tickVals','plotStyle','segment'])
+    assert.deepEqual(boiler[0].options[key],calls[0].options[key],'Boiler and pump share '+key);
+assert.deepEqual(JSON.parse(JSON.stringify(boiler[0].options.rects)),JSON.parse(JSON.stringify(calls[0].options.rects)),
+    'Command and circulation shading match');
+assert.deepEqual(boiler[1].options.curveEndText,calls[1].options.curveEndText,'Endpoint text styling matches');
+assert.equal(boiler[1].options.plotStyle.col,'rgb(0, 0, 0)');
+assert.equal(boiler[1].options.plotStyle.stepAfter,true,'Power changes stay rectangular');
 console.log('Boiler power hooks passed: absent SVG, stale/missing readings, real zero, per-plug selection, gap handling, command overlay.');

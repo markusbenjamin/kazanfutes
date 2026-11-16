@@ -168,7 +168,7 @@ async function loadReplayDay(day) {
         if (!result) {
             const previous = shiftedSelectorDay(day, -1);
             const historyPromise = new Promise((resolve,reject) => {
-                const worker = new Worker('replay_worker.js?v=20261111-replay2');
+                const worker = new Worker('replay_worker.js?v=20261115-boiler-warnings1');
                 replayWorker = worker;
                 worker.onmessage = ({data}) => { worker.terminate(); data.error ? reject(Error(data.error)) : resolve(data); };
                 worker.onerror = () => { worker.terminate(); reject(Error('Historical log loading failed')); };

@@ -31,7 +31,8 @@ async function replayLog(day, relative, select, lastOnly = false) {
 
 self.onmessage = async ({data: {day, previous}}) => {
     const stateKeys = ['measured_temps', 'measured_humidity', 'sensor_last_updated', 'humidity_last_updated',
-        'occupancy', 'set_temps', 'set_temps_interp', 'valve_states', 'room_states', 'pump_states', 'boiler_state', 'mode'];
+        'occupancy', 'set_temps', 'set_temps_interp', 'valve_states', 'room_states', 'pump_states', 'boiler_state', 'mode',
+        'boiler_error', 'rain_protection'];
     const snapshots = async (date, lastOnly) => (await replayLog(date,
         'service_execution/heating_control/heating_control.json', row => row.measured_temps && row.pump_states, lastOnly))
         .map(row => ({timestamp: row.timestamp, state: Object.fromEntries(

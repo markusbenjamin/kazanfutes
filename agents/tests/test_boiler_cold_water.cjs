@@ -1,6 +1,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const styles={},flames=[];
-const context=vm.createContext({console,Number,Math,
+const now=new Date('2026-11-15T12:00:00Z');
+const context=vm.createContext({console,Date,Number,Math,dashboardNow:()=>now,
     cycleSupplyTemperature:(system,cycle)=>system[cycle],
     d3:{select:id=>({style(key,value){(styles[id]||={})[key]=value;return this;}})},
     currentGasUsageRate:0,aspectRatio:1,constrain:(v,min,max)=>Math.max(min,Math.min(max,v)),
@@ -11,18 +12,25 @@ vm.runInContext(source.slice(source.indexOf('let boilerState ='),source.indexOf(
 const draw=fs.readFileSync('docs/draw.js','utf8');
 vm.runInContext(draw.slice(draw.indexOf('function drawBoiler('),draw.indexOf('function textOnArcUprightWeighted(')),context);
 const run=source=>vm.runInContext(source,context);
-const cold = (temperatures, switches = {1:0,2:1,3:0,4:0}) => {
-    context.sample = {...temperatures,switch:{cycles:switches}};
-    return run('boilerWaterTooCold(sample)');
+const warnings = state => {
+    context.sample = {state};
+    return JSON.parse(run('JSON.stringify(dashboardBoilerWarnings(sample))'));
 };
-assert.equal(cold({1:20,2:27.9,3:19,4:22}),true);
-assert.equal(cold({1:20,2:28,3:19}),false,'28 °C is outside the below-threshold condition');
-assert.equal(cold({1:20,2:60}),false,'The hottest enabled circuit determines the result');
-assert.equal(cold({1:20,2:27,3:80},{1:0,2:1,3:-1,4:-1}),true,'Hot disabled circuits cannot suppress the warning');
-assert.equal(cold({1:40,2:20},{1:0,2:-1,3:-1,4:-1}),false,'Cold disabled circuits do not count');
-assert.equal(cold({1:20,2:24},{1:-1,2:-1,3:-1,4:-1}),false,'No enabled circuits means no cold-boiler inference');
-assert.equal(cold({1:20},{}),false,'Missing switch states must not be guessed enabled');
-assert.equal(cold({1:null,2:NaN,3:0}),false,'Unavailable or invalid readings cannot establish cold water');
+for (const value of ['', ' \n ', null, undefined, false, {}])
+    assert.equal(warnings({boiler_error:value}).boilerError,false);
+assert.equal(warnings({boiler_error:'kazán hiba!'}).boilerError,true,'Use the published boiler diagnostic');
+assert.equal(warnings({boiler_error:'',heatmeters:{1:{temp:20}}}).boilerError,false,'No frontend temperature-based fallback');
+const rain={enabled:true,running:true,rain_shutdown:true,mode:'rain_shutdown',
+    checked_at_epoch:now.getTime()/1000,fresh_for_seconds:180};
+assert.deepEqual(warnings({rain_protection:rain}),{boilerError:false,rainProtection:true});
+assert.deepEqual(warnings({boiler_error:'kazán hiba!',rain_protection:rain}),{boilerError:true,rainProtection:true});
+for (const change of [{rain_shutdown:false},{enabled:false},{running:false,mode:'stopped'},
+    {checked_at_epoch:rain.checked_at_epoch-181},{checked_at_epoch:rain.checked_at_epoch+31},
+    {checked_at_epoch:null},{fresh_for_seconds:0},{fresh_for_seconds:'180'}])
+    assert.equal(warnings({rain_protection:{...rain,...change}}).rainProtection,false,'Inactive, stopped or stale rain status is not a warning');
+assert.equal(warnings({rain_protection:{...rain,checked_at_epoch:rain.checked_at_epoch-180}}).rainProtection,true,'Allow the published freshness boundary');
+for (const value of [undefined,null,true,'normal',{}])
+    assert.equal(warnings({rain_protection:value}).rainProtection,false,'The status object itself is not an activation flag');
 run('updateBoilerColor(1,true); drawBoiler()');
 assert.equal(styles['#boiler_body'].stroke,'black');
 assert.equal(styles['#flame_nest'].fill,'rgba(0.2,0.2,0.2,1)');
@@ -50,7 +58,7 @@ for (const pumpState of [0,1]) {
     assert.equal(styles['#flame_nest']['fill-opacity'],'1','The empty flame area remains visible');
     assert.equal(flames.length,count,'Switching heating off removes both active and pilot flames');
     assert.ok(Math.abs(hands.at(-1)[4]-Math.PI*1.25)<1e-10,'The dial points exactly to zero while heating is off');
-    assert.equal(run('boilerColdWaterError'),false,'Heating off is not itself a boiler fault');
+    assert.equal(run('boilerWarningActive'),false,'Heating off is not itself a warning');
     assert.equal(context.currentGasUsageRate,5,'Other gas use remains measured');
 }
 const offFlames=flames.length;
@@ -69,9 +77,19 @@ context.addLineToBox=(id,text,x,y,font)=>{
         node(){return {getComputedTextLength:()=>text.length*font*.6};}};
 };
 vm.runInContext(source.slice(source.indexOf('function updateGeneralInfobox('),source.indexOf('function updateCycleInfobox(')),context);
-run('updateGeneralInfobox({heatingOn:0,boilerError:true})');
-const warning=messages.find(row=>row.text==='kazán hiba!');
-assert.equal(warning.styles.fill,'red');
-assert.equal(warning.styles['font-weight'],'normal');
-assert.equal(warning.y,messages[0].y,'The warning stays on the title row');
-console.log('Cold boiler: enabled-circuit selection, 28 °C threshold, invalid readings, black outline, empty flame area and recovery passed.');
+for (const [boilerError,rainProtection,label] of [[true,false,'kazán hiba!'],[false,true,'esővédelem!'],
+    [true,true,'esővédelem!'],[false,false,'']]) {
+    messages.length=0;
+    context.info={heatingOn:0,boilerError,rainProtection};
+    run('updateGeneralInfobox(info)');
+    const shown=messages.filter(row=>['kazán hiba!','esővédelem!'].includes(row.text));
+    assert.equal(shown.length,0,'Warnings are presented in the dismissible message box, not the infobox');
+    if (label) {
+        const count=flames.length;
+        run('updateBoilerColor(1,info.boilerError||info.rainProtection,true);drawBoiler()');
+        assert.equal(styles['#boiler_body'].stroke,'black','Either published warning makes the boiler black');
+        assert.equal(flames.length,count);
+        assert.ok(Math.abs(hands.at(-1)[4]-Math.PI*1.25)<1e-10);
+    }
+}
+console.log('Published boiler/rain warnings: source fields, freshness, precedence, clearing, black appearance, empty flames, dial and heating-off recovery passed.');

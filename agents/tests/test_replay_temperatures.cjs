@@ -107,7 +107,7 @@ context.currentGasUsageRate=2;
 assert.equal(run('replayVisualGasUsageRate()'),4,'Interpolate gas only for visual consumers');
 assert.equal(context.currentGasUsageRate,2,'The infobox gas rate remains the recorded reading');
 const flames = [], hands = [];
-Object.assign(context,{boilerState:1,boilerColdWaterError:false,boilerHeatingEnabled:true,aspectRatio:1,
+Object.assign(context,{boilerState:1,boilerWarningActive:false,boilerHeatingEnabled:true,aspectRatio:1,
     constrain:(v,min,max)=>Math.max(min,Math.min(max,v)),getBBoxP5jsDimensions:()=>({cx:0,cy:0,w:10,h:10}),
     mapSize:()=>({w:1,h:1}),random:()=>1,color:(...args)=>args,drawFlame:(...args)=>flames.push(args),
     isValidNumber:Number.isFinite,PI:Math.PI,TWO_PI:Math.PI*2,sin:Math.sin,cos:Math.cos,
@@ -120,7 +120,7 @@ run('drawBoiler()');
 assert.ok(Math.abs(flames[0][2]-.58)<1e-10,'Flame strength follows the interpolated rate');
 assert.ok(Math.abs(hands.at(-1)[4]-Math.PI*1.85)<1e-10,'The analog gas dial follows the same interpolated rate');
 assert.equal(context.currentGasUsageRate,2);
-context.boilerColdWaterError=true;
+context.boilerWarningActive=true;
 const count=flames.length;
 run('drawBoiler()');
 assert.equal(flames.length,count,'Interpolation cannot suppress the discrete boiler-fault override');
