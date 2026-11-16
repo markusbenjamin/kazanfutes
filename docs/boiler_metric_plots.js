@@ -1,6 +1,7 @@
 // Ctrl+click boiler details; the ordinary hover and Alt+click KPI stay separate.
 const BOILER_METRICS = {
     demand: {label: 'instant hőigény', key: 'demand_kw', axis: 'hőigény (kW)', unit: ' kW', color: 'rgb(230,130,0)'},
+    delivery: {label: 'leadott fűtőtelj.', key: 'demand_kw', axis: 'fűtőteljesítmény (kW)', unit: ' kW', color: 'rgb(200,0,0)', tooltip: 'leadott fűtőtelj.'},
     temperature: {label: 'átlagos fűtővíz hőm.', key: 'water_temp', axis: '°C', unit: '°C', color: 'rgb(200,0,0)'}
 };
 let boilerMetricSelection = 'demand';
@@ -8,7 +9,8 @@ let boilerMetricSelection = 'demand';
 function createBoilerMetricPlotSetting(day = dayStamp(), metric = boilerMetricSelection) {
     if (!BOILER_METRICS[metric]) metric = 'demand';
     return {title: 'boiler_metrics', day, metric, conditionals: [],
-        types: ['heating_state', ...(metric === 'demand' ? ['heating_demand'] : [1,2,3,4].map(cycle => 'cycle_' + cycle + '_water_temps'))]};
+        types: ['heating_state', ...(metric === 'demand' ? ['heating_demand'] : [1,2,3,4].map(cycle =>
+            'cycle_' + cycle + (metric === 'delivery' ? '_heat_delivery' : '_water_temps')))]};
 }
 
 function openBoilerMetricPlot(event, elementId) {
@@ -42,7 +44,7 @@ function boilerAverageWaterTemperatures(data, cycles) {
     const events = new Map();
     cycles.forEach(cycle => (data['cycle_' + cycle + '_water_temps'] || []).forEach(row => {
         const hour = row.h_of_day_frac;
-        if (!Number.isFinite(hour) || hour < 0 || hour > 24) return;
+        if (!Number.isFinite(hour) || hour < 0 && !row.plot_history || hour > 24) return;
         if (!events.has(hour)) events.set(hour, new Map());
         events.get(hour).set(cycle, row);
     }));
@@ -69,12 +71,39 @@ function boilerHeatingPeriodRects(heatingState, day, range) {
             strokeWeight: .25, dashed: false, dashing: '0.5,1'}));
 }
 
+function boilerDeliveredPower(data) {
+    // Use the same validated heatmeter powers as the cycle charts. A missing
+    // circuit stays unknown; it must never become a zero or a partial total.
+    const events = new Map(), latest = new Map();
+    for (const {cycle} of BOILER_DEMAND_CYCLES) {
+        for (const row of data['cycle_' + cycle + '_heat_delivery'] || []) {
+            const hour = row.h_of_day_frac;
+            if (!Number.isFinite(hour) || hour < 0 || hour > 24) continue;
+            if (!events.has(hour)) events.set(hour, new Map());
+            events.get(hour).set(cycle, row);
+        }
+    }
+    return [...events].sort((a,b) => a[0] - b[0]).map(([hour, updates]) => {
+        updates.forEach((row, cycle) => latest.set(cycle, row));
+        const parts = Object.fromEntries(BOILER_DEMAND_CYCLES.map(({cycle}) => {
+            const row = latest.get(cycle);
+            const valid = row && hour - row.h_of_day_frac <= 3 / 60
+                && Number.isFinite(row.power_kw) && row.power_kw >= 0;
+            return [cycle, valid ? row.power_kw : null];
+        }));
+        return {h_of_day_frac: hour, cycle_demand_kw: parts,
+            demand_kw: Object.values(parts).every(Number.isFinite)
+                ? Object.values(parts).reduce((sum, value) => sum + value, 0) : null};
+    });
+}
+
 function drawBoilerMetricPlot(data, setting) {
     const metric = BOILER_METRICS[setting.metric];
     const isTemperature = setting.metric === 'temperature';
     const end = setting.day === dayStamp() ? getFractionalHourOfDay() : 24;
     const cycles = isTemperature ? boilerEnabledCycles(data.heating_state) : null;
-    const readings = isTemperature ? boilerAverageWaterTemperatures(data, cycles) : (data.heating_demand || []);
+    const readings = isTemperature ? boilerAverageWaterTemperatures(data, cycles)
+        : setting.metric === 'delivery' ? boilerDeliveredPower(data) : (data.heating_demand || []);
     const curves = [{key: metric.key, color: metric.color, tooltip: isTemperature ? 'előremenő' : 'hőigény'}];
     if (isTemperature) curves.push({key: 'return_temp', color: 'rgb(0,40,150)', tooltip: 'visszatérő'});
     curves.forEach(curve => curve.segments = splitCycleHeatReadings(readings.slice()
@@ -94,7 +123,7 @@ function drawBoilerMetricPlot(data, setting) {
     let emptyMessage = values.length ? '' : 'Az adott napra nincs adat.';
     if (isTemperature && cycles === null) emptyMessage = 'Az adott napra nincs kapcsolási adat.';
     else if (isTemperature && !cycles.length) emptyMessage = 'Nincs engedélyezett fűtési kör.';
-    const common = {parentId: 'graph', margins: {top: isTemperature ? .1 : .16, right: .03, bottom: .15, left: .1},
+    const common = {parentId: 'graph', margins: {top: isTemperature ? .16 : .21, right: .03, bottom: .15, left: .1},
         domain: {bottom: [0,24], left: range}, dataKeys: {bottom: 'h_of_day_frac', left: metric.key},
         axesLabel: {bottom: 'óra', left: metric.axis}, tickVals: {left: d3.range(range[0], range[1] + step / 2, step)},
         smoothing: {bottom: 0, left: 0}, segment: {do: false}, plotLabel: '', curveEndText: {show: false},
@@ -103,8 +132,13 @@ function drawBoilerMetricPlot(data, setting) {
         rects: {when: 'before', list: boilerHeatingPeriodRects(data.heating_state, setting.day, range)},
         plotLabelTabs: isTemperature ? boilerMetricTabs(setting) : false,
         plotDateNavigation: {day: setting.day, onDayChange: navigateMainPlotDay}});
+    const labelScale = isMobile ? 1.8 : 1;
+    area.plotElement.append('text').attr('class', 'boiler-details-title')
+        .attr('x', area.plotDims.w / 2).attr('y', (isTemperature ? -12.25 : -21.25) * labelScale)
+        .style('text-anchor', 'middle').style('font-family', dashboardFont).style('font-size', 7 * labelScale + 'px')
+        .text(dashboardText('kazán részletes adatok'));
     if (!isTemperature) {
-        drawPlotTitleSelector(area.plotElement.append('g').attr('transform', 'translate(0,-9)'), area.plotDims, boilerMetricTabs(setting), 7);
+        drawPlotTitleSelector(area.plotElement.append('g').attr('transform', `translate(0,${-9 * labelScale})`), area.plotDims, boilerMetricTabs(setting), 7 * labelScale);
         drawBoilerDemandBars(area, readings, {...metric, unit: 'kW', precision: 2}, range, end);
         return;
     }
@@ -119,7 +153,7 @@ function drawBoilerMetricPlot(data, setting) {
 }
 
 function boilerMetricTabs(setting) {
-    return {prefix: 'kazán — ', selected: setting.metric,
+    return {prefix: '', columns: 3, selected: setting.metric,
         choices: Object.entries(BOILER_METRICS).map(([key, value]) => ({key, label: value.label, color: value.color})),
         onSelect: selectBoilerMetricPlot};
 }

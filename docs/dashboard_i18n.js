@@ -33,18 +33,23 @@ const DASHBOARD_ENGLISH = {
     '1-es kör': 'circuit 1', '2-es kör': 'circuit 2', '3-mas kör': 'circuit 3', '3-as kör': 'circuit 3', '4-es kör': 'circuit 4',
     'alap': 'basic', 'részletes': 'details', 'analitika': 'analytics', 'Grafikon nézete': 'Chart view',
     'grafikon választása': 'chart selection', 'kazán': 'boiler', 'szobák': 'rooms',
+    'kazán részletes adatok': 'boiler details', 'kazán analitika': 'boiler analytics',
     'fázissík': 'phase plane', 'statisztika': 'statistics', 'napi hiba': 'daily error',
     'jelenlét': 'occupied', 'üres': 'unoccupied', 'össz': 'all',
     'hőm.': 'temp.', 'páratart.': 'humidity', 'jelenl.': 'occupancy',
     'radiátor hőm.': 'radiator temp.', 'radiátor hőmérséklet': 'radiator temperature',
     'átlag hőm.': 'mean temp.', 'hőm. próbánként': 'temp. per probe', 'szelepnyitás': 'valve opening',
-    'fűtővíz hőm.': 'water temp.', 'fűtőtelj.': 'heat output', 'átfolyás': 'flow',
+    'fűtővíz hőm.': 'water temp.', 'fűtőtelj.': 'heat output', 'térfogatáram': 'flow rate',
     'szivattyú telj.': 'pump power', 'fűtőteljesítmény (kW)': 'heat output (kW)',
-    'térfogatáram (m³/h)': 'flow (m³/h)', 'szivattyú teljesítmény (W)': 'pump power (W)',
+    'térfogatáram (m³/h)': 'flow rate (m³/h)', 'szivattyú teljesítmény (W)': 'pump power (W)',
     'teljesítmény (W)': 'power (W)', 'ráta (m³/h)': 'rate (m³/h)',
     'előremenő': 'supply', 'visszatérő': 'return', 'instant hőigény': 'instant heat demand',
     'átlagos fűtővíz hőm.': 'mean water temp.', 'hőigény': 'heat demand', 'hőigény (kW)': 'heat demand (kW)',
-    'hőhasznosítás': 'heat utilisation', 'napi pontok': 'daily points',
+    'leadott fűtőtelj.': 'delivered heat output',
+    'előremenő / visszatérő fázissík': 'supply / return phase plane', 'átlag': 'average', 'összes': 'all',
+    'előremenő (°C)': 'supply (°C)', 'visszatérő (°C)': 'return (°C)',
+    'hatásfok': 'efficiency',
+    'hatásfok (%)': 'efficiency (%)',
     'napi leadott hő (kWh)': 'daily delivered heat (kWh)',
     'leadott hő / gázenergia (%)': 'delivered heat / gas energy (%)',
     'leadott hő / gázenergia': 'delivered heat / gas energy',
@@ -84,7 +89,7 @@ const DASHBOARD_ENGLISH = {
 
 const DASHBOARD_ENGLISH_PREFIXES = {
     'Szobák:': 'Rooms:', 'Fűtővíz:': 'Water:',
-    'Keringetett fűtővíz:': 'Circulating water:',
+    'Keringetett fűtővíz:': 'Heating water:',
     'Készenléti fűtővíz:': 'Standby water:',
     'Átlagos eltérés: ': 'Mean deviation: ', 'Eltérés: ': 'Deviation: ',
     'Keringetett körök: ': 'Running circuits: ', 'Utolsó kérés:': 'Last request:',
@@ -94,7 +99,8 @@ const DASHBOARD_ENGLISH_PREFIXES = {
     'Túlfűtés:': 'Overheating:', 'Alulfűtés:': 'Underheating:',
     'átlagos absz. eltérés:': 'mean absolute deviation:', 'nyitással súlyozott állapotidő:': 'valve-weighted state time:',
     'adatlefedettség:': 'data coverage:', 'radiátor:': 'radiator:', 'eltérés:': 'deviation:',
-    'leadott:': 'delivered:', 'gázenergia:': 'gas energy:', 'gáz:': 'gas:', 'nap:': 'day:'
+    'leadott:': 'delivered:', 'gázenergia:': 'gas energy:', 'gáz:': 'gas:', 'nap:': 'day:',
+    'hatásfok:': 'efficiency:'
 };
 const DASHBOARD_WEEKDAYS = {
     'vasárnap': 'Sunday', 'hétfő': 'Monday', 'kedd': 'Tuesday', 'szerda': 'Wednesday',
@@ -139,7 +145,7 @@ function dashboardEnglishLine(line) {
     return leading + result
         .replace(/\b(\d+)\s+(másodperce|perce|órája)\b/g, (_,n,unit) => n + ({másodperce:' seconds ago',perce:' minutes ago',órája:' hours ago'})[unit])
         .replace(/\((vasárnap|hétfő|kedd|szerda|csütörtök|péntek|szombat)\)/g, (_,day) => '(' + DASHBOARD_WEEKDAYS[day] + ')')
-        .replace(/\b7 nap:/g,'7 days:').replace(/\(átl\.:/g,'(avg.:')
+        .replace(/\b(\d+) nap:/g,'$1 days:').replace(/gázenergia:/g,'gas energy:').replace(/\(átl\.:/g,'(avg.:')
         .replace(/ eFt\./g,' kHUF.').replace(/ Ft\./g,' HUF.').replace(/(\d),(?=\d)/g,'$1.') + trailing;
 }
 

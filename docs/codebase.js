@@ -185,7 +185,7 @@ function insertSubstringEveryNFromRight(input, substring, n) {
 }
 
 // Function to calculate moving average
-function calculateMovingAverage(data, field, windowSize) {
+function calculateMovingAverage(data, field, windowSize, causal = false) {
     // Ensure data is actually an array
     if (!Array.isArray(data)) {
         console.warn("calculateMovingAverage: 'data' is not an array:", data);
@@ -205,8 +205,8 @@ function calculateMovingAverage(data, field, windowSize) {
             return d;
         }
 
-        const start = Math.max(0, i - Math.floor(windowSize / 2));
-        const end = Math.min(arr.length, i + Math.floor(windowSize / 2) + 1);
+        const start = Math.max(0, i - (causal ? windowSize - 1 : Math.floor(windowSize / 2)));
+        const end = causal ? i + 1 : Math.min(arr.length, i + Math.floor(windowSize / 2) + 1);
 
         // slice out the subset
         const subset = arr.slice(start, end);

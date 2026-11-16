@@ -18,6 +18,9 @@ for (const search of ['?lang=en','?zoom=0.8&lang=en&demo=1']) {
     assert.equal(t('Kazán 2:'),'Kazán 2:');
     assert.equal(t('1. kazán mai villamos teljesítménye'),"Boiler 1 today's electrical power",'actual boiler plots still translate');
     assert.equal(t('kazán — '),'boiler — ');
+    assert.equal(t('hatásfok'),'efficiency');
+    assert.equal(t('leadott: 452 kWh  ·  gázenergia: 544 kWh'),'delivered: 452 kWh  ·  gas energy: 544 kWh');
+    assert.equal(t('nap: 83,1%  |  30 nap: 72,1%'),'day: 83.1%  |  30 days: 72.1%');
     assert.equal(t('2. kör — '),'Circuit 2 — ');
     for (const circuit of [1,2,3,4]) {
         const name = ['1-es','2-es','3-mas','4-es'][circuit-1] + ' kör';
@@ -35,7 +38,7 @@ for (const search of ['?lang=en','?zoom=0.8&lang=en&demo=1']) {
     assert.equal(t('2026-11-02 (hétfő)'),'2026-11-02 (Monday)');
     assert.equal(t('Vezérlés lefutott: 32  másodperce.'),'Last control run: 32 seconds ago.');
     assert.equal(t('Keringetett körök: mind.'),'Running circuits: all.');
-    assert.equal(t('Keringetett fűtővíz: 52 °C.'),'Circulating water: 52 °C.');
+    assert.equal(t('Keringetett fűtővíz: 52 °C.'),'Heating water: 52 °C.');
     assert.equal(t('kazán hiba!'),'boiler fault!');
     assert.equal(t('esővédelem!'),'rain protection!');
     assert.equal(t('szoba jó de hűl, radiátor meleg és melegszik'),'room comfortable but cooling, radiator hot and warming');

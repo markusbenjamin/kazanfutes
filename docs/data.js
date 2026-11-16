@@ -50,7 +50,10 @@ function insertCanvasFromFile(fileData) {
     newDrawingGroup.appendChild(newGroup);
     // Localise static SVG lettering without changing IDs or drawing geometry.
     newGroup.querySelectorAll('text, tspan').forEach(node => {
-        if (!node.children.length) node.textContent = dashboardText(node.textContent);
+        if (!node.children.length) {
+            node.dataset.dashboardText = node.textContent;
+            node.textContent = dashboardText(node.textContent);
+        }
     });
 
 
@@ -229,7 +232,7 @@ function renderDashboardState(fullFirebaseDataJSON, options = {}) {
                 schedLastUpdateGranularity = ' órája'
             }
 
-            if (!options.replay && timeSinceLastScheduleUpdate < 1) { // Urge redraw if a schedule update is recent
+            if (!options.replay && !options.languageOnly && timeSinceLastScheduleUpdate < 1) { // Urge redraw if a schedule update is recent
                 drawMainGraph();
             }
 
@@ -245,7 +248,7 @@ function renderDashboardState(fullFirebaseDataJSON, options = {}) {
             let requestOrigin = "form";
             let requestTarget = roomV2Name(requestedRoom);
 
-            if (!options.replay && fromRequest && !initialLockDone && roomsDataAndState[requestedRoom]) {
+            if (!options.replay && !options.languageOnly && fromRequest && !initialLockDone && roomsDataAndState[requestedRoom]) {
                 mainGraphContentLocked = true;
                 mainGraphSetting = elementToMainGraphSettingMapping['room_' + requestedRoom];
                 initialLockDone = true;
@@ -325,7 +328,7 @@ function renderDashboardState(fullFirebaseDataJSON, options = {}) {
                 //console.log(currentGasUsageRate)
                 //console.log(timeItTookToUpdateGasUsage)
             });
-            if (!options.replay) refreshMainPlotLiveEndpoint();
+            if (!options.replay && !options.languageOnly) refreshMainPlotLiveEndpoint();
 }
 
 let lastGasUpdate, timeItTookToUpdateGasUsage, prevGasUsageRate;
@@ -507,6 +510,22 @@ let loadedData = {};
 let dataExpiry = 5; //Minutes
 
 function collectDataFromGitHub(dataToCollect, drawFunction, options = {}) {
+    if (options.historyTypes?.length) {
+        const historyTypes = new Set(options.historyTypes);
+        const extra = dataToCollect.filter(({type}) => historyTypes.has(type))
+            .map(({day,type}) => ({day:plotPreviousDay(day),type}));
+        const requests = [...new Map([...dataToCollect,...extra].map(item => [item.day+'/'+item.type,item])).values()];
+        collectDataFromGitHub(requests, loaded => {
+            const result = {};
+            dataToCollect.forEach(({day,type}) => {
+                const rows = loaded[day]?.[type];
+                (result[day] ||= {})[type] = historyTypes.has(type)
+                    ? addPlotHistory(rows,loaded[plotPreviousDay(day)]?.[type]) : rows;
+            });
+            drawFunction(options.unclipped ? result : replayPlotPayload(result));
+        }, {...options,historyTypes:[],unclipped:true});
+        return;
+    }
     // We'll collect final results here in the same shape as loadedData => dataCollected[day][type]
     const dataCollected = {};
 
@@ -683,7 +702,8 @@ function resampleRoomTemperatureForDisplay(
                 const fraction = (hour - previous.h_of_day_frac) / gapHours;
                 displayReadings.push({
                     h_of_day_frac: hour,
-                    temp: previous.temp + (reading.temp - previous.temp) * fraction
+                    temp: typeof dashboardReplayActive === 'function' && dashboardReplayActive()
+                        ? previous.temp : previous.temp + (reading.temp - previous.temp) * fraction
                 });
             }
         }
@@ -1008,11 +1028,13 @@ function drawPlot(plotData, userOptions) {
     }
     else {
         if (ops.smoothing.bottom > 0) {
-            plotData = calculateMovingAverage(plotData, ops.dataKeys.bottom, ops.smoothing.bottom);
+            plotData = calculateMovingAverage(plotData, ops.dataKeys.bottom, ops.smoothing.bottom, dashboardReplayActive());
         }
         if (ops.smoothing.left > 0) {
-            plotData = calculateMovingAverage(plotData, ops.dataKeys.left, ops.smoothing.left);
+            plotData = calculateMovingAverage(plotData, ops.dataKeys.left, ops.smoothing.left, dashboardReplayActive());
         }
+        if (typeof trimPlotHistory === 'function') plotData = trimPlotHistory(plotData,ops.dataKeys.bottom,ops.dataKeys.left,
+            ops.domain.bottom || [0,24],dashboardReplayActive() ? getFractionalHourOfDay() : null);
 
         function drawRects() {
             ops.rects.list.forEach(rect => {
@@ -2207,6 +2229,7 @@ function drawRoomInfo(roomNum) {//IN DEVELOPMENT
 }
 
 function drawMainGraph(graphData = null) {
+    if (typeof cacheDashboardPlotLanguage === 'function') cacheDashboardPlotLanguage(graphData, mainGraphSetting);
     const changed = beginMainPlotLoading(mainGraphSetting);
     if (changed && graphData === null) {
         clearMainGraphs();
@@ -2233,6 +2256,7 @@ function drawMainGraph(graphData = null) {
                 // A slower response for a previous hover must not replace the current cycle.
                 if (mainGraphSetting === requestedSetting) drawMainGraph(data);
             },
+            {historyTypes: typeof plotHistoryTypesForSetting === 'function' ? plotHistoryTypesForSetting(requestedSetting) : []}
         );
     }
     else {
@@ -2598,7 +2622,7 @@ function drawMainGraph(graphData = null) {
                     else { drawRoomV2MeasuredPlot(graphData, mainGraphSetting); }
                     break;
                 case "all_rooms":
-                    Object.keys(graphData).forEach(k => Array.isArray(graphData[k]) && (graphData[k] = graphData[k].filter(elem => elem.timestamp?.slice(0, 10) === mainGraphSetting.day)));
+                    Object.keys(graphData).forEach(k => Array.isArray(graphData[k]) && (graphData[k] = graphData[k].filter(elem => elem.plot_history || elem.timestamp?.slice(0, 10) === mainGraphSetting.day)));
                     let drawForSingleCycle = mainGraphSetting.hoveredCycle > 0;
                     const overviewRoomIds = drawForSingleCycle ? allControlledRooms : allMeasuredRooms;
                     const overviewGroups = roomOverviewGroups(graphData, overviewRoomIds,

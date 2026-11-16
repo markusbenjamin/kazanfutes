@@ -182,7 +182,8 @@ async function loadReplayDay(day) {
                 ...[1,2,3,4].flatMap(cycle => ['cycle_' + cycle + '_water_temps','cycle_' + cycle + '_heat_delivery']),
                 ...allMeasuredRooms.flatMap(room => ['room_' + room + '_measurements'])];
             const seedTypes = ['weather_station','radiator_temps','radiator_valves','gas_usage','pumps_power',
-                ...[1,2,3,4].map(cycle => 'cycle_' + cycle + '_water_temps')];
+                ...[1,2,3,4].map(cycle => 'cycle_' + cycle + '_water_temps'),
+                ...allMeasuredRooms.map(room => 'room_' + room + '_measurements')];
             const fetchType = (date,type) => new Promise(resolve => collectDataFromGitHub([{day:date,type}], data => resolve([type, data[date]?.[type]]), {unclipped:true}));
             const [history, plots, seeds] = await Promise.all([historyPromise,
                 Promise.all(types.map(type => fetchType(day,type))),
@@ -223,7 +224,7 @@ function playReplay() {
     const tick = time => {
         if (!replayPlaying) return;
         // Clamp wall-clock pauses when the browser tab is backgrounded.
-        const elapsed = Math.min(time - replayLastFrame, 1000);
+        const elapsed = Math.max(0, Math.min(time - replayLastFrame, 1000));
         replayLastFrame = time;
         const available = replayDay.endTime;
         dashboardReplayTime = Math.min(available, dashboardReplayTime + elapsed * replaySpeed * 60);
@@ -304,11 +305,13 @@ function updateReplayWeekday() {
     const day = document.getElementById('replay-day').value;
     document.getElementById('replay-next-day').disabled = !day || day >= dayStamp(new Date());
     const label = document.getElementById('replay-date-display');
-    if (label.dataset.day === day) return;
+    const language = dashboardPageOptions().language;
+    if (label.dataset.day === day && label.dataset.language === language) return;
     label.dataset.day = day;
+    label.dataset.language = language;
     label.textContent = /^\d{4}-\d{2}-\d{2}$/.test(day)
         ? (dashboardPageOptions().language === 'en' ? day : day.replaceAll('-', '.') + '.')
-            + ' (' + dashboardText(selectorWeekday(day)) + ')' : replayText('Dátum választása', 'Choose date');
+            + ' ' + dashboardText('(' + selectorWeekday(day) + ')') : replayText('Dátum választása', 'Choose date');
 }
 
 function selectReplayDay(delta) {
@@ -472,7 +475,15 @@ function initializeReplayPane() {
     document.getElementById('replay-restart').addEventListener('click',restartReplay);
     document.getElementById('replay-timeline').addEventListener('input',event=>seekReplay(Number(event.target.value)));
     document.getElementById('replay-speed').addEventListener('change',event=>{replaySpeed=Number(event.target.value);});
-    pane.querySelectorAll('[data-hu]').forEach(node=>{node.textContent=replayText(node.dataset.hu,node.dataset.en);});
+    localizeReplayPane();
+}
+
+function localizeReplayPane() {
+    const pane = document.getElementById('replay-pane');
+    pane.setAttribute('aria-label',replayText('Visszajátszás','Replay'));
+    document.getElementById('replay-day').setAttribute('aria-label',replayText('Dátum','Date'));
+    document.getElementById('replay-timeline').setAttribute('aria-label',replayText('Visszajátszás ideje','Replay time'));
+    pane.querySelector('.replay-transport').setAttribute('aria-label',replayText('Lejátszás','Playback'));
     const labels = {play:['Lejátszás','Play'],pause:['Szünet','Pause'],stop:['Leállítás','Stop'],
         restart:['Újra az elejétől','Replay from start'],size:['Kis méret','Minimize'],close:['Bezárás','Close'],
         load:['Napi adatok betöltése','Load daily data'],
@@ -481,4 +492,15 @@ function initializeReplayPane() {
         const button=document.getElementById('replay-'+id), text=replayText(...label);
         button.setAttribute('aria-label',text);button.title=text;
     });
+    const minimized = pane.classList.contains('replay-minimized');
+    const sizeLabel = minimized ? replayText('Kibontás','Expand') : replayText('Kis méret','Minimize');
+    const size = document.getElementById('replay-size');
+    size.setAttribute('aria-label',sizeLabel); size.title = sizeLabel;
+    document.querySelectorAll('#replay-speed option').forEach(option => {
+        option.textContent = minimized ? option.value + replayText(' p/mp',' min/s') : replayText(option.dataset.hu,option.dataset.en);
+    });
+    const status = document.getElementById('replay-status');
+    if (status.textContent) status.textContent = replayLoadingDay ? replayText('Napi adatok betöltése…','Loading daily data…')
+        : replayText('Ehhez a naphoz nem elérhető a napló.','The log is unavailable for this day.');
+    updateReplayPane();
 }

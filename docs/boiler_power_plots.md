@@ -28,9 +28,13 @@ There is no historical-data fallback for the instantaneous value.
 `data_formatter` reads the existing `data/logs/boilers_power/boiler_plugs.json`
 NDJSON and emits both daily power files under `data/formatted/YYYY-MM-DD/`.
 Each record contains `timestamp` and `power_w`. Unavailable samples are retained
-as JSON null, not converted into zero; the curve breaks at these samples and at
-gaps longer than three minutes. An absent/uncommissioned source produces an
+as JSON null, not converted into zero; the curve breaks at these samples. Known observations remain joined across
+logging gaps. An absent/uncommissioned source produces an
 empty array, which the plot handles normally.
+
+Electrical curves use the pump chart's black, unsmoothed step-after style,
+with a thinner 0.5-unit stroke. Known observations join across time gaps;
+explicit missing/invalid measurements still break the curve.
 
 The shared daily `boiler_commands.json` overlay is derived from executed
 `device == "boiler"` entries in `data/heating_control/commands_archive.json`,

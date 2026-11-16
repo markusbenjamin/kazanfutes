@@ -10,7 +10,7 @@ for (const code of ['hu','en']) assert.match(languageTools, new RegExp('id="dash
 function page(search) {
     let document;
     class Element {
-        constructor(id='') {this.id=id;this.hidden=true;this.children=[];this.attrs={};this.events={};this.isConnected=true;this.textContent='';}
+        constructor(id='') {this.id=id;this.hidden=true;this.children=[];this.attrs={};this.events={};this.isConnected=true;this.textContent='';this.style={};this.dataset={};}
         append(...children) {this.children.push(...children);}
         replaceChildren(...children) {this.children=children;}
         setAttribute(key,value) {this.attrs[key]=value;}
@@ -18,7 +18,7 @@ function page(search) {
         addEventListener(key,callback) {this.events[key]=callback;}
         contains(node) {return this===node||this.children.some(child=>child.contains?.(node));}
         focus() {document.activeElement=this;}
-        click() {this.focus();this.events.click?.({});}
+        click() {this.focus();this.events.click?.({preventDefault(){},stopPropagation(){}});}
     }
     const ids=['admin-message','admin-message-content','admin-message-close','admin-message-ok',
         'demo-help','demo-help-content','demo-help-launcher','demo-help-close','demo-help-ok',
@@ -31,9 +31,12 @@ function page(search) {
     nodes['demo-help'].append(nodes['demo-help-content'],nodes['demo-help-close'],nodes['demo-help-ok']);
     const link=new Element();
     document={documentElement:{},title:'Kazán-Gólya fűtés: rendszerállapot',activeElement:new Element('body'),
-        getElementById:id=>nodes[id],querySelector:()=>link,createElement:()=>new Element(),
+        getElementById:id=>nodes[id],querySelector:()=>link,querySelectorAll:()=>[],createElement:()=>new Element(),
         createTextNode:text=>({textContent:text})};
-    const context=createContext({URL,URLSearchParams,window:{location:{search,href:'http://localhost/dashboard.html'+search}},document});
+    const pageUrl=new URL('http://localhost/dashboard.html'+search);
+    const window={location:{search:pageUrl.search,href:pageUrl.href},addEventListener(){}};
+    window.history={state:{unchanged:true},replaceState(state,unused,url){const next=new URL(url);window.location={href:next.href,search:next.search};}};
+    const context=createContext({URL,URLSearchParams,window,document});
     for(const file of ['admin_message','dashboard_help'])
         vm.runInContext(fs.readFileSync(path.resolve(__dirname,'../../docs/'+file+'.js'),'utf8'),context);
     return {context,nodes,document,link,update(value){context.message=value;vm.runInContext('updateAdminMessage(message)',context);}};
@@ -94,5 +97,51 @@ for (const query of ['?zoom=0.8&demo=1&lang=en&ref_source=form#plot','?mobile=1&
         assert.equal(nodes['dashboard-language-'+language].attrs['aria-current'],String(query.includes('lang='+language)));
         assert.equal(nodes['dashboard-language-'+language].hidden,query.includes('lang='+language),'only the other language is visible');
     }
+}
+{
+    const {context,nodes,document}=page('?zoom=0.8&demo=1&lang=en#plot');
+    const staticLabel={dataset:{dashboardText:'mért hőmérséklet'},textContent:'measured temperature'};
+    document.querySelectorAll=()=>[staticLabel];
+    vm.runInContext(fs.readFileSync(path.resolve(__dirname,'../../docs/dashboard_language.js'),'utf8'),context);
+    const setting={title:'boiler_kpi',day:'2026-11-15',metric:'phase',phaseMode:'3'},data={'2026-11-15':{sample:[1]}};
+    const draws=[],states=[],repaints=[];
+    Object.assign(context,{mainGraphSetting:setting,mainGraphContentLocked:true,replayLatestLive:{system:{}},
+        drawMainGraph:data=>draws.push(data),renderDashboardState:(data,options)=>states.push(options),
+        dashboardReplayActive:()=>false,replayPaint:value=>repaints.push(value)});
+    context.savedData=data;
+    vm.runInContext('cacheDashboardPlotLanguage(savedData,mainGraphSetting)',context);
+    nodes['demo-help-ok'].click();
+    nodes['dashboard-language-hu'].click();
+    assert.equal(context.window.location.search,'?zoom=0.8&demo=1&lang=hu');
+    assert.equal(new URL(context.window.location.href).hash,'#plot');
+    assert.equal(document.documentElement.lang,'hu');
+    assert.equal(document.title,'Kazán-Gólya fűtés: rendszerállapot','title translates back from its original source');
+    assert.equal(staticLabel.textContent,'mért hőmérséklet');
+    assert.equal(nodes['demo-help-content'].children.length,8,'help content is rebuilt rather than appended again');
+    assert.equal(nodes['demo-help'].hidden,true);
+    assert.equal(context.mainGraphSetting,setting);
+    assert.equal(context.mainGraphContentLocked,true);
+    assert.equal(draws.at(-1),data,'redraw uses retained plot inputs without fetching again');
+    assert.equal(states.at(-1).languageOnly,true);
+    nodes['dashboard-language-en'].click();
+    assert.equal(document.documentElement.lang,'en');
+    assert.equal(staticLabel.textContent,'measured temperature');
+    assert.equal(nodes['demo-help'].hidden,true,'switching language does not reopen dismissed demo help');
+    assert.equal(nodes['demo-help-launcher'].hidden,false);
+    context.dashboardReplayActive=()=>true;
+    nodes['dashboard-language-hu'].click();
+    assert.deepEqual(repaints,[false],'replay is repainted without a restart or advancing its time');
+    context.messages={admin_message:'Magyar üzenet',admin_message_en:'English message'};
+    vm.runInContext('updateDashboardMessageConfig(messages);dismissAdminMessage()',context);
+    nodes['dashboard-language-en'].click();
+    assert.equal(nodes['admin-message'].hidden,true,'a dismissed message stays dismissed across languages');
+    assert.equal(vm.runInContext('dismissedAdminMessage',context),'English message');
+    nodes['dashboard-language-hu'].click();
+    context.messages={admin_message:'Másik magyar üzenet'};
+    vm.runInContext('updateDashboardMessageConfig(messages);dismissAdminMessage()',context);
+    nodes['dashboard-language-en'].click();
+    vm.runInContext('updateDashboardMessageConfig(messages)',context);
+    nodes['dashboard-language-hu'].click();
+    assert.equal(nodes['admin-message'].hidden,true,'missing English text does not lose the Hungarian acknowledgement');
 }
 console.log('Dashboard help passed: English help retained, Hungarian help on hold with content preserved, repeatable reopening, Ok/X/Escape, focus restoration, polling isolation and language links preserving URL options.');

@@ -8,6 +8,7 @@ let dismissedAdminMessage = "";
 let adminMessagePreviousFocus;
 let currentDashboardWarnings = {rainProtection: false, boilerError: false};
 const dismissedDashboardWarnings = new Map();
+const dashboardMessageLanguageAcknowledgements = new Map();
 let displayedDashboardMessage = "";
 let dashboardMessageConfig = {};
 
@@ -123,8 +124,29 @@ function updateDashboardWarnings(warnings) {
         currentDashboardWarnings[key] = warnings?.[key] === true;
         // Acknowledgement lasts for this occurrence, even while another error
         // has priority. A clear followed by recurrence should show it again.
-        if (!currentDashboardWarnings[key]) dismissedDashboardWarnings.delete(key);
+        if (!currentDashboardWarnings[key]) {
+            dismissedDashboardWarnings.delete(key);
+            dashboardMessageLanguageAcknowledgements.forEach(ack => ack.warnings.delete(key));
+        }
     }
+    renderDashboardMessage();
+}
+
+function refreshDashboardMessageLanguage(previousLanguage) {
+    // Preserve acknowledgement of the same message when its translated text changes.
+    const previousAck = {admin:dismissedAdminMessage,warnings:new Map(dismissedDashboardWarnings)};
+    dashboardMessageLanguageAcknowledgements.set(previousLanguage,previousAck);
+    const saved = dashboardMessageLanguageAcknowledgements.get(dashboardPageOptions().language);
+    dismissedAdminMessage = saved?.admin || '';
+    dismissedDashboardWarnings.clear();
+    saved?.warnings.forEach((message,type) => dismissedDashboardWarnings.set(type,message));
+    for (const [type,key] of [['admin','admin_message'],['rainProtection','rain_protection_message'],['boilerError','boiler_fault_message']]) {
+        const previous = normalizeDashboardMessage(dashboardMessageConfig[key + (previousLanguage === 'en' ? '_en' : '')]);
+        const translated = normalizeDashboardMessage(dashboardConfigMessage(dashboardMessageConfig,key));
+        if (type === 'admin' && previous && previousAck.admin === previous) dismissedAdminMessage = translated;
+        else if (previous && previousAck.warnings.get(type) === previous) dismissedDashboardWarnings.set(type,translated);
+    }
+    currentAdminMessage = normalizeDashboardMessage(dashboardAdminMessage(dashboardMessageConfig));
     renderDashboardMessage();
 }
 

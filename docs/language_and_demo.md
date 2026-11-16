@@ -19,11 +19,15 @@ dialog; admin messages remain pink. Ok, X or Escape closes help, and the button
 reopens it by keyboard/touch. Firebase polling cannot reopen dismissed help.
 Messages also work in demo and form-referral views. No storage permissions are needed.
 
-The `hu` and `en` text links next to help switch the whole dashboard by
-reloading with `lang=hu` or `lang=en`. All other URL parameters and the fragment
+The `hu` and `en` text links next to help switch the whole dashboard in place,
+updating `lang=hu` or `lang=en` without navigation. All other URL parameters and the fragment
 are preserved, including demo, zoom, mobile and ref_source. Only the non-active
 language is shown as a compact text toggle, with a native-language accessible name.
 The link stays visually small on touch screens while retaining a 44px tap target.
+Plots redraw from their retained inputs, preserving the date, selected metric,
+pinning, zoom and active replay position/playback. Static SVG text retains its
+Hungarian source for reversible relabeling. Help does not reopen on a switch;
+acknowledgements of configured messages survive switching languages.
 
 English translations are applied at display boundaries before text measurements.
 SVG IDs, field names, metric keys, colors, control calculations and proper room/

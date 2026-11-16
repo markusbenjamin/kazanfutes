@@ -101,7 +101,7 @@ function drawBoilerPowerPlot(data, setting) {
         dataKeys: { bottom: 'h_of_day_frac', left: 'power_w' },
         axesLabel: { bottom: 'óra', left: 'teljesítmény (W)' },
         tickVals: { left: d3.range(range[0], range[1] + tickStep / 2, tickStep) },
-        plotStyle: electricalPowerPlotStyle(), segment: { do: false }, curveEndText: { show: false },
+        plotStyle: {...electricalPowerPlotStyle(), thickness: '.5'}, segment: { do: false }, curveEndText: { show: false },
         plotLabel: setting.boilerNumber + '. kazán ' + (setting.day === dayStamp() ? 'mai' : 'napi') + ' villamos teljesítménye'
     };
     drawPlot([], { ...common, rects: { when: 'before', list: boilerCommandPeriods(data.boiler_commands || [], range[0], range[1]) } });

@@ -23,17 +23,19 @@ function hideDemoHelp() {
     if (hadFocus) (demoHelpPreviousFocus?.isConnected ? demoHelpPreviousFocus : demoHelpLauncher).focus({preventScroll:true});
 }
 
-function initializeDashboardPage() {
+function initializeDashboardPage({initial = true} = {}) {
     const {language, demo} = dashboardPageOptions();
     document.documentElement.lang = language;
-    document.title = dashboardText(document.title);
-    ['admin-message','admin-message-close','demo-help','demo-help-close'].forEach(id => {
+    document.title = dashboardText('Kazán-Gólya fűtés: rendszerállapot');
+    Object.entries({'admin-message':'Adminisztrátori üzenet','admin-message-close':'Üzenet bezárása',
+        'demo-help':'A dashboard használata','demo-help-close':'Súgó bezárása'}).forEach(([id,label]) => {
         const node = document.getElementById(id);
-        node.setAttribute('aria-label',dashboardText(node.getAttribute('aria-label')));
+        node.setAttribute('aria-label',dashboardText(label));
     });
     document.querySelector('#admin-message a').textContent = dashboardText('Kérdésem van');
     demoHelpLauncher.textContent = dashboardText('mi ez?');
     demoHelpLauncher.hidden = !dashboardHelpEnabled();
+    if (!dashboardHelpEnabled()) {demoHelpBox.hidden = true; demoHelpLauncher.setAttribute('aria-expanded','false');}
     document.getElementById('dashboard-page-tools').setAttribute('aria-label',language === 'en' ? 'Language and help' : 'Nyelv és súgó');
     ['hu','en'].forEach(code => {
         const link = document.getElementById('dashboard-language-' + code);
@@ -64,16 +66,22 @@ function initializeDashboardPage() {
         'Élő adatok. Az Ok vagy × bezárja a dobozt; a jobb felső „mi ez?” gombbal újra megnyithatod.'
     ];
     const content = document.getElementById('demo-help-content');
+    content.replaceChildren();
     introduction.forEach(text => {const p=document.createElement('p');p.textContent=text;content.append(p);});
     const heading = document.createElement('h3');
     heading.textContent = dashboardText('A dashboard használata');
     content.append(heading);
     paragraphs.forEach(text => {const p=document.createElement('p');p.textContent=text;content.append(p);});
-    if (demo) showDemoHelp();
+    if (initial && demo) showDemoHelp();
 }
 
 demoHelpLauncher.addEventListener('click',showDemoHelp);
 document.getElementById('demo-help-close').addEventListener('click',hideDemoHelp);
 document.getElementById('demo-help-ok').addEventListener('click',hideDemoHelp);
 demoHelpBox.addEventListener('keydown',event => {if(event.key === 'Escape') hideDemoHelp();});
+['hu','en'].forEach(code => document.getElementById('dashboard-language-' + code).addEventListener('click',event => {
+    if (event.button > 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    event.preventDefault(); event.stopPropagation();
+    switchDashboardLanguage(code);
+}));
 initializeDashboardPage();

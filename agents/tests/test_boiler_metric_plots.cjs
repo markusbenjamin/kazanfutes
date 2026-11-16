@@ -3,12 +3,12 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
 const source = fs.readFileSync(path.resolve(__dirname,'../../docs/data.js'),'utf8');
-const draws = [], requests = [], barDraws = [];
+const draws = [], requests = [], barDraws = [], titleTexts = [];
 const context = require('./dashboard_test_context.cjs')({Number, Math, Date, Object, Map,
-    dayStamp: () => '2026-10-27', getFractionalHourOfDay: () => 12, mainGraphSetting: {}, mainGraphContentLocked: false,
+    dayStamp: () => '2026-10-27', getFractionalHourOfDay: () => 12, isMobile:false, dashboardFont:'Consolas', mainGraphSetting: {}, mainGraphContentLocked: false,
     elementToMainGraphSettingMapping: {boiler_body: {title: 'heating_state', day: '2026-10-27'}},
     drawMainGraph: data => requests.push(data), drawPlot: (rows, options) => {draws.push({rows, options});
-        return {plotElement:{append(){return this;},attr(){return this;}},plotDims:{w:200,h:100}};}, drawPlotTitleSelector() {},
+        return {plotElement:{append(){return this;},attr(){return this;},style(){return this;},text(value){titleTexts.push(value);return this;}},plotDims:{w:200,h:100}};}, drawPlotTitleSelector() {},
     navigateMainPlotDay() {}, d3: {range: (start,end,step) => Array.from({length: Math.ceil((end-start)/step)},(_,i) => start+i*step)}});
 for (const file of ['cycle_heat_plots','boiler_demand_bars','boiler_metric_plots'])
     vm.runInContext(fs.readFileSync(path.resolve(__dirname,'../../docs/'+file+'.js'),'utf8'),context);
@@ -52,14 +52,16 @@ assert.equal(evaluate('boilerAverageWaterTemperatures(data,[1,3]).at(-1).water_t
 assert.equal(evaluate('boilerAverageWaterTemperatures(data,[1,4])[0].water_temp'),null,'missing enabled circuit is not a partial average');
 draws.length = 0;
 vm.runInContext("drawBoilerMetricPlot(data,createBoilerMetricPlotSetting('2026-10-26','temperature'))",context);
-assert.equal(draws[0].options.plotLabelTabs.choices.length,2);
+assert.equal(draws[0].options.plotLabelTabs.choices.length,3);
+assert.equal(draws[0].options.plotLabelTabs.prefix,'','heading is separate from metric selectors');
+assert.ok(titleTexts.includes('kazán részletes adatok'));
 assert.equal(draws[0].options.rects.when,'before');
 assert.equal(draws[0].options.rects.list.length,2,'overlapping cycle-on backgrounds stack like on the gas plot');
 assert.ok(draws[0].options.rects.list.every(rect => rect.x1===1 && rect.x2===2 &&
     rect.y1===draws[0].options.domain.left[0] && rect.y2===draws[0].options.domain.left[1] &&
     rect.fill==='rgba(255,0,0,0.05)' && rect.stroke==='rgba(255,0,0,0)' && !rect.dashed));
 assert.deepEqual(Array.from(draws[0].options.plotLabelTabs.choices,choice=>choice.label),
-    ['instant hőigény','átlagos fűtővíz hőm.']);
+    ['instant hőigény','leadott fűtőtelj.','átlagos fűtővíz hőm.']);
 assert.ok(draws.some(draw => draw.options.curveTooltip === 'előremenő'));
 assert.ok(draws.some(draw => draw.options.curveTooltip === 'visszatérő' && draw.options.plotStyle.col === 'rgb(0,40,150)'));
 assert.ok(draws.filter(draw=>draw.options.background?.show===false).some(draw=>draw.options.curveEndText.show));
@@ -118,7 +120,7 @@ for (const value of [-1,101,60044000,Infinity,NaN,'40',true,null,undefined]) {
 context.corrupt.cycle_2_water_temps[1].return_temp = 150;
 assert.equal(evaluate('boilerAverageWaterTemperatures(corrupt,[1,2])[1].return_temp'),null,
     'even a bad circuit whose diluted mean would be below 100 C stays unknown');
-assert.match(source,/if \(openBoilerMetricPlot\(event, this.id\)\) return;/);
+assert.ok(source.includes('if (openBoilerMetricPlot(event, elementId)) return;'));
 assert.match(source,/case 'boiler_metrics':\s*drawBoilerMetricPlot/);
 assert.match(source,/type === 'heating_demand'/);
 console.log('Boiler details passed: demand stream, Ctrl binding, date/metric memory, daily pump-on membership, full-day means, causal alignment, missing data, colours and labels.');

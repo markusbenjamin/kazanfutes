@@ -1,10 +1,11 @@
 # Boiler details
 
 Ctrl+click the boiler body (or select `részletes` on touch) opens a daily
-selector with `instant hőigény` and `átlagos fűtővíz hőm.`. Ordinary hover still shows cycle
+selector headed `kazán részletes adatok`, with `instant hőigény`,
+`leadott fűtőtelj.` and `átlagos fűtővíz hőm.`. Ordinary hover still shows cycle
 switching; Alt+click / `analitika` still shows the energy KPI. Metric selection
 is remembered and date navigation preserves it.
-Both views use the gas plot's pale-red cycle-on background, including stacked
+These views use the gas plot's pale-red cycle-on background, including stacked
 shading where multiple cycles are on. The same period extractor is used;
 current open periods end at now, historical ones at midnight. Shading is drawn
 once behind the curves and spans the current plot's full vertical range.
@@ -26,7 +27,13 @@ empty. The final isolated observation contributes at most one minute, and today'
 last bin stops at now. Each raw breakdown is validated before averaging. The net
 is averaged separately because clipping and averaging do not commute. Incomplete
 breakdown coverage keeps an orange total bar. No daily energy totals or backend
-demand calculations are changed.
+demand calculations are performed in the browser.
+
+Measured delivery uses the same borderless ten-minute stacked bars and circuit
+colours, summing validated heatmeter `power_kw` streams. All four circuit powers
+must be present and aligned within three minutes. Missing circuits remain
+unknown rather than being omitted or counted as zero. This view shows kW;
+accumulated daily energy remains on the numbered circuit dials.
 
 The temperature view averages the existing `cycle_N_water_temps.json` supply
 and return series across circuits with at least one pump-on command in the
