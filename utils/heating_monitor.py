@@ -102,7 +102,10 @@ def evaluate(previous, snapshot, config):
             return value if demand is True else False if demand is False else None
         condition(f"{cycle}:pump_data", gated(not pump_ok), config["missing_seconds"],
                   f"Cycle {cycle}: pump measurement unavailable", pump.get("error") or "Missing, invalid or stale pump observation")
-        condition(f"{cycle}:meter_data", gated(not meter_ok), config["missing_seconds"],
+        meter_needed = demand is True or (commands.get('boiler_inhibited') is True
+                                         and commands.get('heat_requests', {}).get(cycle) is True)
+        meter_missing = not meter_ok if meter_needed else gated(not meter_ok)
+        condition(f"{cycle}:meter_data", meter_missing, config["missing_seconds"],
                   f"Cycle {cycle}: heat-meter measurement unavailable", meter.get("error") or "Missing, invalid or stale heat-meter observation")
         bad_pump = (not pump["on"] or pump_w < limits["min_pump_w"]) if pump_ok else None
         condition(f"{cycle}:pump", gated(bad_pump), config["pump_fault_seconds"],
@@ -124,7 +127,13 @@ def evaluate(previous, snapshot, config):
                 old = older[0]["cycles"][cycle]
                 warming = meter["flow_temperature_c"] - old["supply_c"] >= limits["warming_rise_c"]
         thermal_bad = None
-        if meter_ok and on_seconds >= config["warmup_seconds"]:
+        heat_seconds = on_seconds
+        restored = number(commands.get('heat_restored_at'))
+        if restored is not None:
+            heat_seconds = min(heat_seconds, max(0, now - restored))
+        if commands.get('boiler_inhibited') is True:
+            thermal_bad = False  # Residual circulation does not request new boiler heat.
+        elif meter_ok and heat_seconds >= config["warmup_seconds"]:
             # Hot return water and normal burner cycling alone are not faults.
             thermal_bad = (meter["power_w"] < limits["min_heat_w"]
                            and meter["flow_temperature_c"] < limits["min_supply_c"]

@@ -43,3 +43,49 @@ are recorded locally and retried next cycle. Graceful stop publishes `stopped`.
 Consumers must check freshness as a crashed process cannot publish its own stop.
 
 Validation: `python -m unittest services.test_shelly_plug_manager`.
+
+## Boiler inhibition and residual circulation
+
+`heating_interlock` in `services/shelly_plug_manager.json` enables coordination
+with the existing heating controller. Rain protection owns the Shelly plugs;
+the heating controller remains the sole normal writer of boiler GPIO and pumps.
+The master heating OFF switch still stops the whole system, including TRVs.
+
+During a rain shutdown, boiler enable is forced OFF. Each circuit keeps its
+normal room heat requests, but its pump is permitted only with a fresh supply
+temperature **strictly above 40 C**. At 40 C or below, no heat request, or missing
+water data, that pump stops. Existing heat-meter mapping comes from
+`config/heating_monitor.json`; no boiler/circuit associations are inferred.
+Water snapshots are read locally from the existing heat-meter logger, without
+extra Modbus polling. Maximum observation age is 180 seconds.
+
+Running, eligible pumps continue immediately. Starting requires two different
+fresh warm observations; a stopped pump waits at least five minutes before
+restarting. The controller alone persists these timers in `heating_status.json`.
+Unserved demand cannot increase PID integral bias; normal gains are unchanged.
+
+After the existing dry-hour condition, restoration waits for a fresh, matching
+controller acknowledgement that boiler GPIO is OFF. The manager restores and
+reads back plug outputs while boiler enable stays inhibited, then grants normal
+heat generation. Optional plug 2 does not block restoration before first seen.
+Partial restoration holds already-powered plugs instead of cycling them. New
+rain cancels the acknowledgement and takes immediate mains-OFF priority.
+
+Permissions and boiler GPIO operations share `heat_permission.lock`. A new rain
+restriction is saved atomically without waiting on that lock, so a stuck GPIO
+operation cannot delay mains OFF. Permission grants always require the lock and
+verified acknowledgement/readbacks. Commands carry the rain-episode generation;
+old queued boiler-ON commands cannot revive after restoration. Missing/stale
+policy blocks boiler enable. Weather-source failure alone retains the agreed
+hold policy and does not invent a new rain event.
+
+Firebase `system/state/rain_protection` additionally contains `heating_interlock`
+and the latest `heating_controller` status, including per-circuit requests,
+temperatures, pump commands and blocking reasons. Cold-water diagnostics are
+suppressed for intentional shutdown and a ten-minute post-restoration warmup;
+pump, flow, meter-data and electrical protection checks remain active.
+
+For a local, read-only current-versus-rain decision comparison on the Pi:
+`python services/shelly_plug_manager.py --preview-heating`. It issues no commands,
+writes no controller state, and sends no email. New interlock tests:
+`python -m unittest services.test_heating_rain_interlock`.

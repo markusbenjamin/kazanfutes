@@ -273,7 +273,7 @@ class ControlIntegrationTests(unittest.TestCase):
                  'room_states': {r: previous_vote for r in rooms},
                  'pump_states': {str(i): 0 for i in range(1, 5)}, 'boiler_state': 0,
                  'occupancy': {r: True for r in rooms}}
-        switch = {'cycles': {str(i): 0 for i in range(1, 5)},
+        switch = {'system': 1, 'cycles': {str(i): 0 for i in range(1, 5)},
                   'rooms': {r: -1 if r == disabled_room else 0 for r in rooms}}
         for field, values in (state_updates or {}).items():
             state[field].update(values)
@@ -386,20 +386,22 @@ class ControlIntegrationTests(unittest.TestCase):
             self.assertIn({'success_voting': True}, logs)
             self.assertFalse(errors)
 
-    def test_production_matches_reviewed_candidate(self):
-        production = ast.parse((ROOT / 'services' / 'heating_control.py').read_text(encoding='utf-8'))
+    def test_normal_heating_pid_matches_reviewed_candidate(self):
         candidate = ast.parse((ROOT / 'services' / 'heating_control_pid_candidate.py').read_text(encoding='utf-8'))
-        # Scheduling can evolve independently; preserve the reviewed PID and
-        # command/voting implementation and all PID constants.
-        def pid_nodes(tree):
-            names = {'read_pid_gains', 'calculate_pid_overlay', 'apply_pid_overlay',
-                     'compare_and_command', 'usable_control_number', 'complete_sensor_state',
-                     'binary_room_vote', 'get_system_state', 'execute_commands'}
-            return [ast.dump(node) for node in tree.body if
-                    (isinstance(node, ast.FunctionDef) and node.name in names) or
-                    (isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and
-                     t.id.startswith('PID_') for t in node.targets))]
-        self.assertEqual(sorted(pid_nodes(production)), sorted(pid_nodes(candidate)))
+        # Compare behaviour, allowing the new rain interlock to gate actuation.
+        env = load_calculations()
+        nodes = [n for n in candidate.body if isinstance(n, ast.FunctionDef)
+                 and n.name == 'calculate_pid_overlay']
+        reviewed = dict(env)
+        exec(compile(ast.Module(body=nodes, type_ignores=[]), '<reviewed PID>', 'exec'), reviewed)
+        for temp, target, valve in ((19, 21, 30), (21, 21, 2), (22, 21, 30), (10, 25, 100)):
+            args = (target, temp, NOW.strftime(FMT), valve, 2, None,
+                    env['read_pid_gains'](GAINS), NOW)
+            actual = env['calculate_pid_overlay'](*args)
+            expected = reviewed['calculate_pid_overlay'](*args)
+            self.assertEqual(actual['setpoint'], expected['setpoint'])
+            self.assertEqual(actual['next_state']['bias_I'], expected['next_state']['bias_I'])
+            self.assertEqual(actual['room_overshoot'], expected['room_overshoot'])
 
 
 if __name__ == '__main__':

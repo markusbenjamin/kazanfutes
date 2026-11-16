@@ -97,6 +97,13 @@ def read_commands(config):
             raise ValueError("invalid boiler command")
         result.update(available=True, cycles={c: bool(cycles[c]) for c in CYCLES},
                       boiler=bool(control["boiler"]), updated_at=control["last_updated"])
+        restriction = control.get('rain_protection', {})
+        result['boiler_inhibited'] = restriction.get('boiler_inhibited') is True
+        result['heat_restored_at'] = restriction.get('heat_restored_at')
+        requests = control.get('heat_requests', cycles)
+        if isinstance(requests, dict) and all(type(requests.get(c)) in (int, bool)
+                and requests[c] in (0, 1) for c in CYCLES):
+            result['heat_requests'] = {c: bool(requests[c]) for c in CYCLES}
     except Exception as error:
         result["error"] = f"{type(error).__name__}: {error}"
     return result

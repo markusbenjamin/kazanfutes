@@ -7,6 +7,7 @@ from utils.project import *
 from utils.set_temperature import (interpolate_set_temperature,
                                    schedule_with_recent_history)
 from utils.boiler_temperature_diagnostic import read_boiler_error
+from utils.heating_rain_interlock import HeatingRainInterlock
 
 #region PID calculation
 PID_STATE_VERSION = 2
@@ -27,7 +28,7 @@ def read_pid_gains(config):
 
 
 def calculate_pid_overlay(set_temp, measured_temp, sensor_timestamp,
-                          valve_percent, valve_threshold, previous, gains, now):
+                          valve_percent, valve_threshold, previous, gains, now, *, heating_available=True):
     """Calculate one TRV's existing PI/PD overlay without I/O.
 
     Integral state is a non-negative heating bias, limited to 5 K. Negative
@@ -88,17 +89,21 @@ def calculate_pid_overlay(set_temp, measured_temp, sensor_timestamp,
             reset_reason = 'invalid_state'
 
     error_raw = set_temp - measured_temp
+    if heating_available and isinstance(previous, dict) and previous.get('heating_available') is False:
+        # Never integrate a forced heating outage or apply a derivative kick on return.
+        dt_PID, temp_prev, previous_sample_time = 0.0, measured_temp, sample_time
+        reset_reason = 'heat_restored'
     error_pos = max(0.0, error_raw)
     bias_P_lag = gains['gain_P_lag'] * error_pos
     bias_I = bias_I_prev
     if gains['gain_I'] == 0:
         bias_I = 0.0
-    elif error_raw > 0:
+    elif error_raw > 0 and heating_available:
         # Limit the increment itself, not only the final output. If P already
         # saturates the output, retain I without accumulating more of it.
         headroom = max(0.0, PID_MAX_LAG - bias_P_lag - bias_I_prev)
         bias_I += min(gains['gain_I'] * error_raw * dt_PID, headroom)
-    else:
+    elif error_raw <= 0:
         bias_I = max(0.0, bias_I_prev + gains['gain_I'] * error_raw * dt_PID)
     bias_I = min(PID_MAX_LAG, max(0.0, bias_I))
     weight_lag = logistic_sigmoid(error_pos, 0.25, 20, 0, 1) if error_raw > 0 else 0.0
@@ -108,7 +113,7 @@ def calculate_pid_overlay(set_temp, measured_temp, sensor_timestamp,
     # sample contributes no derivative; a missing history contributes no kick.
     dT = measured_temp - temp_prev
     sample_dt = (sample_time - previous_sample_time).total_seconds()
-    heat_rate = dT / sample_dt if sample_dt > 0 and reset_reason is None else 0.0
+    heat_rate = dT / sample_dt if heating_available and sample_dt > 0 and reset_reason is None else 0.0
     valve_active = valve_percent > valve_threshold
     overshoot = max(0.0, measured_temp - (set_temp + PID_OVERSHOOT_DEADBAND))
     weight_overshoot = int(error_raw < -PID_OVERSHOOT_VOTE_THRESHOLD and valve_active)
@@ -123,7 +128,7 @@ def calculate_pid_overlay(set_temp, measured_temp, sensor_timestamp,
         'version': PID_STATE_VERSION, 'bias_I': bias_I, 'temp': measured_temp,
         'timestamp': now.strftime(fmt),
         'sensor_timestamp': None if sample_invalid else sensor_timestamp,
-        'set_temp': set_temp, 'gains': signature,
+        'set_temp': set_temp, 'gains': signature, 'heating_available': heating_available,
     }
     return {
         'next_state': next_state, 'setpoint': set_PID,
@@ -522,7 +527,10 @@ def compare_and_command(heating_switch:dict, system_state:dict):
     control = {}
     pump_votes = None
     boiler_vote = None
+    interlock = globals().get('rain_interlock')
     try:
+        if interlock is not None:
+            interlock.prepare(system_state['pump_states'], heating_switch['system'] == 1)
         rooms_info = get_rooms_info()
         room_votes = {}
         cycle_votes = {'1':0,'2':0,'3':0,'4':0}
@@ -585,9 +593,10 @@ def compare_and_command(heating_switch:dict, system_state:dict):
             room_overshoot = False
             bias_report = []
             for thermostat, valve in zip(thermostats, valves):
+                availability = {} if interlock is None or interlock.integration_allowed(cycle) else {'heating_available': False}
                 result = calculate_pid_overlay(set_temp, measured_temp, sensor_last_updated,
                                                valve, demand_open, PID_state.get(thermostat),
-                                               gains, datetime.now())
+                                               gains, datetime.now(), **availability)
                 active_PID_thermostats.add(thermostat)
                 room_overshoot = room_overshoot or result['room_overshoot']
                 bias_report.append(result['log']['outputs']['net_bias'])
@@ -646,6 +655,16 @@ def compare_and_command(heating_switch:dict, system_state:dict):
             control['cycles'][cycle] = sign(votes)
 
         boiler_vote = sign(sum(list(pump_votes.values())))
+        if interlock is not None:
+            control['heat_requests'] = dict(pump_votes)
+            pump_votes, boiler_vote = interlock.decide(pump_votes)
+            control['cycles'] = dict(pump_votes)
+            control['rain_protection'] = interlock.status
+            interlock.control = control
+            if interlock.prepared_policy['inhibit']:
+                system_state['mode'] = 'rain_residual_heat' if any(pump_votes.values()) else 'rain_shutdown'
+            else:
+                system_state['mode'] = 'heating_on'
         control['boiler'] = boiler_vote
 
         log({'PID_state':PID_log})
@@ -706,6 +725,8 @@ def compare_and_command(heating_switch:dict, system_state:dict):
                     'executed':False,
                     'execution_timestamp':None
                 }
+        if device == 'boiler' and setting == 1 and interlock is not None:
+            command['heat_generation'] = interlock.prepared_policy.get('generation')
 
         redundant = False
         for existing_command in existing_commands:
@@ -795,8 +816,20 @@ def execute_commands():
     """
     report('\nEXECUTING COMMANDS')
     success = False
+    interlock = globals().get('rain_interlock')
     try:
+        if interlock is not None:
+            try:
+                forced = interlock.ensure_boiler_off(set_boiler_state, get_boiler_state)
+                if forced and forced[1]:
+                    system_state['boiler_state'] = 0
+            except Exception as error:
+                interlock.boiler_off_confirmed = False
+                ServiceException('Could not confirm rain boiler-OFF; continuing pump control',
+                                 original_exception=error, severity=3)
         commands = load_commands(COMMANDS_PATH)
+        if interlock is not None and interlock.policy()['inhibit']:
+            commands = [c for c in commands if c['device'] != 'boiler' or c['setting'] != 1]
         executed_commands = list(filter(lambda command:command['executed'],commands))
         future_commands = list(filter(lambda command:datetime.now()<timestamp_to_datetime(command['due_timestamp']),commands))
         latest_unexecuted_commands_past_due = []
@@ -819,7 +852,20 @@ def execute_commands():
         complete_sensor_state(system_state, [])
         for command in latest_unexecuted_commands_past_due:
             try:
-                if command['device'] == 'boiler':
+                if interlock is not None:
+                    actual, confirmed = interlock.actuate(
+                        command['device'], command['setting'], set_boiler_state,
+                        get_boiler_state, set_pump_state, generation=command.get('heat_generation'))
+                    if actual != command['setting']:
+                        command['blocked_setting'] = command['setting']
+                        command['setting'] = actual
+                        command['restriction'] = 'rain_interlock'
+                    if confirmed:
+                        if command['device'] == 'boiler':
+                            system_state['boiler_state'] = actual
+                        else:
+                            system_state['pump_states'][command['device'][-1]] = actual
+                elif command['device'] == 'boiler':
                     confirmed = bool(set_boiler_state(command['setting']))
                     if confirmed:
                         system_state['boiler_state'] = command['setting']
@@ -851,6 +897,30 @@ def execute_commands():
     except Exception:
         system_node.write({'last_updated':timestamp(),'error':True,'where':'execute_commands'},'control/error')
         ServiceException(f"Unexpected error while executing commands", severity = 3)
+    finally:
+        if interlock is not None:
+            try:
+                forced = interlock.ensure_boiler_off(set_boiler_state, get_boiler_state)
+                if forced and forced[1]:
+                    system_state['boiler_state'] = 0
+            except Exception as error:
+                interlock.boiler_off_confirmed = False
+                ServiceException('Could not confirm rain boiler-OFF', original_exception=error, severity=3)
+            try:
+                interlock.publish_ack(system_state)
+                control = getattr(interlock, 'control', None)
+                if control is not None:
+                    control['cycles'] = {c: v['pump_command'] for c, v in interlock.status['cycles'].items()}
+                    if interlock.effective_boiler_command is not None:
+                        control['boiler'] = interlock.effective_boiler_command
+                    control['last_updated'] = timestamp()
+                    export_dict_as_json(control, 'system/control.json')
+                    system_node.write(control, 'control')
+                if interlock.status['boiler_inhibited']:
+                    system_state['mode'] = ('rain_residual_heat' if any(
+                        v['pump_command'] for v in interlock.status.get('cycles', {}).values()) else 'rain_shutdown')
+            except Exception as error:
+                ServiceException('Rain heating acknowledgement failed', original_exception=error, severity=3)
 
     log({'success_executing_commands':success})
 
@@ -863,7 +933,9 @@ def export_system_state():
     # Reporting only, after actuation. Always clear an earlier diagnostic first.
     system_state['boiler_error'] = ''
     try:
-        system_state['boiler_error'] = read_boiler_error(get_project_root(), heating_switch, datetime.now())
+        interlock = globals().get('rain_interlock')
+        if interlock is None or interlock.generation_expected():
+            system_state['boiler_error'] = read_boiler_error(get_project_root(), heating_switch, datetime.now())
     except Exception as error:
         # A diagnostic failure must not alter control/error or prevent publication.
         report(f"Boiler temperature diagnostic unavailable: {error}", verbose=True)
@@ -891,6 +963,12 @@ if __name__ == '__main__':
 
     settings['verbosity'] = True
 
+    rain_interlock = HeatingRainInterlock(get_project_root())
+    if rain_interlock.enabled:
+        rain_interlock.acquire_loop()
+    else:
+        rain_interlock = None
+
     heating_switch = acquire_heating_switch()
     system_state = get_system_state()
 
@@ -901,7 +979,17 @@ if __name__ == '__main__':
 
         if settings['on_raspi']:
             try:
-                shutdown_heating()
+                stopped = shutdown_heating()
+                if rain_interlock is not None:
+                    rain_interlock.prepare(system_state['pump_states'], master_on=False)
+                    rain_interlock.decide({c: 0 for c in ('1', '2', '3', '4')})
+                    actual, confirmed = rain_interlock.actuate(
+                        'boiler', 0, set_boiler_state, get_boiler_state, set_pump_state)
+                    if confirmed:
+                        system_state['boiler_state'] = 0
+                    if stopped:
+                        system_state['pump_states'] = {c: 0 for c in ('1', '2', '3', '4')}
+                    rain_interlock.publish_ack(system_state)
                 export_dict_as_json({}, "system/PID_state.json")
             except ModuleException as e:
                 system_node.write({'last_updated':timestamp(),'error':True,'where':'shutdown_heating'},'control/error')
