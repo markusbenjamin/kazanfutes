@@ -30,6 +30,7 @@ const context = require('./dashboard_test_context.cjs')({
     }, range: (start, end, step) => Array.from({length: Math.ceil((end-start)/step)}, (_, i) => start+i*step) },
 });
 vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../../docs/boiler_demand_bars.js'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../../docs/plot_history.js'), 'utf8'), context);
 vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../../docs/cycle_heat_plots.js'), 'utf8'), context);
 vm.runInContext(helper + mapping, context);
 const evaluate = code => JSON.parse(JSON.stringify(vm.runInContext(code, context)));
@@ -169,7 +170,34 @@ assert.deepEqual(Array.from(calls[1].data,row=>row.flow_m3h),[0,.8,.5],
     'retain actual zeros and valid readings without converting missing data to zero');
 assert.equal(calls[1].options.curveEndText.text,'0.5 m³/h');
 assert.equal(JSON.stringify(context.graphData),joinedFlowBefore);
-context.mainGraphSetting.metric = 'power';
+// The Nov 15 corrupt register packet must not stretch Nov 16's range just
+// because it was loaded as hidden previous-day context for midnight continuity.
+context.graphData = {cycle_2_heat_delivery:[
+    {h_of_day_frac:-1.66,flow_m3h:11302,plot_history:true},
+    {h_of_day_frac:-.01,flow_m3h:1.3,plot_history:true},
+    {h_of_day_frac:.01,flow_m3h:1.35},
+    {h_of_day_frac:21.5,flow_m3h:1.352}]};
+const historyFlowBefore=JSON.stringify(context.graphData);
+calls.length=0;
+vm.runInContext('drawCycleHeatPlot(graphData,mainGraphSetting)',context);
+assert.ok(calls[0].options.domain.left[1]<2,'hidden history cannot inflate the flow axis');
+assert.equal(calls[1].data[0].h_of_day_frac,0,'retain the interpolated midnight boundary');
+assert.ok(Math.abs(calls[1].data[0].flow_m3h-1.325)<1e-8);
+assert.equal(calls[1].options.curveEndText.text,'1.352 m³/h');
+assert.equal(JSON.stringify(context.graphData),historyFlowBefore,'do not rewrite cached measurements');
+plot(3,{cycle_3_water_temps:[
+    {h_of_day_frac:-1.66,water_temp:1.155,return_temp:37,plot_history:true},
+    {h_of_day_frac:-.01,water_temp:54,return_temp:42,plot_history:true},
+    {h_of_day_frac:.01,water_temp:52,return_temp:41},
+    {h_of_day_frac:1,water_temp:22,return_temp:18},
+    {h_of_day_frac:21.5,water_temp:62,return_temp:41}]});
+assert.deepEqual(Array.from(calls[0].options.domain.left),[10,70],
+    'temperature range includes visible supply and return, not hidden corrupt context');
+assert.ok(calls.slice(1).every(call=>call.data.every(row=>row.h_of_day_frac>=0)));
+plot(3,{cycle_3_water_temps:[{h_of_day_frac:-1,water_temp:1.155,return_temp:37,plot_history:true}]});
+assert.equal(calls.length,1,'history-only segments must not create curves or end labels for an empty day');
+assert.deepEqual(Array.from(calls[0].options.domain.left),[0,80]);
+context.mainGraphSetting = {cycleNum:2,day:'2026-10-21',metric:'power'};
 context.graphData = {cycle_2_heat_delivery: [{h_of_day_frac: 1, power_kw: 16.672}]};
 calls.length = 0;
 vm.runInContext('drawCycleHeatPlot(graphData, mainGraphSetting)', context);

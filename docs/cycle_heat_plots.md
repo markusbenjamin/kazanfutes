@@ -38,6 +38,9 @@ activation do not bubble into the dashboard's outside-click unlock handler.
   return curves with hover labels `előremenő` and `visszatérő`; no extra legend.
   Their shared scale includes both series. Invalid values are null and split
   only the affected curve. Older supply-only files still render supply normally.
+  Curve segments are clipped to the displayed day before calculating ranges
+  and endpoint labels. Previous-day context contributes only an interpolated
+  midnight boundary, never off-screen extrema or labels for an empty day.
   The browser also rejects temperatures outside 0–100 °C before scaling old
   archived data, preventing corrupt heatmeter fields from creating huge axes.
 - Thermal power and flow: new `cycle_N_heat_delivery.json`, `power_kw` in kW
