@@ -163,8 +163,6 @@ function getDataFromFirebase() {
     fetchJSONEndpoint(url)
         .then(fullFirebaseDataJSON => {
             replayLatestLive = fullFirebaseDataJSON;
-            // Notices follow the current config, independently of heating or replay.
-            updateDashboardMessageConfig(fullFirebaseDataJSON.system?.dashboard);
             if (!dashboardReplayActive()) renderDashboardState(fullFirebaseDataJSON);
         })
         .catch(error => {

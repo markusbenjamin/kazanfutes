@@ -1,4 +1,4 @@
-// The config updater publishes the Sheet's Hungarian and English messages.
+// message_sheet.js reads the Sheet's message text and priorities directly.
 // Keep acknowledgement only until reload, so polling does not reopen it.
 const adminMessageBox = document.getElementById("admin-message");
 const adminMessageContent = document.getElementById("admin-message-content");

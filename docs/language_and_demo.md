@@ -35,8 +35,10 @@ Wind compass letters are localized separately, so the Kelvin unit K stays K.
 
 ## Configured dashboard messages
 
-The config updater publishes these fields from the existing heating-control
-config Sheet to `system/dashboard` in Firebase:
+The dashboard reads these fields directly from the first tab of the existing
+heating-control config Sheet, on page load and every 30 seconds. The Sheet must
+allow anyone with its link to view it. No API key, Google login, Pi restart or
+GitHub config-copy refresh is required for message updates.
 
 | Message | Text | Priority |
 | --- | --- | --- |
@@ -54,6 +56,9 @@ Missing or invalid priorities rank last; equal priorities use rain, boiler, admi
 messages are always eligible. Boiler errors follow the nonempty `system/state/boiler_error`
 string; rain protection follows the fresh, running `system/state/rain_protection.rain_shutdown` latch.
 Both conditions make the boiler black independently of message text or priority.
+Only these operational states come from Firebase; its message text/config copy
+cannot overwrite the directly downloaded Sheet values. During a failed Sheet
+request, the last successfully read messages remain in effect.
 
 Acknowledging a message keeps it closed across polling and does not reveal
 lower-priority messages while it remains the selected condition. A changed text,

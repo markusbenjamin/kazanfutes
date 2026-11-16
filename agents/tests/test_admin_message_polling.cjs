@@ -18,10 +18,10 @@ async function main() {
         vm.runInContext(polling,context);
         vm.runInContext('getDataFromFirebase()',context);
         await new Promise(setImmediate);
-        assert.deepEqual(messages,[config],'Polling forwards all message texts and priorities regardless of heating, page mode or replay');
+        assert.deepEqual(messages,[],'Firebase must never overwrite message text and priorities read directly from the Sheet');
         assert.equal(rendered,replay?0:1,'Replay still protects the historical dashboard from live-state rendering');
         assert.equal(context.replayLatestLive,payload);
     }
-    console.log('Admin polling: both languages, heating on/off, demo/form URLs and live notices during replay passed.');
+    console.log('Message source isolation: Firebase cannot overwrite Sheet text/priorities; live/replay rendering remains independent in both languages.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
