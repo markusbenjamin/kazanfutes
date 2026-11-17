@@ -6,6 +6,7 @@ AST extraction excludes project imports, initialization, logs and device I/O.
 import ast
 import copy
 import math
+import importlib.util
 from pathlib import Path
 import unittest
 from datetime import datetime, timedelta
@@ -33,6 +34,11 @@ def load_calculations():
               and n.name == 'logistic_sigmoid']
     env = {'math': math, 'datetime': datetime, 'timedelta': timedelta,
            'settings': {'timestamp_format': FMT}}
+    spec = importlib.util.spec_from_file_location('heating_targets', ROOT / 'utils/heating_targets.py')
+    targets = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(targets)
+    env.update(master_target_rooms=targets.master_target_rooms, warming_parameters=targets.warming_parameters)
+    env.update(cycle_off_requests=targets.cycle_off_requests, switches_with_timed_off=targets.switches_with_timed_off)
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(SOURCE), 'exec'), env)
     return env
 
@@ -264,6 +270,8 @@ class ControlIntegrationTests(unittest.TestCase):
                    system_node=Node(), ModuleException=ModuleError,
                    ServiceException=lambda *a, **kw: errors.append(a),
                    load_commands=lambda *a: [], refresh_commands=lambda *a: None,
+                   load_csv_to_2D_array=lambda path: ([['room_id', 'a', 'b', 'start', 'end', 'min', 'max']] +
+                       [[r, 100, 0, 1, 1.01, 14, 22 + int(r)] for r in rooms]) if path.endswith('warming_params.csv') else [],
                    COMMANDS_PATH='mocked')
         state = {'set_temps': {r: 21 for r in rooms}, 'set_temps_interp': {r: 21 for r in rooms},
                  'measured_temps': {r: temp for r in rooms},
@@ -378,11 +386,12 @@ class ControlIntegrationTests(unittest.TestCase):
         self.assertIn({'success_issuing_command': True}, logs)
         self.assertFalse(errors)
 
-    def test_missing_state_starts_clean_and_disabled_history_is_removed(self):
+    def test_missing_state_starts_clean_and_master_off_controls_its_lower_target(self):
         for missing in (False, True):
             logs, errors, writes, saved = self.run_control(disabled_room='1', state_missing=missing)
-            self.assertEqual(writes, ['72'])
-            self.assertEqual(set(saved['system/PID_state.json']), {'72'})
+            self.assertEqual(writes, ['71', '72'])
+            self.assertEqual(set(saved['system/PID_state.json']), {'71', '72'})
+            self.assertEqual(saved['system/PID_state.json']['71']['set_temp'], 14)
             self.assertIn({'success_voting': True}, logs)
             self.assertFalse(errors)
 

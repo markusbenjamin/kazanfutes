@@ -8,6 +8,8 @@ from utils.set_temperature import (interpolate_set_temperature,
                                    schedule_with_recent_history)
 from utils.boiler_temperature_diagnostic import read_boiler_error
 from utils.heating_rain_interlock import HeatingRainInterlock
+from utils.heating_targets import (master_target_rooms, warming_parameters,
+                                   cycle_off_requests, switches_with_timed_off)
 
 #region PID calculation
 PID_STATE_VERSION = 2
@@ -205,10 +207,10 @@ def binary_room_vote(room, cycle, set_temp, heating_switch):
         return 0, 'c_s_m_off', False
     cycle_switch = heating_switch['cycles'][cycle]
     if cycle_switch != 0:
-        return int(cycle_switch == 1), 'c_m_on' if cycle_switch == 1 else 'c_m_off', False
+        return int(cycle_switch == 1), 'c_m_on' if cycle_switch == 1 else 'c_m_off', True
     room_switch = heating_switch['rooms'][room]
     if room_switch != 0:
-        return int(room_switch == 1), 'r_m_on' if room_switch == 1 else 'r_m_off', False
+        return int(room_switch == 1), 'r_m_on' if room_switch == 1 else 'r_m_off', True
     vote = int(set_temp == 1) if set_temp in (0, 1) else int(
         set_temp > float(heating_config[f'room_{room}_threshold_temp']))
     return vote, 't_on' if vote else 't_off', set_temp not in (0, 1)
@@ -532,6 +534,41 @@ def compare_and_command(heating_switch:dict, system_state:dict):
         if interlock is not None:
             interlock.prepare(system_state['pump_states'], heating_switch['system'] == 1)
         rooms_info = get_rooms_info()
+        effective_switch = heating_switch
+        timed_cycles = set()
+        soft_cycles = set()
+        try:
+            requests = cycle_off_requests(load_csv_to_2D_array('config/scheduling/local_scheduling_files/override_cycles.csv'))
+            effective_switch, timed_cycles, soft_cycles = switches_with_timed_off(heating_switch, requests, datetime.now())
+        except Exception as error:
+            ServiceException('Timed cycle-off requests unavailable; using the published schedule', original_exception=error, severity=2)
+        master_rooms = master_target_rooms(effective_switch, rooms_info, system_state['set_temps'])
+        for room in master_rooms:
+            if str(rooms_info[room]['cycle']) in timed_cycles:
+                master_rooms[room] = 'timed_cycle_off'
+        system_state['target_sources'] = dict.fromkeys(rooms_info, 'schedule')
+        for room, info in rooms_info.items():
+            if str(info['cycle']) in soft_cycles and room not in master_rooms:
+                # The scheduler supplies Tmin or the presence-restored request.
+                # Do not ramp toward a later occupied hour during a soft holiday hold.
+                system_state['set_temps_interp'][room] = system_state['set_temps'][room]
+                system_state['target_sources'][room] = 'timed_cycle_soft'
+        master_targets_ready = False
+        if master_rooms:
+            try:
+                params = warming_parameters(load_csv_to_2D_array('config/warming_params.csv'), rooms_info)
+                for room, source in master_rooms.items():
+                    # Apply after interpolation: neither master mode has a setback or ramp.
+                    target = params[room]['t_max' if source.endswith('_on') else 't_off']
+                    system_state['set_temps'][room] = target
+                    system_state['set_temps_interp'][room] = target
+                    system_state['target_sources'][room] = source
+                master_targets_ready = True
+            except Exception as error:
+                # Preserve the established binary fallback if configuration is unavailable.
+                system_node.write({'last_updated': timestamp(), 'error': True,
+                                   'where': 'master_targets'}, 'control/error')
+                ServiceException('Master temperatures unavailable; retaining binary votes', original_exception=error, severity=3)
         room_votes = {}
         cycle_votes = {'1':0,'2':0,'3':0,'4':0}
         report('Room votes:',verbose=True)
@@ -551,6 +588,29 @@ def compare_and_command(heating_switch:dict, system_state:dict):
         complete_sensor_state(system_state, rooms_info)
         room_failures = False
 
+        def command_master_without_feedback(room, target, measured_temp=None):
+            """An explicit manual temperature remains actionable without PID inputs."""
+            nonlocal pid_commands_confirmed
+            thermostat_ids = rooms_info[room]['thermostats']
+            if not isinstance(thermostat_ids, str):
+                return
+            for thermostat in (th.strip() for th in thermostat_ids.split(';') if th.strip()):
+                command = {'heatsetpoint': target}
+                if measured_temp is not None:
+                    command['externalsensortemp'] = measured_temp
+                confirmed = False
+                try:
+                    confirmed = bool(set_thermostat_state_by_id(thermostat, **command))
+                    if not confirmed:
+                        ServiceException(f'TRV {thermostat} manual temperature command was not confirmed', severity=2)
+                except Exception as error:
+                    ServiceException(f'TRV {thermostat} manual temperature command failed', original_exception=error, severity=2)
+                pid_commands_confirmed = confirmed and pid_commands_confirmed
+                PID_log[room][thermostat] = {'regime': 'master_without_feedback',
+                    'command_confirmed': confirmed, 'outputs': {
+                        'set_temp_nominal': target, 'set_temp_requested': target,
+                        'set_temp_effective': target if confirmed else None}}
+
         def refine_room_vote(room, set_temp, fallback_vote, fallback_reason):
             nonlocal pid_commands_confirmed
             measured_temp = system_state['measured_temps'][room]
@@ -562,6 +622,8 @@ def compare_and_command(heating_switch:dict, system_state:dict):
                 minutes_since_update = None
             if (not usable_control_number(measured_temp) or minutes_since_update is None
                     or minutes_since_update > float(heating_config['temp_data_expiry'])):
+                if room in master_rooms:
+                    command_master_without_feedback(room, set_temp)
                 return fallback_vote, fallback_reason, 'temperature unavailable/expired; timed fallback'
 
             previous_vote = system_state['room_states'][room]
@@ -574,8 +636,10 @@ def compare_and_command(heating_switch:dict, system_state:dict):
                              and len(valves) == len(thermostats)
                              and all(usable_control_number(v) and 0 <= v <= 100 for v in valves))
             if not valves_usable:
+                if room in master_rooms:
+                    command_master_without_feedback(room, set_temp, measured_temp)
                 # Use existing temperature hysteresis when valve feedback is unavailable.
-                # Do not invent a TRV demand or send a fallback TRV command.
+                # Only an explicit master mode sends a target without PID feedback.
                 buffer = float(heating_config['hysteresis_buffer'])
                 upper = PID_OVERSHOOT_VOTE_THRESHOLD if thermostats else buffer
                 relation = f'{measured_temp} °C vs {set_temp} °C; temperature control'
@@ -616,10 +680,10 @@ def compare_and_command(heating_switch:dict, system_state:dict):
             set_temp = max(system_state['set_temps'][room], system_state['set_temps_interp'][room])
             cycle = room_to_cycle(room)
             # Establish the sensor-independent vote before attempting any refinement.
-            room_vote, reason_control, automatic = binary_room_vote(room, cycle, set_temp, heating_switch)
+            room_vote, reason_control, automatic = binary_room_vote(room, cycle, set_temp, effective_switch)
             relation = 'scheduled or manual on/off control'
             PID_log[room] = {}
-            if automatic:
+            if automatic and (room not in master_rooms or master_targets_ready):
                 try:
                     room_vote, reason_control, relation = refine_room_vote(room, set_temp, room_vote, reason_control)
                 except Exception as error:
@@ -700,7 +764,7 @@ def compare_and_command(heating_switch:dict, system_state:dict):
         control['last_updated'] = timestamp()
         system_node.write(control,'control')
         export_dict_as_json(control,'system/control.json')
-        success = pid_commands_confirmed and not room_failures
+        success = pid_commands_confirmed and not room_failures and (not master_rooms or master_targets_ready)
     except ModuleException as e:
         system_node.write({'last_updated':timestamp(),'error':True,'where':'voting'},'control/error')
         ServiceException(f"Module error while voting", original_exception=e, severity = 3)

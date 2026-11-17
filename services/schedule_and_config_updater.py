@@ -13,6 +13,8 @@ from utils.room_registry import read_request_rows, request_marker_rows, load_roo
 from utils.weekly_cycle_config import weekly_presence
 from services.room_id_scheduler import LocalWeeklyBaseline, refresh_registry
 from utils.scheduling_temperature import get_scheduling_external_temperature
+from utils.heating_targets import (request_temperature, warming_parameters,
+                                   cycle_off_requests, cycle_off_mode)
 
 export_path_prefix = ""
 #export_path_prefix = "dev/"
@@ -37,6 +39,8 @@ weekly_baseline.refresh()
 
 schedule = None
 presence_with_override = None
+requested_temps = None
+cycle_off_modes = None
 schedule_update_info = {'update_needed':True,'last_updated':None}
 #endregion
 
@@ -197,28 +201,14 @@ Pipeline:
     - presence with overrides, based on:
         - weighted avearge of weekly cycle in 0/1 format and calculated presence patterns based on past n weeks
         - masked with overrides in temp format (mapped to 0/1)
-    - temp, calculated from presence with overrides and Tmin, Tmax for each room
+    - temp, calculated from presence and Tmin/Tmax, replaced by explicit request temperatures
     - heating, calculated from temp by taking into account warming params for each room
-    - condensed schedule, calculated from heating by subtracting no presence offset clipped to Tmin
+    - condensed schedule, subtracting the no-presence offset with the existing minimum floor
+      (an explicit request below Tmin lowers that floor to the requested temperature)
 """
 def extract_warming_params():
     rows = load_csv_to_2D_array(f'{export_path_prefix}config/warming_params.csv')
-    if not rows or rows[0][0] != 'room_id':
-        raise ValueError('Warming parameters require stable room_id keys')
-    result = {}
-    fields = ['a', 'b', 'start_factor', 'end_factor', 't_min', 't_max']
-    for row in rows[1:]:
-        key = str(row[0]).strip()
-        if key in result or key not in rooms_info:
-            raise ValueError('Unexpected or duplicate warming-parameter room ID')
-        result[key] = {field: float(value) for field, value in zip(fields, row[1:])}
-        if len(result[key]) != len(fields):
-            raise ValueError('Incomplete warming-parameter row')
-        if len(row) != len(fields) + 1 or not all(math.isfinite(value) for value in result[key].values()):
-            raise ValueError('Invalid warming-parameter coefficient')
-    if set(result) != set(rooms_info):
-        raise ValueError('Warming parameters must cover the controlled rooms')
-    return result
+    return warming_parameters(rows, rooms_info)
 
 def get_presence_patterns_with_weekly_cycle_weighted_average(room, day, hour):
     presence_prob = weekly_presence(weekly_baseline.config, room, int(day), int(hour))
@@ -231,7 +221,7 @@ def get_presence_patterns_with_weekly_cycle_weighted_average(room, day, hour):
             (1 - weight) * math.floor(observed / threshold)))
     return presence_prob
         
-def generate_condensed_schedule(already_existing_presence_with_override = None, already_existing_schedule = None, for_how_many_days:int = 7):
+def generate_condensed_schedule(already_existing_presence_with_override = None, already_existing_schedule = None, for_how_many_days:int = 7, requested_temps=None, cycle_off_modes=None):
         """
         Adds presence effects to already existing or locally computed schedule to arrive at condensed schedule.
         """
@@ -245,19 +235,23 @@ def generate_condensed_schedule(already_existing_presence_with_override = None, 
                 schedule_with_pres_with_o = generate_schedule(for_how_many_days)
                 schedule = schedule_with_pres_with_o['schedule']
                 presence_with_override = schedule_with_pres_with_o['presence_with_override']
+                requested_temps = schedule_with_pres_with_o['requested_temps']
+                cycle_off_modes = schedule_with_pres_with_o['cycle_off_modes']
                 schedule_update_info['update_needed'] = False
                 schedule_update_info['last_updated'] = datetime.now()
             else:
                 schedule = already_existing_schedule
                 presence_with_override = already_existing_presence_with_override
             
-            condensed_schedule = presence_enforcer(presence_with_override ,schedule)
+            condensed_schedule = presence_enforcer(presence_with_override, schedule, requested_temps, cycle_off_modes)
             
             success = True
             
             return {
                 "presence_with_override":presence_with_override,
                 "schedule":schedule, 
+                "requested_temps":requested_temps,
+                "cycle_off_modes":cycle_off_modes,
                 "condensed_schedule":condensed_schedule
                 }
         except ModuleException as e:
@@ -275,20 +269,15 @@ def generate_schedule(for_how_many_days : int):
             if datetime.strptime(command['date'] + '-' + command['hour_of_day'], '%d/%m/%Y-%H')
             + timedelta(hours=int(command['duration'])) >= datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)]
 
-        override_commands_for_cycles = [
-            command
-            for command 
-            in response_table_to_dict_list(
-                select_subtable_from_table(load_csv_to_2D_array(local_scheduling_files_relative_path + '/override_cycles.csv'),row_selection=[1,-0]),
-                ["google_timestamp","cycle","date","hour_of_day","duration"]
-                )
-            if datetime.strptime(command['date']+'-'+command['hour_of_day'],'%d/%m/%Y-%H')+timedelta(hours=int(command['duration'])) >= datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-            ]
+        override_commands_for_cycles = cycle_off_requests(
+            load_csv_to_2D_array(local_scheduling_files_relative_path + '/override_cycles.csv'))
     
         rooms_list = list(rooms_info.keys())
 
         # Calculate presence with override from presence patterns, weekly cycle and overrides #DEV
         presence_with_override = {}
+        requested_temps = {}
+        cycle_off_modes = {}
         for day_from_now in range(0,for_how_many_days):
             shifted_day = datetime.now() + timedelta(days=day_from_now)
             for hour_of_day in range(0,24):
@@ -303,6 +292,7 @@ def generate_schedule(for_how_many_days : int):
                 for room in rooms_list:
                     # Set temp based on presence patterns + weekly cycle weighted average
                     set_temp = get_presence_patterns_with_weekly_cycle_weighted_average(room, timepoint_info['day_of_week'], hour_of_day)
+                    requested_temp = None
                     
                     # Check if there's a relevant room override, overwrite set temp if yes
                     relevant_room_overrides = [
@@ -322,24 +312,19 @@ def generate_schedule(for_how_many_days : int):
                     relevant_room_overrides = sorted(relevant_room_overrides, key=lambda command: datetime_object_from_google_timestamp(command['google_timestamp']))
 
                     if 0<len(relevant_room_overrides): # if at least one valid override
-                        set_temp = math.floor(int(relevant_room_overrides[-1]['on'])/17) # select latest, 17 is magic number to split heating on vs. heating off
+                        requested_temp = request_temperature(relevant_room_overrides[-1]['on'])
+                        # Keep presence metadata binary; apply the actual Celsius value below.
+                        set_temp = int(requested_temp > warming_params[room]['t_min'])
                     
                     # Check if there's a relevant cycle-wide override, overwrite set temp if yes
-                    relevant_cycle_overrides = [
-                        -1
-                        for command
-                        in override_commands_for_cycles
-                        if 
-                        command['cycle'] == room_to_cycle(room) # room is on cycle
-                        and
-                        datetime.strptime(command['date']+'-'+command['hour_of_day'],'%d/%m/%Y-%H') # start of override period is
-                        < # before
-                        timepoint # iterated timepoint and iterated timepoint is
-                        < # before
-                        datetime.strptime(command['date']+'-'+command['hour_of_day'],'%d/%m/%Y-%H') + timedelta(hours=int(command['duration'])) # end of override period
-                    ]
-                    if 0<len(relevant_cycle_overrides): # if at least one valid override
+                    cycle_mode = cycle_off_mode(override_commands_for_cycles, room_to_cycle(room), timepoint)
+                    if cycle_mode is not None:
                         set_temp = 0 # set master off for room
+                        if cycle_mode == 1:
+                            requested_temp = None
+                        update_nested_dict(cycle_off_modes, '/'.join([room, str(timepoint_info['unix_day']), str(hour_of_day)]), cycle_mode)
+                    if requested_temp is not None:
+                        update_nested_dict(requested_temps, '/'.join([room, str(timepoint_info['unix_day']), str(hour_of_day)]), requested_temp)
                     update_nested_dict(presence_with_override,'/'.join([room,str(timepoint_info['unix_day']),str(hour_of_day)]),set_temp)        
 
         # Calculate temp curves for rooms from presence and t_min, t_max
@@ -349,7 +334,11 @@ def generate_schedule(for_how_many_days : int):
             for day,presence in days_presence.items():
                 temp[room_num][day] = {}
                 for hour, val in presence.items():
-                    temp[room_num][day][hour] = warming_params[room_num]['t_min']+val*(warming_params[room_num]['t_max'] - warming_params[room_num]['t_min'])
+                    temp[room_num][day][hour] = requested_temps.get(room_num, {}).get(day, {}).get(hour,
+                        warming_params[room_num]['t_min']+val*(warming_params[room_num]['t_max'] - warming_params[room_num]['t_min']))
+                    if hour in cycle_off_modes.get(room_num, {}).get(day, {}):
+                        mode = cycle_off_modes[room_num][day][hour]
+                        temp[room_num][day][hour] = warming_params[room_num]['t_off' if mode else 't_min']
 
 
         # Calculate warming curves for rooms from parameters
@@ -382,12 +371,21 @@ def generate_schedule(for_how_many_days : int):
         # Calculate heating curves for rooms from warming curves and temp curves
         heating = copy.deepcopy(temp)
         for room_num, days_temp in heating.items():
-            warming_items  = list(warming_curve[room_num].items())
-            warming_keys = [k for k, _ in warming_items]
-            warming_values = [v for _, v in warming_items]
             for day, temps in days_temp.items():
                 for h in range(24):
                     set_temp = temps[str(h)]
+                    # Reuse the same warming model for requests above the usual comfort temperature.
+                    # The ordinary occupancy schedule retains its existing curve unchanged.
+                    requested = requested_temps.get(room_num, {}).get(day, {}).get(str(h))
+                    curve = warming_curve[room_num]
+                    if requested is not None and requested > warming_params[room_num]['t_max']:
+                        params = warming_params[room_num]
+                        curve = {minute // 60 - back_hour_num: clamp(warming(minute,
+                            params['t_min'] * params['start_factor'], requested * params['end_factor'],
+                            params['a'] + params['b'] * external_temp), params['t_min'], requested)
+                            for minute in range(0, back_hour_num * 60 + 1, 60)}
+                    warming_keys = list(curve)
+                    warming_values = list(curve.values())
                     closest_on_warming = min(warming_values, key=lambda t: abs(t - set_temp))
                     this_hour_in_warming = warming_keys[warming_values.index(closest_on_warming)]
                     back_hours = back_hour_num + this_hour_in_warming
@@ -396,7 +394,7 @@ def generate_schedule(for_how_many_days : int):
                         if h - b_h >=0:
                             heating[room_num][day][str(h - b_h)] = max(
                                     heating[room_num][day][str(h - b_h)],
-                                    warming_curve[room_num][warming_key]
+                                    curve[warming_key]
                                 )
                         
         # Calculate schedule by subtracting no presence offset
@@ -408,13 +406,17 @@ def generate_schedule(for_how_many_days : int):
                     enforce_no_presence = 1 if isinstance(rooms_info[room_num]['pres'],str) else 0
                     schedule[room_num][day][h] = round(clamp(
                         schedule[room_num][day][h] - no_presence_offset * enforce_no_presence,
-                        warming_params[room_num]['t_min'],
-                        warming_params[room_num]['t_max']
+                        min(warming_params[room_num]['t_min'], set_temp),
+                        max(warming_params[room_num]['t_max'], set_temp)
                     ),1)
+                    if h in cycle_off_modes.get(room_num, {}).get(day, {}):
+                        mode = cycle_off_modes[room_num][day][h]
+                        schedule[room_num][day][h] = warming_params[room_num]['t_off' if mode else 't_min']
 
         report('Successfully generated schedule.')
         success = True
-        return {'presence_with_override':presence_with_override,'schedule':schedule}
+        return {'presence_with_override':presence_with_override,'schedule':schedule,
+                'requested_temps':requested_temps, 'cycle_off_modes':cycle_off_modes}
     except ModuleException as e:
         ServiceException(f"Module error while trying to generate schedule", original_exception=e, severity = 3)
     except Exception:
@@ -422,7 +424,7 @@ def generate_schedule(for_how_many_days : int):
 
     log({f"success_generating_schedule":success})
 
-def presence_enforcer(presence_with_override, schedule):
+def presence_enforcer(presence_with_override, schedule, requested_temps=None, cycle_off_modes=None):
     success = False
     condensed_schedule = copy.deepcopy(schedule)
     try:
@@ -445,7 +447,15 @@ def presence_enforcer(presence_with_override, schedule):
         for room_num, state in rooms_aggregate_occupancy_past_n_minutes.items():
             if room_num in condensed_schedule and state: # and presence_with_override[room_num][day][str(int(h))] > 0.3: # Give heating if presence regardless of previous patterns
                 #condensed_schedule[room_num][day][str(int(h))] += no_presence_offset
-                condensed_schedule[room_num][day][str(int(h))] = warming_params[room_num]['t_max']
+                condensed_schedule[room_num][day][str(int(h))] = (requested_temps or {}).get(
+                    room_num, {}).get(day, {}).get(str(int(h)), warming_params[room_num]['t_max'])
+
+        # Strong holds ignore presence; soft holds keep the presence-restored current hour.
+        for room, days in (cycle_off_modes or {}).items():
+            for day, hours in days.items():
+                for hour, mode in hours.items():
+                    if mode == 1:
+                        condensed_schedule[room][day][hour] = warming_params[room]['t_off']
 
         report('Successfully generated schedule.')
         success = True
@@ -536,7 +546,7 @@ def update_valid_requests_on_firebase():
                             'timestamp': request_timestamp,
                             'time': time_timestamp,
                             'duration': raw_entry[4],
-                            'set_temp': warming_params[room]['t_max'] if math.floor(float(raw_entry[5])/17) >= 1 else warming_params[room]['t_min']
+                            'set_temp': request_temperature(raw_entry[5])
                         }
                         request_lists_for_room.append(formatted_request)
             request_lists[room] = keep_latest_entries(request_lists_for_room)
@@ -568,7 +578,9 @@ if __name__ == "__main__":
         warming_params = extract_warming_params()
         check_scheduling_files_expiry(6) # Refresh files older than 6 hours, no matter what
         update_local_scheduling_files()
-        pres_with_o_schedule_and_condensed_schedule = generate_condensed_schedule(presence_with_override, schedule, 7) # Generate condensed schedule for the following week
+        pres_with_o_schedule_and_condensed_schedule = generate_condensed_schedule(presence_with_override, schedule, 7, requested_temps, cycle_off_modes) # Generate condensed schedule for the following week
+        requested_temps = pres_with_o_schedule_and_condensed_schedule['requested_temps']
+        cycle_off_modes = pres_with_o_schedule_and_condensed_schedule['cycle_off_modes']
         presence_with_override = pres_with_o_schedule_and_condensed_schedule['presence_with_override'] # No current presence effects
         schedule = pres_with_o_schedule_and_condensed_schedule['schedule'] # No current presence effects
         condensed_schedule = pres_with_o_schedule_and_condensed_schedule['condensed_schedule'] # Current presence effects added
