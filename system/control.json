@@ -63,15 +63,15 @@
     },
     "rain_protection": {
         "version": 1,
-        "checked_at": 1794928762.0592492,
+        "checked_at": 1794929362.2335408,
         "boiler_inhibited": false,
         "policy_phase": "normal",
         "policy_error": null,
         "heat_restored_at": null,
         "cycles": {
             "1": {
-                "supply_c": 38.0,
-                "observed_at": 1794928747.0,
+                "supply_c": 35.0,
+                "observed_at": 1794929347.0,
                 "fresh": true,
                 "heat_requested": true,
                 "pump_command": 1,
@@ -82,8 +82,8 @@
                 "last_stop_at": null
             },
             "2": {
-                "supply_c": 39.0,
-                "observed_at": 1794928747.0,
+                "supply_c": 40.0,
+                "observed_at": 1794929347.0,
                 "fresh": true,
                 "heat_requested": true,
                 "pump_command": 1,
@@ -94,20 +94,20 @@
                 "last_stop_at": 1794927652.9792013
             },
             "3": {
-                "supply_c": 38.0,
-                "observed_at": 1794928747.0,
+                "supply_c": 45.0,
+                "observed_at": 1794929347.0,
                 "fresh": true,
                 "heat_requested": true,
                 "pump_command": 1,
                 "pump_actual": 1,
                 "reason": "normal",
-                "warm_samples": 0,
-                "last_warm_sample": null,
+                "warm_samples": 2,
+                "last_warm_sample": 1794929347.0,
                 "last_stop_at": 1794921802.8512075
             },
             "4": {
                 "supply_c": 21.0,
-                "observed_at": 1794928747.0,
+                "observed_at": 1794929347.0,
                 "fresh": true,
                 "heat_requested": false,
                 "pump_command": 0,
@@ -125,5 +125,5 @@
     },
     "boiler": 1,
     "pid_commands_confirmed": true,
-    "last_updated": "2026-11-17-16-19-22"
+    "last_updated": "2026-11-17-16-29-22"
 }
