@@ -5,8 +5,8 @@
             "reason": "above"
         },
         "2": {
-            "vote": 1,
-            "reason": "d_high"
+            "vote": 0,
+            "reason": "above"
         },
         "3": {
             "vote": 1,
@@ -22,7 +22,7 @@
         },
         "6": {
             "vote": 0,
-            "reason": "above"
+            "reason": "d_low"
         },
         "7": {
             "vote": 1,
@@ -63,15 +63,15 @@
     },
     "rain_protection": {
         "version": 1,
-        "checked_at": 1794998361.1556609,
+        "checked_at": 1794998960.3313591,
         "boiler_inhibited": false,
         "policy_phase": "normal",
         "policy_error": null,
         "heat_restored_at": null,
         "cycles": {
             "1": {
-                "supply_c": 32.0,
-                "observed_at": 1794998346.0,
+                "supply_c": 34.0,
+                "observed_at": 1794998946.0,
                 "fresh": true,
                 "heat_requested": true,
                 "pump_command": 1,
@@ -83,7 +83,7 @@
             },
             "2": {
                 "supply_c": 37.0,
-                "observed_at": 1794998346.0,
+                "observed_at": 1794998946.0,
                 "fresh": true,
                 "heat_requested": true,
                 "pump_command": 1,
@@ -94,8 +94,8 @@
                 "last_stop_at": null
             },
             "3": {
-                "supply_c": 37.0,
-                "observed_at": 1794998346.0,
+                "supply_c": 38.0,
+                "observed_at": 1794998946.0,
                 "fresh": true,
                 "heat_requested": true,
                 "pump_command": 1,
@@ -106,8 +106,8 @@
                 "last_stop_at": null
             },
             "4": {
-                "supply_c": 21.0,
-                "observed_at": 1794998346.0,
+                "supply_c": 22.0,
+                "observed_at": 1794998946.0,
                 "fresh": true,
                 "heat_requested": false,
                 "pump_command": 0,
@@ -125,5 +125,5 @@
     },
     "boiler": 1,
     "pid_commands_confirmed": true,
-    "last_updated": "2026-11-18-11-39-21"
+    "last_updated": "2026-11-18-11-49-20"
 }
