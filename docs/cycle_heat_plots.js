@@ -7,6 +7,54 @@ const CYCLE_HEAT_METRICS = {
 };
 const cycleHeatSelections = {};
 
+function cycleSwitchingIntervals(readings, cycle, end) {
+    const observations = new Map();
+    for (const row of readings || []) {
+        if (!row?.cycle_states || !Number.isFinite(row.h_of_day_frac) || row.h_of_day_frac > end) continue;
+        const state = row.cycle_states[cycle];
+        observations.set(row.h_of_day_frac, [0,1].includes(state) ? state : null);
+    }
+    const samples = [...observations].sort((a,b) => a[0]-b[0]);
+    const intervals = [];
+    samples.forEach(([hour,state],index) => {
+        const start = Math.max(0,hour), stop = Math.min(end,samples[index+1]?.[0] ?? end);
+        if (state === null || stop <= start) return;
+        const previous = intervals.at(-1);
+        if (previous?.state === state && previous.end === start) previous.end = stop;
+        else intervals.push({start,end:stop,state});
+    });
+    return intervals;
+}
+
+function drawCycleSwitchingPlot(readings, setting) {
+    // The last timestamp includes the fresh Firebase tail (or replay cutoff).
+    // Hold a known state until the next observation rather than splitting it
+    // at an arbitrary upload gap. Do not extend past the available data edge.
+    const end = Math.min(24,(readings || []).reduce((latest,row) => row?.cycle_states && Number.isFinite(row.h_of_day_frac)
+        ? Math.max(latest,row.h_of_day_frac) : latest,0));
+    const area = drawPlot([], {
+        parentId:'graph', domain:{bottom:[0,24],left:[.5,4.5]},
+        dataKeys:{bottom:'h_of_day_frac',left:'cycle_state'},
+        tickVals:{left:[1,2,3,4]}, axesLabel:{bottom:'óra',left:'kör'},
+        plotLabel:'körök ' + (setting.day === dayStamp() ? 'mai' : 'napi') + ' kapcsolási mintázata',
+        now:{show:true,pos:end}
+    });
+    const x = d3.scaleLinear().domain([0,24]).range([0,area.plotDims.w]);
+    const y = d3.scaleLinear().domain([.5,4.5]).range([area.plotDims.h,0]);
+    for (let cycle=1;cycle<=4;cycle++) {
+        for (const period of cycleSwitchingIntervals(readings,cycle,end)) {
+            area.plotElement.append('line').attr('class','cycle-switching-period')
+                .attr('data-cycle',cycle).attr('data-state',period.state)
+                .attr('data-start',period.start).attr('data-end',period.end)
+                .attr('x1',x(period.start)).attr('x2',x(period.end))
+                .attr('y1',y(cycle)).attr('y2',y(cycle))
+                .attr('stroke',period.state ? 'rgba(255, 64, 0, 0.75)' : 'rgba(8, 86, 222, 0.23)')
+                .attr('stroke-width',(period.state ? 8 : 6) * (isMobile ? 2 : 1))
+                .attr('stroke-linecap','butt');
+        }
+    }
+}
+
 function cycleHeatMetric(cycle, name) {
     const metric = {...CYCLE_HEAT_METRICS[name]};
     if (name === 'power') {

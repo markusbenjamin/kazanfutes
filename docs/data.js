@@ -2389,57 +2389,7 @@ function drawMainGraph(graphData = null) {
                     drawBoilerPowerPlot(graphData, mainGraphSetting);
                     break;
                 case "heating_state":
-                    for (let cycle = 1; cycle < 5; cycle++) {
-                        let maxHFrac = 0;
-                        const cycleOnData = [];
-                        const cycleOffData = [];
-                        graphData["heating_state"].filter(entry => entry.cycle_states)
-                            .forEach(entry => {
-                                if (maxHFrac < entry.h_of_day_frac) {
-                                    maxHFrac = entry.h_of_day_frac;
-                                }
-                                if (entry.cycle_states[cycle] == 1) {
-                                    cycleOnData.push({
-                                        h_of_day_frac: entry.h_of_day_frac,
-                                        cycle_state: cycle
-                                    });
-                                }
-                                else {
-                                    cycleOffData.push({
-                                        h_of_day_frac: entry.h_of_day_frac,
-                                        cycle_state: cycle
-                                    });
-                                }
-                            });
-                        drawPlot(
-                            cycleOffData,
-                            {
-                                parentId: "graph",
-                                axes: { left: cycle == 1, bottom: cycle == 1 },
-                                domain: { bottom: [0, 24], left: [0.5, 4.5] },
-                                dataKeys: { bottom: "h_of_day_frac", left: "cycle_state" },
-                                background: { show: cycle == 1, col: "white" },
-                                plotStyle: { joined: true, col: "rgba(8, 86, 222, 0.23)", thickness: "6", startCap: false, endCap: false },
-                                tickVals: { left: [1, 2, 3, 4] },
-                                axesLabel: { bottom: cycle == 1 ? "óra" : false, left: cycle == 1 ? "kör" : false },
-                                plotLabel: cycle == 1 ? "körök " + (mainGraphSetting.day === dayStamp() ? 'mai' : 'napi') + " kapcsolási mintázata" : false,
-                                now: { show: cycle == 1, pos: maxHFrac },
-                                segment: { do: true, gap: 0.1 }
-                            }
-                        );
-                        drawPlot(
-                            cycleOnData,
-                            {
-                                parentId: "graph",
-                                domain: { bottom: [0, 24], left: [0.5, 4.5] },
-                                dataKeys: { bottom: "h_of_day_frac", left: "cycle_state" },
-                                background: { show: false },
-                                tickVals: { left: [1, 2, 3, 4] },
-                                plotStyle: { joined: true, col: "rgba(255, 64, 0, 0.75)", thickness: "8", startCap: false, endCap: false },
-                                segment: { do: true, gap: 0.1 }
-                            }
-                        );
-                    }
+                    drawCycleSwitchingPlot(graphData.heating_state, mainGraphSetting);
                     break;
                 case "weather_metrics":
                     drawWeatherMetricPlot(graphData, mainGraphSetting);
