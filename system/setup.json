@@ -112,22 +112,22 @@
         "7": {
             "name": "Gólyairoda",
             "sensor": "Aqara15",
-            "pres":"Pres2",
-            "thermostats":"65",
+            "pres": "Pres2",
+            "thermostats": "65",
             "cycle": "1",
             "controlled": true
         },
         "8": {
             "name": "kisterem",
-            "sensor": "Sonoff6",
-            "pres": false,
+            "sensor": "Aqara8",
+            "pres": "Aqara8",
             "thermostats": true,
             "cycle": "3",
             "controlled": true
         },
         "9": {
             "name": "vendégtér",
-            "sensor": "Sonoff4",
+            "sensor": "Aqara12",
             "cycle": "3",
             "pres": false,
             "thermostats": true,
@@ -135,7 +135,7 @@
         },
         "10": {
             "name": "Trafóház",
-            "sensor": "Sonoff2",
+            "sensor": "Aqara14",
             "cycle": "4",
             "pres": false,
             "thermostats": true,

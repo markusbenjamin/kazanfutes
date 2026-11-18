@@ -133,7 +133,6 @@
         "Nous9"
       ],
       "lux_sensors": [
-        "Aqara14",
         "Aqara16"
       ],
       "owner_notes": null
@@ -197,13 +196,17 @@
       "location_id": "kisterem",
       "svg_target": "room_8",
       "temperature_sensors": [
-        "Sonoff6"
+        "Aqara8"
       ],
-      "presence_sensors": [],
+      "presence_sensors": [
+        "Aqara8"
+      ],
       "valve_mode": "unrestricted",
       "trv_ids": [],
       "co2_sensors": [],
-      "lux_sensors": [],
+      "lux_sensors": [
+        "Aqara8"
+      ],
       "owner_notes": null
     },
     "9": {
@@ -215,13 +218,15 @@
       "location_id": "vendegter",
       "svg_target": "room_9",
       "temperature_sensors": [
-        "Sonoff4"
+        "Aqara12"
       ],
       "presence_sensors": [],
       "valve_mode": "unrestricted",
       "trv_ids": [],
       "co2_sensors": [],
-      "lux_sensors": [],
+      "lux_sensors": [
+        "Aqara12"
+      ],
       "owner_notes": null
     },
     "10": {
@@ -233,13 +238,15 @@
       "location_id": "trafohaz",
       "svg_target": "room_10",
       "temperature_sensors": [
-        "Sonoff2"
+        "Aqara14"
       ],
       "presence_sensors": [],
       "valve_mode": "unrestricted",
       "trv_ids": [],
       "co2_sensors": [],
-      "lux_sensors": [],
+      "lux_sensors": [
+        "Aqara14"
+      ],
       "owner_notes": null
     },
     "11": {
@@ -251,7 +258,6 @@
       "location_id": "oktopusz_keramia",
       "svg_target": "room_11",
       "temperature_sensors": [
-        "Aqara12",
         "Aqara7"
       ],
       "presence_sensors": [],
@@ -259,7 +265,6 @@
       "trv_ids": [],
       "co2_sensors": [],
       "lux_sensors": [
-        "Aqara12",
         "Aqara7"
       ],
       "owner_notes": null
@@ -288,7 +293,7 @@
       "lux_sensors": [
         "Aqara11"
       ],
-      "owner_notes": "Sonoff1 was previously assigned here; its physical location is unverified. Heating control uses Aqara11."
+      "owner_notes": "Sonoff1 has been located and removed from the system. Heating control uses Aqara11."
     },
     "13": {
       "display_name": "GÉP műhely",
@@ -370,18 +375,12 @@
       "cycle_status": "none",
       "location_id": "studio.kint",
       "svg_target": null,
-      "temperature_sensors": [
-        "Aqara8"
-      ],
-      "presence_sensors": [
-        "Aqara8"
-      ],
+      "temperature_sensors": [],
+      "presence_sensors": [],
       "valve_mode": "none",
       "trv_ids": null,
       "co2_sensors": [],
-      "lux_sensors": [
-        "Aqara8"
-      ],
+      "lux_sensors": [],
       "owner_notes": null
     },
     "24": {
