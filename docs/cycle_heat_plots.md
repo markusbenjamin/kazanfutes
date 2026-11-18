@@ -32,6 +32,12 @@ activation do not bubble into the dashboard's outside-click unlock handler.
 
 ## Formatted data
 
+The boiler's ordinary switching chart renders known on/off states as horizontal
+intervals, ending each at the next state observation or the last available plot
+timestamp. Fresh Firebase states extend the intervals to the current-time marker;
+upload gaps no longer split a continuing state. Actual transitions meet without
+overlap, explicit unknown states stay blank, and replay stops at its data edge.
+
 - Temperature: existing `cycle_N_water_temps.json`, `water_temp` (supply) and
   `return_temp` in °C, from the mapped meter's `flow_temperature_c` and
   `return_temperature_c`. The same view overlays thin red supply and deep-blue
