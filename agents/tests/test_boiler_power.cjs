@@ -16,6 +16,7 @@ const context = require('./dashboard_test_context.cjs')({
 });
 vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../../docs/boiler_power.js'), 'utf8'), context);
 vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../../docs/boiler_demand_bars.js'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../../docs/plot_history.js'), 'utf8'), context);
 vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../../docs/cycle_heat_plots.js'), 'utf8'), context);
 const evaluate = code => JSON.parse(JSON.stringify(vm.runInContext(code, context)));
 assert.equal(evaluate("freshBoilerPower({reachable:true,power_w:0,timestamp:'2026-10-19-12-00-00'},new Date('2026-10-19T12:01:00'))"), 0);

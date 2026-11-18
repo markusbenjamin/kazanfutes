@@ -44,6 +44,7 @@ context.payload[day].room_1_measurements.push({timestamp:day+'-12-01-00',h_of_da
 assert.deepEqual(evaluate('withLivePlotReadings(payload,setting,system,now)')[day].room_1_measurements,
     context.payload[day].room_1_measurements,'no out-of-order endpoint');
 
+vm.runInContext('livePlotBuffers.clear()',context);
 context.payload={[day]:{cycle_1_heat_delivery:[{h_of_day_frac:11,power_kw:10,flow_m3h:.5}],
     cycle_1_water_temps:[{h_of_day_frac:11,water_temp:58,return_temp:38}],
     pumps_power:[{h_of_day_frac:11,pump_1_power:30}]}};
@@ -61,6 +62,7 @@ context.system.state.heatmeters[1].return_temp=undefined;
 assert.equal(evaluate('withLivePlotReadings(payload,setting,system,now)')[day].cycle_1_heat_delivery.at(-1).power_kw,undefined);
 context.system.state.heatmeters[1].power=0;
 assert.equal(evaluate('withLivePlotReadings(payload,setting,system,now)')[day].cycle_1_heat_delivery.at(-1).power_kw,0);
+vm.runInContext('livePlotBuffers.clear()',context);
 context.setting={title:'weather_metrics',day,metric:'temperature',types:['weather_station','external_temp']};
 context.payload={[day]:{weather_station:[{h_of_day_frac:11,temperature_c:-1,humidity_pct:80}],
     external_temp:[{h_of_day_frac:11,external_temp:-1}]}};
@@ -70,6 +72,7 @@ context.setting.metric='direction';
 assert.deepEqual(evaluate('withLivePlotReadings(payload,setting,system,now)'),context.payload,'wind histogram must not count a synthetic observation');
 context.setting.metric='rain';
 assert.deepEqual(evaluate('withLivePlotReadings(payload,setting,system,now)'),context.payload,'rain accumulation/differentiation stays on actual observations');
+vm.runInContext('livePlotBuffers.clear()',context);
 context.setting={title:'radiator',day,types:['radiator_temps','radiator_valves','boiler_1_plug_power']};
 context.payload={[day]:{radiator_temps:[{h_of_day_frac:11,probes:{'shelly/100':50,'shelly/101':45}}],
     radiator_valves:[{h_of_day_frac:11,valves:{a:20,b:40}}],boiler_1_plug_power:[{h_of_day_frac:11,power_w:40}]}};
@@ -86,6 +89,7 @@ assert.equal(evaluate("livePlotDate('2026-02-31-12-00-00')"),null);
 
 // Firebase may arrive before the history request. It must not create a lone dot,
 // a new channel, or a derived mean from otherwise-unloaded source curves.
+vm.runInContext('livePlotBuffers.clear()',context);
 const history={
     room_1_measurements:[{h_of_day_frac:11,temp:19,hum:40}],
     room_1_valve_state:[{h_of_day_frac:11,valve:0}],

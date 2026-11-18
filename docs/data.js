@@ -165,6 +165,7 @@ function getDataFromFirebase() {
     const url = "https://kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app/.json";
     fetchJSONEndpoint(url)
         .then(fullFirebaseDataJSON => {
+            recordLivePlotReadings(fullFirebaseDataJSON.system);
             replayLatestLive = fullFirebaseDataJSON;
             if (!dashboardReplayActive()) renderDashboardState(fullFirebaseDataJSON);
         })
