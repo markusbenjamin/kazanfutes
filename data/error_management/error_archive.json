@@ -6125,5 +6125,16 @@
         "reported_timestamp": "2026-11-16-17-31-00",
         "checked": true,
         "checked_timestamp": "2026-11-16-17-31-00"
+    },
+    {
+        "message": "Firebase status upload failed; local control completed: 500 Server Error: Internal Server Error for url: https://kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app/system.json.",
+        "severity": 1,
+        "origin": "heating_control.py/publish:241 --> models.py/raise_for_status:1024",
+        "origin_timestamp": "2026-11-18-05-01-39",
+        "registration_timestamp": "2026-11-18-05-01-39",
+        "reported": true,
+        "reported_timestamp": "2026-11-18-05-06-21",
+        "checked": true,
+        "checked_timestamp": "2026-11-18-05-06-21"
     }
 ]
