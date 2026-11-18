@@ -85,7 +85,7 @@ function visitLivePlotReadings(system, now, add) {
         if (reading?.reachable === true) add(source + '_power', {power_w: livePlotNumber(reading.power_w, 0)}, reading.timestamp, 180);
     });
     const weather = state.weather_station;
-    if (weather && !['rain','direction'].includes(setting.metric)) {
+    if (weather) {
         const fields = ['temperature_c','humidity_pct','dewpoint_c','wind_speed_m_s','gust_speed_m_s',
             'illuminance_lux','uv_index','pressure_hpa'];
         add('weather_station', Object.fromEntries(fields.map(key => [key, livePlotNumber(weather[key])])), weather.timestamp, 300);
@@ -163,6 +163,9 @@ function withLivePlotReadings(payload, setting, system, now = new Date()) {
     const data = {...payload[day]}, result = {...payload,[day]:data};
     const hour = now.getHours() + now.getMinutes()/60 + now.getSeconds()/3600;
     for (const [type] of current) {
+        // Collect WS90 independently of the selected plot, but never inject
+        // synthetic samples into rain calculations or the direction histogram.
+        if (['weather_station','external_temp'].includes(type) && ['rain','direction'].includes(setting.metric)) continue;
         if (!(Object.hasOwn(data,type) || setting.types?.includes(type))) continue;
         const rows = data[type];
         if (!Array.isArray(rows)) continue;
