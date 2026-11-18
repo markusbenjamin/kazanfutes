@@ -6,6 +6,19 @@ const day = '2026-11-18';
 const ctx = makeContext({Date, Number, Object, Math});
 const run = code => JSON.parse(JSON.stringify(vm.runInContext(code,ctx)));
 const at = (minute,second=0) => new Date(2026,10,18,12,minute,second);
+// The startup callback runs before a plot is selected. Do not expose a global
+// named `setting`: it would hide an accidental free variable in the collector.
+const startup=makeContext({Date,Number,Object,Math});
+startup.clock=at(0);
+startup.snapshot={state:{weather_station:{timestamp:day+'-12-00-00',temperature_c:8,humidity_pct:70}}};
+assert.doesNotThrow(()=>vm.runInContext('recordLivePlotReadings(snapshot,clock)',startup),
+    'Firebase startup must succeed without any selected plot');
+assert.equal(vm.runInContext("livePlotBuffers.get('weather_station').length",startup),1);
+startup.raw={[day]:{weather_station:[{h_of_day_frac:11,temperature_c:7}]}};
+startup.selectedPlot={day,title:'weather_metrics',metric:'rain',types:['weather_station']};
+assert.equal(vm.runInContext('withLivePlotReadings(raw,selectedPlot,snapshot,clock)',startup)[day].weather_station.length,1);
+startup.selectedPlot.metric='temperature';
+assert.equal(vm.runInContext('withLivePlotReadings(raw,selectedPlot,snapshot,clock)',startup)[day].weather_station.length,2);
 ctx.setting = {title:'boiler_metrics',metric:'temperature',day,
     types:['cycle_1_water_temps','pumps_power','radiator_temps']};
 ctx.payload = {[day]:{
