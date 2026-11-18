@@ -2,8 +2,24 @@
 
 `live_plot_data.js` overlays fresh Firebase readings on today's main chart
 payload without editing the cached/archive arrays. The most recent raw payload
-is retained so the existing five-second Firebase poll can redraw its endpoint
-without another GitHub download. Date/view changes invalidate that reuse.
+is retained so the existing five-second Firebase poll can redraw its live tail
+without another GitHub download. Date/view changes invalidate that payload reuse.
+
+Every Firebase response also records fresh, validated source publications in
+browser memory, independently of the selected plot and whether its archive has
+loaded. Retention is limited to the current day, the last hour and at most 720
+publications per stream. Closing/reloading the page discards the buffer. Repeated
+polls of the same source timestamp do not add samples or bias averages; older
+publications cannot replace newer ones.
+
+Continuous values use arithmetic one-minute means of distinct publications,
+independently for each channel/probe. Completed minutes stay fixed as new
+publications arrive. The current minute's mean extends to now, so each update
+changes only the short live tail rather than replacing one point connected to
+an increasingly distant archive. No intermediate point markers are added.
+Pump/boiler-plug electrical power, valve openings and heating states retain
+their actual step values and change times, without averaging across transitions.
+The instantaneous dashboard displays and backend data remain unchanged.
 
 Numbers must be finite actual numbers, not null/string/boolean conversions.
 Snapshot timestamps must parse, be within the source's freshness limit and no

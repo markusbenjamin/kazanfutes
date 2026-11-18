@@ -22,37 +22,16 @@ function livePlotNumber(value, minimum = -Infinity, maximum = Infinity) {
     return Number.isFinite(value) && value >= minimum && value <= maximum ? value : undefined;
 }
 
-function withLivePlotReadings(payload, setting, system, now = new Date()) {
-    const stamp = livePlotStamp(now), day = stamp.slice(0, 10);
-    if (setting.day !== day || !system?.state || setting.title.startsWith('room_control_') || setting.title === 'boiler_kpi') return payload;
-    const state = system.state, data = {...payload[day]}, result = {...payload, [day]: data};
-    const requested = type => Object.hasOwn(data, type) || setting.types?.includes(type);
-    const hour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
-    const add = (type, fields, observed, age) => {
-        if (!requested(type) || !livePlotFresh(observed, age, now)) return;
-        const rows = data[type];
-        if (!Array.isArray(rows)) return;
-        // A live value extends loaded history; it must never create a curve.
-        // Gate each channel/source separately (e.g. supply history is not return history).
-        const history = rows.filter(row => row?.live !== true && Number.isFinite(row?.h_of_day_frac)
-            && row.h_of_day_frac >= 0 && row.h_of_day_frac < hour);
-        const known = {};
-        Object.entries(fields).forEach(([key, value]) => {
-            if (value === undefined) return;
-            if (value !== null && typeof value === 'object') {
-                const sources = Object.fromEntries(Object.entries(value).filter(([source]) =>
-                    history.some(row => Number.isFinite(row[key]?.[source]))));
-                if (Object.keys(sources).length) known[key] = sources;
-            } else if (history.some(row => Number.isFinite(row[key]))) known[key] = value;
-        });
-        if (!Object.keys(known).length) return;
-        const latest = rows.reduce((last, row) => Number.isFinite(row?.h_of_day_frac)
-            && (!last || row.h_of_day_frac > last.h_of_day_frac) ? row : last, null);
-        // Never append out of order or replace a later archived observation with an older snapshot.
-        if (latest && (latest.h_of_day_frac >= hour || livePlotDate(latest.timestamp) > livePlotDate(observed))) return;
-        data[type] = [...rows, {timestamp: stamp, h_of_day_frac: hour, ...known,
-            live: true, source_timestamp: observed}];
-    };
+// Retain only the current browser session's recent measurements. This is not
+// an archive and must never feed replay, analytics or cumulative energy.
+const LIVE_PLOT_TAIL_MINUTES = 60;
+const LIVE_PLOT_MAX_SAMPLES = 720;
+let livePlotBufferDay;
+const livePlotBuffers = new Map();
+
+function visitLivePlotReadings(system, now, add) {
+    if (!system?.state) return;
+    const state = system.state;
     const controlFresh = livePlotFresh(state.last_updated, 180, now);
     if (controlFresh) {
         for (const room of Object.keys(state.measured_temps || {})) {
@@ -111,6 +90,117 @@ function withLivePlotReadings(payload, setting, system, now = new Date()) {
             'illuminance_lux','uv_index','pressure_hpa'];
         add('weather_station', Object.fromEntries(fields.map(key => [key, livePlotNumber(weather[key])])), weather.timestamp, 300);
         add('external_temp', {external_temp: livePlotNumber(weather.temperature_c)}, weather.timestamp, 300);
+    }
+}
+
+function recordLivePlotReadings(system, now = new Date()) {
+    const stamp = livePlotStamp(now), day = stamp.slice(0,10);
+    if (livePlotBufferDay !== day) {
+        livePlotBuffers.clear();
+        livePlotBufferDay = day;
+    }
+    const current = new Map();
+    visitLivePlotReadings(system, now, (type, fields, observed, age) => {
+        if (!livePlotFresh(observed, age, now)) return;
+        current.set(type, {fields, observed});
+        const rows = livePlotBuffers.get(type) || [];
+        const previous = rows.at(-1);
+        // Polls of an unchanged publication are not additional measurements.
+        if (previous && livePlotDate(observed) < livePlotDate(previous.source_timestamp)) return;
+        const row = {timestamp:stamp, h_of_day_frac:now.getHours() + now.getMinutes()/60 + now.getSeconds()/3600,
+            fields, source_timestamp:observed};
+        if (previous?.source_timestamp === observed) {
+            // A corrected publication replaces that sample, retaining its time.
+            rows[rows.length-1] = {...previous, fields};
+        } else rows.push(row);
+        const cutoff = row.h_of_day_frac - LIVE_PLOT_TAIL_MINUTES/60;
+        livePlotBuffers.set(type, rows.filter(sample => sample.h_of_day_frac >= cutoff).slice(-LIVE_PLOT_MAX_SAMPLES));
+    });
+    return current;
+}
+
+function livePlotBucketFields(rows) {
+    const last = rows.at(-1).fields;
+    const mean = values => {
+        const known = values.filter(Number.isFinite);
+        return known.length ? known.reduce((sum,value) => sum+value,0)/known.length : undefined;
+    };
+    const fields = {};
+    for (const [key,value] of Object.entries(last)) {
+        if (value !== null && typeof value === 'object') {
+            fields[key] = Object.fromEntries(Object.entries(value).map(([source,current]) => [source,
+                Number.isFinite(current) ? mean(rows.map(row => row.fields[key]?.[source])) : current]));
+        } else if (Number.isFinite(value)) fields[key] = mean(rows.map(row => row.fields[key]));
+        else if (value === null) fields[key] = null;
+    }
+    return fields;
+}
+
+function livePlotStepSeries(type) {
+    return type === 'heating_state' || type === 'pumps_power' || type === 'radiator_valves'
+        || type.endsWith('_valve_state') || type.endsWith('_plug_power');
+}
+
+function livePlotTailRows(type, rows) {
+    if (livePlotStepSeries(type)) {
+        // Preserve electrical/control edges; never average an on/off transition.
+        return rows.filter((row,index) => index === 0 || index === rows.length-1
+            || JSON.stringify(row.fields) !== JSON.stringify(rows[index-1].fields));
+    }
+    const buckets = new Map();
+    for (const row of rows) {
+        const minute = Math.floor(row.h_of_day_frac*60 + 1e-8);
+        if (!buckets.has(minute)) buckets.set(minute,[]);
+        buckets.get(minute).push(row);
+    }
+    return [...buckets.values()].map(bucket => ({...bucket.at(-1),fields:livePlotBucketFields(bucket)}));
+}
+
+function withLivePlotReadings(payload, setting, system, now = new Date()) {
+    const stamp = livePlotStamp(now), day = stamp.slice(0,10);
+    if (setting.day !== day || !system?.state || setting.title.startsWith('room_control_') || setting.title === 'boiler_kpi') return payload;
+    const current = recordLivePlotReadings(system,now);
+    const data = {...payload[day]}, result = {...payload,[day]:data};
+    const hour = now.getHours() + now.getMinutes()/60 + now.getSeconds()/3600;
+    for (const [type] of current) {
+        if (!(Object.hasOwn(data,type) || setting.types?.includes(type))) continue;
+        const rows = data[type];
+        if (!Array.isArray(rows)) continue;
+        // Gate every channel against actual loaded history. Buffered readings
+        // cannot create a curve while its archive request is still loading.
+        const history = rows.filter(row => row?.live !== true && Number.isFinite(row?.h_of_day_frac)
+            && row.h_of_day_frac >= 0 && row.h_of_day_frac < hour);
+        const knownFields = fields => {
+            const known = {};
+            for (const [key,value] of Object.entries(fields)) {
+                if (value === undefined) continue;
+                if (value !== null && typeof value === 'object') {
+                    const sources = Object.fromEntries(Object.entries(value).filter(([source]) =>
+                        history.some(row => Number.isFinite(row[key]?.[source]))));
+                    if (Object.keys(sources).length) known[key] = sources;
+                } else if (history.some(row => Number.isFinite(row[key]))) known[key] = value;
+            }
+            return known;
+        };
+        const latest = rows.filter(row => row?.live !== true).reduce((last,row) => Number.isFinite(row?.h_of_day_frac)
+            && (!last || row.h_of_day_frac > last.h_of_day_frac) ? row : last,null);
+        if (!latest || latest.h_of_day_frac >= hour - 1e-9) continue;
+        const archivedAt = livePlotDate(latest.timestamp);
+        const eligible = (livePlotBuffers.get(type) || []).filter(row => row.h_of_day_frac > latest.h_of_day_frac + 1e-9
+            && row.h_of_day_frac <= hour + 1e-9 && (!archivedAt || livePlotDate(row.source_timestamp) >= archivedAt));
+        const tail = livePlotTailRows(type,eligible).map(row => ({timestamp:row.timestamp,h_of_day_frac:row.h_of_day_frac,
+            ...knownFields(row.fields),live:true,source_timestamp:row.source_timestamp}));
+        if (!tail.length) continue;
+        // Hold the newest valid minute/step to now, without inventing another
+        // measurement or adding another sample to its average on every redraw.
+        const last = tail.at(-1);
+        if (last.h_of_day_frac < hour) {
+            if (!livePlotStepSeries(type) && Math.floor(last.h_of_day_frac*60+1e-8) === Math.floor(hour*60+1e-8))
+                tail[tail.length-1] = {...last,timestamp:stamp,h_of_day_frac:hour};
+            else tail.push({...last,timestamp:stamp,h_of_day_frac:hour});
+        }
+        if (!tail.some(row => Object.keys(row).some(key => !['timestamp','h_of_day_frac','live','source_timestamp'].includes(key)))) continue;
+        data[type] = [...rows.filter(row => row?.live !== true),...tail];
     }
     return result;
 }
