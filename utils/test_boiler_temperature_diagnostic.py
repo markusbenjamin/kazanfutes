@@ -14,6 +14,7 @@ _diagnostic = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_diagnostic)
 STAMP_FORMAT = _diagnostic.STAMP_FORMAT
 boiler_error_from_snapshot = _diagnostic.boiler_error_from_snapshot
+boiler_error_from_power = _diagnostic.boiler_error_from_power
 read_boiler_error = _diagnostic.read_boiler_error
 
 
@@ -31,6 +32,111 @@ class BoilerTemperatureTests(unittest.TestCase):
     def diagnose(self, temperatures, age=0):
         return boiler_error_from_snapshot(self.switch, self.snapshot(temperatures, age),
                                           self.mapping, self.now)
+
+    def plug(self, watts, age=0, **updates):
+        snapshot = {'timestamp': (self.now - timedelta(seconds=age)).strftime(STAMP_FORMAT),
+                    'name': 'boiler_1_plug', 'reachable': True, 'collection_error': None,
+                    'measurements': {'power_w': watts}}
+        snapshot.update(updates)
+        return snapshot
+
+    def write_plugs(self, root, *snapshots):
+        path = root / 'data/logs/boilers_power/boiler_plugs.json'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(''.join(json.dumps(snapshot) + '\n' for snapshot in snapshots), encoding='utf-8')
+        return path
+
+    def test_power_threshold_includes_zero_and_clears_at_twenty_watts(self):
+        for watts, expected in ((0, 'kazán hiba!'), (19.99, 'kazán hiba!'), (20, ''), (68, '')):
+            with self.subTest(watts=watts):
+                self.assertEqual(boiler_error_from_power(self.switch, self.plug(watts), self.now), expected)
+
+    def test_unavailable_power_is_distinct_from_healthy_power(self):
+        for value in (None, '10', True, False, -1, float('nan'), float('inf'), {}, []):
+            with self.subTest(value=value):
+                self.assertIsNone(boiler_error_from_power(self.switch, self.plug(value), self.now))
+        for snapshot in (None, {}, self.plug(10, reachable=False),
+                         self.plug(10, collection_error='unavailable'),
+                         self.plug(10, measurements=None), self.plug(10, name='boiler_2_plug'),
+                         self.plug(10, timestamp='invalid')):
+            self.assertIsNone(boiler_error_from_power(self.switch, snapshot, self.now))
+
+    def test_power_freshness_uses_same_limit_as_water(self):
+        self.assertEqual(boiler_error_from_power(self.switch, self.plug(10, age=90), self.now), 'kazán hiba!')
+        self.assertIsNone(boiler_error_from_power(self.switch, self.plug(10, age=91), self.now))
+        self.assertIsNone(boiler_error_from_power(self.switch, self.plug(10, age=-1), self.now))
+        for limit in (None, True, '90', 0, -1, float('inf'), float('nan')):
+            self.assertIsNone(boiler_error_from_power(self.switch, self.plug(10), self.now, limit))
+
+    def test_power_requires_heating_on_and_an_enabled_circuit(self):
+        for switch in (None, {}, {'system': 0, 'cycles': {'1': 1}},
+                       {'system': 1, 'cycles': {}}, {'system': 1, 'cycles': {'1': -1}}):
+            self.assertEqual(boiler_error_from_power(switch, self.plug(0), self.now), '')
+        for mode in (0, 1):
+            self.assertEqual(boiler_error_from_power(
+                {'system': 1, 'cycles': {'1': mode}}, self.plug(0), self.now), 'kazán hiba!')
+
+    def test_valid_power_overrides_water_and_recovers_on_next_observation(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            _, readings = self.make_files(root)
+            for watts, temperature, expected in ((10, 60, 'kazán hiba!'), (20, 22, ''),
+                                                  (0, 60, 'kazán hiba!'), (68, 22, '')):
+                with self.subTest(watts=watts, temperature=temperature):
+                    readings.write_text(json.dumps(self.snapshot({9: temperature})), encoding='utf-8')
+                    self.write_plugs(root, self.plug(watts))
+                    self.assertEqual(read_boiler_error(root, self.switch, self.now), expected)
+
+    def test_unusable_power_falls_back_to_water_in_both_directions(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            _, readings = self.make_files(root)
+            for snapshot in (self.plug(None), self.plug('10'), self.plug(True), self.plug(-1),
+                             self.plug(float('nan')), self.plug(10, age=91), self.plug(10, age=-1),
+                             self.plug(10, reachable=False), self.plug(10, collection_error='failed'),
+                             self.plug(10, timestamp=None), self.plug(10, measurements={})):
+                for temperature, expected in ((22, 'kazán hiba!'), (60, '')):
+                    self.write_plugs(root, snapshot)
+                    readings.write_text(json.dumps(self.snapshot({9: temperature})), encoding='utf-8')
+                    self.assertEqual(read_boiler_error(root, self.switch, self.now), expected)
+
+    def test_latest_first_plug_record_wins_and_second_plug_is_ignored(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            _, readings = self.make_files(root)
+            readings.write_text(json.dumps(self.snapshot({9: 60})), encoding='utf-8')
+            path = self.write_plugs(root, *([self.plug(68)] * 1000), self.plug(10),
+                                    self.plug(68, name='boiler_2_plug'))
+            with path.open('a', encoding='utf-8') as output:
+                output.write('{"timestamp":')
+            self.assertEqual(read_boiler_error(root, self.switch, self.now), 'kazán hiba!')
+            # A new unreachable/invalid observation must fall back, not reuse the old power.
+            for latest in (self.plug(10, reachable=False), self.plug(None)):
+                self.write_plugs(root, self.plug(10), latest)
+                self.assertEqual(read_boiler_error(root, self.switch, self.now), '')
+            self.write_plugs(root, self.plug(0, name='boiler_2_plug'))
+            self.assertEqual(read_boiler_error(root, self.switch, self.now), '')
+
+    def test_power_does_not_need_water_readings_or_meter_mapping(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            # Missing water/config files cannot hide an available plug reading.
+            for watts, expected in ((10, 'kazán hiba!'), (20, '')):
+                self.write_plugs(root, self.plug(watts))
+                self.assertEqual(read_boiler_error(root, self.switch, self.now), expected)
+            self.write_plugs(root, self.plug(None))
+            self.assertEqual(read_boiler_error(root, self.switch, self.now), '')
+
+    def test_missing_or_corrupt_plug_file_uses_water(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            _, readings = self.make_files(root)
+            readings.write_text(json.dumps(self.snapshot({9: 22})), encoding='utf-8')
+            path = self.write_plugs(root)
+            path.write_text('invalid json', encoding='utf-8')
+            self.assertEqual(read_boiler_error(root, self.switch, self.now), 'kazán hiba!')
+            path.unlink()
+            self.assertEqual(read_boiler_error(root, self.switch, self.now), 'kazán hiba!')
 
     def test_automatic_and_forced_circuits_count_but_disabled_do_not(self):
         self.assertEqual(self.diagnose({1: 22, 3: 60}), 'kazán hiba!')
@@ -133,6 +239,7 @@ class BoilerTemperatureTests(unittest.TestCase):
     def test_heating_off_does_not_read_files(self):
         with patch.object(Path, 'read_text', side_effect=AssertionError('unexpected read')):
             self.assertEqual(read_boiler_error('/unused', {'system': 0}, self.now), '')
+            self.assertEqual(read_boiler_error('/unused', {'system': 1, 'cycles': {'1': -1}}, self.now), '')
 
 
 if __name__ == '__main__':
