@@ -11839,12 +11839,152 @@
             "room_sensor_age_s": 1172.0,
             "pump_on": 0,
             "valve_fraction": 0.1
+        },
+        {
+            "timestamp": "2026-11-19-14-05-44",
+            "error_k": -1.0,
+            "intensity_k": -13.6,
+            "source": "measured",
+            "reason": null,
+            "model_quality": "fitted",
+            "room_temp_c": 22.0,
+            "set_temp_c": 21.0,
+            "radiator_temp_c": 28.4,
+            "room_sensor_age_s": 1255.0,
+            "pump_on": 0,
+            "valve_fraction": 0.1
+        },
+        {
+            "timestamp": "2026-11-19-14-06-23",
+            "error_k": -1.0,
+            "intensity_k": -13.6,
+            "source": "measured",
+            "reason": null,
+            "model_quality": "fitted",
+            "room_temp_c": 22.0,
+            "set_temp_c": 21.0,
+            "radiator_temp_c": 28.4,
+            "room_sensor_age_s": 1294.0,
+            "pump_on": 0,
+            "valve_fraction": 0.1
+        },
+        {
+            "timestamp": "2026-11-19-14-07-21",
+            "error_k": -1.0,
+            "intensity_k": -13.7,
+            "source": "measured",
+            "reason": null,
+            "model_quality": "fitted",
+            "room_temp_c": 22.0,
+            "set_temp_c": 21.0,
+            "radiator_temp_c": 28.3,
+            "room_sensor_age_s": 1352.0,
+            "pump_on": 0,
+            "valve_fraction": 0.11
+        },
+        {
+            "timestamp": "2026-11-19-14-08-20",
+            "error_k": -1.0,
+            "intensity_k": -13.9,
+            "source": "measured",
+            "reason": null,
+            "model_quality": "fitted",
+            "room_temp_c": 22.0,
+            "set_temp_c": 21.0,
+            "radiator_temp_c": 28.1,
+            "room_sensor_age_s": 1411.0,
+            "pump_on": 0,
+            "valve_fraction": 0.11
+        },
+        {
+            "timestamp": "2026-11-19-14-09-15",
+            "error_k": null,
+            "intensity_k": -14.0,
+            "source": "unavailable",
+            "reason": "no_temperature_target",
+            "model_quality": "fitted",
+            "room_temp_c": 22.0,
+            "set_temp_c": null,
+            "radiator_temp_c": 28.0,
+            "room_sensor_age_s": 1466.0,
+            "pump_on": 0,
+            "valve_fraction": 0.11
+        },
+        {
+            "timestamp": "2026-11-19-14-10-46",
+            "error_k": -1.0,
+            "intensity_k": -14.3,
+            "source": "measured",
+            "reason": null,
+            "model_quality": "fitted",
+            "room_temp_c": 22.0,
+            "set_temp_c": 21.0,
+            "radiator_temp_c": 27.7,
+            "room_sensor_age_s": 1557.0,
+            "pump_on": 0,
+            "valve_fraction": 0.11
+        },
+        {
+            "timestamp": "2026-11-19-14-11-26",
+            "error_k": -1.0,
+            "intensity_k": -14.3,
+            "source": "measured",
+            "reason": null,
+            "model_quality": "fitted",
+            "room_temp_c": 22.0,
+            "set_temp_c": 21.0,
+            "radiator_temp_c": 27.7,
+            "room_sensor_age_s": 1597.0,
+            "pump_on": 0,
+            "valve_fraction": 0.13
+        },
+        {
+            "timestamp": "2026-11-19-14-12-21",
+            "error_k": -1.0,
+            "intensity_k": -14.5,
+            "source": "measured",
+            "reason": null,
+            "model_quality": "fitted",
+            "room_temp_c": 22.0,
+            "set_temp_c": 21.0,
+            "radiator_temp_c": 27.5,
+            "room_sensor_age_s": 1652.0,
+            "pump_on": 1,
+            "valve_fraction": 0.15
+        },
+        {
+            "timestamp": "2026-11-19-14-13-21",
+            "error_k": -1.0,
+            "intensity_k": -14.6,
+            "source": "measured",
+            "reason": null,
+            "model_quality": "fitted",
+            "room_temp_c": 22.0,
+            "set_temp_c": 21.0,
+            "radiator_temp_c": 27.4,
+            "room_sensor_age_s": 1712.0,
+            "pump_on": 1,
+            "valve_fraction": 0.17
+        },
+        {
+            "timestamp": "2026-11-19-14-14-21",
+            "error_k": 0.12,
+            "intensity_k": -13.48,
+            "source": "measured",
+            "reason": null,
+            "model_quality": "fitted",
+            "room_temp_c": 20.88,
+            "set_temp_c": 21.0,
+            "radiator_temp_c": 27.4,
+            "room_sensor_age_s": 20.0,
+            "pump_on": 1,
+            "valve_fraction": 0.19
         }
     ],
     "coverage": {
-        "measured": 843,
+        "measured": 852,
         "estimated": 0,
-        "unavailable": 2
+        "unavailable": 3
     },
     "model": {
         "heat_tau_s": 1200.0,
@@ -11856,8 +11996,8 @@
             "heating",
             "cooling"
         ],
-        "heating_samples": 721,
-        "cooling_samples": 828
+        "heating_samples": 723,
+        "cooling_samples": 835
     },
     "probe_sources": [
         "szgk_radiator_shelly/temperature:100"
