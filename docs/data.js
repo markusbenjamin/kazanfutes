@@ -1725,7 +1725,7 @@ function updateGeneralInfobox(info) {
     }
 
     let lines = []; 
-    const shutdownStatus = info.warnings?.rainProtection ? "A fűtés esővédelem miatt áll"
+    const shutdownStatus = info.warnings?.rainProtection ? "A fűtés esővédelem miatt áll."
         : info.warnings?.boilerError ? "A fűtés kazánhiba miatt áll." : '';
     if (info.heatingOn == 1) {
         // Generate lines from incoming info

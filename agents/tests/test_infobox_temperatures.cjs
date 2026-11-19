@@ -61,8 +61,8 @@ run('info.cyclesOn=[];updateGeneralInfobox(info)');
 assert.ok(lines.includes('Készenléti fűtővíz: 52 °C.'));
 for (const [warnings,message] of [
     [{boilerError:true,rainProtection:false},'A fűtés kazánhiba miatt áll.'],
-    [{boilerError:false,rainProtection:true},'A fűtés esővédelem miatt áll'],
-    [{boilerError:true,rainProtection:true},'A fűtés esővédelem miatt áll']]) {
+    [{boilerError:false,rainProtection:true},'A fűtés esővédelem miatt áll.'],
+    [{boilerError:true,rainProtection:true},'A fűtés esővédelem miatt áll.']]) {
     context.warnings=warnings;
     lines.length=0;
     run('info.warnings=warnings;updateGeneralInfobox(info)');
