@@ -19,7 +19,8 @@ const context = vm.createContext({Date, Number, Math, Map, Object, console,
     elementToMainGraphSettingMapping:{room:{day:'2026-11-11'}},
     mainGraphDefaultSetting:{title:'all_rooms',day:'2026-11-11'},
     mainGraphSetting:{title:'all_rooms',day:'2026-11-11'},mainGraphContentLocked:false,
-    getDataFromFirebase(){liveRefreshes++;},writeGasUsageToDial(){},writeCycleEnergyToMarkers(){},drawMainGraph(){}});
+    getDataFromFirebase(){liveRefreshes++;},writeGasUsageToDial(){},writeCycleEnergyToMarkers(){},drawMainGraph(){},
+    renderDashboardMessage(){node('admin-message').hidden=!node('replay-pane').hidden;}});
 vm.runInContext(fs.readFileSync('docs/dashboard_replay.js','utf8'),context);
 const run = source=>vm.runInContext(source,context);
 context.updateReplayPane=()=>{};context.updateDashboardClock=()=>{};
@@ -47,7 +48,7 @@ assert.equal(context.mainGraphSetting.title,'all_rooms');
 assert.equal(context.mainGraphSetting.day,'2026-11-11');
 node('admin-message').hidden=false;
 run(`mainGraphSetting={title:'weather_metrics',day:'2026-11-11'};openReplayPane();`);
-assert.equal(node('admin-message').hidden,false,'Resuming replay must not hide an admin notice');
+assert.equal(node('admin-message').hidden,true,'Resuming replay hides an admin notice immediately');
 assert.equal(loads.length,1,'Reopening a loaded replay needs no network request');
 assert.equal(run('dashboardReplayTime'),cursor,'Resume at the exact last cursor, rather than midnight or current live time');
 assert.equal(run('replayPlaying'),false,'Resume paused even when closing during playback');

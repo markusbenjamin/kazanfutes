@@ -276,6 +276,7 @@ function leaveReplay() {
     replaySavedPlot = null; mainPlotLivePayload = null;
     document.getElementById('replay-pane').hidden = true;
     if (replayLatestLive) renderDashboardState(replayLatestLive);
+    if (typeof renderDashboardMessage === 'function') renderDashboardMessage();
     getDataFromFirebase(); writeGasUsageToDial(); writeCycleEnergyToMarkers(); drawMainGraph();
     updateDashboardClock(); updateReplayPane();
 }
@@ -325,6 +326,7 @@ function selectReplayDay(delta) {
 function openReplayPane() {
     const pane = document.getElementById('replay-pane');
     pane.hidden = false;
+    if (typeof renderDashboardMessage === 'function') renderDashboardMessage();
     if (!pane.classList.contains('replay-minimized')) toggleReplayPaneSize();
     const date = document.getElementById('replay-day');
     if (!dashboardReplayActive() && replayResumeState) {

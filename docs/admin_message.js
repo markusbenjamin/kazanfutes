@@ -120,6 +120,11 @@ function selectedDashboardMessage() {
 }
 
 function updateDashboardWarnings(warnings) {
+    // Historical flags must not clear acknowledgement of a live occurrence.
+    if (typeof dashboardReplayActive === 'function' && dashboardReplayActive()) {
+        hideAdminMessage();
+        return;
+    }
     for (const key of ['rainProtection','boilerError']) {
         currentDashboardWarnings[key] = warnings?.[key] === true;
         // Acknowledgement lasts for this occurrence, even while another error
@@ -151,6 +156,12 @@ function refreshDashboardMessageLanguage(previousLanguage) {
 }
 
 function renderDashboardMessage() {
+    // Also cover the loading phase before the replay clock becomes active.
+    if ((typeof dashboardReplayActive === 'function' && dashboardReplayActive())
+        || document.getElementById('replay-pane')?.hidden === false) {
+        hideAdminMessage();
+        return;
+    }
     const selected = selectedDashboardMessage();
     if (!selected || (selected.type === 'admin' ? selected.message === dismissedAdminMessage
         : selected.message === dismissedDashboardWarnings.get(selected.type))) {
