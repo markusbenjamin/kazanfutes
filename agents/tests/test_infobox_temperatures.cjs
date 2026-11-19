@@ -30,11 +30,13 @@ assert.equal(run('infoboxCirculatedWaterTemperature(system)'),60,'Absent switch 
 run('system.state.heatmeters.last_updated="2000-01-01"; system.state.pump_states[2]=0;');
 assert.equal(run('infoboxCirculatedWaterTemperature(system)'),null,'Old heatmeter snapshots are unavailable');
 const lines=[];
+const renderedLines=[];
 context.isMobile=false;
 context.getBBoxDrawingDimensions=()=>({w:58,h:100});
 context.d3.selectAll=()=>({remove(){}});
 context.addLineToBox=(id,message,x,y,font)=>{
-    lines.push(message);return {style(){return this;},node(){return {getComputedTextLength:()=>message.length*font*.6};}};
+    const rendered={message,font,styles:{}};renderedLines.push(rendered);
+    lines.push(message);return {style(key,value){rendered.styles[key]=value;return this;},node(){return {getComputedTextLength:()=>message.length*font*.6};}};
 };
 vm.runInContext(source.slice(source.indexOf('function updateCycleInfobox('),source.indexOf('let dataWaitTime')),context);
 run('updateCycleInfobox(1,{enabled:true,state:1,roomTemp:21.25,waterTemp:61.8,wantHeating:[]})');
@@ -57,4 +59,25 @@ assert.ok(lines.includes('Keringetett körök: mind.'));
 lines.length=0;
 run('info.cyclesOn=[];updateGeneralInfobox(info)');
 assert.ok(lines.includes('Készenléti fűtővíz: 52 °C.'));
+for (const [warnings,message] of [
+    [{boilerError:true,rainProtection:false},'A fűtés kazánhiba miatt áll.'],
+    [{boilerError:false,rainProtection:true},'A fűtés esővédelem miatt áll.'],
+    [{boilerError:true,rainProtection:true},'A fűtés esővédelem miatt áll.']]) {
+    context.warnings=warnings;
+    lines.length=0;
+    run('info.warnings=warnings;updateGeneralInfobox(info)');
+    assert.ok(lines.includes(message));
+    assert.ok(!lines.includes('Senki nem kér fűtést.'));
+    const status=renderedLines.findLast(row=>row.message===message);
+    assert.equal(status.styles.fill,'red');
+    assert.equal(status.font,6.5,'keep the existing font size');
+}
+lines.length=0;
+run('info.warnings={};updateGeneralInfobox(info)');
+assert.ok(lines.includes('Senki nem kér fűtést.'));
+assert.equal(renderedLines.findLast(row=>row.message==='Senki nem kér fűtést.').styles.fill,'black');
+lines.length=0;
+run('info.heatingOn=0;info.warnings={boilerError:true};updateGeneralInfobox(info)');
+assert.ok(lines.includes('A fűtés kazánhiba miatt áll.'));
+assert.match(source,/warnings: boilerWarnings/,'use the same validated Firebase flags as boiler coloring and warnings');
 console.log('Infobox temperatures: running/standby selection, sensor freshness, room averaging, cycle rows and sentence punctuation passed.');

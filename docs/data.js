@@ -276,6 +276,7 @@ function renderDashboardState(fullFirebaseDataJSON, options = {}) {
                 {
                     heatingOn: systemJSON.switch.system,
                     cyclesOn: cyclesOn,
+                    warnings: boilerWarnings,
                     lastControlRun: { timeSince: timeSinceLastControlRun, granularity: lastControlRunGranularity },
                     lastRequest: { target: requestTarget, origin: requestOrigin, timeSince: timeSinceLastRequest, granularity: lastRequestGranularity, hourStamp: lastRequestHourStamp },
                     scheduleLastUpdated: lastScheduleUpdate,
@@ -1724,17 +1725,20 @@ function updateGeneralInfobox(info) {
     }
 
     let lines = []; 
+    const shutdownStatus = info.warnings?.rainProtection ? "A fűtés esővédelem miatt áll."
+        : info.warnings?.boilerError ? "A fűtés kazánhiba miatt áll." : '';
     if (info.heatingOn == 1) {
         // Generate lines from incoming info
         if (!isMobile) {
             lines.push({lineXOffset:0, text:(info.cyclesOn.length ? "Keringetett fűtővíz: " : "Készenléti fűtővíz: ")
                 + (Number.isFinite(info.waterTemp) ? Math.round(info.waterTemp) + " °C." : "—")});
-            let cyclesOnLine = info.cyclesOn.length === 4 ? "Keringetett körök: mind."
-                : info.cyclesOn.length > 0 ? "Keringetett körök: " + info.cyclesOn.join(", ") + "." : "Senki nem kér fűtést.";
+            let cyclesOnLine = shutdownStatus || (info.cyclesOn.length === 4 ? "Keringetett körök: mind."
+                : info.cyclesOn.length > 0 ? "Keringetett körök: " + info.cyclesOn.join(", ") + "." : "Senki nem kér fűtést.");
             lines.push(
                 {
                     lineXOffset: 0,
-                    text: cyclesOnLine
+                    text: cyclesOnLine,
+                    color: shutdownStatus ? 'red' : 'black'
                 }
             );
             lines.push(
@@ -1744,6 +1748,8 @@ function updateGeneralInfobox(info) {
                 }
             );
         }
+
+        if (isMobile && shutdownStatus) lines.push({lineXOffset:0,text:shutdownStatus,color:'red'});
 
         if (isMobile) {
             if (info.lastRequest.granularity == "órája" && info.lastRequest.timeSince > getFractionalHourOfDay()) {
@@ -1924,17 +1930,17 @@ function updateGeneralInfobox(info) {
                 titleXPos + lineXOffset + lines[line - 1].lineXOffset,
                 titleYPos + lineYOffset + lineHeight * line,
                 lineFontSize, allCentered
-            );
+            ).style('fill',lines[line - 1].color || 'black');
         }
     }
     else {
         addLineToBox(
             "general_infobox",
-            "Fűtés kikapcsolva.",
+            shutdownStatus || "Fűtés kikapcsolva.",
             titleXPos + lineXOffset,
             titleYPos + lineYOffset + lineHeight * 1.5,
             lineFontSize, allCentered
-        );
+        ).style('fill',shutdownStatus ? 'red' : 'black');
     }
 }
 
