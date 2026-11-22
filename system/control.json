@@ -5,8 +5,8 @@
             "reason": "above"
         },
         "2": {
-            "vote": 1,
-            "reason": "d_high"
+            "vote": 0,
+            "reason": "above"
         },
         "3": {
             "vote": 0,
@@ -17,32 +17,32 @@
             "reason": "above"
         },
         "5": {
-            "vote": 1,
-            "reason": "d_high"
+            "vote": 0,
+            "reason": "above"
         },
         "6": {
-            "vote": 1,
-            "reason": "d_high"
+            "vote": 0,
+            "reason": "above"
         },
         "7": {
             "vote": 0,
             "reason": "above"
         },
         "8": {
-            "vote": 1,
-            "reason": "below"
+            "vote": 0,
+            "reason": "above"
         },
         "9": {
             "vote": 0,
-            "reason": "h_off"
+            "reason": "above"
         },
         "10": {
             "vote": 1,
             "reason": "below"
         },
         "12": {
-            "vote": 1,
-            "reason": "d_high"
+            "vote": 0,
+            "reason": "above"
         },
         "13": {
             "vote": 0,
@@ -50,71 +50,71 @@
         }
     },
     "cycles": {
-        "1": 1,
-        "2": 1,
-        "3": 1,
+        "1": 0,
+        "2": 0,
+        "3": 0,
         "4": 1
     },
     "heat_requests": {
-        "1": 1,
-        "2": 1,
-        "3": 1,
+        "1": 0,
+        "2": 0,
+        "3": 0,
         "4": 1
     },
     "rain_protection": {
         "version": 1,
-        "checked_at": 1795359555.869174,
+        "checked_at": 1795360151.8245108,
         "boiler_inhibited": false,
         "policy_phase": "normal",
         "policy_error": null,
         "heat_restored_at": 1795121107.0239162,
         "cycles": {
             "1": {
-                "supply_c": 49.0,
-                "observed_at": 1795359545.0,
+                "supply_c": 48.0,
+                "observed_at": 1795360144.0,
                 "fresh": true,
-                "heat_requested": true,
-                "pump_command": 1,
-                "pump_actual": 1,
-                "reason": "normal",
+                "heat_requested": false,
+                "pump_command": 0,
+                "pump_actual": 0,
+                "reason": "no_heat_request",
                 "warm_samples": 2,
-                "last_warm_sample": 1795359545.0,
-                "last_stop_at": null
+                "last_warm_sample": 1795360144.0,
+                "last_stop_at": 1795359791.7065997
             },
             "2": {
                 "supply_c": 50.0,
-                "observed_at": 1795359545.0,
+                "observed_at": 1795360144.0,
                 "fresh": true,
-                "heat_requested": true,
-                "pump_command": 1,
-                "pump_actual": 1,
-                "reason": "normal",
+                "heat_requested": false,
+                "pump_command": 0,
+                "pump_actual": 0,
+                "reason": "no_heat_request",
                 "warm_samples": 2,
-                "last_warm_sample": 1795359545.0,
-                "last_stop_at": 1795356035.6059937
+                "last_warm_sample": 1795360144.0,
+                "last_stop_at": 1795359852.1083133
             },
             "3": {
-                "supply_c": 50.0,
-                "observed_at": 1795359545.0,
+                "supply_c": 53.0,
+                "observed_at": 1795360144.0,
                 "fresh": true,
-                "heat_requested": true,
-                "pump_command": 1,
-                "pump_actual": 1,
-                "reason": "normal",
+                "heat_requested": false,
+                "pump_command": 0,
+                "pump_actual": 0,
+                "reason": "no_heat_request",
                 "warm_samples": 2,
-                "last_warm_sample": 1795359545.0,
-                "last_stop_at": 1795353438.4677103
+                "last_warm_sample": 1795360144.0,
+                "last_stop_at": 1795360091.6363628
             },
             "4": {
-                "supply_c": 51.0,
-                "observed_at": 1795359545.0,
+                "supply_c": 55.0,
+                "observed_at": 1795360144.0,
                 "fresh": true,
                 "heat_requested": true,
                 "pump_command": 1,
                 "pump_actual": 1,
                 "reason": "normal",
                 "warm_samples": 2,
-                "last_warm_sample": 1795359545.0,
+                "last_warm_sample": 1795360144.0,
                 "last_stop_at": null
             }
         },
@@ -125,5 +125,5 @@
     },
     "boiler": 1,
     "pid_commands_confirmed": true,
-    "last_updated": "2026-11-22-15-59-15"
+    "last_updated": "2026-11-22-16-09-11"
 }
