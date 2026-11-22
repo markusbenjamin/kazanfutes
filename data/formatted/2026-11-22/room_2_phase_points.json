@@ -13469,14 +13469,14 @@
             "error_k": 0.58,
             "intensity_k": null,
             "source": "unavailable",
-            "reason": "missing_model_input",
+            "reason": "model_warmup",
             "model_quality": "shared",
             "room_temp_c": 20.42,
             "set_temp_c": 21.0,
             "radiator_temp_c": null,
             "room_sensor_age_s": 926.0,
             "pump_on": 1,
-            "valve_fraction": null
+            "valve_fraction": 0.895
         },
         {
             "timestamp": "2026-11-22-16-03-11",
@@ -18685,12 +18685,110 @@
             "room_sensor_age_s": 3473.0,
             "pump_on": 0,
             "valve_fraction": 0.01
+        },
+        {
+            "timestamp": "2026-11-22-22-15-18",
+            "error_k": -3.01,
+            "intensity_k": null,
+            "source": "unavailable",
+            "reason": "model_warmup",
+            "model_quality": "shared",
+            "room_temp_c": 17.01,
+            "set_temp_c": 14.0,
+            "radiator_temp_c": null,
+            "room_sensor_age_s": 31.0,
+            "pump_on": 0,
+            "valve_fraction": 0.01
+        },
+        {
+            "timestamp": "2026-11-22-22-16-11",
+            "error_k": -3.01,
+            "intensity_k": null,
+            "source": "unavailable",
+            "reason": "model_warmup",
+            "model_quality": "shared",
+            "room_temp_c": 17.01,
+            "set_temp_c": 14.0,
+            "radiator_temp_c": null,
+            "room_sensor_age_s": 84.0,
+            "pump_on": 0,
+            "valve_fraction": 0.01
+        },
+        {
+            "timestamp": "2026-11-22-22-17-13",
+            "error_k": -3.01,
+            "intensity_k": null,
+            "source": "unavailable",
+            "reason": "model_warmup",
+            "model_quality": "shared",
+            "room_temp_c": 17.01,
+            "set_temp_c": 14.0,
+            "radiator_temp_c": null,
+            "room_sensor_age_s": 146.0,
+            "pump_on": 0,
+            "valve_fraction": 0.01
+        },
+        {
+            "timestamp": "2026-11-22-22-18-11",
+            "error_k": -3.01,
+            "intensity_k": null,
+            "source": "unavailable",
+            "reason": "model_warmup",
+            "model_quality": "shared",
+            "room_temp_c": 17.01,
+            "set_temp_c": 14.0,
+            "radiator_temp_c": null,
+            "room_sensor_age_s": 204.0,
+            "pump_on": 0,
+            "valve_fraction": 0.01
+        },
+        {
+            "timestamp": "2026-11-22-22-19-12",
+            "error_k": -3.01,
+            "intensity_k": null,
+            "source": "unavailable",
+            "reason": "model_warmup",
+            "model_quality": "shared",
+            "room_temp_c": 17.01,
+            "set_temp_c": 14.0,
+            "radiator_temp_c": null,
+            "room_sensor_age_s": 265.0,
+            "pump_on": 0,
+            "valve_fraction": 0.01
+        },
+        {
+            "timestamp": "2026-11-22-22-20-23",
+            "error_k": -3.01,
+            "intensity_k": null,
+            "source": "unavailable",
+            "reason": "model_warmup",
+            "model_quality": "shared",
+            "room_temp_c": 17.01,
+            "set_temp_c": 14.0,
+            "radiator_temp_c": null,
+            "room_sensor_age_s": 336.0,
+            "pump_on": 0,
+            "valve_fraction": 0.01
+        },
+        {
+            "timestamp": "2026-11-22-22-21-11",
+            "error_k": -3.01,
+            "intensity_k": null,
+            "source": "unavailable",
+            "reason": "model_warmup",
+            "model_quality": "shared",
+            "room_temp_c": 17.01,
+            "set_temp_c": 14.0,
+            "radiator_temp_c": null,
+            "room_sensor_age_s": 384.0,
+            "pump_on": 0,
+            "valve_fraction": 0.01
         }
     ],
     "coverage": {
         "measured": 0,
         "estimated": 955,
-        "unavailable": 379
+        "unavailable": 386
     },
     "model": {
         "heat_tau_s": 1200.0,
