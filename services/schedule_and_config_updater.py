@@ -212,6 +212,8 @@ def extract_warming_params():
 
 def get_presence_patterns_with_weekly_cycle_weighted_average(room, day, hour):
     presence_prob = weekly_presence(weekly_baseline.config, room, int(day), int(hour))
+    if rooms_info[room].get('presence_control', True) is False:
+        return presence_prob
     patterns = load_json_to_dict(f'{export_path_prefix}config/scheduling/local_scheduling_files/occupancy.json')
     observed = patterns.get(room, {}).get(str(day), {}).get(str(hour))
     if observed is not None:
@@ -403,7 +405,9 @@ def generate_schedule(for_how_many_days : int):
         for room_num, room_schedule_for_days in schedule.items():
             for day, room_schedule in room_schedule_for_days.items():
                 for h, set_temp in room_schedule.items():
-                    enforce_no_presence = 1 if isinstance(rooms_info[room_num]['pres'],str) else 0
+                    enforce_no_presence = int(
+                        isinstance(rooms_info[room_num]['pres'], str)
+                        and rooms_info[room_num].get('presence_control', True))
                     schedule[room_num][day][h] = round(clamp(
                         schedule[room_num][day][h] - no_presence_offset * enforce_no_presence,
                         min(warming_params[room_num]['t_min'], set_temp),
@@ -445,8 +449,8 @@ def presence_enforcer(presence_with_override, schedule, requested_temps=None, cy
         h = timepoint_info['hour_of_day']      
         
         for room_num, state in rooms_aggregate_occupancy_past_n_minutes.items():
-            if room_num in condensed_schedule and state: # and presence_with_override[room_num][day][str(int(h))] > 0.3: # Give heating if presence regardless of previous patterns
-                #condensed_schedule[room_num][day][str(int(h))] += no_presence_offset
+            if (room_num in condensed_schedule and state
+                    and rooms_info[room_num].get('presence_control', True)):
                 condensed_schedule[room_num][day][str(int(h))] = (requested_temps or {}).get(
                     room_num, {}).get(day, {}).get(str(int(h)), warming_params[room_num]['t_max'])
 
