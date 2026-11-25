@@ -26,6 +26,8 @@ def validate_definitions(document):
         room_id(key)
         if not isinstance(info.get('included'), bool) or not isinstance(info.get('controlled'), bool):
             raise ValueError(f'Room {key} needs explicit inclusion/control flags')
+        if 'presence_control' in info and not isinstance(info['presence_control'], bool):
+            raise ValueError(f'Room {key} needs a boolean presence_control flag')
         if info.get('cycle') is not None and info['cycle'] not in ('1', '2', '3', '4'):
             raise ValueError(f'Room {key} has an invalid heating cycle')
         if info['controlled'] and (not info['included'] or info.get('cycle') is None):
