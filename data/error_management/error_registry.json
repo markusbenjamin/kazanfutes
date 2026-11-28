@@ -8831,16 +8831,5 @@
         "reported_timestamp": "2026-11-28-03-25-30",
         "checked": false,
         "checked_timestamp": null
-    },
-    {
-        "message": "Firebase status upload failed; local control completed: HTTPSConnectionPool(host='kazanfutes-71b78-default-rtdb.europe-west1.firebasedatabase.app', port=443): Read timed out. (read timeout=3).",
-        "severity": 1,
-        "origin": "heating_control.py/publish:237 --> api.py/patch:145 --> api.py/request:59 --> sessions.py/request:589 --> sessions.py/send:703 --> adapters.py/send:713",
-        "origin_timestamp": "2026-11-28-18-38-15",
-        "registration_timestamp": "2026-11-28-18-38-15",
-        "reported": false,
-        "reported_timestamp": null,
-        "checked": false,
-        "checked_timestamp": null
     }
 ]
