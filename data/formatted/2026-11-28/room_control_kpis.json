@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "day": "2026-11-28",
-  "observed_until": "2026-11-28-21-45-17",
+  "observed_until": "2026-11-28-21-55-17",
   "tolerance_c": 0.5,
   "max_hold_seconds": 180,
   "max_sensor_age_seconds": 3600,
@@ -9,31 +9,31 @@
   "comfort_source": "observed_occupancy",
   "rooms": {
     "1": {
-      "valid_seconds": 74828.158522,
-      "heating_seconds": 3691.6665852200467,
-      "occupied_seconds": 28561.158522,
-      "comfort_seconds": 6920.0,
-      "absolute_error_on_kh": 0.856663902380283,
-      "signed_error_on_kh": -0.29730270873083425,
+      "valid_seconds": 75428.075247,
+      "heating_seconds": 3697.6657524700536,
+      "occupied_seconds": 29161.075247,
+      "comfort_seconds": 7516.075247,
+      "absolute_error_on_kh": 0.8573582384757549,
+      "signed_error_on_kh": -0.2966083726353628,
       "quadrant_seconds": {
         "below_on": 1768.8600000000026,
-        "above_on": 294.41158521999637,
+        "above_on": 294.44999999999635,
         "below_off": 5854.139999999999,
-        "above_off": 54463.746936779906
+        "above_off": 54467.54999999991
       },
       "quadrant_error_kh": {
         "below_on": 0.43300252777777926,
-        "above_on": 0.2789073190469451,
+        "above_on": 0.27892279166666734,
         "below_off": 1.5032558055555563,
-        "above_off": 57.721381530091676
+        "above_off": 57.722913319444174
       },
-      "mae_on_c": 0.835392356643495,
-      "bias_on_c": -0.2899204808245724,
-      "comfort_pct": 24.228709051384186,
-      "coverage_pct": 95.5450375551867
+      "mae_on_c": 0.8347129960167253,
+      "bias_on_c": -0.28877411128196717,
+      "comfort_pct": 25.77434193813971,
+      "coverage_pct": 95.57890356544526
     },
     "2": {
-      "valid_seconds": 73306.158522,
+      "valid_seconds": 73906.075247,
       "heating_seconds": 147.7049999999976,
       "occupied_seconds": 0.0,
       "comfort_seconds": 0.0,
@@ -43,21 +43,21 @@
         "below_on": 0.0,
         "above_on": 147.7049999999976,
         "below_off": 0.0,
-        "above_off": 73158.45352200128
+        "above_off": 73758.37024700128
       },
       "quadrant_error_kh": {
         "below_on": 0.0,
         "above_on": 0.15773290277777938,
         "below_off": 0.0,
-        "above_off": 75.75606230641766
+        "above_off": 76.34764685468178
       },
       "mae_on_c": 3.8444091262991433,
       "bias_on_c": 3.8444091262991433,
       "comfort_pct": null,
-      "coverage_pct": 93.6016575491661
+      "coverage_pct": 93.65029686627864
     },
     "3": {
-      "valid_seconds": 78290.158522,
+      "valid_seconds": 78890.075247,
       "heating_seconds": 325.4299999999928,
       "occupied_seconds": 0.0,
       "comfort_seconds": 0.0,
@@ -67,21 +67,21 @@
         "below_on": 0.0,
         "above_on": 325.4299999999928,
         "below_off": 0.0,
-        "above_off": 77964.72852199966
+        "above_off": 78564.64524699966
       },
       "quadrant_error_kh": {
         "below_on": 0.0,
         "above_on": 0.37342866666667013,
         "below_off": 0.0,
-        "above_off": 93.43701664184404
+        "above_off": 94.12358800489967
       },
       "mae_on_c": 4.13097501766906,
       "bias_on_c": 4.13097501766906,
       "comfort_pct": null,
-      "coverage_pct": 99.96552479621383
+      "coverage_pct": 99.9657868719596
     },
     "4": {
-      "valid_seconds": 78290.158522,
+      "valid_seconds": 78890.075247,
       "heating_seconds": 18636.04999999994,
       "occupied_seconds": 27442.0,
       "comfort_seconds": 10460.0,
@@ -91,21 +91,21 @@
         "below_on": 10876.600000000024,
         "above_on": 42.73000000000005,
         "below_off": 5263.399999999988,
-        "above_off": 47320.428521999915
+        "above_off": 47920.34524699992
       },
       "quadrant_error_kh": {
         "below_on": 3.9419343055555642,
         "above_on": 0.051883277777777924,
         "below_off": 2.4581990277777734,
-        "above_off": 58.134471208316526
+        "above_off": 58.85127532999981
       },
       "mae_on_c": 0.8244300643108455,
       "bias_on_c": -0.7813741699555471,
       "comfort_pct": 38.11675533853218,
-      "coverage_pct": 99.96552479621383
+      "coverage_pct": 99.9657868719596
     },
     "5": {
-      "valid_seconds": 78290.158522,
+      "valid_seconds": 78890.075247,
       "heating_seconds": 325.4299999999928,
       "occupied_seconds": 0.0,
       "comfort_seconds": 0.0,
@@ -115,72 +115,72 @@
         "below_on": 0.0,
         "above_on": 325.4299999999928,
         "below_off": 0.0,
-        "above_off": 77964.72852199966
+        "above_off": 78564.64524699966
       },
       "quadrant_error_kh": {
         "below_on": 0.0,
         "above_on": 0.43648944444444565,
         "below_off": 0.0,
-        "above_off": 107.42446114813293
+        "above_off": 108.1275554229386
       },
       "mae_on_c": 4.828571428571549,
       "bias_on_c": 4.828571428571549,
       "comfort_pct": null,
-      "coverage_pct": 99.96552479621383
+      "coverage_pct": 99.9657868719596
     },
     "6": {
-      "valid_seconds": 78290.158522,
-      "heating_seconds": 1390.573170439978,
+      "valid_seconds": 78890.075247,
+      "heating_seconds": 1420.453762349978,
       "occupied_seconds": 0.0,
       "comfort_seconds": 0.0,
-      "absolute_error_on_kh": 0.2735737824790015,
-      "signed_error_on_kh": 0.06400855085433424,
+      "absolute_error_on_kh": 0.27780686633291773,
+      "signed_error_on_kh": 0.05977546700041757,
       "quadrant_seconds": {
-        "below_on": 494.49317044000094,
+        "below_on": 524.3737623500004,
         "above_on": 265.35000000000105,
-        "below_off": 6733.665351559993,
+        "below_off": 7303.701484649992,
         "above_off": 49737.64999999991
       },
       "quadrant_error_kh": {
-        "below_on": 0.09044067136788904,
+        "below_on": 0.09467375522180581,
         "above_on": 0.14132619444444397,
-        "below_off": 1.173012341471,
+        "below_off": 1.253767460325417,
         "above_off": 27.931884916666665
       },
-      "mae_on_c": 0.7082443684806556,
-      "bias_on_c": 0.1657092111180995,
+      "mae_on_c": 0.7040741101941573,
+      "bias_on_c": 0.15149502708591742,
       "comfort_pct": null,
-      "coverage_pct": 99.96552479621383
+      "coverage_pct": 99.9657868719596
     },
     "7": {
-      "valid_seconds": 78290.158522,
-      "heating_seconds": 359.5315852199901,
+      "valid_seconds": 78890.075247,
+      "heating_seconds": 365.5307524699894,
       "occupied_seconds": 0.0,
       "comfort_seconds": 0.0,
-      "absolute_error_on_kh": 0.6100423083689546,
-      "signed_error_on_kh": 0.6100423083689546,
+      "absolute_error_on_kh": 0.6197242977363145,
+      "signed_error_on_kh": 0.6197242977363145,
       "quadrant_seconds": {
         "below_on": 0.0,
-        "above_on": 359.5315852199901,
+        "above_on": 365.5307524699894,
         "below_off": 0.0,
-        "above_off": 77930.62693678119
+        "above_off": 78524.54449453129
       },
       "quadrant_error_kh": {
         "below_on": 0.0,
-        "above_on": 0.6100423083689546,
+        "above_on": 0.6197242977363145,
         "below_off": 0.0,
-        "above_off": 131.19611908408183
+        "above_off": 132.15463603145068
       },
-      "mae_on_c": 6.108371003856185,
-      "bias_on_c": 6.108371003856185,
+      "mae_on_c": 6.103474076463378,
+      "bias_on_c": 6.103474076463378,
       "comfort_pct": null,
-      "coverage_pct": 99.96552479621383
+      "coverage_pct": 99.9657868719596
     },
     "8": {
-      "valid_seconds": 78290.158522,
+      "valid_seconds": 78890.075247,
       "heating_seconds": 9305.0,
-      "occupied_seconds": 28738.0,
-      "comfort_seconds": 4777.0,
+      "occupied_seconds": 29334.075247,
+      "comfort_seconds": 5373.075247,
       "absolute_error_on_kh": 2.07050833333334,
       "signed_error_on_kh": -0.04150277777777983,
       "quadrant_seconds": {
@@ -197,11 +197,11 @@
       },
       "mae_on_c": 0.8010564212788849,
       "bias_on_c": -0.01605695862439628,
-      "comfort_pct": 16.6225902985594,
-      "coverage_pct": 99.96552479621383
+      "comfort_pct": 18.316838699558133,
+      "coverage_pct": 99.9657868719596
     },
     "9": {
-      "valid_seconds": 78290.158522,
+      "valid_seconds": 78890.075247,
       "heating_seconds": 9305.0,
       "occupied_seconds": 0.0,
       "comfort_seconds": 0.0,
@@ -211,22 +211,22 @@
         "below_on": 2468.0,
         "above_on": 1816.0,
         "below_off": 1.0,
-        "above_off": 52537.158522
+        "above_off": 53137.075247
       },
       "quadrant_error_kh": {
         "below_on": 0.6855555555555555,
         "above_on": 0.5291500000000006,
         "below_off": 0.0002777777777777778,
-        "above_off": 90.48621079987252
+        "above_off": 90.74784114938637
       },
       "mae_on_c": 0.6072960773777542,
       "bias_on_c": -0.1293401397098331,
       "comfort_pct": null,
-      "coverage_pct": 99.96552479621383
+      "coverage_pct": 99.9657868719596
     },
     "10": {
-      "valid_seconds": 78290.158522,
-      "heating_seconds": 8936.158522,
+      "valid_seconds": 78890.075247,
+      "heating_seconds": 8939.0,
       "occupied_seconds": 0.0,
       "comfort_seconds": 0.0,
       "absolute_error_on_kh": 1.9252166666666708,
@@ -235,21 +235,21 @@
         "below_on": 3345.0,
         "above_on": 228.0,
         "below_off": 0.0,
-        "above_off": 63903.0
+        "above_off": 64499.075247
       },
       "quadrant_error_kh": {
         "below_on": 1.7579555555555586,
         "above_on": 0.043066666666666656,
         "below_off": 0.0,
-        "above_off": 103.39852500000039
+        "above_off": 103.6237089822002
       },
-      "mae_on_c": 0.775588300379528,
-      "bias_on_c": -0.6949406710625513,
+      "mae_on_c": 0.7753417608233599,
+      "bias_on_c": -0.6947197673117816,
       "comfort_pct": null,
-      "coverage_pct": 99.96552479621383
+      "coverage_pct": 99.9657868719596
     },
     "12": {
-      "valid_seconds": 78290.158522,
+      "valid_seconds": 78890.075247,
       "heating_seconds": 2838.3400000002835,
       "occupied_seconds": 0.0,
       "comfort_seconds": 0.0,
@@ -259,42 +259,42 @@
         "below_on": 0.0,
         "above_on": 283.14999999999606,
         "below_off": 0.0,
-        "above_off": 68451.00852200035
+        "above_off": 69050.92524700036
       },
       "quadrant_error_kh": {
         "below_on": 0.0,
         "above_on": 0.33418711111111393,
         "below_off": 0.0,
-        "above_off": 77.88791849736747
+        "above_off": 78.49783383445099
       },
       "mae_on_c": 0.7217654685484485,
       "bias_on_c": 0.12596496543753216,
       "comfort_pct": null,
-      "coverage_pct": 99.96552479621383
+      "coverage_pct": 99.9657868719596
     },
     "13": {
-      "valid_seconds": 74854.158522,
-      "heating_seconds": 1926.4015852199714,
+      "valid_seconds": 75454.075247,
+      "heating_seconds": 1932.4007524699705,
       "occupied_seconds": 12137.0,
       "comfort_seconds": 9195.0,
-      "absolute_error_on_kh": 0.42292478257749866,
-      "signed_error_on_kh": 0.19765739368861127,
+      "absolute_error_on_kh": 0.4345065082406933,
+      "signed_error_on_kh": 0.2092391193518054,
       "quadrant_seconds": {
         "below_on": 385.3899999999999,
-        "above_on": 145.2415852200006,
+        "above_on": 151.24075247000047,
         "below_off": 4064.610000000005,
-        "above_off": 44083.916936780406
+        "above_off": 44677.834494530405
       },
       "quadrant_error_kh": {
         "below_on": 0.107052777777778,
-        "above_on": 0.2754363381330554,
+        "above_on": 0.28701806379625006,
         "below_off": 1.1290583333333353,
-        "above_off": 83.92348914183948
+        "above_off": 85.07007998249588
       },
-      "mae_on_c": 0.7903488187304109,
-      "bias_on_c": 0.36937605468059687,
+      "mae_on_c": 0.8094715486252658,
+      "bias_on_c": 0.3898057008639077,
       "comfort_pct": 75.76007250556151,
-      "coverage_pct": 95.57823589957339
+      "coverage_pct": 95.61184954059527
     }
   }
 }
